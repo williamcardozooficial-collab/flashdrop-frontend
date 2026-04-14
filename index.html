@@ -1,174 +1,180 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlashDrop</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, sans-serif; background: #0f0f0f; color: #fff; min-height: 100vh; }
-    input, button, select, textarea { font-family: inherit; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FlashDrop</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#0f0f0f;color:#fff;min-height:100vh}
+input,button{font-family:inherit}
+.btn{width:100%;padding:16px;background:#a855f7;border:none;border-radius:10px;color:#fff;font-size:17px;cursor:pointer;font-weight:bold}
+.btn:disabled{opacity:.6}
+.inp{width:100%;padding:14px;background:#1a1a1a;border:1px solid #333;border-radius:10px;color:#fff;font-size:16px;display:block}
+.card{background:#1a1a1a;border-radius:10px;padding:14px;margin-bottom:10px}
+.tab-btn{padding:8px 16px;background:#222;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px}
+.tab-btn.active{background:#a855f7;font-weight:bold}
+.badge{padding:2px 8px;border-radius:20px;font-size:11px;color:#fff}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const API = 'https://flashdrop-backend-production.up.railway.app';
-    const tg = window.Telegram?.WebApp;
-    if (tg) { tg.expand(); tg.ready(); }
+<div id="app"></div>
+<script>
+var API='https://flashdrop-backend-production.up.railway.app';
+var tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.expand();tg.ready();}
+var state={user:null,tab:'pedidos',orders:[],users:[],settings:null,timer:null};
 
-    function App() {
-      const [user, setUser] = React.useState(null);
-      const [username, setUsername] = React.useState('');
-      const [password, setPassword] = React.useState('');
-      const [error, setError] = React.useState('');
-      const [loading, setLoading] = React.useState(false);
-      const [tab, setTab] = React.useState('pedidos');
-      const [users, setUsers] = React.useState([]);
-      const [orders, setOrders] = React.useState([]);
-      const [settings, setSettings] = React.useState(null);
+function el(tag,style,text){
+  var e=document.createElement(tag);
+  if(style)Object.keys(style).forEach(function(k){e.style[k]=style[k];});
+  if(text!=null)e.textContent=text;
+  return e;
+}
+function add(parent){for(var i=1;i<arguments.length;i++)if(arguments[i])parent.appendChild(arguments[i]);return parent;}
 
-      const login = async () => {
-        setLoading(true); setError('');
-        try {
-          const res = await fetch(`${API}/users/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-          });
-          const data = await res.json();
-          if (res.ok) { setUser(data); loadData(data); }
-          else setError(data.error || 'Credenciais invalidas');
-        } catch(e) { setError('Erro ao conectar'); }
-        setLoading(false);
-      };
+function statusBg(s){
+  if(s==='pendente')return'#f59e0b';
+  if(s==='aceito'||s==='na_loja'||s==='coletado')return'#3b82f6';
+  if(s==='entregue')return'#22c55e';
+  return'#ef4444';
+}
+function roleName(r){return r==='admin'?'Admin':r==='loja'?'Loja':'Motoboy';}
+function roleColor(r){return r==='admin'?'#7c3aed':r==='loja'?'#f59e0b':'#22c55e';}
 
-      const loadData = async (u) => {
-        if (!u) return;
-        try {
-          const [ordRes, usrRes, setRes] = await Promise.all([
-            fetch(`${API}/orders`),
-            fetch(`${API}/users`),
-            fetch(`${API}/settings`)
-          ]);
-          setOrders(await ordRes.json());
-          setUsers(await usrRes.json());
-          setSettings(await setRes.json());
-        } catch(e) {}
-      };
+function badge(role){
+  var b=el('span',{background:roleColor(role),padding:'2px 8px',borderRadius:'20px',fontSize:'11px',color:'#fff'},roleName(role));
+  return b;
+}
 
-      React.useEffect(() => { if (user) { const t = setInterval(() => loadData(user), 10000); return () => clearInterval(t); } }, [user]);
+async function loadData(){
+  try{
+    var r1=await fetch(API+'/orders'),r2=await fetch(API+'/users'),r3=await fetch(API+'/settings');
+    state.orders=await r1.json();
+    state.users=await r2.json();
+    state.settings=await r3.json();
+    render();
+  }catch(e){}
+}
 
-      if (!user) return (
-        <div style={{padding:20, maxWidth:400, margin:'60px auto'}}>
-          <h1 style={{textAlign:'center', marginBottom:8, color:'#a855f7', fontSize:32, fontWeight:'bold'}}>FlashDrop</h1>
-          <p style={{textAlign:'center', color:'#666', marginBottom:30, fontSize:14}}>Sistema de Entregas</p>
-          <input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Usuario" style={{width:'100%', padding:14, marginBottom:12, background:'#1a1a1a', border:'1px solid #333', borderRadius:10, color:'#fff', fontSize:16}} />
-          <input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} placeholder="Senha" style={{width:'100%', padding:14, marginBottom:16, background:'#1a1a1a', border:'1px solid #333', borderRadius:10, color:'#fff', fontSize:16}} />
-          {error && <p style={{color:'#f87171', marginBottom:12, fontSize:14}}>{error}</p>}
-          <button onClick={login} disabled={loading} style={{width:'100%', padding:16, background:loading?'#7c3aed':'#a855f7', border:'none', borderRadius:10, color:'#fff', fontSize:17, cursor:'pointer', fontWeight:'bold', opacity:loading?0.7:1}}>
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </div>
-      );
+function renderLogin(){
+  var wrap=el('div',{padding:'20px',maxWidth:'400px',margin:'60px auto'});
+  var title=el('h1',{textAlign:'center',marginBottom:'8px',color:'#a855f7',fontSize:'32px',fontWeight:'bold'},'FlashDrop');
+  var sub=el('p',{textAlign:'center',color:'#666',marginBottom:'30px',fontSize:'14px'},'Sistema de Entregas');
+  var ui=el('input',{marginBottom:'12px'});ui.className='inp';ui.placeholder='Usuario';ui.type='text';
+  var pi=el('input',{marginBottom:'16px'});pi.className='inp';pi.placeholder='Senha';pi.type='password';
+  var err=el('p',{color:'#f87171',marginBottom:'12px',fontSize:'14px',display:'none'});
+  var btn=el('button');btn.className='btn';btn.textContent='Entrar';
+  btn.onclick=async function(){
+    btn.disabled=true;btn.textContent='Entrando...';err.style.display='none';
+    try{
+      var r=await fetch(API+'/users/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ui.value,password:pi.value})});
+      var d=await r.json();
+      if(r.ok){state.user=d;loadData();return;}
+      err.textContent=d.error||'Credenciais invalidas';err.style.display='block';
+    }catch(e){err.textContent='Erro ao conectar';err.style.display='block';}
+    btn.disabled=false;btn.textContent='Entrar';
+  };
+  pi.onkeydown=function(e){if(e.key==='Enter')btn.click();};
+  return add(wrap,title,sub,ui,pi,err,btn);
+}
 
-      const badge = (role) => role==='admin'?'Admin':role==='loja'?'Loja':'Motoboy';
-      const statusColor = (s) => s==='pendente'?'#f59e0b':s==='aceito'||s==='na_loja'||s==='coletado'?'#3b82f6':s==='entregue'?'#22c55e':'#ef4444';
+function renderHeader(){
+  var div=el('div',{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 16px',background:'#1a1a1a',borderBottom:'1px solid #333'});
+  var left=el('div');
+  add(left,el('span',{color:'#a855f7',fontWeight:'bold',fontSize:'18px'},'FlashDrop'));
+  var nameRow=el('div',{display:'flex',alignItems:'center',gap:'8px',marginTop:'4px'});
+  add(nameRow,el('span',{fontSize:'13px',color:'#aaa'},state.user.name),badge(state.user.role));
+  add(left,nameRow);
+  var sair=el('button',{padding:'6px 12px',background:'#333',border:'none',borderRadius:'8px',color:'#fff',cursor:'pointer',fontSize:'12px'},'Sair');
+  sair.onclick=function(){state.user=null;if(state.timer)clearInterval(state.timer);render();};
+  return add(div,left,sair);
+}
 
-      return (
-        <div style={{maxWidth:600, margin:'0 auto', paddingBottom:80}}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 16px', background:'#1a1a1a', borderBottom:'1px solid #333'}}>
-            <span style={{color:'#a855f7', fontWeight:'bold', fontSize:18}}>FlashDrop</span>
-            <div style={{display:'flex', alignItems:'center', gap:10}}>
-              <span style={{fontSize:13, color:'#aaa'}}>{user.name} <span style={{background:'#7c3aed', padding:'2px 8px', borderRadius:20, fontSize:11}}>{badge(user.role)}</span></span>
-              <button onClick={()=>setUser(null)} style={{padding:'6px 12px', background:'#333', border:'none', borderRadius:8, color:'#fff', cursor:'pointer', fontSize:12}}>Sair</button>
-            </div>
-          </div>
+function renderTabBar(){
+  if(state.user.role!=='admin')return null;
+  var div=el('div',{display:'flex',gap:'4px',padding:'10px 16px',background:'#111',borderBottom:'1px solid #222'});
+  [['pedidos','Pedidos'],['usuarios','Usuarios'],['config','Config']].forEach(function(pair){
+    var b=el('button');b.className='tab-btn'+(state.tab===pair[0]?' active':'');b.textContent=pair[1];
+    b.onclick=function(){state.tab=pair[0];render();};
+    div.appendChild(b);
+  });
+  return div;
+}
 
-          {user.role==='admin' && (
-            <div style={{display:'flex', gap:4, padding:'10px 16px', background:'#111', borderBottom:'1px solid #222'}}>
-              {['pedidos','usuarios','config'].map(t=>(
-                <button key={t} onClick={()=>setTab(t)} style={{padding:'8px 16px', background:tab===t?'#a855f7':'#222', border:'none', borderRadius:8, color:'#fff', cursor:'pointer', fontSize:13, fontWeight:tab===t?'bold':'normal'}}>
-                  {t==='pedidos'?'Pedidos':t==='usuarios'?'Usuarios':'Config'}
-                </button>
-              ))}
-            </div>
-          )}
+function renderPedidos(){
+  var div=el('div',{padding:'16px'});
+  add(div,el('h2',{marginBottom:'12px',fontSize:'16px',color:'#aaa'},'Pedidos ('+state.orders.length+')'));
+  if(!state.orders.length){add(div,el('p',{color:'#555',textAlign:'center',padding:'40px'},'Nenhum pedido'));return div;}
+  state.orders.forEach(function(o){
+    var card=document.createElement('div');card.className='card';card.style.borderLeft='3px solid '+statusBg(o.status);
+    var top=el('div',{display:'flex',justifyContent:'space-between',alignItems:'flex-start'});
+    var info=el('div');
+    add(info,el('p',{fontWeight:'bold',fontSize:'15px'},'#'+o.id+' - '+(o.loja_name||o.loja_user||'')));
+    add(info,el('p',{color:'#aaa',fontSize:'13px',marginTop:'4px'},o.endereco_entrega||''));
+    add(info,el('p',{color:'#aaa',fontSize:'13px'},(o.nome_cliente||'')+' | '+(o.telefone_cliente||'')));
+    var st=el('span',{background:statusBg(o.status),padding:'3px 10px',borderRadius:'20px',fontSize:'12px',fontWeight:'bold',whiteSpace:'nowrap'},o.status);
+    add(top,info,st);
+    var bot=el('div',{display:'flex',gap:'8px',marginTop:'8px',flexWrap:'wrap'});
+    add(bot,el('span',{fontSize:'12px',color:'#888'},'R$ '+Number(o.valor_motoboy||0).toFixed(2)+' motoboy'),el('span',{fontSize:'12px',color:'#888'},'R$ '+Number(o.valor_total||0).toFixed(2)+' total'));
+    if(o.motoboy_name)add(bot,el('span',{fontSize:'12px',color:'#22c55e'},o.motoboy_name));
+    add(card,top,bot);div.appendChild(card);
+  });
+  return div;
+}
 
-          <div style={{padding:16}}>
-            {(tab==='pedidos' || user.role!=='admin') && (
-              <div>
-                <h2 style={{marginBottom:12, fontSize:16, color:'#aaa'}}>Pedidos ({orders.length})</h2>
-                {orders.length===0 && <p style={{color:'#555', textAlign:'center', padding:40}}>Nenhum pedido</p>}
-                {orders.map(o=>(
-                  <div key={o.id} style={{background:'#1a1a1a', borderRadius:10, padding:14, marginBottom:10, borderLeft:`3px solid ${statusColor(o.status)}`}}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
-                      <div>
-                        <p style={{fontWeight:'bold', fontSize:15}}>#{o.id} - {o.loja_name || o.loja_user}</p>
-                        <p style={{color:'#aaa', fontSize:13, marginTop:4}}>{o.endereco_entrega}</p>
-                        <p style={{color:'#aaa', fontSize:13}}>{o.nome_cliente} | {o.telefone_cliente}</p>
-                      </div>
-                      <span style={{background:statusColor(o.status), padding:'3px 10px', borderRadius:20, fontSize:12, fontWeight:'bold', whiteSpace:'nowrap'}}>{o.status}</span>
-                    </div>
-                    <div style={{display:'flex', gap:8, marginTop:8, flexWrap:'wrap'}}>
-                      <span style={{fontSize:12, color:'#888'}}>R$ {Number(o.valor_motoboy||0).toFixed(2)} motoboy</span>
-                      <span style={{fontSize:12, color:'#888'}}>R$ {Number(o.valor_total||0).toFixed(2)} total</span>
-                      {o.motoboy_name && <span style={{fontSize:12, color:'#22c55e'}}>{o.motoboy_name}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+function renderUsuarios(){
+  var div=el('div',{padding:'16px'});
+  add(div,el('h2',{marginBottom:'12px',fontSize:'16px',color:'#aaa'},'Usuarios ('+state.users.length+')'));
+  state.users.forEach(function(u){
+    var card=document.createElement('div');card.className='card';card.style.display='flex';card.style.justifyContent='space-between';card.style.alignItems='center';
+    var info=el('div');
+    add(info,el('p',{fontWeight:'bold'},u.name),el('p',{color:'#888',fontSize:'13px',marginTop:'2px'},'@'+u.username+' | '+roleName(u.role)));
+    if(u.role==='motoboy')add(info,el('p',{color:'#22c55e',fontSize:'13px',marginTop:'2px'},'Saldo: R$ '+Number(u.balance||0).toFixed(2)));
+    var st=el('span',{padding:'4px 10px',background:u.blocked?'#ef4444':u.online?'#22c55e':'#555',borderRadius:'20px',fontSize:'12px'},u.blocked?'Bloqueado':u.online?'Online':'Offline');
+    add(card,info,st);div.appendChild(card);
+  });
+  return div;
+}
 
-            {tab==='usuarios' && user.role==='admin' && (
-              <div>
-                <h2 style={{marginBottom:12, fontSize:16, color:'#aaa'}}>Usuarios ({users.length})</h2>
-                {users.map(u=>(
-                  <div key={u.id} style={{background:'#1a1a1a', borderRadius:10, padding:14, marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <div>
-                      <p style={{fontWeight:'bold'}}>{u.name}</p>
-                      <p style={{color:'#888', fontSize:13}}>@{u.username} | {badge(u.role)}</p>
-                      {u.role==='motoboy' && <p style={{color:'#22c55e', fontSize:13}}>Saldo: R$ {Number(u.balance||0).toFixed(2)}</p>}
-                    </div>
-                    <span style={{padding:'4px 10px', background:u.blocked?'#ef4444':u.online?'#22c55e':'#555', borderRadius:20, fontSize:12}}>
-                      {u.blocked?'Bloqueado':u.online?'Online':'Offline'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+function renderConfig(){
+  var div=el('div',{padding:'16px'});
+  add(div,el('h2',{marginBottom:'12px',fontSize:'16px',color:'#aaa'},'Configuracoes'));
+  if(!state.settings){add(div,el('p',{color:'#555'},'Carregando...'));return div;}
+  var card=document.createElement('div');card.className='card';
+  [['Taxa minima (R$)','min_fee'],['Preco/km (R$)','price_per_km'],['Arrancada (R$)','arrancada'],['Comissao (R$)','commission'],['Max pedidos/motoboy','max_per_motoboy']].forEach(function(pair){
+    var wrap=el('div',{marginBottom:'14px'});
+    add(wrap,el('p',{fontSize:'13px',color:'#888',marginBottom:'4px'},pair[0]));
+    var inp=document.createElement('input');inp.className='inp';inp.type='number';inp.value=state.settings[pair[1]]||0;
+    inp.onblur=async function(){
+      var upd=Object.assign({},state.settings);upd[pair[1]]=parseFloat(inp.value);
+      await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(upd)});
+      loadData();
+    };
+    add(wrap,inp);card.appendChild(wrap);
+  });
+  add(div,card);return div;
+}
 
-            {tab==='config' && user.role==='admin' && settings && (
-              <div>
-                <h2 style={{marginBottom:12, fontSize:16, color:'#aaa'}}>Configuracoes</h2>
-                <div style={{background:'#1a1a1a', borderRadius:10, padding:16}}>
-                  {[['Taxa minima (R$)','min_fee'],['Preco/km (R$)','price_per_km'],['Arrancada (R$)','arrancada'],['Comissao (R$)','commission'],['Max pedidos/motoboy','max_per_motoboy']].map(([label,key])=>(
-                    <div key={key} style={{marginBottom:14}}>
-                      <p style={{fontSize:13, color:'#888', marginBottom:4}}>{label}</p>
-                      <input
-                        type="number"
-                        defaultValue={settings[key]}
-                        onBlur={async(e)=>{
-                          await fetch(`${API}/settings`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...settings,[key]:e.target.value})});
-                          loadData(user);
-                        }}
-                        style={{width:'100%', padding:10, background:'#111', border:'1px solid #333', borderRadius:8, color:'#fff', fontSize:15}}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
+function render(){
+  var app=document.getElementById('app');
+  while(app.firstChild)app.removeChild(app.firstChild);
+  if(!state.user){app.appendChild(renderLogin());return;}
+  if(state.timer)clearInterval(state.timer);
+  state.timer=setInterval(loadData,10000);
+  var wrap=el('div',{maxWidth:'600px',margin:'0 auto',paddingBottom:'80px'});
+  wrap.appendChild(renderHeader());
+  var tb=renderTabBar();
+  if(tb)wrap.appendChild(tb);
+  var tab=state.user.role==='admin'?state.tab:'pedidos';
+  if(tab==='pedidos')wrap.appendChild(renderPedidos());
+  else if(tab==='usuarios')wrap.appendChild(renderUsuarios());
+  else if(tab==='config')wrap.appendChild(renderConfig());
+  app.appendChild(wrap);
+}
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+render();
+</script>
 </body>
 </html>
