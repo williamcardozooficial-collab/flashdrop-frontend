@@ -53,7 +53,12 @@
         <div id="pedidos" class="section active"></div>
         <div id="lojas" class="section"></div>
         <div id="motoboys" class="section"></div>
-        <div id="financeiro" class="section"></div>
+        <div id="financeiro" class="section">
+            <div class="card">
+                <input id="search-finance" class="input" placeholder="🔍 Pesquisar usuário..." oninput="filterFinance()">
+            </div>
+            <div id="finance-list"></div>
+        </div>
         <div id="config" class="section">
             <div class="card">
                 <h3>Taxas da Plataforma</h3>
@@ -105,11 +110,11 @@
 
     <div id="modal-finance" class="modal">
         <div class="modal-content">
-            <h3>Ajustar Saldo</h3>
+            <h3 id="finance-modal-title">Ajustar Saldo</h3>
             <div id="finance-fields"></div>
             <div style="display:flex;gap:10px;margin-top:20px">
                 <button class="btn btn-outline" onclick="closeModal('modal-finance')">Cancelar</button>
-                <button class="btn btn-primary" onclick="updateBalance()">Atualizar</button>
+                <button class="btn btn-primary" onclick="updateBalance()">Confirmar</button>
             </div>
         </div>
     </div>
@@ -121,6 +126,7 @@
 
         let currentUserId = null;
         let currentOrderId = null;
+        let allUsers = [];
 
         function showTab(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -141,8 +147,8 @@
                 renderUsers(data.filter(u => u.role === (tab === 'lojas' ? 'loja' : 'motoboy')), tab);
             } else if (tab === 'financeiro') {
                 const r = await fetch(`${API}/users`);
-                const data = await r.json();
-                renderFinance(data);
+                allUsers = await r.json();
+                renderFinance(allUsers);
             } else if (tab === 'config') {
                 const r = await fetch(`${API}/settings`);
                 const data = await r.json();
@@ -151,6 +157,12 @@
                 document.getElementById('cfg-arr').value = data.arrancada;
                 document.getElementById('cfg-com').value = data.commission;
             }
+        }
+
+        function filterFinance() {
+            const term = document.getElementById('search-finance').value.toLowerCase();
+            const filtered = allUsers.filter(u => u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term));
+            renderFinance(filtered);
         }
 
         function renderOrders(orders) {
@@ -189,26 +201,68 @@
         }
 
         function renderFinance(users) {
-            const container = document.getElementById('financeiro');
+            const container = document.getElementById('finance-list');
             const lojas = users.filter(u => u.role === 'loja');
             const motoboys = users.filter(u => u.role === 'motoboy');
             
             container.innerHTML = `
-                <h3>Lojas</h3>
+                <h3 style="margin:10px 0">Lojas</h3>
                 ${lojas.map(u => `
                     <div class="card">
                         <div class="card-header"><strong>${u.name}</strong><span>Crédito: R$ ${Number(u.credit).toFixed(2)}</span></div>
-                        <button class="btn btn-primary" onclick="openFinanceModal(${u.id}, 'credit')">Ajustar Crédito</button>
+                        <div style="display:flex;gap:10px">
+                            <button class="btn btn-primary" style="margin-top:0" onclick="openFinanceModal(${u.id}, 'credit', 'add')">Aumentar</button>
+                            <button class="btn btn-danger" style="margin-top:0" onclick="openFinanceModal(${u.id}, 'credit', 'sub')">Diminuir</button>
+                        </div>
                     </div>
                 `).join('')}
-                <h3 style="margin-top:20px">Motoboys</h3>
+                <h3 style="margin:20px 0 10px 0">Motoboys</h3>
                 ${motoboys.map(u => `
                     <div class="card">
                         <div class="card-header"><strong>${u.name}</strong><span>Saldo: R$ ${Number(u.balance).toFixed(2)}</span></div>
-                        <button class="btn btn-primary" onclick="openFinanceModal(${u.id}, 'balance')">Ajustar Saldo</button>
+                        <div style="display:flex;gap:10px">
+                            <button class="btn btn-primary" style="margin-top:0" onclick="openFinanceModal(${u.id}, 'balance', 'add')">Aumentar</button>
+                            <button class="btn btn-danger" style="margin-top:0" onclick="openFinanceModal(${u.id}, 'balance', 'sub')">Diminuir</button>
+                        </div>
                     </div>
                 `).join('')}
             `;
+        }
+
+        function openFinanceModal(id, type, action) {
+            currentUserId = id;
+            const label = action === 'add' ? 'adicionar' : 'remover';
+            document.getElementById('finance-modal-title').textContent = action === 'add' ? 'Aumentar Saldo' : 'Diminuir Saldo';
+            document.getElementById('finance-fields').innerHTML = `
+                <div class="input-group">
+                    <label>Valor para ${label}</label>
+                    <input id="f-val" class="input" type="number" step="1">
+                </div>
+                <input type="hidden" id="f-type" value="${type}">
+                <input type="hidden" id="f-action" value="${action}">
+            `;
+            openModal('modal-finance');
+        }
+
+        async function updateBalance() {
+            const valInput = parseFloat(document.getElementById('f-val').value);
+            const type = document.getElementById('f-type').value;
+            const action = document.getElementById('f-action').value;
+            const val = action === 'sub' ? -valInput : valInput;
+            
+            const u = allUsers.find(x => x.id === currentUserId);
+            const current = parseFloat(u[type] || 0);
+            const newData = {};
+            newData[type] = current + val;
+
+            await fetch(`${API}/users/${currentUserId}`, {
+                method: 'PUT',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(newData)
+            });
+            closeModal('modal-finance');
+            loadData('financeiro');
+            tg.showAlert('Saldo atualizado!');
         }
 
         function openNewUser() {
@@ -241,9 +295,7 @@
 
         async function openEditUser(id) {
             currentUserId = id;
-            const r = await fetch(`${API}/users`);
-            const users = await r.json();
-            const u = users.find(x => x.id === id);
+            const u = allUsers.find(x => x.id === id);
             
             document.getElementById('user-modal-title').textContent = 'Editar Usuário';
             document.getElementById('user-fields').innerHTML = `
@@ -326,40 +378,6 @@
             closeModal('modal-order');
             loadData('pedidos');
             tg.showAlert('Pedido atualizado!');
-        }
-
-        function openFinanceModal(id, type) {
-            currentUserId = id;
-            document.getElementById('finance-fields').innerHTML = `
-                <div class="input-group">
-                    <label>Valor para adicionar/remover (use - para remover)</label>
-                    <input id="f-val" class="input" type="number" step="1">
-                </div>
-                <input type="hidden" id="f-type" value="${type}">
-            `;
-            openModal('modal-finance');
-        }
-
-        async function updateBalance() {
-            const val = parseFloat(document.getElementById('f-val').value);
-            const type = document.getElementById('f-type').value;
-            
-            const r = await fetch(`${API}/users`);
-            const users = await r.json();
-            const u = users.find(x => x.id === currentUserId);
-            
-            const current = parseFloat(u[type] || 0);
-            const newData = {};
-            newData[type] = current + val;
-
-            await fetch(`${API}/users/${currentUserId}`, {
-                method: 'PUT',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify(newData)
-            });
-            closeModal('modal-finance');
-            loadData('financeiro');
-            tg.showAlert('Saldo atualizado!');
         }
 
         async function saveSettings() {
