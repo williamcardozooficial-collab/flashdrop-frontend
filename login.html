@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <title>FlashDrop - Login</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-container{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.logo{text-align:center;margin-bottom:30px}
+.logo h1{font-size:32px;color:#667eea;margin-bottom:5px}
+.logo p{color:#999;font-size:14px}
+.input-group{margin-bottom:20px}
+.input-group label{display:block;color:#333;font-weight:600;margin-bottom:8px;font-size:14px}
+.input{width:100%;padding:14px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;transition:all 0.3s}
+.input:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+.btn{width:100%;padding:16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:transform 0.2s}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+.error{background:#fee;border:1px solid #fcc;color:#c33;padding:12px;border-radius:10px;margin-bottom:20px;font-size:14px;display:none}
+.success{background:#efe;border:1px solid #cfc;color:#3c3;padding:12px;border-radius:10px;margin-bottom:20px;font-size:14px;display:none}
+.divider{text-align:center;margin:20px 0;color:#999;font-size:14px}
+.register-link{text-align:center;margin-top:20px;color:#667eea;font-size:14px}
+.register-link a{color:#667eea;font-weight:600;text-decoration:none}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🚀 FlashDrop</h1>
+            <p>Sistema de Entregas</p>
+        </div>
+        
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+        
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">👤 Usuário</label>
+                <input type="text" id="username" class="input" placeholder="Digite seu usuário" required/>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">🔐 Senha</label>
+                <input type="password" id="password" class="input" placeholder="Digite sua senha" required/>
+            </div>
+            
+            <button type="submit" class="btn" id="loginBtn">Entrar</button>
+        </form>
+        
+        <div class="divider">ou</div>
+        
+        <div class="register-link">
+            Não tem conta? <a href="cadastro.html">Cadastre-se aqui</a>
+        </div>
+    </div>
+    
+    <script>
+const API='https://flashdrop-backend-production.up.railway.app';
+let tg=window.Telegram.WebApp;
+tg.expand();
+
+const form=document.getElementById('loginForm');
+const errorDiv=document.getElementById('error');
+const successDiv=document.getElementById('success');
+const loginBtn=document.getElementById('loginBtn');
+
+function showError(msg){
+    errorDiv.textContent=msg;
+    errorDiv.style.display='block';
+    successDiv.style.display='none';
+}
+
+function showSuccess(msg){
+    successDiv.textContent=msg;
+    successDiv.style.display='block';
+    errorDiv.style.display='none';
+}
+
+form.addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    
+    const username=document.getElementById('username').value;
+    const password=document.getElementById('password').value;
+    
+    if(!username||!password){
+        showError('❌ Preencha todos os campos');
+        return;
+    }
+    
+    loginBtn.disabled=true;
+    loginBtn.textContent='Entrando...';
+    
+    try{
+        const res=await fetch(`${API}/users/login`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({username,password})
+        });
+        
+        const data=await res.json();
+        
+        if(res.ok){
+            showSuccess('✅ Login realizado com sucesso!');
+            localStorage.setItem('flashdrop_user',JSON.stringify(data));
+            
+            setTimeout(()=>{
+                if(data.role==='admin'){
+                    window.location.href='index.html';
+                }else if(data.role==='loja'){
+                    window.location.href='loja.html';
+                }else if(data.role==='motoboy'){
+                    window.location.href='motoboy.html';
+                }
+            },1000);
+        }else{
+            showError(data.error||'❌ Usuário ou senha inválidos');
+            loginBtn.disabled=false;
+            loginBtn.textContent='Entrar';
+        }
+    }catch(e){
+        showError('❌ Erro ao conectar com o servidor');
+        loginBtn.disabled=false;
+        loginBtn.textContent='Entrar';
+    }
+});
+    </script>
+</body>
+</html>
