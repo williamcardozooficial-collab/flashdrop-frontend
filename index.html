@@ -231,12 +231,75 @@ function getStatusLabel(status){
     return labels[status]||status;
 }
 
-function showNovaLoja(){
-    tg.showAlert('Funcionalidade em desenvolvimento');
+        async function showNovaLoja(){
+    const nome=prompt('🏪 Nome da Loja:');
+    if(!nome)return;
+    const endereco=prompt('📍 Endereço:');
+    if(!endereco)return;
+    const telefone=prompt('📱 Telefone:');
+    const usuario=prompt('👤 Usuário de login:');
+    if(!usuario)return;
+    const senha=prompt('🔐 Senha:');
+    if(!senha)return;
+    
+    try{
+        const res=await fetch(`${API}/users`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                username:usuario,
+                password:senha,
+                role:'loja',
+                name:nome,
+                address:endereco,
+                phone:telefone||'',
+                vehicle:''
+            })
+        });
+        if(res.ok){
+            tg.showAlert('✅ Loja cadastrada com sucesso!');
+            loadLojas();
+        }else{
+            tg.showAlert('❌ Erro ao cadastrar loja');
+        }
+    }catch(e){
+        tg.showAlert('❌ Erro: '+e.message);
+    }
 }
 
-function showNovoMotoboy(){
-    tg.showAlert('Funcionalidade em desenvolvimento');
+async function showNovoMotoboy(){
+    const nome=prompt('🚴 Nome do Motoboy:');
+    if(!nome)return;
+    const telefone=prompt('📱 Telefone:');
+    const veiculo=prompt('🏍 Veículo (ex: Moto Honda CG 160):');
+    const usuario=prompt('👤 Usuário de login:');
+    if(!usuario)return;
+    const senha=prompt('🔐 Senha:');
+    if(!senha)return;
+    
+    try{
+        const res=await fetch(`${API}/users`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                username:usuario,
+                password:senha,
+                role:'motoboy',
+                name:nome,
+                address:'',
+                phone:telefone||'',
+                vehicle:veiculo||''
+            })
+        });
+        if(res.ok){
+            tg.showAlert('✅ Motoboy cadastrado com sucesso!');
+            loadMotoboys();
+        }else{
+            tg.showAlert('❌ Erro ao cadastrar motoboy');
+        }
+    }catch(e){
+        tg.showAlert('❌ Erro: '+e.message);
+    }
 }
 
 init();
