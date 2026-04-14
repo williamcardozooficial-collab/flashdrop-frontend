@@ -10,7 +10,8 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, sans-serif; background: #0f0f0f; color: #fff; }
+    body { font-family: -apple-system, sans-serif; background: #0f0f0f; color: #fff; min-height: 100vh; }
+    input, button, select, textarea { font-family: inherit; }
   </style>
 </head>
 <body>
@@ -18,54 +19,80 @@
   <script type="text/babel">
     const API = 'https://flashdrop-backend-production.up.railway.app';
     const tg = window.Telegram?.WebApp;
-    if (tg) tg.expand();
+    if (tg) { tg.expand(); tg.ready(); }
 
     function App() {
       const [user, setUser] = React.useState(null);
       const [username, setUsername] = React.useState('');
       const [password, setPassword] = React.useState('');
       const [error, setError] = React.useState('');
+      const [loading, setLoading] = React.useState(false);
 
       const login = async () => {
+        setLoading(true); setError('');
         try {
-          const res = await fetch(`${API}/api/login`, {
+          const res = await fetch(`${API}/users/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
           });
           const data = await res.json();
-          if (data.user) setUser(data.user);
+          if (res.ok) setUser(data);
           else setError(data.error || 'Credenciais inválidas');
         } catch(e) {
           setError('Erro ao conectar ao servidor');
         }
+        setLoading(false);
+      };
+
+      const roleLabel = () => {
+        if (!username) return null;
+        const u = username.toLowerCase();
+        if (u === 'admin') return { label: 'Administrador', color: '#a855f7' };
+        return { label: 'Usuário', color: '#22c55e' };
       };
 
       if (!user) return (
-        <div style={{padding:20, maxWidth:400, margin:'80px auto'}}>
-          <h1 style={{textAlign:'center', marginBottom:30, color:'#a855f7'}}>FlashDrop</h1>
+        <div style={{padding:20, maxWidth:400, margin:'60px auto'}}>
+          <h1 style={{textAlign:'center', marginBottom:8, color:'#a855f7', fontSize:32, fontWeight:'bold'}}>FlashDrop</h1>
+          <p style={{textAlign:'center', color:'#666', marginBottom:30, fontSize:14}}>Sistema de Entregas</p>
           <input value={username} onChange={e=>setUsername(e.target.value)}
-            placeholder="Usuário" style={{width:'100%', padding:12, marginBottom:12,
-            background:'#1a1a1a', border:'1px solid #333', borderRadius:8, color:'#fff', fontSize:16}} />
+            placeholder="Usuário" style={{width:'100%', padding:14, marginBottom:12,
+            background:'#1a1a1a', border:'1px solid #333', borderRadius:10, color:'#fff', fontSize:16}} />
           <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
-            placeholder="Senha" style={{width:'100%', padding:12, marginBottom:12,
-            background:'#1a1a1a', border:'1px solid #333', borderRadius:8, color:'#fff', fontSize:16}} />
-          {error && <p style={{color:'#f87171', marginBottom:12}}>{error}</p>}
-          <button onClick={login} style={{width:'100%', padding:14, background:'#a855f7',
-            border:'none', borderRadius:8, color:'#fff', fontSize:16, cursor:'pointer', fontWeight:'bold'}}>
-            Entrar
+            onKeyDown={e=>e.key==='Enter'&&login()}
+            placeholder="Senha" style={{width:'100%', padding:14, marginBottom:16,
+            background:'#1a1a1a', border:'1px solid #333', borderRadius:10, color:'#fff', fontSize:16}} />
+          {error && <p style={{color:'#f87171', marginBottom:12, fontSize:14}}>{error}</p>}
+          <button onClick={login} disabled={loading} style={{width:'100%', padding:16, background: loading ? '#7c3aed' : '#a855f7',
+            border:'none', borderRadius:10, color:'#fff', fontSize:17, cursor:'pointer', fontWeight:'bold', opacity: loading ? 0.7 : 1}}>
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </div>
       );
 
       return (
         <div style={{padding:20}}>
-          <h2 style={{color:'#a855f7', marginBottom:10}}>Olá, {user.name}!</h2>
-          <p style={{color:'#aaa'}}>Perfil: {user.role}</p>
-          <button onClick={()=>setUser(null)} style={{marginTop:20, padding:'8px 16px',
-            background:'#333', border:'none', borderRadius:6, color:'#fff', cursor:'pointer'}}>
-            Sair
-          </button>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20,
+            background:'#1a1a1a', padding:16, borderRadius:12}}>
+            <div>
+              <p style={{fontSize:12, color:'#666', marginBottom:4}}>Logado como</p>
+              <p style={{fontWeight:'bold', fontSize:16}}>{user.name}</p>
+              <span style={{fontSize:12, background: user.role==='admin'?'#7c3aed':user.role==='loja'?'#f59e0b':'#22c55e',
+                padding:'2px 8px', borderRadius:20, color:'#fff'}}>
+                {user.role==='admin'?'🛡️ Admin':user.role==='loja'?'🎪 Loja':'🏍️ Motoboy'}
+              </span>
+            </div>
+            <button onClick={()=>setUser(null)} style={{padding:'8px 16px',
+              background:'#333', border:'none', borderRadius:8, color:'#fff', cursor:'pointer', fontSize:14}}>
+              Sair
+            </button>
+          </div>
+          <div style={{background:'#1a1a1a', padding:16, borderRadius:12, textAlign:'center', color:'#666'}}>
+            <p style={{fontSize:40, marginBottom:8}}>🚀</p>
+            <p>App em construção</p>
+            <p style={{fontSize:12, marginTop:4}}>Em breve todas as funcionalidades</p>
+          </div>
         </div>
       );
     }
