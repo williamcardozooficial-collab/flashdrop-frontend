@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FlashDrop - Cadastro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#0f0f0f;color:#fff;min-height:100vh;padding:20px}
+.container{max-width:500px;margin:0 auto}
+h1{color:#a855f7;text-align:center;margin-bottom:30px}
+.form-group{margin-bottom:16px}
+label{display:block;color:#aaa;font-size:13px;margin-bottom:4px}
+input,select{width:100%;padding:12px;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:15px}
+input:focus,select:focus{outline:none;border-color:#a855f7}
+.btn{width:100%;padding:14px;background:#a855f7;border:none;border-radius:8px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}
+.btn:hover{background:#9333ea}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+.msg{padding:12px;border-radius:8px;margin-bottom:16px;text-align:center}
+.success{background:#22c55e;color:#fff}
+.error{background:#ef4444;color:#fff}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Cadastro de Usuarios</h1>
+<div id="msg"></div>
+<form id="form">
+<div class="form-group">
+<label>Tipo de Usuario</label>
+<select id="role" required>
+<option value="">Selecione...</option>
+<option value="loja">Loja</option>
+<option value="motoboy">Motoboy</option>
+</select>
+</div>
+<div class="form-group">
+<label>Nome</label>
+<input id="name" required placeholder="Ex: Lanchonete do Jose"/>
+</div>
+<div class="form-group">
+<label>Usuario (login)</label>
+<input id="username" required placeholder="Ex: loja2"/>
+</div>
+<div class="form-group">
+<label>Senha</label>
+<input id="password" type="password" required placeholder="Min 6 caracteres"/>
+</div>
+<div class="form-group">
+<label>Telefone</label>
+<input id="phone" placeholder="Ex: 54999990000"/>
+</div>
+<div class="form-group" id="addressGroup" style="display:none">
+<label>Endereco (coleta)</label>
+<input id="address" placeholder="Rua, numero, bairro"/>
+</div>
+<div class="form-group" id="vehicleGroup" style="display:none">
+<label>Veiculo</label>
+<input id="vehicle" placeholder="Ex: Moto Honda CG 160"/>
+</div>
+<button type="submit" class="btn">Cadastrar</button>
+</form>
+</div>
+<script>
+const API='https://flashdrop-backend-production.up.railway.app';
+const form=document.getElementById('form');
+const msg=document.getElementById('msg');
+const roleSelect=document.getElementById('role');
+const addressGroup=document.getElementById('addressGroup');
+const vehicleGroup=document.getElementById('vehicleGroup');
+roleSelect.onchange=()=>{
+if(roleSelect.value==='loja'){
+addressGroup.style.display='block';
+vehicleGroup.style.display='none';
+}else if(roleSelect.value==='motoboy'){
+addressGroup.style.display='none';
+vehicleGroup.style.display='block';
+}else{
+addressGroup.style.display='none';
+vehicleGroup.style.display='none';
+}
+};
+form.onsubmit=async(e)=>{
+e.preventDefault();
+msg.innerHTML='';
+const data={
+username:document.getElementById('username').value,
+password:document.getElementById('password').value,
+role:document.getElementById('role').value,
+name:document.getElementById('name').value,
+phone:document.getElementById('phone').value,
+address:document.getElementById('address').value||null,
+vehicle:document.getElementById('vehicle').value||null
+};
+try{
+const r=await fetch(API+'/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+const result=await r.json();
+if(r.ok){
+msg.innerHTML='<div class="success">Usuario cadastrado com sucesso!</div>';
+form.reset();
+addressGroup.style.display='none';
+vehicleGroup.style.display='none';
+}else{
+msg.innerHTML='<div class="error">Erro: '+(result.error||'Falha ao cadastrar')+'</div>';
+}
+}catch(e){
+msg.innerHTML='<div class="error">Erro ao conectar com servidor</div>';
+}
+};
+</script>
+</body>
+</html>
