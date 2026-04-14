@@ -1,180 +1,245 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>FlashDrop</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <title>FlashDrop Admin</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,sans-serif;background:#0f0f0f;color:#fff;min-height:100vh}
-input,button{font-family:inherit}
-.btn{width:100%;padding:16px;background:#a855f7;border:none;border-radius:10px;color:#fff;font-size:17px;cursor:pointer;font-weight:bold}
-.btn:disabled{opacity:.6}
-.inp{width:100%;padding:14px;background:#1a1a1a;border:1px solid #333;border-radius:10px;color:#fff;font-size:16px;display:block}
-.card{background:#1a1a1a;border-radius:10px;padding:14px;margin-bottom:10px}
-.tab-btn{padding:8px 16px;background:#222;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px}
-.tab-btn.active{background:#a855f7;font-weight:bold}
-.badge{padding:2px 8px;border-radius:20px;font-size:11px;color:#fff}
-</style>
+body{font-family:-apple-system,sans-serif;background:#f0f0f0;color:#fff;min-height:100vh}
+.container{max-width:600px;margin:0 auto;padding:20px}
+.header{background:#0f0f0f;padding:20px;border-radius:12px;margin-bottom:20px;text-align:center}
+.header h1{font-size:24px;margin-bottom:5px}
+.header p{color:#999;font-size:14px}
+.tabs{display:flex;gap:10px;margin-bottom:20px;background:#1a1a1a;padding:10px;border-radius:12px}
+.tab-btn{flex:1;padding:12px;background:transparent;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;transition:all 0.3s}
+.tab-btn.active{background:#0088cc;font-weight:600}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.card{background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:12px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-title{font-size:16px;font-weight:600}
+.badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.badge.pending{background:#ffa500;color:#000}
+.badge.progress{background:#0088cc}
+.badge.delivered{background:#28a745}
+.badge.cancelled{background:#dc3545}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;font-size:14px}
+.info-row:last-child{border:none}
+.info-label{color:#999}
+.info-value{font-weight:500}
+.btn{width:100%;padding:14px;background:#0088cc;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px}
+.btn:active{opacity:0.8}
+.btn-danger{background:#dc3545}
+.btn-success{background:#28a745}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:#1a1a1a;padding:16px;border-radius:12px;text-align:center}
+.stat-value{font-size:28px;font-weight:700;color:#0088cc;margin-bottom:4px}
+.stat-label{color:#999;font-size:12px}
+.input{width:100%;padding:14px;background:#2a2a2a;border:1px solid #333;border-radius:10px;color:#fff;font-size:16px;margin-bottom:12px}
+.input:focus{outline:none;border-color:#0088cc}
+.select{width:100%;padding:14px;background:#2a2a2a;border:1px solid #333;border-radius:10px;color:#fff;font-size:16px;margin-bottom:12px}
+.empty{text-align:center;padding:40px;color:#999}
+    </style>
 </head>
 <body>
-<div id="app"></div>
-<script>
-var API='https://flashdrop-backend-production.up.railway.app';
-var tg=window.Telegram&&window.Telegram.WebApp;
-if(tg){tg.expand();tg.ready();}
-var state={user:null,tab:'pedidos',orders:[],users:[],settings:null,timer:null};
+    <div class="container">
+        <div class="header">
+            <h1>🚀 FlashDrop Admin</h1>
+            <p id="user-info">Carregando...</p>
+        </div>
 
-function el(tag,style,text){
-  var e=document.createElement(tag);
-  if(style)Object.keys(style).forEach(function(k){e.style[k]=style[k];});
-  if(text!=null)e.textContent=text;
-  return e;
-}
-function add(parent){for(var i=1;i<arguments.length;i++)if(arguments[i])parent.appendChild(arguments[i]);return parent;}
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('pedidos')">Pedidos</button>
+            <button class="tab-btn" onclick="showTab('lojas')">Lojas</button>
+            <button class="tab-btn" onclick="showTab('motoboys')">Motoboys</button>
+        </div>
 
-function statusBg(s){
-  if(s==='pendente')return'#f59e0b';
-  if(s==='aceito'||s==='na_loja'||s==='coletado')return'#3b82f6';
-  if(s==='entregue')return'#22c55e';
-  return'#ef4444';
-}
-function roleName(r){return r==='admin'?'Admin':r==='loja'?'Loja':'Motoboy';}
-function roleColor(r){return r==='admin'?'#7c3aed':r==='loja'?'#f59e0b':'#22c55e';}
+        <div id="pedidos" class="tab-content active">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-pedidos">0</div>
+                    <div class="stat-label">Total Pedidos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pedidos-ativos">0</div>
+                    <div class="stat-label">Ativos</div>
+                </div>
+            </div>
+            <div id="pedidos-list"></div>
+        </div>
 
-function badge(role){
-  var b=el('span',{background:roleColor(role),padding:'2px 8px',borderRadius:'20px',fontSize:'11px',color:'#fff'},roleName(role));
-  return b;
-}
+        <div id="lojas" class="tab-content">
+            <button class="btn" onclick="showNovaLoja()">+ Nova Loja</button>
+            <div id="lojas-list"></div>
+        </div>
 
-async function loadData(){
-  try{
-    var r1=await fetch(API+'/orders'),r2=await fetch(API+'/users'),r3=await fetch(API+'/settings');
-    state.orders=await r1.json();
-    state.users=await r2.json();
-    state.settings=await r3.json();
-    render();
-  }catch(e){}
-}
+        <div id="motoboys" class="tab-content">
+            <button class="btn" onclick="showNovoMotoboy()">+ Novo Motoboy</button>
+            <div id="motoboys-list"></div>
+        </div>
+    </div>
 
-function renderLogin(){
-  var wrap=el('div',{padding:'20px',maxWidth:'400px',margin:'60px auto'});
-  var title=el('h1',{textAlign:'center',marginBottom:'8px',color:'#a855f7',fontSize:'32px',fontWeight:'bold'},'FlashDrop');
-  var sub=el('p',{textAlign:'center',color:'#666',marginBottom:'30px',fontSize:'14px'},'Sistema de Entregas');
-  var ui=el('input',{marginBottom:'12px'});ui.className='inp';ui.placeholder='Usuario';ui.type='text';
-  var pi=el('input',{marginBottom:'16px'});pi.className='inp';pi.placeholder='Senha';pi.type='password';
-  var err=el('p',{color:'#f87171',marginBottom:'12px',fontSize:'14px',display:'none'});
-  var btn=el('button');btn.className='btn';btn.textContent='Entrar';
-  btn.onclick=async function(){
-    btn.disabled=true;btn.textContent='Entrando...';err.style.display='none';
+    <script>
+const API='https://flashdrop-backend-production.up.railway.app';
+let tg=window.Telegram.WebApp;
+tg.expand();
+tg.MainButton.hide();
+
+let currentUser=null;
+
+async function init(){
     try{
-      var r=await fetch(API+'/users/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ui.value,password:pi.value})});
-      var d=await r.json();
-      if(r.ok){state.user=d;loadData();return;}
-      err.textContent=d.error||'Credenciais invalidas';err.style.display='block';
-    }catch(e){err.textContent='Erro ao conectar';err.style.display='block';}
-    btn.disabled=false;btn.textContent='Entrar';
-  };
-  pi.onkeydown=function(e){if(e.key==='Enter')btn.click();};
-  return add(wrap,title,sub,ui,pi,err,btn);
+        const userId=tg.initDataUnsafe?.user?.id||'admin';
+        const res=await fetch(`${API}/api/admin/login`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({usuario:'admin',senha:'admin123'})
+        });
+        const data=await res.json();
+        currentUser=data;
+        document.getElementById('user-info').textContent=`👤 ${data.nome||'Admin'}`;
+        loadPedidos();
+    }catch(e){
+        console.error(e);
+        document.getElementById('user-info').textContent='❌ Erro ao carregar';
+    }
 }
 
-function renderHeader(){
-  var div=el('div',{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 16px',background:'#1a1a1a',borderBottom:'1px solid #333'});
-  var left=el('div');
-  add(left,el('span',{color:'#a855f7',fontWeight:'bold',fontSize:'18px'},'FlashDrop'));
-  var nameRow=el('div',{display:'flex',alignItems:'center',gap:'8px',marginTop:'4px'});
-  add(nameRow,el('span',{fontSize:'13px',color:'#aaa'},state.user.name),badge(state.user.role));
-  add(left,nameRow);
-  var sair=el('button',{padding:'6px 12px',background:'#333',border:'none',borderRadius:'8px',color:'#fff',cursor:'pointer',fontSize:'12px'},'Sair');
-  sair.onclick=function(){state.user=null;if(state.timer)clearInterval(state.timer);render();};
-  return add(div,left,sair);
+async function loadPedidos(){
+    try{
+        const res=await fetch(`${API}/api/pedidos`);
+        const pedidos=await res.json();
+        
+        document.getElementById('total-pedidos').textContent=pedidos.length;
+        document.getElementById('pedidos-ativos').textContent=pedidos.filter(p=>p.status!=='entregue'&&p.status!=='cancelado').length;
+        
+        const list=document.getElementById('pedidos-list');
+        if(pedidos.length===0){
+            list.innerHTML='<div class="empty">Nenhum pedido encontrado</div>';
+            return;
+        }
+        
+        list.innerHTML=pedidos.map(p=>`
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Pedido #${p.id}</div>
+                    <span class="badge ${p.status}">${getStatusLabel(p.status)}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Loja:</span>
+                    <span class="info-value">${p.loja_nome||'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Motoboy:</span>
+                    <span class="info-value">${p.motoboy_nome||'Não atribuído'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Cliente:</span>
+                    <span class="info-value">${p.cliente_nome}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Valor:</span>
+                    <span class="info-value">R$ ${parseFloat(p.valor).toFixed(2)}</span>
+                </div>
+            </div>
+        `).join('');
+    }catch(e){
+        console.error(e);
+        document.getElementById('pedidos-list').innerHTML='<div class="empty">Erro ao carregar pedidos</div>';
+    }
 }
 
-function renderTabBar(){
-  if(state.user.role!=='admin')return null;
-  var div=el('div',{display:'flex',gap:'4px',padding:'10px 16px',background:'#111',borderBottom:'1px solid #222'});
-  [['pedidos','Pedidos'],['usuarios','Usuarios'],['config','Config']].forEach(function(pair){
-    var b=el('button');b.className='tab-btn'+(state.tab===pair[0]?' active':'');b.textContent=pair[1];
-    b.onclick=function(){state.tab=pair[0];render();};
-    div.appendChild(b);
-  });
-  return div;
+async function loadLojas(){
+    try{
+        const res=await fetch(`${API}/api/lojas`);
+        const lojas=await res.json();
+        
+        const list=document.getElementById('lojas-list');
+        if(lojas.length===0){
+            list.innerHTML='<div class="empty">Nenhuma loja cadastrada</div>';
+            return;
+        }
+        
+        list.innerHTML=lojas.map(l=>`
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">${l.nome}</div>
+                    <span class="badge ${l.ativo?'delivered':'cancelled'}">${l.ativo?'Ativa':'Inativa'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Endereço:</span>
+                    <span class="info-value">${l.endereco}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Telefone:</span>
+                    <span class="info-value">${l.telefone||'N/A'}</span>
+                </div>
+            </div>
+        `).join('');
+    }catch(e){
+        console.error(e);
+    }
 }
 
-function renderPedidos(){
-  var div=el('div',{padding:'16px'});
-  add(div,el('h2',{marginBottom:'12px',fontSize:'16px',color:'#aaa'},'Pedidos ('+state.orders.length+')'));
-  if(!state.orders.length){add(div,el('p',{color:'#555',textAlign:'center',padding:'40px'},'Nenhum pedido'));return div;}
-  state.orders.forEach(function(o){
-    var card=document.createElement('div');card.className='card';card.style.borderLeft='3px solid '+statusBg(o.status);
-    var top=el('div',{display:'flex',justifyContent:'space-between',alignItems:'flex-start'});
-    var info=el('div');
-    add(info,el('p',{fontWeight:'bold',fontSize:'15px'},'#'+o.id+' - '+(o.loja_name||o.loja_user||'')));
-    add(info,el('p',{color:'#aaa',fontSize:'13px',marginTop:'4px'},o.endereco_entrega||''));
-    add(info,el('p',{color:'#aaa',fontSize:'13px'},(o.nome_cliente||'')+' | '+(o.telefone_cliente||'')));
-    var st=el('span',{background:statusBg(o.status),padding:'3px 10px',borderRadius:'20px',fontSize:'12px',fontWeight:'bold',whiteSpace:'nowrap'},o.status);
-    add(top,info,st);
-    var bot=el('div',{display:'flex',gap:'8px',marginTop:'8px',flexWrap:'wrap'});
-    add(bot,el('span',{fontSize:'12px',color:'#888'},'R$ '+Number(o.valor_motoboy||0).toFixed(2)+' motoboy'),el('span',{fontSize:'12px',color:'#888'},'R$ '+Number(o.valor_total||0).toFixed(2)+' total'));
-    if(o.motoboy_name)add(bot,el('span',{fontSize:'12px',color:'#22c55e'},o.motoboy_name));
-    add(card,top,bot);div.appendChild(card);
-  });
-  return div;
+async function loadMotoboys(){
+    try{
+        const res=await fetch(`${API}/api/motoboys`);
+        const motoboys=await res.json();
+        
+        const list=document.getElementById('motoboys-list');
+        if(motoboys.length===0){
+            list.innerHTML='<div class="empty">Nenhum motoboy cadastrado</div>';
+            return;
+        }
+        
+        list.innerHTML=motoboys.map(m=>`
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">${m.nome}</div>
+                    <span class="badge ${m.disponivel?'delivered':'cancelled'}">${m.disponivel?'Disponível':'Ocupado'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Telefone:</span>
+                    <span class="info-value">${m.telefone||'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Veículo:</span>
+                    <span class="info-value">${m.veiculo||'N/A'}</span>
+                </div>
+            </div>
+        `).join('');
+    }catch(e){
+        console.error(e);
+    }
 }
 
-function renderUsuarios(){
-  var div=el('div',{padding:'16px'});
-  add(div,el('h2',{marginBottom:'12px',fontSize:'16px',color:'#aaa'},'Usuarios ('+state.users.length+')'));
-  state.users.forEach(function(u){
-    var card=document.createElement('div');card.className='card';card.style.display='flex';card.style.justifyContent='space-between';card.style.alignItems='center';
-    var info=el('div');
-    add(info,el('p',{fontWeight:'bold'},u.name),el('p',{color:'#888',fontSize:'13px',marginTop:'2px'},'@'+u.username+' | '+roleName(u.role)));
-    if(u.role==='motoboy')add(info,el('p',{color:'#22c55e',fontSize:'13px',marginTop:'2px'},'Saldo: R$ '+Number(u.balance||0).toFixed(2)));
-    var st=el('span',{padding:'4px 10px',background:u.blocked?'#ef4444':u.online?'#22c55e':'#555',borderRadius:'20px',fontSize:'12px'},u.blocked?'Bloqueado':u.online?'Online':'Offline');
-    add(card,info,st);div.appendChild(card);
-  });
-  return div;
+function showTab(tab){
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    event.target.classList.add('active');
+    
+    if(tab==='pedidos')loadPedidos();
+    if(tab==='lojas')loadLojas();
+    if(tab==='motoboys')loadMotoboys();
 }
 
-function renderConfig(){
-  var div=el('div',{padding:'16px'});
-  add(div,el('h2',{marginBottom:'12px',fontSize:'16px',color:'#aaa'},'Configuracoes'));
-  if(!state.settings){add(div,el('p',{color:'#555'},'Carregando...'));return div;}
-  var card=document.createElement('div');card.className='card';
-  [['Taxa minima (R$)','min_fee'],['Preco/km (R$)','price_per_km'],['Arrancada (R$)','arrancada'],['Comissao (R$)','commission'],['Max pedidos/motoboy','max_per_motoboy']].forEach(function(pair){
-    var wrap=el('div',{marginBottom:'14px'});
-    add(wrap,el('p',{fontSize:'13px',color:'#888',marginBottom:'4px'},pair[0]));
-    var inp=document.createElement('input');inp.className='inp';inp.type='number';inp.value=state.settings[pair[1]]||0;
-    inp.onblur=async function(){
-      var upd=Object.assign({},state.settings);upd[pair[1]]=parseFloat(inp.value);
-      await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(upd)});
-      loadData();
-    };
-    add(wrap,inp);card.appendChild(wrap);
-  });
-  add(div,card);return div;
+function getStatusLabel(status){
+    const labels={pendente:'Pendente',em_rota:'Em Rota',entregue:'Entregue',cancelado:'Cancelado'};
+    return labels[status]||status;
 }
 
-function render(){
-  var app=document.getElementById('app');
-  while(app.firstChild)app.removeChild(app.firstChild);
-  if(!state.user){app.appendChild(renderLogin());return;}
-  if(state.timer)clearInterval(state.timer);
-  state.timer=setInterval(loadData,10000);
-  var wrap=el('div',{maxWidth:'600px',margin:'0 auto',paddingBottom:'80px'});
-  wrap.appendChild(renderHeader());
-  var tb=renderTabBar();
-  if(tb)wrap.appendChild(tb);
-  var tab=state.user.role==='admin'?state.tab:'pedidos';
-  if(tab==='pedidos')wrap.appendChild(renderPedidos());
-  else if(tab==='usuarios')wrap.appendChild(renderUsuarios());
-  else if(tab==='config')wrap.appendChild(renderConfig());
-  app.appendChild(wrap);
+function showNovaLoja(){
+    tg.showAlert('Funcionalidade em desenvolvimento');
 }
 
-render();
-</script>
+function showNovoMotoboy(){
+    tg.showAlert('Funcionalidade em desenvolvimento');
+}
+
+init();
+    </script>
 </body>
 </html>
