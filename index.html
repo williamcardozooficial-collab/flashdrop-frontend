@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlashDrop</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, sans-serif; background: #0f0f0f; color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const API = 'https://flashdrop-backend-production.up.railway.app';
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.expand();
+
+    function App() {
+      const [user, setUser] = React.useState(null);
+      const [username, setUsername] = React.useState('');
+      const [password, setPassword] = React.useState('');
+      const [error, setError] = React.useState('');
+
+      const login = async () => {
+        try {
+          const res = await fetch(`${API}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (data.user) setUser(data.user);
+          else setError(data.error || 'Credenciais inválidas');
+        } catch(e) {
+          setError('Erro ao conectar ao servidor');
+        }
+      };
+
+      if (!user) return (
+        <div style={{padding:20, maxWidth:400, margin:'80px auto'}}>
+          <h1 style={{textAlign:'center', marginBottom:30, color:'#a855f7'}}>FlashDrop</h1>
+          <input value={username} onChange={e=>setUsername(e.target.value)}
+            placeholder="Usuário" style={{width:'100%', padding:12, marginBottom:12,
+            background:'#1a1a1a', border:'1px solid #333', borderRadius:8, color:'#fff', fontSize:16}} />
+          <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
+            placeholder="Senha" style={{width:'100%', padding:12, marginBottom:12,
+            background:'#1a1a1a', border:'1px solid #333', borderRadius:8, color:'#fff', fontSize:16}} />
+          {error && <p style={{color:'#f87171', marginBottom:12}}>{error}</p>}
+          <button onClick={login} style={{width:'100%', padding:14, background:'#a855f7',
+            border:'none', borderRadius:8, color:'#fff', fontSize:16, cursor:'pointer', fontWeight:'bold'}}>
+            Entrar
+          </button>
+        </div>
+      );
+
+      return (
+        <div style={{padding:20}}>
+          <h2 style={{color:'#a855f7', marginBottom:10}}>Olá, {user.name}!</h2>
+          <p style={{color:'#aaa'}}>Perfil: {user.role}</p>
+          <button onClick={()=>setUser(null)} style={{marginTop:20, padding:'8px 16px',
+            background:'#333', border:'none', borderRadius:6, color:'#fff', cursor:'pointer'}}>
+            Sair
+          </button>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
