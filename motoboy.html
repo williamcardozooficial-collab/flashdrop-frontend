@@ -6,36 +6,36 @@
     <title>FlashDrop - Motoboy</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;min-height:100vh;padding-bottom:80px}
-.header{background:#0f0f0f;padding:20px;text-align:center;border-bottom:2px solid #333}
-.header h1{font-size:24px;margin-bottom:5px}
-.header .status{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-top:8px}
-.status.online{background:#28a745;color:#fff}
-.status.offline{background:#6c757d;color:#fff}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:20px;max-width:600px;margin:0 auto}
-.stat-card{background:#2a2a2a;padding:20px;border-radius:12px;text-align:center}
-.stat-value{font-size:32px;font-weight:700;color:#0088cc;margin-bottom:4px}
-.stat-label{color:#999;font-size:13px}
-.orders{max-width:600px;margin:0 auto;padding:20px}
-.section-title{font-size:18px;font-weight:600;margin-bottom:16px;color:#fff}
-.order-card{background:#2a2a2a;border-radius:12px;padding:16px;margin-bottom:12px;border:2px solid transparent;transition:all 0.3s}
-.order-card.pending{border-color:#ffa500}
-.order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.order-id{font-size:16px;font-weight:600}
-.badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
-.badge.pendente{background:#ffa500;color:#000}
-.badge.em_rota{background:#0088cc}
-.badge.entregue{background:#28a745}
-.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #3a3a3a;font-size:14px}
-.info-row:last-child{border:none}
-.info-label{color:#999}
-.info-value{font-weight:500;color:#fff}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;transition:all 0.3s}
-.btn-accept{background:#28a745;color:#fff}
-.btn-delivered{background:#0088cc;color:#fff}
-.btn-toggle{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:#0088cc;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000}
-.empty{text-align:center;padding:60px 20px;color:#666}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;min-height:100vh;padding-bottom:80px}
+        .header{background:#0f0f0f;padding:20px;text-align:center;border-bottom:2px solid #333}
+        .header h1{font-size:24px;margin-bottom:5px}
+        .header .status{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-top:8px}
+        .status.online{background:#28a745;color:#fff}
+        .status.offline{background:#6c757d;color:#fff}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:15px;max-width:600px;margin:0 auto}
+        .stat-card{background:#2a2a2a;padding:15px;border-radius:12px;text-align:center}
+        .stat-value{font-size:20px;font-weight:700;color:#ffcc00;margin-bottom:4px}
+        .stat-label{color:#999;font-size:11px;text-transform:uppercase}
+        .orders{max-width:600px;margin:0 auto;padding:20px}
+        .section-title{font-size:18px;font-weight:600;margin-bottom:16px;color:#fff}
+        .order-card{background:#2a2a2a;border-radius:12px;padding:16px;margin-bottom:12px;border:2px solid transparent}
+        .order-card.pending{border-color:#ffa500}
+        .order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .order-id{font-size:16px;font-weight:600}
+        .badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+        .badge.pendente{background:#ffa500;color:#000}
+        .badge.em_rota{background:#0088cc}
+        .badge.entregue{background:#28a745}
+        .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #3a3a3a;font-size:14px}
+        .info-row:last-child{border:none}
+        .info-label{color:#999}
+        .info-value{font-weight:500;color:#fff}
+        .btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
+        .btn-accept{background:#28a745;color:#fff}
+        .btn-delivered{background:#0088cc;color:#fff}
+        .btn-toggle{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:#0088cc;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000}
+        .empty{text-align:center;padding:60px 20px;color:#666}
     </style>
 </head>
 <body>
@@ -48,18 +48,22 @@ body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;min-heig
     <div class="stats">
         <div class="stat-card">
             <div class="stat-value" id="total-entregas">0</div>
-            <div class="stat-label">Entregas Hoje</div>
+            <div class="stat-label">Entregas</div>
         </div>
         <div class="stat-card">
             <div class="stat-value" id="total-ganhos">R$ 0</div>
-            <div class="stat-label">Ganhos Hoje</div>
+            <div class="stat-label">Ganhos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="user-balance">R$ 0</div>
+            <div class="stat-label">Saldo</div>
         </div>
     </div>
 
     <div class="orders">
         <div class="section-title">📦 Pedidos Disponíveis</div>
         <div id="available-orders"></div>
-        
+        <br/>
         <div class="section-title" style="margin-top:30px">🚨 Minhas Entregas</div>
         <div id="my-orders"></div>
     </div>
@@ -67,169 +71,163 @@ body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;min-heig
     <button class="btn-toggle" id="toggleStatus">⏸</button>
 
     <script>
-const API='https://flashdrop-backend-production.up.railway.app';
-let tg=window.Telegram.WebApp;
-tg.expand();
+        const API='https://flashdrop-backend-production.up.railway.app';
+        const tg=window.Telegram.WebApp;
+        tg.expand();
 
-let user=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
-if(!user.id||user.role!=='motoboy'){
-    window.location.href='login.html';
-}
-
-let isOnline=user.online||false;
-
-async function init(){
-    document.getElementById('motoboy-name').textContent=user.name;
-    updateStatus();
-    loadOrders();
-    setInterval(loadOrders,10000);
-}
-
-function updateStatus(){
-    const statusEl=document.getElementById('status');
-    const btnToggle=document.getElementById('toggleStatus');
-    if(isOnline){
-        statusEl.textContent='Online';
-        statusEl.className='status online';
-        btnToggle.textContent='⏸';
-    }else{
-        statusEl.textContent='Offline';
-        statusEl.className='status offline';
-        btnToggle.textContent='▶';
-    }
-}
-
-document.getElementById('toggleStatus').onclick=async()=>{
-    isOnline=!isOnline;
-    try{
-        await fetch(`${API}/users/${user.id}`,{
-            method:'PUT',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({online:isOnline})
-        });
-        user.online=isOnline;
-        localStorage.setItem('flashdrop_user',JSON.stringify(user));
-        updateStatus();
-    }catch(e){}
-};
-
-async function loadOrders(){
-    try{
-        const res=await fetch(`${API}/orders`);
-        const orders=await res.json();
-        
-        const available=orders.filter(o=>o.status==='pendente'&&!o.motoboy_id);
-        const mine=orders.filter(o=>o.motoboy_id==user.username);
-        
-        const availableDiv=document.getElementById('available-orders');
-        const myDiv=document.getElementById('my-orders');
-        
-        if(available.length===0){
-            availableDiv.innerHTML='<div class="empty">Nenhum pedido disponível no momento</div>';
-        }else{
-            availableDiv.innerHTML=available.map(o=>`
-                <div class="order-card pending">
-                    <div class="order-header">
-                        <div class="order-id">Pedido #${o.id}</div>
-                        <span class="badge pendente">Disponível</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Loja:</span>
-                        <span class="info-value">${o.loja_name||'N/A'}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Cliente:</span>
-                        <span class="info-value">${o.nome_cliente}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Endereço:</span>
-                        <span class="info-value">${o.endereco_entrega}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Seu ganho:</span>
-                        <span class="info-value">R$ ${parseFloat(o.valor_motoboy||0).toFixed(2)}</span>
-                    </div>
-                    <button class="btn btn-accept" onclick="acceptOrder(${o.id})">Aceitar Entrega</button>
-                </div>
-            `).join('');
+        let user=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+        if(!user.id||user.role!=='motoboy'){
+            window.location.href='login.html';
         }
-        
-        if(mine.length===0){
-            myDiv.innerHTML='<div class="empty">Você não tem entregas no momento</div>';
-        }else{
-            myDiv.innerHTML=mine.map(o=>`
-                <div class="order-card">
-                    <div class="order-header">
-                        <div class="order-id">Pedido #${o.id}</div>
-                        <span class="badge ${o.status}">${getStatusLabel(o.status)}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Cliente:</span>
-                        <span class="info-value">${o.nome_cliente}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Endereço:</span>
-                        <span class="info-value">${o.endereco_entrega}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Seu ganho:</span>
-                        <span class="info-value">R$ ${parseFloat(o.valor_motoboy||0).toFixed(2)}</span>
-                    </div>
-                    ${o.status==='em_rota'?`<button class="btn btn-delivered" onclick="markDelivered(${o.id})">Marcar como Entregue</button>`:''}
-                </div>
-            `).join('');
-            
-            const totalGanhos=mine.filter(o=>o.status==='entregue').reduce((sum,o)=>sum+parseFloat(o.valor_motoboy||0),0);
-            document.getElementById('total-entregas').textContent=mine.filter(o=>o.status==='entregue').length;
-            document.getElementById('total-ganhos').textContent='R$ '+totalGanhos.toFixed(2);
+
+        async function init(){
+            document.getElementById('motoboy-name').textContent=user.name;
+            await syncUser();
+            updateStatusUI();
+            loadOrders();
+            setInterval(loadOrders, 10000);
+            setInterval(syncUser, 15000);
         }
-    }catch(e){
-        console.error(e);
-    }
-}
 
-async function acceptOrder(id){
-    try{
-        await fetch(`${API}/orders/${id}`,{
-            method:'PUT',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-                status:'em_rota',
-                motoboy_id:user.username,
-                motoboy_name:user.name,
-                t_aceito:new Date().toISOString()
-            })
-        });
-        tg.showAlert('✅ Entrega aceita!');
-        loadOrders();
-    }catch(e){
-        tg.showAlert('❌ Erro ao aceitar entrega');
-    }
-}
+        async function syncUser(){
+            try {
+                const res = await fetch(`${API}/users`);
+                const users = await res.json();
+                const latest = users.find(u => u.id === user.id);
+                if(latest){
+                    user = {...user, ...latest};
+                    localStorage.setItem('flashdrop_user', JSON.stringify(user));
+                    document.getElementById('user-balance').textContent = 'R$ ' + parseFloat(user.balance || 0).toFixed(2);
+                    updateStatusUI();
+                }
+            } catch(e) {}
+        }
 
-async function markDelivered(id){
-    try{
-        await fetch(`${API}/orders/${id}`,{
-            method:'PUT',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-                status:'entregue',
-                t_entregue:new Date().toISOString()
-            })
-        });
-        tg.showAlert('✅ Entrega concluída!');
-        loadOrders();
-    }catch(e){
-        tg.showAlert('❌ Erro ao finalizar entrega');
-    }
-}
+        function updateStatusUI(){
+            const statusEl=document.getElementById('status');
+            const btnToggle=document.getElementById('toggleStatus');
+            if(user.online){
+                statusEl.textContent='Online';
+                statusEl.className='status online';
+                btnToggle.textContent='⏸';
+            }else{
+                statusEl.textContent='Offline';
+                statusEl.className='status offline';
+                btnToggle.textContent='▶';
+            }
+        }
 
-function getStatusLabel(status){
-    const labels={pendente:'Pendente',em_rota:'Em Rota',entregue:'Entregue'};
-    return labels[status]||status;
-}
+        document.getElementById('toggleStatus').onclick=async()=>{
+            user.online = !user.online;
+            try{
+                await fetch(`${API}/users/${user.id}`,{
+                    method:'PUT',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({online:user.online})
+                });
+                localStorage.setItem('flashdrop_user',JSON.stringify(user));
+                updateStatusUI();
+            }catch(e){}
+        };
 
-init();
+        async function loadOrders(){
+            try{
+                const res=await fetch(`${API}/orders`);
+                const orders=await res.json();
+                
+                const available=orders.filter(o=>o.status==='pendente'&&!o.motoboy_id);
+                const mine=orders.filter(o=>o.motoboy_id==user.username);
+                
+                const availableDiv=document.getElementById('available-orders');
+                const myDiv=document.getElementById('my-orders');
+                
+                if(available.length===0){
+                    availableDiv.innerHTML='<div class="empty">Nenhum pedido disponível no momento</div>';
+                }else{
+                    availableDiv.innerHTML=available.map(o=>`
+                        <div class="order-card pending">
+                            <div class="order-header">
+                                <div class="order-id">Pedido #${o.id}</div>
+                                <span class="badge pendente">Disponível</span>
+                            </div>
+                            <div class="info-row"><span class="info-label">Loja:</span><span class="info-value">${o.loja_name||'N/A'}</span></div>
+                            <div class="info-row"><span class="info-label">Cliente:</span><span class="info-value">${o.nome_cliente}</span></div>
+                            <div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">${o.endereco_entrega}</span></div>
+                            <div class="info-row"><span class="info-label">Seu ganho:</span><span class="info-value">R$ ${parseFloat(o.valor_motoboy||0).toFixed(2)}</span></div>
+                            <button class="btn btn-accept" onclick="acceptOrder(${o.id})">Aceitar Entrega</button>
+                        </div>
+                    `).join('');
+                }
+                
+                if(mine.length===0){
+                    myDiv.innerHTML='<div class="empty">Você não tem entregas no momento</div>';
+                }else{
+                    myDiv.innerHTML=mine.map(o=>`
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="order-id">Pedido #${o.id}</div>
+                                <span class="badge ${o.status}">${getStatusLabel(o.status)}</span>
+                            </div>
+                            <div class="info-row"><span class="info-label">Cliente:</span><span class="info-value">${o.nome_cliente}</span></div>
+                            <div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">${o.endereco_entrega}</span></div>
+                            <div class="info-row"><span class="info-label">Seu ganho:</span><span class="info-value">R$ ${parseFloat(o.valor_motoboy||0).toFixed(2)}</span></div>
+                            ${o.status==='em_rota'?`<button class="btn btn-delivered" onclick="markDelivered(${o.id})">Marcar como Entregue</button>`:''}
+                        </div>
+                    `).join('');
+                    
+                    const deliveredOrders = mine.filter(o=>o.status==='entregue');
+                    const totalGanhos=deliveredOrders.reduce((sum,o)=>sum+parseFloat(o.valor_motoboy||0),0);
+                    document.getElementById('total-entregas').textContent=deliveredOrders.length;
+                    document.getElementById('total-ganhos').textContent='R$ '+totalGanhos.toFixed(2);
+                }
+            }catch(e){
+                console.error(e);
+            }
+        }
+
+        async function acceptOrder(id){
+            try{
+                await fetch(`${API}/orders/${id}`,{
+                    method:'PUT',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        status:'em_rota',
+                        motoboy_id:user.username,
+                        motoboy_name:user.name,
+                        t_aceito:new Date().toISOString()
+                    })
+                });
+                tg.showAlert('✅ Entrega aceita!');
+                loadOrders();
+            }catch(e){
+                tg.showAlert('❌ Erro ao aceitar entrega');
+            }
+        }
+
+        async function markDelivered(id){
+            try{
+                await fetch(`${API}/orders/${id}`,{
+                    method:'PUT',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        status:'entregue',
+                        t_entregue:new Date().toISOString()
+                    })
+                });
+                tg.showAlert('✅ Entrega concluída!');
+                loadOrders();
+                syncUser();
+            }catch(e){
+                tg.showAlert('❌ Erro ao finalizar entrega');
+            }
+        }
+
+        function getStatusLabel(status){
+            const labels={pendente:'Pendente',em_rota:'Em Rota',entregue:'Entregue'};
+            return labels[status]||status;
+        }
+
+        init();
     </script>
 </body>
 </html>
