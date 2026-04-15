@@ -46,20 +46,23 @@
   .online-dot.on{background:#4caf50}
   .online-dot.off{background:#666}
   </style>
- 
+ </head>
  <body>
   <div class="header"><h1>FlashDrop Admin</h1></div>div>
+ 
  <div class="tabs" id="tabs">
    <button class="tab-btn active" onclick="showTab('pedidos',this)">Pedidos</button>button>
    <button class="tab-btn" onclick="showTab('lojas',this)">Lojas</button>button>
    <button class="tab-btn" onclick="showTab('motoboys',this)">Motoboys</button>button>
    <button class="tab-btn" onclick="showTab('financeiro',this)">Financeiro</button>button>
-   <button class="tab-btn" onclick="showTab('config',this)">Ajustes</button>button>
+   <button class="tab-btn" onclick="showTab('config',this)">&#9881; Ajustes de Corrida</button>button>
  </div>div>
+ 
  <div class="content">
    <div id="pedidos" class="section active"></div>div>
    <div id="lojas" class="section"></div>div>
    <div id="motoboys" class="section"></div>div>
+ 
    <div id="financeiro" class="section">
        <div class="card">
              <div style="display:flex;gap:10px">
@@ -68,10 +71,11 @@
        </div>div>
        <div id="finance-list"></div>div>
    </div>div>
+ 
    <div id="config" class="section">
        <div class="card">
-             <h3>Taxas da Plataforma</h3>
-             <div class="input-group" style="margin-top:15px"><label>Taxa Minima (R$)</label><input id="cfg-min" class="input" type="number" step="0.50"></div>div>
+             <h3 style="margin-bottom:15px;color:#ffcc00;">&#9881; Ajustes de Corrida</h3>
+             <div class="input-group"><label>Taxa Minima (R$)</label><input id="cfg-min" class="input" type="number" step="0.50"></div>div>
              <div class="input-group"><label>Preco por KM (R$)</label><input id="cfg-km" class="input" type="number" step="0.10"></div>div>
              <div class="input-group"><label>Taxa de Arrancada (R$)</label><input id="cfg-arr" class="input" type="number" step="0.50"></div>div>
              <div class="input-group"><label>Comissao da Plataforma (R$)</label><input id="cfg-com" class="input" type="number" step="0.50"></div>div>
@@ -80,6 +84,7 @@
        </div>div>
    </div>div>
  </div>div>
+ 
  <button class="fab" onclick="openNewUser()">+</button>button>
  
  <!-- Modals -->
@@ -120,14 +125,8 @@
   const API = 'https://flashdrop-backend-production.up.railway.app';
   const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : { showAlert: function(m){ alert(m); }, expand: function(){} };
   tg.expand();
-
   let currentUserId = null, currentOrderId = null, allUsers = [], allOrders = [], currentOrderFilter = 'todos';
-
-  const STATUS_LABELS = {
-     pendente: 'Pendente', aceito: 'Aceito', na_loja: 'Na Loja',
-     coletado: 'Coletado', no_cliente: 'No Cliente',
-     entregue: 'Entregue', cancelado: 'Cancelado'
-  };
+  const STATUS_LABELS = { pendente: 'Pendente', aceito: 'Aceito', na_loja: 'Na Loja', coletado: 'Coletado', no_cliente: 'No Cliente', entregue: 'Entregue', cancelado: 'Cancelado' };
 
   function showTab(id, btn) {
      document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
@@ -242,8 +241,7 @@
   function openFinanceModal(id, type, action) {
      currentUserId = id;
      document.getElementById('finance-modal-title').textContent = action === 'add' ? 'Aumentar Saldo' : 'Diminuir Saldo';
-     document.getElementById('finance-fields').innerHTML =
-          '<div class="input-group"><label>Valor (R$)</label>' +
+     document.getElementById('finance-fields').innerHTML = '<div class="input-group"><label>Valor (R$)</label>' +
           '<input id="f-val" class="input" type="number" step="0.01" min="0">' +
           '<input type="hidden" id="f-type" value="' + type + '">' +
           '<input type="hidden" id="f-action" value="' + action + '"></div>';
@@ -257,11 +255,7 @@
      var action = document.getElementById('f-action').value;
      var u = allUsers.find(function(x){ return x.id === currentUserId; });
      var newVal = parseFloat(u[type] || 0) + (action === 'sub' ? -val : val);
-     await fetch(API + '/users/' + currentUserId, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ [type]: newVal })
-     });
+     await fetch(API + '/users/' + currentUserId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [type]: newVal }) });
      closeModal('modal-finance');
      loadData('financeiro');
      tg.showAlert('Saldo atualizado!');
@@ -269,23 +263,15 @@
 
   async function zeroBalance(id, field) {
      if (!confirm('Zerar o saldo deste usuario?')) return;
-     await fetch(API + '/users/' + id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ [field]: 0 })
-     });
+     await fetch(API + '/users/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [field]: 0 }) });
      loadData('financeiro');
      tg.showAlert('Saldo zerado!');
   }
 
   async function toggleBlock(id, blocked) {
-     await fetch(API + '/users/' + id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ blocked: !blocked })
-     });
+     await fetch(API + '/users/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ blocked: !blocked }) });
      var tab = document.querySelector('.tab-btn.active');
-     if (tab) loadData(tab.textContent.trim() === 'Lojas' ? 'lojas' : 'motoboys');
+     if (tab) loadData(tab.textContent.trim().includes('Lojas') ? 'lojas' : 'motoboys');
   }
 
   function openNewUser() {
@@ -315,10 +301,7 @@
   }
 
   async function saveUser() {
-     var data = {
-          name: document.getElementById('u-name').value,
-          phone: document.getElementById('u-phone').value
-     };
+     var data = { name: document.getElementById('u-name').value, phone: document.getElementById('u-phone').value };
      var pass = document.getElementById('u-pass').value;
      if (pass) data.password = pass;
      if (!currentUserId) {
@@ -331,16 +314,12 @@
           var extra = document.getElementById('u-extra').value;
           if (u.role === 'loja') data.address = extra; else data.vehicle = extra;
      }
-     await fetch(API + '/users' + (currentUserId ? '/' + currentUserId : ''), {
-          method: currentUserId ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-     });
+     await fetch(API + '/users' + (currentUserId ? '/' + currentUserId : ''), { method: currentUserId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
      closeModal('modal-user');
      var activeTab = document.querySelector('.tab-btn.active');
      if (activeTab) {
           var txt = activeTab.textContent.trim();
-          loadData(txt === 'Lojas' ? 'lojas' : txt === 'Motoboys' ? 'motoboys' : 'pedidos');
+          loadData(txt.includes('Lojas') ? 'lojas' : txt.includes('Motoboys') ? 'motoboys' : 'pedidos');
      }
      tg.showAlert('Usuario salvo!');
   }
@@ -354,8 +333,7 @@
           '<select id="o-status" class="input">' +
           ['pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'].map(function(s){
                  return '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + (STATUS_LABELS[s] || s) + '</option>';
-          }).join('') +
-          '</select></div>' +
+          }).join('') + '</select></div>' +
           '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (o.nome_cliente || '') + '"></div>' +
           '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (o.endereco_entrega || '') + '"></div>' +
           '<div class="input-group"><label>Valor Total (R$)</label><input id="o-valor" class="input" type="number" step="0.01" value="' + (o.valor_total || 0) + '"></div>' +
@@ -373,11 +351,7 @@
           valor_motoboy: parseFloat(document.getElementById('o-motoboy').value),
           obs: document.getElementById('o-obs').value
      };
-     await fetch(API + '/orders/' + currentOrderId, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(update)
-     });
+     await fetch(API + '/orders/' + currentOrderId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(update) });
      closeModal('modal-order');
      loadData('pedidos');
      tg.showAlert('Pedido atualizado!');
@@ -385,11 +359,7 @@
 
   async function cancelOrder(id) {
      if (!confirm('Cancelar pedido #' + id + '?')) return;
-     await fetch(API + '/orders/' + id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'cancelado' })
-     });
+     await fetch(API + '/orders/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelado' }) });
      loadData('pedidos');
   }
 
@@ -411,4 +381,11 @@
   function openModal(id) { document.getElementById(id).classList.add('active'); }
   function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-  loadData('ped
+  loadData('pedidos');
+ </script>
+ </body>
+</html>html>
+ </script></label></label></h1>
+ </body>
+ </style></title>
+ </head>
