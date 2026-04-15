@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width,initial-scale=1.0">
- <title>FlashDrop Admin</title>
- <script src="https://telegram.org/js/telegram-web-app.js"></script>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>FlashDrop Admin</title>
  <style>
   *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif}
   body{background:#0f0f0f;color:#fff;min-height:100vh;padding-bottom:80px}
   .header{background:#1a1a1a;padding:20px;text-align:center;border-bottom:1px solid #333}
   .header h1{font-size:24px;color:#ffcc00}
   .tabs{display:flex;overflow-x:auto;background:#1a1a1a;padding:10px;gap:10px;position:sticky;top:0;z-index:100}
-  .tab-btn{padding:10px 20px;background:#333;border:none;border-radius:20px;color:#fff;white-space:nowrap;cursor:pointer}
+  .tab-btn{padding:10px 20px;background:#333;border:none;border-radius:20px;color:#fff;white-space:nowrap;cursor:pointer;font-size:13px}
   .tab-btn.active{background:#ffcc00;color:#000;font-weight:bold}
   .content{padding:15px}
   .section{display:none}
   .section.active{display:block}
   .card{background:#1a1a1a;border-radius:12px;padding:15px;margin-bottom:15px;border:1px solid #333}
   .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .badge{padding:4px 8px;border-radius:6px;font-size:12px;text-transform:uppercase}
+  .badge{padding:4px 8px;border-radius:6px;font-size:11px;text-transform:uppercase;font-weight:600}
   .badge-pendente{background:#ff9800;color:#000}
+  .badge-aceito{background:#17a2b8;color:#fff}
+  .badge-na_loja{background:#6610f2;color:#fff}
+  .badge-coletado{background:#fd7e14;color:#fff}
+  .badge-no_cliente{background:#007bff;color:#fff}
   .badge-entregue{background:#4caf50;color:#fff}
   .badge-cancelado{background:#f44336;color:#fff}
   .row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:14px}
@@ -28,197 +31,384 @@
   .btn-primary{background:#ffcc00;color:#000;width:100%}
   .btn-outline{background:transparent;border:1px solid #ffcc00;color:#ffcc00;width:100%}
   .btn-danger{background:#f44336;color:#fff;width:100%}
+  .btn-sm{padding:6px 12px;font-size:12px;width:auto;margin-top:0}
   .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:200;padding:20px;overflow-y:auto}
   .modal.active{display:block}
-  .modal-content{background:#1a1a1a;border-radius:12px;padding:20px}
+  .modal-content{background:#1a1a1a;border-radius:12px;padding:20px;max-width:500px;margin:0 auto}
   .input-group{margin-bottom:15px}
   .input-group label{display:block;margin-bottom:5px;font-size:14px;color:#ccc}
-  .input{width:100%;padding:12px;border-radius:8px;border:1px solid #333;background:#000;color:#fff}
-  .fab{position:fixed;bottom:20px;right:20px;width:56px;height:56px;background:#ffcc00;border-radius:28px;display:flex;align-items:center;justify-content:center;color:#000;font-size:24px;box-shadow:0 4px 10px rgba(0,0,0,0.5);cursor:pointer;z-index:150}
- </style>
-</head>
-<body>
- <div class="header"><h1>FlashDrop Admin</h1></div>
+  .input{width:100%;padding:12px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:14px}
+  .fab{position:fixed;bottom:20px;right:20px;width:56px;height:56px;background:#ffcc00;border-radius:28px;display:flex;align-items:center;justify-content:center;color:#000;font-size:24px;box-shadow:0 4px 10px rgba(0,0,0,0.5);cursor:pointer;z-index:150;border:none}
+  .filter-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px}
+  .filter-btn{padding:6px 14px;background:#333;border:none;border-radius:16px;color:#fff;white-space:nowrap;cursor:pointer;font-size:12px}
+  .filter-btn.active{background:#ffcc00;color:#000;font-weight:bold}
+  .online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+  .online-dot.on{background:#4caf50}
+  .online-dot.off{background:#666}
+  </style>
+ 
+ <body>
+  <div class="header"><h1>FlashDrop Admin</h1></div>div>
  <div class="tabs" id="tabs">
-  <button class="tab-btn active" onclick="showTab('pedidos')">Pedidos</button>
-  <button class="tab-btn" onclick="showTab('lojas')">Lojas</button>
-  <button class="tab-btn" onclick="showTab('motoboys')">Motoboys</button>
-  <button class="tab-btn" onclick="showTab('financeiro')">Financeiro</button>
-  <button class="tab-btn" onclick="showTab('config')">Ajustes</button>
- </div>
+   <button class="tab-btn active" onclick="showTab('pedidos',this)">Pedidos</button>button>
+   <button class="tab-btn" onclick="showTab('lojas',this)">Lojas</button>button>
+   <button class="tab-btn" onclick="showTab('motoboys',this)">Motoboys</button>button>
+   <button class="tab-btn" onclick="showTab('financeiro',this)">Financeiro</button>button>
+   <button class="tab-btn" onclick="showTab('config',this)">Ajustes</button>button>
+ </div>div>
  <div class="content">
-  <div id="pedidos" class="section active"></div>
-  <div id="lojas" class="section"></div>
-  <div id="motoboys" class="section"></div>
-  <div id="financeiro" class="section">
-   <div class="card">
-    <div style="display:flex;gap:10px">
-     <input id="search-finance" class="input" placeholder="🔍 Nome ou usuário..." oninput="filterFinance()">
-     <button class="btn btn-primary" style="margin-top:0;width:auto" onclick="filterFinance()">Pesquisar</button>
-    </div>
-   </div>
-   <div id="finance-list"></div>
-  </div>
-  <div id="config" class="section">
-   <div class="card">
-    <h3>Taxas da Plataforma</h3>
-    <div class="input-group" style="margin-top:15px"><label>Taxa Mínima (R$)</label><input id="cfg-min" class="input" type="number" step="0.50"></div>
-    <div class="input-group"><label>Preço por KM (R$)</label><input id="cfg-km" class="input" type="number" step="0.10"></div>
-    <div class="input-group"><label>Taxa de Arrancada (R$)</label><input id="cfg-arr" class="input" type="number" step="0.50"></div>
-    <div class="input-group"><label>Comissão da Plataforma (R$)</label><input id="cfg-com" class="input" type="number" step="0.50"></div>
-    <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
-   </div>
-  </div>
- </div>
- <div class="fab" onclick="openNewUser()">+</div>
-
+   <div id="pedidos" class="section active"></div>div>
+   <div id="lojas" class="section"></div>div>
+   <div id="motoboys" class="section"></div>div>
+   <div id="financeiro" class="section">
+       <div class="card">
+             <div style="display:flex;gap:10px">
+                     <input id="search-finance" class="input" placeholder="Buscar nome ou usuario..." oninput="filterFinance()">
+             </div>div>
+       </div>div>
+       <div id="finance-list"></div>div>
+   </div>div>
+   <div id="config" class="section">
+       <div class="card">
+             <h3>Taxas da Plataforma</h3>
+             <div class="input-group" style="margin-top:15px"><label>Taxa Minima (R$)</label><input id="cfg-min" class="input" type="number" step="0.50"></div>div>
+             <div class="input-group"><label>Preco por KM (R$)</label><input id="cfg-km" class="input" type="number" step="0.10"></div>div>
+             <div class="input-group"><label>Taxa de Arrancada (R$)</label><input id="cfg-arr" class="input" type="number" step="0.50"></div>div>
+             <div class="input-group"><label>Comissao da Plataforma (R$)</label><input id="cfg-com" class="input" type="number" step="0.50"></div>div>
+             <div class="input-group"><label>Max pedidos por motoboy</label><input id="cfg-max" class="input" type="number"></div>div>
+             <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>button>
+       </div>div>
+   </div>div>
+ </div>div>
+ <button class="fab" onclick="openNewUser()">+</button>button>
+ 
  <!-- Modals -->
- <div id="modal-user" class="modal"><div class="modal-content"><h3 id="user-modal-title">Usuário</h3><div id="user-fields"></div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button><button class="btn btn-primary" onclick="saveUser()">Salvar</button></div></div></div>
- <div id="modal-order" class="modal"><div class="modal-content"><h3>Editar Pedido</h3><div id="order-fields"></div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-outline" onclick="closeModal('modal-order')">Cancelar</button><button class="btn btn-primary" onclick="saveOrder()">Salvar</button></div></div></div>
- <div id="modal-finance" class="modal"><div class="modal-content"><h3 id="finance-modal-title">Ajustar Saldo</h3><div id="finance-fields"></div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-outline" onclick="closeModal('modal-finance')">Cancelar</button><button class="btn btn-primary" onclick="updateBalance()">Confirmar</button></div></div></div>
-
+ <div id="modal-user" class="modal">
+   <div class="modal-content">
+       <h3 id="user-modal-title">Usuario</h3>
+       <div id="user-fields"></div>div>
+       <div style="display:flex;gap:10px;margin-top:20px">
+             <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>button>
+             <button class="btn btn-primary" onclick="saveUser()">Salvar</button>button>
+       </div>div>
+   </div>div>
+ </div>div>
+ 
+ <div id="modal-order" class="modal">
+   <div class="modal-content">
+       <h3>Editar Pedido</h3>
+       <div id="order-fields"></div>div>
+       <div style="display:flex;gap:10px;margin-top:20px">
+             <button class="btn btn-outline" onclick="closeModal('modal-order')">Cancelar</button>button>
+             <button class="btn btn-primary" onclick="saveOrder()">Salvar</button>button>
+       </div>div>
+   </div>div>
+ </div>div>
+ 
+ <div id="modal-finance" class="modal">
+   <div class="modal-content">
+       <h3 id="finance-modal-title">Ajustar Saldo</h3>
+       <div id="finance-fields"></div>div>
+       <div style="display:flex;gap:10px;margin-top:20px">
+             <button class="btn btn-outline" onclick="closeModal('modal-finance')">Cancelar</button>button>
+             <button class="btn btn-primary" onclick="updateBalance()">Confirmar</button>button>
+       </div>div>
+   </div>div>
+ </div>div>
+ 
  <script>
   const API = 'https://flashdrop-backend-production.up.railway.app';
-  const tg = window.Telegram.WebApp; tg.expand();
-  let currentUserId = null, currentOrderId = null, allUsers = [];
+  const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : { showAlert: function(m){ alert(m); }, expand: function(){} };
+  tg.expand();
 
-  function showTab(id) {
-   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-   document.getElementById(id).classList.add('active');
-   if(event) event.target.classList.add('active');
-   loadData(id);
+  let currentUserId = null, currentOrderId = null, allUsers = [], allOrders = [], currentOrderFilter = 'todos';
+
+  const STATUS_LABELS = {
+     pendente: 'Pendente', aceito: 'Aceito', na_loja: 'Na Loja',
+     coletado: 'Coletado', no_cliente: 'No Cliente',
+     entregue: 'Entregue', cancelado: 'Cancelado'
+  };
+
+  function showTab(id, btn) {
+     document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+     document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+     document.getElementById(id).classList.add('active');
+     if (btn) btn.classList.add('active');
+     loadData(id);
   }
 
-  async function loadData(tab = 'pedidos') {
-   const r = await fetch(`${API}/${tab === 'pedidos' ? 'orders' : tab === 'config' ? 'settings' : 'users'}`);
-   const data = await r.json();
-   if (tab === 'pedidos') renderOrders(data);
-   else if (tab === 'lojas' || tab === 'motoboys') { allUsers = data; renderUsers(data.filter(u => u.role === (tab === 'lojas' ? 'loja' : 'motoboy')), tab); }
-   else if (tab === 'financeiro') { allUsers = data; renderFinance(data); }
-   else if (tab === 'config') {
-    document.getElementById('cfg-min').value = data.min_fee;
-    document.getElementById('cfg-km').value = data.price_per_km;
-    document.getElementById('cfg-arr').value = data.arrancada;
-    document.getElementById('cfg-com').value = data.commission;
-   }
+  async function loadData(tab) {
+     tab = tab || 'pedidos';
+     if (tab === 'pedidos') {
+          const r = await fetch(API + '/orders');
+          allOrders = await r.json();
+          renderOrders(allOrders);
+     } else if (tab === 'lojas' || tab === 'motoboys') {
+          const r = await fetch(API + '/users');
+          allUsers = await r.json();
+          renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }), tab);
+     } else if (tab === 'financeiro') {
+          const r = await fetch(API + '/users');
+          allUsers = await r.json();
+          renderFinance(allUsers);
+     } else if (tab === 'config') {
+          const r = await fetch(API + '/settings');
+          const data = await r.json();
+          document.getElementById('cfg-min').value = data.min_fee;
+          document.getElementById('cfg-km').value = data.price_per_km;
+          document.getElementById('cfg-arr').value = data.arrancada;
+          document.getElementById('cfg-com').value = data.commission;
+          document.getElementById('cfg-max').value = data.max_per_motoboy;
+     }
   }
 
-  function filterFinance() {
-   const term = document.getElementById('search-finance').value.toLowerCase();
-   const filtered = allUsers.filter(u => u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term));
-   renderFinance(filtered);
+  function filterOrders(status) {
+     currentOrderFilter = status;
+     document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+     event.target.classList.add('active');
+     var filtered = status === 'todos' ? allOrders : allOrders.filter(function(o){ return o.status === status; });
+     renderOrderCards(filtered);
   }
 
   function renderOrders(orders) {
-   document.getElementById('pedidos').innerHTML = orders.map(o => `
-    <div class="card">
-     <div class="card-header"><strong>#${o.id} - ${o.loja_name}</strong><span class="badge badge-${o.status}">${o.status}</span></div>
-     <div class="row"><span class="val">Cliente:</span><span>${o.nome_cliente}</span></div>
-     <div class="row"><span class="val">Entrega:</span><span>${o.endereco_entrega}</span></div>
-     <div class="row"><span class="val">Valor:</span><strong>R$ ${Number(o.valor_total).toFixed(2)}</strong></div>
-     <div style="display:flex;gap:10px"><button class="btn btn-outline" onclick="openEditOrder(${o.id})">Editar</button></div>
-    </div>
-   `).join('') || '<p style="text-align:center">Sem pedidos.</p>';
+     var filters = ['todos','pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'];
+     var filterBar = '<div class="filter-bar">' + filters.map(function(f){
+          var lbl = f === 'todos' ? 'Todos' : (STATUS_LABELS[f] || f);
+          var active = currentOrderFilter === f ? ' active' : '';
+          return '<button class="filter-btn' + active + '" onclick="filterOrders(\'' + f + '\')">' + lbl + '</button>';
+     }).join('') + '</div>';
+     document.getElementById('pedidos').innerHTML = filterBar + '<div id="orders-list"></div>';
+     var filtered = currentOrderFilter === 'todos' ? orders : orders.filter(function(o){ return o.status === currentOrderFilter; });
+     renderOrderCards(filtered);
+  }
+
+  function renderOrderCards(orders) {
+     var list = document.getElementById('orders-list');
+     if (!list) return;
+     if (orders.length === 0) { list.innerHTML = '<p style="text-align:center;color:#666;padding:30px">Sem pedidos.</p>'; return; }
+     list.innerHTML = orders.map(function(o) {
+          var status = o.status || 'pendente';
+          var label = STATUS_LABELS[status] || status;
+          var mb = o.motoboy_name ? '<div class="row"><span class="val">Motoboy:</span><span>' + o.motoboy_name + '</span></div>' : '';
+          return '<div class="card">' +
+                 '<div class="card-header"><strong>#' + o.id + ' - ' + (o.loja_name || o.loja_user) + '</strong>' +
+                 '<span class="badge badge-' + status + '">' + label + '</span></div>' +
+                 '<div class="row"><span class="val">Cliente:</span><span>' + o.nome_cliente + '</span></div>' +
+                 '<div class="row"><span class="val">Entrega:</span><span>' + o.endereco_entrega + '</span></div>' +
+                 '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' +
+                 mb +
+                 '<div style="display:flex;gap:8px">' +
+                 '<button class="btn btn-outline btn-sm" onclick="openEditOrder(' + o.id + ')">Editar</button>' +
+                 (status !== 'entregue' && status !== 'cancelado' ? '<button class="btn btn-danger btn-sm" onclick="cancelOrder(' + o.id + ')">Cancelar</button>' : '') +
+                 '</div></div>';
+     }).join('');
   }
 
   function renderUsers(users, tab) {
-   document.getElementById(tab).innerHTML = users.map(u => `
-    <div class="card">
-     <div class="card-header"><strong>${u.name}</strong><span style="color:${u.online ? '#4caf50' : '#f44336'}">${u.online ? '● Online' : '○ Offline'}</span></div>
-     <div class="row"><span class="val">Telefone:</span><span>${u.phone || '-'}</span></div>
-     <div class="row"><span class="val">Crédito/Saldo:</span><strong>R$ ${Number(u.role === 'loja' ? u.credit : u.balance).toFixed(2)}</strong></div>
-     <button class="btn btn-outline" onclick="openEditUser(${u.id})">Editar Perfil</button>
-    </div>
-   `).join('');
+     document.getElementById(tab).innerHTML = users.map(function(u) {
+          var saldo = u.role === 'loja' ? u.credit : u.balance;
+          return '<div class="card">' +
+                 '<div class="card-header"><strong>' + u.name + '</strong>' +
+                 '<span><span class="online-dot ' + (u.online ? 'on' : 'off') + '"></span>' + (u.online ? 'Online' : 'Offline') + '</span></div>' +
+                 '<div class="row"><span class="val">Usuario:</span><span>@' + u.username + '</span></div>' +
+                 '<div class="row"><span class="val">Telefone:</span><span>' + (u.phone || '-') + '</span></div>' +
+                 '<div class="row"><span class="val">Saldo:</span><strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
+                 (u.blocked ? '<div style="color:#f44336;font-size:12px;margin-bottom:5px">BLOQUEADO</div>' : '') +
+                 '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+                 '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">Editar</button>' +
+                 '<button class="btn btn-sm" style="background:' + (u.blocked ? '#4caf50' : '#f44336') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + u.blocked + ')">' + (u.blocked ? 'Desbloquear' : 'Bloquear') + '</button>' +
+                 '</div></div>';
+     }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
   }
 
   function renderFinance(users) {
-   const filtered = users.filter(u => u.role !== 'admin');
-   document.getElementById('finance-list').innerHTML = filtered.map(u => `
-    <div class="card">
-     <div class="card-header"><strong>${u.name} (@${u.username})</strong><span>${u.role === 'loja' ? 'Crédito' : 'Saldo'}: R$ ${Number(u.role === 'loja' ? u.credit : u.balance).toFixed(2)}</span></div>
-     <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" style="margin-top:0" onclick="openFinanceModal(${u.id}, '${u.role === 'loja' ? 'credit' : 'balance'}', 'add')">Aumentar</button>
-      <button class="btn btn-danger" style="margin-top:0" onclick="openFinanceModal(${u.id}, '${u.role === 'loja' ? 'credit' : 'balance'}', 'sub')">Diminuir</button>
-     </div>
-    </div>
-   `).join('');
+     var term = (document.getElementById('search-finance') && document.getElementById('search-finance').value || '').toLowerCase();
+     var filtered = users.filter(function(u){ return u.role !== 'admin' && (u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term)); });
+     document.getElementById('finance-list').innerHTML = filtered.map(function(u) {
+          var saldo = u.role === 'loja' ? u.credit : u.balance;
+          var field = u.role === 'loja' ? 'credit' : 'balance';
+          return '<div class="card">' +
+                 '<div class="card-header"><strong>' + u.name + ' (@' + u.username + ')</strong><span>' + (u.role === 'loja' ? 'Credito' : 'Saldo') + ': <strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></span></div>' +
+                 '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+                 '<button class="btn btn-primary btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'add\')">Aumentar</button>' +
+                 '<button class="btn btn-danger btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'sub\')">Diminuir</button>' +
+                 '<button class="btn btn-sm" style="background:#333;color:#fff" onclick="zeroBalance(' + u.id + ',\'' + field + '\')">Zerar</button>' +
+                 '</div></div>';
+     }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
   }
 
+  function filterFinance() { renderFinance(allUsers); }
+
   function openFinanceModal(id, type, action) {
-   currentUserId = id;
-   document.getElementById('finance-modal-title').textContent = action === 'add' ? 'Aumentar Saldo' : 'Diminuir Saldo';
-   document.getElementById('finance-fields').innerHTML = `<div class="input-group"><label>Valor</label><input id="f-val" class="input" type="number"><input type="hidden" id="f-type" value="${type}"><input type="hidden" id="f-action" value="${action}"></div>`;
-   openModal('modal-finance');
+     currentUserId = id;
+     document.getElementById('finance-modal-title').textContent = action === 'add' ? 'Aumentar Saldo' : 'Diminuir Saldo';
+     document.getElementById('finance-fields').innerHTML =
+          '<div class="input-group"><label>Valor (R$)</label>' +
+          '<input id="f-val" class="input" type="number" step="0.01" min="0">' +
+          '<input type="hidden" id="f-type" value="' + type + '">' +
+          '<input type="hidden" id="f-action" value="' + action + '"></div>';
+     openModal('modal-finance');
   }
 
   async function updateBalance() {
-   const valInput = parseFloat(document.getElementById('f-val').value);
-   const type = document.getElementById('f-type').value, action = document.getElementById('f-action').value;
-   const val = action === 'sub' ? -valInput : valInput;
-   const u = allUsers.find(x => x.id === currentUserId);
-   await fetch(`${API}/users/${currentUserId}`, {
-    method: 'PUT', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ [type]: parseFloat(u[type] || 0) + val })
-   });
-   closeModal('modal-finance'); loadData('financeiro'); tg.showAlert('✅ Saldo atualizado!');
+     var val = parseFloat(document.getElementById('f-val').value);
+     if (isNaN(val) || val <= 0) { tg.showAlert('Valor invalido'); return; }
+     var type = document.getElementById('f-type').value;
+     var action = document.getElementById('f-action').value;
+     var u = allUsers.find(function(x){ return x.id === currentUserId; });
+     var newVal = parseFloat(u[type] || 0) + (action === 'sub' ? -val : val);
+     await fetch(API + '/users/' + currentUserId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [type]: newVal })
+     });
+     closeModal('modal-finance');
+     loadData('financeiro');
+     tg.showAlert('Saldo atualizado!');
+  }
+
+  async function zeroBalance(id, field) {
+     if (!confirm('Zerar o saldo deste usuario?')) return;
+     await fetch(API + '/users/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: 0 })
+     });
+     loadData('financeiro');
+     tg.showAlert('Saldo zerado!');
+  }
+
+  async function toggleBlock(id, blocked) {
+     await fetch(API + '/users/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blocked: !blocked })
+     });
+     var tab = document.querySelector('.tab-btn.active');
+     if (tab) loadData(tab.textContent.trim() === 'Lojas' ? 'lojas' : 'motoboys');
   }
 
   function openNewUser() {
-   currentUserId = null; document.getElementById('user-modal-title').textContent = 'Novo Usuário';
-   document.getElementById('user-fields').innerHTML = `<div class="input-group"><label>Nome</label><input id="u-name" class="input"></div><div class="input-group"><label>Usuário</label><input id="u-user" class="input"></div><div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password"></div><div class="input-group"><label>Tipo</label><select id="u-role" class="input"><option value="loja">Loja</option><option value="motoboy">Motoboy</option></select></div><div class="input-group"><label>Telefone</label><input id="u-phone" class="input"></div>`;
-   openModal('modal-user');
+     currentUserId = null;
+     document.getElementById('user-modal-title').textContent = 'Novo Usuario';
+     document.getElementById('user-fields').innerHTML =
+          '<div class="input-group"><label>Nome</label><input id="u-name" class="input"></div>' +
+          '<div class="input-group"><label>Usuario</label><input id="u-user" class="input"></div>' +
+          '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password"></div>' +
+          '<div class="input-group"><label>Tipo</label><select id="u-role" class="input"><option value="loja">Loja</option><option value="motoboy">Motoboy</option></select></div>' +
+          '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input"></div>' +
+          '<div class="input-group"><label>Endereco/Veiculo</label><input id="u-extra" class="input"></div>';
+     openModal('modal-user');
   }
 
   function openEditUser(id) {
-   currentUserId = id; const u = allUsers.find(x => x.id === id);
-   document.getElementById('user-modal-title').textContent = 'Editar Usuário';
-   document.getElementById('user-fields').innerHTML = `<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="${u.name}"></div><div class="input-group"><label>Senha (opcional)</label><input id="u-pass" class="input" type="password"></div><div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="${u.phone||''}"></div><div class="input-group"><label>Endereço/Veículo</label><input id="u-extra" class="input" value="${u.address||u.vehicle||''}"></div>`;
-   openModal('modal-user');
+     currentUserId = id;
+     var u = allUsers.find(function(x){ return x.id === id; });
+     if (!u) return;
+     document.getElementById('user-modal-title').textContent = 'Editar - ' + u.name;
+     document.getElementById('user-fields').innerHTML =
+          '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></div>' +
+          '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
+          '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></div>' +
+          '<div class="input-group"><label>' + (u.role === 'loja' ? 'Endereco' : 'Veiculo') + '</label><input id="u-extra" class="input" value="' + (u.address || u.vehicle || '') + '"></div>';
+     openModal('modal-user');
   }
 
   async function saveUser() {
-   const data = { name: document.getElementById('u-name').value, phone: document.getElementById('u-phone').value };
-   const pass = document.getElementById('u-pass').value; if(pass) data.password = pass;
-   if(!currentUserId) {
-    data.username = document.getElementById('u-user').value;
-    data.role = document.getElementById('u-role').value;
-   } else {
-    const u = allUsers.find(x => x.id === currentUserId);
-    if(u.role === 'loja') data.address = document.getElementById('u-extra').value;
-    else data.vehicle = document.getElementById('u-extra').value;
-   }
-   await fetch(`${API}/users${currentUserId ? '/'+currentUserId : ''}`, {
-    method: currentUserId ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
-   });
-   closeModal('modal-user'); loadData(document.querySelector('.tab-btn.active').textContent.toLowerCase());
+     var data = {
+          name: document.getElementById('u-name').value,
+          phone: document.getElementById('u-phone').value
+     };
+     var pass = document.getElementById('u-pass').value;
+     if (pass) data.password = pass;
+     if (!currentUserId) {
+          data.username = document.getElementById('u-user').value;
+          data.role = document.getElementById('u-role').value;
+          var extra = document.getElementById('u-extra').value;
+          if (data.role === 'loja') data.address = extra; else data.vehicle = extra;
+     } else {
+          var u = allUsers.find(function(x){ return x.id === currentUserId; });
+          var extra = document.getElementById('u-extra').value;
+          if (u.role === 'loja') data.address = extra; else data.vehicle = extra;
+     }
+     await fetch(API + '/users' + (currentUserId ? '/' + currentUserId : ''), {
+          method: currentUserId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+     });
+     closeModal('modal-user');
+     var activeTab = document.querySelector('.tab-btn.active');
+     if (activeTab) {
+          var txt = activeTab.textContent.trim();
+          loadData(txt === 'Lojas' ? 'lojas' : txt === 'Motoboys' ? 'motoboys' : 'pedidos');
+     }
+     tg.showAlert('Usuario salvo!');
   }
 
   function openEditOrder(id) {
-   currentOrderId = id; document.getElementById('order-fields').innerHTML = `<div class="input-group"><label>Status</label><select id="o-status" class="input"><option value="pendente">Pendente</option><option value="em_rota">Em Rota</option><option value="entregue">Entregue</option><option value="cancelado">Cancelado</option></select></div>`;
-   openModal('modal-order');
+     currentOrderId = id;
+     var o = allOrders.find(function(x){ return x.id === id; });
+     if (!o) return;
+     document.getElementById('order-fields').innerHTML =
+          '<div class="input-group"><label>Status</label>' +
+          '<select id="o-status" class="input">' +
+          ['pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'].map(function(s){
+                 return '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + (STATUS_LABELS[s] || s) + '</option>';
+          }).join('') +
+          '</select></div>' +
+          '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (o.nome_cliente || '') + '"></div>' +
+          '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (o.endereco_entrega || '') + '"></div>' +
+          '<div class="input-group"><label>Valor Total (R$)</label><input id="o-valor" class="input" type="number" step="0.01" value="' + (o.valor_total || 0) + '"></div>' +
+          '<div class="input-group"><label>Ganho Motoboy (R$)</label><input id="o-motoboy" class="input" type="number" step="0.01" value="' + (o.valor_motoboy || 0) + '"></div>' +
+          '<div class="input-group"><label>Obs</label><input id="o-obs" class="input" value="' + (o.obs || '') + '"></div>';
+     openModal('modal-order');
   }
 
   async function saveOrder() {
-   await fetch(`${API}/orders/${currentOrderId}`, {
-    method: 'PUT', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ status: document.getElementById('o-status').value })
-   });
-   closeModal('modal-order'); loadData('pedidos');
+     var update = {
+          status: document.getElementById('o-status').value,
+          nome_cliente: document.getElementById('o-cliente').value,
+          endereco_entrega: document.getElementById('o-endereco').value,
+          valor_total: parseFloat(document.getElementById('o-valor').value),
+          valor_motoboy: parseFloat(document.getElementById('o-motoboy').value),
+          obs: document.getElementById('o-obs').value
+     };
+     await fetch(API + '/orders/' + currentOrderId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(update)
+     });
+     closeModal('modal-order');
+     loadData('pedidos');
+     tg.showAlert('Pedido atualizado!');
+  }
+
+  async function cancelOrder(id) {
+     if (!confirm('Cancelar pedido #' + id + '?')) return;
+     await fetch(API + '/orders/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'cancelado' })
+     });
+     loadData('pedidos');
   }
 
   async function saveSettings() {
-   await fetch(`${API}/settings`, {
-    method: 'PUT', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ min_fee: document.getElementById('cfg-min').value, price_per_km: document.getElementById('cfg-km').value, arrancada: document.getElementById('cfg-arr').value, commission: document.getElementById('cfg-com').value })
-   });
-   tg.showAlert('Ajustes salvos!');
+     await fetch(API + '/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+                 min_fee: document.getElementById('cfg-min').value,
+                 price_per_km: document.getElementById('cfg-km').value,
+                 arrancada: document.getElementById('cfg-arr').value,
+                 commission: document.getElementById('cfg-com').value,
+                 max_per_motoboy: document.getElementById('cfg-max').value
+          })
+     });
+     tg.showAlert('Ajustes salvos!');
   }
 
   function openModal(id) { document.getElementById(id).classList.add('active'); }
   function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-  loadData();
- </script>
-</body>
-</html>
+
+  loadData('ped
