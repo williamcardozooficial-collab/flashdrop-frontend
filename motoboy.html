@@ -91,6 +91,7 @@
     if (!user.id || user.role !== "motoboy") { window.location.href = "login.html"; }
 
     var activeOrders = [];
+    var allOrdersCache = [];   /* cache de todos os pedidos, usado no calcBalance */
     var activeTimers = {};
     var TIMER_DURATION = 15 * 60;
 
@@ -118,7 +119,7 @@
         updateTimerEl(orderId);
         if (activeTimers[orderId].remaining <= 0) {
           clearInterval(activeTimers[orderId].interval);
-          tg.showAlert("Atencao! Tempo limite de 15 min atingido para o pedido #" + orderId + ". Chegue o quanto antes!");
+          tg.showAlert("Atencao! Tempo de 15 min atingido para o pedido #" + orderId + ". Chegue logo!");
         }
       }, 1000);
     }
@@ -131,12 +132,12 @@
       var el = document.getElementById("timer-" + orderId);
       if (!el) return;
       var rem = activeTimers[orderId] ? activeTimers[orderId].remaining : 0;
-      var mins = Math.floor(Math.max(rem,0) / 60);
-      var secs = Math.max(rem,0) % 60;
+      var mins = Math.floor(Math.max(rem, 0) / 60);
+      var secs = Math.max(rem, 0) % 60;
       el.querySelector(".timer-text").textContent = rem <= 0
         ? "Tempo esgotado! Chegue logo na loja."
         : ("Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs);
-      el.className = "timer-box " + (rem <= 0 || rem <= 120 ? "urgent" : rem <= 300 ? "" : "ok");
+      el.className = "timer-box " + (rem <= 120 ? "urgent" : rem <= 300 ? "" : "ok");
     }
 
     /* ── STATUS UI ── */
@@ -160,14 +161,16 @@
       var newOnline = !user.online;
       try {
         var resp = await fetch(API + "/users/" + user.id, {
-          method:"PUT", headers:{"Content-Type":"application/json"},
+          method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ online: newOnline })
         });
         if (resp.ok) {
           user.online = newOnline;
           localStorage.setItem("flashdrop_user", JSON.stringify(user));
           updateStatusUI();
-        } else { tg.showAlert("Erro ao alterar status. Tente novamente."); }
+        } else {
+          tg.showAlert("Erro ao alterar status. Tente novamente.");
+        }
       } catch(e) { tg.showAlert("Sem conexao. Verifique sua internet."); }
     });
 
@@ -179,46 +182,21 @@
         if (u && u.id) {
           user = Object.assign({}, user, u);
           localStorage.setItem("flashdrop_user", JSON.stringify(user));
-          document.getElementById("user-balance").textContent = "R$ " + parseFloat(user.balance||0).toFixed(2);
+          document.getElementById("user-balance").textContent = "R$ " + parseFloat(user.balance || 0).toFixed(2);
           document.getElementById("motoboy-name").textContent = user.name;
           updateStatusUI();
         }
       } catch(e) {}
     }
 
-    /* ── CRIA CARD DOM (sem innerHTML para os botoes) ── */
-    function makeInfoRow(label, value) {
+    /* ── DOM HELPERS ── */
+    function makeInfoRow(label, value, highlight) {
       var row = document.createElement("div"); row.className = "info-row";
       var l = document.createElement("span"); l.className = "info-label"; l.textContent = label;
       var v = document.createElement("span"); v.className = "info-value"; v.textContent = value;
+      if (highlight) v.style.color = "#ffcc00";
       row.appendChild(l); row.appendChild(v);
       return row;
-    }
-
-    function makeActionButton(orderId, status, action) {
-      var btn = document.createElement("button");
-      btn.className = "btn-action " + action.cls;
-      btn.innerHTML = "<span>" + action.icon + "</span> " + action.label;
-      btn.addEventListener("click", function() {
-        doAction(orderId, status);
-      });
-      return btn;
-    }
-
-    function makeTimerEl(orderId, tAceito) {
-      var elapsed = tAceito ? Math.floor((Date.now() - new Date(tAceito).getTime()) / 1000) : 0;
-      var remaining = TIMER_DURATION - elapsed;
-      var rem = Math.max(remaining, 0);
-      var mins = Math.floor(rem / 60); var secs = rem % 60;
-      var cls = remaining <= 0 || remaining <= 120 ? "urgent" : remaining <= 300 ? "" : "ok";
-      var txt = remaining <= 0
-        ? "Tempo esgotado! Chegue logo na loja."
-        : ("Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs);
-      var box = document.createElement("div");
-      box.className = "timer-box " + cls;
-      box.id = "timer-" + orderId;
-      box.innerHTML = "<span class=\"timer-icon\">&#x23F1;</span><span class=\"timer-text\">" + txt + "</span>";
-      return box;
     }
 
     function makeProgressEl(status) {
@@ -234,16 +212,35 @@
       return wrap;
     }
 
-    function makeOrderCard(o, type) {
-      var card = document.createElement("div");
-      card.className = "order-card " + type;
+    function makeTimerEl(orderId, tAceito) {
+      var elapsed = tAceito ? Math.floor((Date.now() - new Date(tAceito).getTime()) / 1000) : 0;
+      var remaining = TIMER_DURATION - elapsed;
+      var rem = Math.max(remaining, 0);
+      var mins = Math.floor(rem / 60); var secs = rem % 60;
+      var cls = remaining <= 120 ? "urgent" : remaining <= 300 ? "" : "ok";
+      var txt = remaining <= 0
+        ? "Tempo esgotado! Chegue logo na loja."
+        : ("Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs);
+      var box = document.createElement("div");
+      box.className = "timer-box " + cls;
+      box.id = "timer-" + orderId;
+      var icon = document.createElement("span"); icon.className = "timer-icon"; icon.textContent = "⏱";
+      var text = document.createElement("span"); text.className = "timer-text"; text.textContent = txt;
+      box.appendChild(icon); box.appendChild(text);
+      return box;
+    }
 
-      // Header
+    /* ── CRIA CARD VIA DOM ── */
+    function makeOrderCard(o, cardType) {
+      var card = document.createElement("div");
+      card.className = "order-card " + cardType;
+
+      /* Header */
       var header = document.createElement("div"); header.className = "order-header";
       var idEl = document.createElement("div"); idEl.className = "order-id";
       idEl.textContent = "Pedido #" + o.id;
       var badgeEl = document.createElement("span");
-      if (type === "pending") {
+      if (cardType === "pending") {
         badgeEl.className = "badge badge-pendente"; badgeEl.textContent = "Disponivel";
       } else {
         badgeEl.className = "badge badge-" + o.status;
@@ -252,35 +249,42 @@
       header.appendChild(idEl); header.appendChild(badgeEl);
       card.appendChild(header);
 
-      // Progress (somente pedidos meus)
-      if (type === "mine") { card.appendChild(makeProgressEl(o.status)); }
-
-      // Timer (somente aceito)
-      if (type === "mine" && o.status === "aceito") {
-        card.appendChild(makeTimerEl(o.id, o.t_aceito));
-        if (!activeTimers[o.id]) {
-          var elapsed = o.t_aceito ? Math.floor((Date.now() - new Date(o.t_aceito).getTime())/1000) : 0;
-          startTimer(o.id, elapsed);
+      /* Progress e Timer */
+      if (cardType === "mine") {
+        card.appendChild(makeProgressEl(o.status));
+        if (o.status === "aceito") {
+          card.appendChild(makeTimerEl(o.id, o.t_aceito));
+          if (!activeTimers[o.id]) {
+            var el = o.t_aceito ? Math.floor((Date.now() - new Date(o.t_aceito).getTime()) / 1000) : 0;
+            startTimer(o.id, el);
+          }
         }
       }
 
-      // Infos
-      if (o.loja_name)        card.appendChild(makeInfoRow("Loja",    o.loja_name));
-      if (o.endereco_coleta)  card.appendChild(makeInfoRow("Coleta",  o.endereco_coleta));
+      /* Infos */
+      if (o.loja_name)       card.appendChild(makeInfoRow("Loja",    o.loja_name));
+      if (o.endereco_coleta) card.appendChild(makeInfoRow("Coleta",  o.endereco_coleta));
       card.appendChild(makeInfoRow("Cliente", o.nome_cliente));
-      if (type === "mine" && o.telefone_cliente)
+      if (cardType === "mine" && o.telefone_cliente)
         card.appendChild(makeInfoRow("Tel", o.telefone_cliente));
       card.appendChild(makeInfoRow("Entrega", o.endereco_entrega));
+      card.appendChild(makeInfoRow("Ganho", "R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2), true));
 
-      // Ganho
-      var ganhoRow = makeInfoRow("Seu ganho", "R$ " + parseFloat(o.valor_motoboy||0).toFixed(2));
-      ganhoRow.querySelector(".info-value").style.color = "#ffcc00";
-      card.appendChild(ganhoRow);
-
-      // Botao de acao
-      var actionKey = type === "pending" ? "pendente" : o.status;
+      /* Botao de acao */
+      var actionKey = cardType === "pending" ? "pendente" : o.status;
       var action = ACTION_MAP[actionKey];
-      if (action) { card.appendChild(makeActionButton(o.id, actionKey, action)); }
+      if (action && cardType !== "done-card") {
+        var btn = document.createElement("button");
+        btn.className = "btn-action " + action.cls;
+        var icon = document.createElement("span"); icon.textContent = action.icon;
+        btn.appendChild(icon);
+        btn.appendChild(document.createTextNode(" " + action.label));
+        /* Captura orderId e actionKey no closure */
+        (function(oid, akey) {
+          btn.addEventListener("click", function() { doAction(oid, akey); });
+        })(o.id, actionKey);
+        card.appendChild(btn);
+      }
 
       return card;
     }
@@ -290,13 +294,13 @@
       try {
         var r = await fetch(API + "/orders");
         var orders = await r.json();
+        allOrdersCache = orders;   /* salva cache para uso no doAction */
 
         var available = orders.filter(function(o) { return o.status === "pendente" && !o.motoboy_id; });
-        var mine      = orders.filter(function(o) { return parseInt(o.motoboy_id) === parseInt(user.id); });
+        var mine      = orders.filter(function(o) { return String(o.motoboy_id) === String(user.id); });
         var active    = mine.filter(function(o)   { return o.status !== "entregue" && o.status !== "cancelado"; });
         var done      = mine.filter(function(o)   { return o.status === "entregue"; });
-
-        activeOrders = active;
+        activeOrders  = active;
 
         /* Disponíveis */
         var avDiv = document.getElementById("available-orders");
@@ -310,15 +314,13 @@
         /* Minhas entregas */
         var myDiv = document.getElementById("my-orders");
         myDiv.innerHTML = "";
-
         if (active.length === 0 && done.length === 0) {
           myDiv.innerHTML = "<div class=\"empty\">Voce nao tem entregas ativas</div>";
         } else {
           active.forEach(function(o) { myDiv.appendChild(makeOrderCard(o, "mine")); });
 
-          // Para timers de pedidos que nao sao mais "aceito"
           Object.keys(activeTimers).forEach(function(tid) {
-            var still = active.find(function(o){ return String(o.id) === String(tid) && o.status === "aceito"; });
+            var still = active.find(function(o) { return String(o.id) === tid && o.status === "aceito"; });
             if (!still) stopTimer(tid);
           });
 
@@ -333,7 +335,7 @@
         }
 
         document.getElementById("total-entregas").textContent = done.length;
-        var totalGanhos = done.reduce(function(s,o){ return s + parseFloat(o.valor_motoboy||0); }, 0);
+        var totalGanhos = done.reduce(function(s, o) { return s + parseFloat(o.valor_motoboy || 0); }, 0);
         document.getElementById("total-ganhos").textContent = "R$ " + totalGanhos.toFixed(2);
 
       } catch(e) { console.error("loadOrders error:", e); }
@@ -355,23 +357,26 @@
         if (tsMap[action.next]) update[tsMap[action.next]] = new Date().toISOString();
         if (currentStatus === "pendente") { update.motoboy_id = user.id; update.motoboy_name = user.name; }
 
+        /* calcBalance: usa cache local — GET /orders/:id nao existe no backend */
         if (action.calcBalance) {
-          var orderResp = await fetch(API + "/orders/" + orderId);
-          var order = await orderResp.json();
-          var ganho = parseFloat(order.valor_motoboy || 0);
+          var cached = allOrdersCache.find(function(o) { return String(o.id) === String(orderId); });
+          var ganho = parseFloat((cached && cached.valor_motoboy) || 0);
           var novoSaldo = parseFloat(user.balance || 0) + ganho;
-          await fetch(API + "/users/" + user.id, {
-            method:"PUT", headers:{"Content-Type":"application/json"},
+          var balResp = await fetch(API + "/users/" + user.id, {
+            method: "PUT", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ balance: novoSaldo })
           });
+          if (!balResp.ok) throw new Error("Erro ao atualizar saldo");
           user.balance = novoSaldo;
           localStorage.setItem("flashdrop_user", JSON.stringify(user));
         }
 
-        await fetch(API + "/orders/" + orderId, {
-          method:"PUT", headers:{"Content-Type":"application/json"},
+        /* Atualiza o pedido */
+        var orderResp = await fetch(API + "/orders/" + orderId, {
+          method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(update)
         });
+        if (!orderResp.ok) throw new Error("Erro ao atualizar pedido");
 
         if (action.startTimer) startTimer(orderId, 0);
         if (action.stopTimer)  stopTimer(orderId);
@@ -381,7 +386,7 @@
         if (action.calcBalance) await syncUser();
 
       } catch(e) {
-        tg.showAlert("Erro ao atualizar pedido. Tente novamente.");
+        tg.showAlert("Erro: " + e.message);
         console.error(e);
       }
     }
