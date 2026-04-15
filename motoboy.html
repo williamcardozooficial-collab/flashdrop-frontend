@@ -106,7 +106,7 @@
       aceito:     { label:"Cheguei na Loja",    icon:"🏪", cls:"btn-na_loja",    next:"na_loja",    msg:"Otimo! Colete o pedido.", stopTimer:true },
       na_loja:    { label:"Coletei o Pedido",   icon:"📦", cls:"btn-coletado",   next:"coletado",   msg:"Pedido coletado! Va entregar ao cliente." },
       coletado:   { label:"Cheguei no Cliente", icon:"🏠", cls:"btn-no_cliente", next:"no_cliente", msg:"Chegou no cliente! Conclua a entrega." },
-      no_cliente: { label:"Entreguei",           icon:"🎉", cls:"btn-entregue",   next:"entregue",   msg:"Entrega concluida! Saldo atualizado.", calcBalance:true }
+      no_cliente: { label:"Entreguei",           icon:"🎉", cls:"btn-entregue",   next:"entregue",   msg:"Entrega concluida! Saldo atualizado." }
     };
 
     /* ── TIMER ── */
@@ -357,24 +357,7 @@
         if (tsMap[action.next]) update[tsMap[action.next]] = new Date().toISOString();
         if (currentStatus === "pendente") { update.motoboy_id = user.id; update.motoboy_name = user.name; }
 
-        /* calcBalance: busca saldo atual do backend antes de somar — evita duplicidade */
-        if (action.calcBalance) {
-          var cached = allOrdersCache.find(function(o) { return String(o.id) === String(orderId); });
-          var ganho = parseFloat((cached && cached.valor_motoboy) || 0);
-          /* Busca saldo ATUAL do servidor para nao usar valor defasado do localStorage */
-          var freshResp = await fetch(API + "/users/" + user.id);
-          if (!freshResp.ok) throw new Error("Erro ao buscar saldo atual");
-          var freshUser = await freshResp.json();
-          var saldoAtual = parseFloat(freshUser.balance || 0);
-          var novoSaldo = saldoAtual + ganho;
-          var balResp = await fetch(API + "/users/" + user.id, {
-            method: "PUT", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ balance: novoSaldo })
-          });
-          if (!balResp.ok) throw new Error("Erro ao atualizar saldo");
-          user.balance = novoSaldo;
-          localStorage.setItem("flashdrop_user", JSON.stringify(user));
-        }
+        /* Saldo creditado automaticamente pelo backend ao marcar como entregue */
 
         /* Atualiza o pedido */
         var orderResp = await fetch(API + "/orders/" + orderId, {
@@ -388,7 +371,7 @@
 
         tg.showAlert(action.msg);
         await loadOrders();
-        if (action.calcBalance) await syncUser();
+        await syncUser();
 
       } catch(e) {
         tg.showAlert("Erro: " + e.message);
