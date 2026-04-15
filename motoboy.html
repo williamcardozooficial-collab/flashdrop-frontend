@@ -1,233 +1,261 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>FlashDrop - Motoboy</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+        <title>FlashDrop - Motoboy</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;min-height:100vh;padding-bottom:80px}
         .header{background:#0f0f0f;padding:20px;text-align:center;border-bottom:2px solid #333}
         .header h1{font-size:24px;margin-bottom:5px}
-        .header .status{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-top:8px}
-        .status.online{background:#28a745;color:#fff}
-        .status.offline{background:#6c757d;color:#fff}
+        .status-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-top:8px}
+        .status-badge.online{background:#28a745;color:#fff}
+        .status-badge.offline{background:#6c757d;color:#fff}
         .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:15px;max-width:600px;margin:0 auto}
         .stat-card{background:#2a2a2a;padding:15px;border-radius:12px;text-align:center}
         .stat-value{font-size:20px;font-weight:700;color:#ffcc00;margin-bottom:4px}
         .stat-label{color:#999;font-size:11px;text-transform:uppercase}
-        .orders{max-width:600px;margin:0 auto;padding:20px}
-        .section-title{font-size:18px;font-weight:600;margin-bottom:16px;color:#fff}
+        .orders{max-width:600px;margin:0 auto;padding:15px}
+        .section-title{font-size:18px;font-weight:600;margin-bottom:12px;color:#fff}
         .order-card{background:#2a2a2a;border-radius:12px;padding:16px;margin-bottom:12px;border:2px solid transparent}
         .order-card.pending{border-color:#ffa500}
+        .order-card.mine{border-color:#0088cc}
         .order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
         .order-id{font-size:16px;font-weight:600}
         .badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
-        .badge.pendente{background:#ffa500;color:#000}
-        .badge.em_rota{background:#0088cc}
-        .badge.entregue{background:#28a745}
+        .badge-pendente{background:#ffa500;color:#000}
+        .badge-aceito{background:#17a2b8;color:#fff}
+        .badge-na_loja{background:#6610f2;color:#fff}
+        .badge-coletado{background:#fd7e14;color:#fff}
+        .badge-no_cliente{background:#007bff;color:#fff}
+        .badge-entregue{background:#28a745;color:#fff}
         .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #3a3a3a;font-size:14px}
         .info-row:last-child{border:none}
         .info-label{color:#999}
-        .info-value{font-weight:500;color:#fff}
-        .btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
+        .info-value{font-weight:500;color:#fff;text-align:right;max-width:60%}
+        .btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
         .btn-accept{background:#28a745;color:#fff}
-        .btn-delivered{background:#0088cc;color:#fff}
+        .btn-blue{background:#0088cc;color:#fff}
+        .btn-orange{background:#fd7e14;color:#fff}
+        .btn-purple{background:#6610f2;color:#fff}
+        .btn-green{background:#28a745;color:#fff}
         .btn-toggle{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:#0088cc;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000}
-        .empty{text-align:center;padding:60px 20px;color:#666}
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🏍 FlashDrop Motoboy</h1>
-        <div id="motoboy-name">Carregando...</div>
-        <span class="status offline" id="status">Offline</span>
-    </div>
-
+        .empty{text-align:center;padding:40px 20px;color:#666}
+        .progress-steps{display:flex;justify-content:space-between;margin:10px 0;padding:10px;background:#1a1a1a;border-radius:8px}
+        .step{text-align:center;flex:1;font-size:10px;color:#555}
+        .step.done{color:#28a745}
+        .step.active{color:#ffcc00;font-weight:bold}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+              <h1>FlashDrop Motoboy</h1>
+          <div id="motoboy-name" style="color:#aaa;font-size:14px">Carregando...</div>div>
+          <span class="status-badge offline" id="status-badge">Offline</span>span>
+        </div>div>
     <div class="stats">
-        <div class="stat-card">
-            <div class="stat-value" id="total-entregas">0</div>
-            <div class="stat-label">Entregas</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="total-ganhos">R$ 0</div>
-            <div class="stat-label">Ganhos</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="user-balance">R$ 0</div>
-            <div class="stat-label">Saldo</div>
-        </div>
-    </div>
-
+      <div class="stat-card"><div class="stat-value" id="total-entregas">0</div>div><div class="stat-label">Entregas</div>div></div>div>
+      <div class="stat-card"><div class="stat-value" id="total-ganhos">R$ 0</div>div><div class="stat-label">Ganhos</div>div></div>div>
+      <div class="stat-card"><div class="stat-value" id="user-balance">R$ 0</div>div><div class="stat-label">Saldo</div>div></div>div>
+    </div>div>
     <div class="orders">
-        <div class="section-title">📦 Pedidos Disponíveis</div>
-        <div id="available-orders"></div>
-        <br/>
-        <div class="section-title" style="margin-top:30px">🚨 Minhas Entregas</div>
-        <div id="my-orders"></div>
-    </div>
-
-    <button class="btn-toggle" id="toggleStatus">⏸</button>
-
+      <div class="section-title">Pedidos Disponíveis</div>div>
+      <div id="available-orders"></div>div>
+      <div class="section-title" style="margin-top:20px">Minhas Entregas</div>div>
+      <div id="my-orders"></div>div>
+    </div>div>
+    <button class="btn-toggle" id="toggleStatus">&#9654;</button>button>
     <script>
-        const API='https://flashdrop-backend-production.up.railway.app';
-        const tg=window.Telegram.WebApp;
+        const API = 'https://flashdrop-backend-production.up.railway.app';
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : { showAlert: function(m){ alert(m); }, expand: function(){} };
         tg.expand();
 
-        let user=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
-        if(!user.id||user.role!=='motoboy'){
-            window.location.href='login.html';
-        }
+        let user = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+        if (!user.id || user.role !== 'motoboy') { window.location.href = 'login.html'; }
 
-        async function init(){
-            document.getElementById('motoboy-name').textContent=user.name;
-            await syncUser();
-            updateStatusUI();
-            loadOrders();
-            setInterval(loadOrders, 10000);
-            setInterval(syncUser, 15000);
-        }
-
-        async function syncUser(){
-            try {
-                const res = await fetch(`${API}/users`);
-                const users = await res.json();
-                const latest = users.find(u => u.id === user.id);
-                if(latest){
-                    user = {...user, ...latest};
-                    localStorage.setItem('flashdrop_user', JSON.stringify(user));
-                    document.getElementById('user-balance').textContent = 'R$ ' + parseFloat(user.balance || 0).toFixed(2);
-                    updateStatusUI();
-                }
-            } catch(e) {}
-        }
-
-        function updateStatusUI(){
-            const statusEl=document.getElementById('status');
-            const btnToggle=document.getElementById('toggleStatus');
-            if(user.online){
-                statusEl.textContent='Online';
-                statusEl.className='status online';
-                btnToggle.textContent='⏸';
-            }else{
-                statusEl.textContent='Offline';
-                statusEl.className='status offline';
-                btnToggle.textContent='▶';
-            }
-        }
-
-        document.getElementById('toggleStatus').onclick=async()=>{
-            user.online = !user.online;
-            try{
-                await fetch(`${API}/users/${user.id}`,{
-                    method:'PUT',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({online:user.online})
-                });
-                localStorage.setItem('flashdrop_user',JSON.stringify(user));
-                updateStatusUI();
-            }catch(e){}
+        const STATUS_LABELS = {
+              pendente: 'Pendente',
+              aceito: 'Aceito',
+              na_loja: 'Na Loja',
+              coletado: 'Coletado',
+              no_cliente: 'No Cliente',
+              entregue: 'Entregue',
+              cancelado: 'Cancelado'
         };
 
-        async function loadOrders(){
-            try{
-                const res=await fetch(`${API}/orders`);
-                const orders=await res.json();
-                
-                const available=orders.filter(o=>o.status==='pendente'&&!o.motoboy_id);
-                const mine=orders.filter(o=>o.motoboy_id==user.username);
-                
-                const availableDiv=document.getElementById('available-orders');
-                const myDiv=document.getElementById('my-orders');
-                
-                if(available.length===0){
-                    availableDiv.innerHTML='<div class="empty">Nenhum pedido disponível no momento</div>';
-                }else{
-                    availableDiv.innerHTML=available.map(o=>`
-                        <div class="order-card pending">
-                            <div class="order-header">
-                                <div class="order-id">Pedido #${o.id}</div>
-                                <span class="badge pendente">Disponível</span>
-                            </div>
-                            <div class="info-row"><span class="info-label">Loja:</span><span class="info-value">${o.loja_name||'N/A'}</span></div>
-                            <div class="info-row"><span class="info-label">Cliente:</span><span class="info-value">${o.nome_cliente}</span></div>
-                            <div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">${o.endereco_entrega}</span></div>
-                            <div class="info-row"><span class="info-label">Seu ganho:</span><span class="info-value">R$ ${parseFloat(o.valor_motoboy||0).toFixed(2)}</span></div>
-                            <button class="btn btn-accept" onclick="acceptOrder(${o.id})">Aceitar Entrega</button>
-                        </div>
-                    `).join('');
-                }
-                
-                if(mine.length===0){
-                    myDiv.innerHTML='<div class="empty">Você não tem entregas no momento</div>';
-                }else{
-                    myDiv.innerHTML=mine.map(o=>`
-                        <div class="order-card">
-                            <div class="order-header">
-                                <div class="order-id">Pedido #${o.id}</div>
-                                <span class="badge ${o.status}">${getStatusLabel(o.status)}</span>
-                            </div>
-                            <div class="info-row"><span class="info-label">Cliente:</span><span class="info-value">${o.nome_cliente}</span></div>
-                            <div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">${o.endereco_entrega}</span></div>
-                            <div class="info-row"><span class="info-label">Seu ganho:</span><span class="info-value">R$ ${parseFloat(o.valor_motoboy||0).toFixed(2)}</span></div>
-                            ${o.status==='em_rota'?`<button class="btn btn-delivered" onclick="markDelivered(${o.id})">Marcar como Entregue</button>`:''}
-                        </div>
-                    `).join('');
-                    
-                    const deliveredOrders = mine.filter(o=>o.status==='entregue');
-                    const totalGanhos=deliveredOrders.reduce((sum,o)=>sum+parseFloat(o.valor_motoboy||0),0);
-                    document.getElementById('total-entregas').textContent=deliveredOrders.length;
-                    document.getElementById('total-ganhos').textContent='R$ '+totalGanhos.toFixed(2);
-                }
-            }catch(e){
-                console.error(e);
-            }
+        const STATUS_NEXT = {
+              aceito: { next: 'na_loja', label: 'Cheguei na Loja', cls: 'btn-purple' },
+              na_loja: { next: 'coletado', label: 'Coletei o Pedido', cls: 'btn-orange' },
+              coletado: { next: 'no_cliente', label: 'Cheguei no Cliente', cls: 'btn-blue' },
+              no_cliente: { next: 'entregue', label: 'Entregue!', cls: 'btn-green' }
+        };
+
+        function updateStatusUI() {
+              const el = document.getElementById('status-badge');
+              const btn = document.getElementById('toggleStatus');
+              if (user.online) {
+                      el.textContent = 'Online';
+                      el.className = 'status-badge online';
+                      btn.innerHTML = '&#9646;&#9646;';
+                      btn.style.background = '#28a745';
+              } else {
+                      el.textContent = 'Offline';
+                      el.className = 'status-badge offline';
+                      btn.innerHTML = '&#9654;';
+                      btn.style.background = '#6c757d';
+              }
         }
 
-        async function acceptOrder(id){
-            try{
-                await fetch(`${API}/orders/${id}`,{
-                    method:'PUT',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({
-                        status:'em_rota',
-                        motoboy_id:user.username,
-                        motoboy_name:user.name,
-                        t_aceito:new Date().toISOString()
-                    })
-                });
-                tg.showAlert('✅ Entrega aceita!');
-                loadOrders();
-            }catch(e){
-                tg.showAlert('❌ Erro ao aceitar entrega');
-            }
+        document.getElementById('toggleStatus').onclick = async function() {
+              user.online = !user.online;
+              try {
+                      await fetch(API + '/users/' + user.id, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ online: user.online })
+                      });
+                      localStorage.setItem('flashdrop_user', JSON.stringify(user));
+                      updateStatusUI();
+              } catch(e) { user.online = !user.online; }
+        };
+
+        async function syncUser() {
+              try {
+                      const r = await fetch(API + '/users/' + user.id);
+                      const u = await r.json();
+                      if (u && u.id) {
+                                user = Object.assign({}, user, u);
+                                localStorage.setItem('flashdrop_user', JSON.stringify(user));
+                                document.getElementById('user-balance').textContent = 'R$ ' + parseFloat(user.balance || 0).toFixed(2);
+                                document.getElementById('motoboy-name').textContent = user.name;
+                                updateStatusUI();
+                      }
+              } catch(e) {}
         }
 
-        async function markDelivered(id){
-            try{
-                await fetch(`${API}/orders/${id}`,{
-                    method:'PUT',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({
-                        status:'entregue',
-                        t_entregue:new Date().toISOString()
-                    })
-                });
-                tg.showAlert('✅ Entrega concluída!');
-                loadOrders();
-                syncUser();
-            }catch(e){
-                tg.showAlert('❌ Erro ao finalizar entrega');
-            }
+        async function loadOrders() {
+              try {
+                      const r = await fetch(API + '/orders');
+                      const orders = await r.json();
+                      const available = orders.filter(function(o) { return o.status === 'pendente' && !o.motoboy_id; });
+                      const mine = orders.filter(function(o) { return parseInt(o.motoboy_id) === parseInt(user.id); });
+
+                      const avDiv = document.getElementById('available-orders');
+                      if (available.length === 0) {
+                                avDiv.innerHTML = '<div class="empty">Nenhum pedido disponível</div>';
+                      } else {
+                                avDiv.innerHTML = available.map(function(o) {
+                                            return '<div class="order-card pending">' +
+                                                          '<div class="order-header"><div class="order-id">Pedido #' + o.id + '</div>' +
+                                                          '<span class="badge badge-pendente">Disponível</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Loja</span><span class="info-value">' + (o.loja_name || '-') + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Coleta</span><span class="info-value">' + (o.endereco_coleta || '-') + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Entrega</span><span class="info-value">' + o.endereco_entrega + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Cliente</span><span class="info-value">' + o.nome_cliente + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Seu ganho</span><span class="info-value" style="color:#ffcc00">R$ ' + parseFloat(o.valor_motoboy || 0).toFixed(2) + '</span></div>' +
+                                                          '<button class="btn btn-accept" onclick="acceptOrder(' + o.id + ')">Aceitar Entrega</button>' +
+                                                          '</div>';
+                                }).join('');
+                      }
+
+                      const myDiv = document.getElementById('my-orders');
+                      const active = mine.filter(function(o) { return o.status !== 'entregue' && o.status !== 'cancelado'; });
+                      const done = mine.filter(function(o) { return o.status === 'entregue'; });
+
+                      if (mine.length === 0) {
+                                myDiv.innerHTML = '<div class="empty">Você não tem entregas ativas</div>';
+                      } else {
+                                myDiv.innerHTML = active.map(function(o) {
+                                            const next = STATUS_NEXT[o.status];
+                                            const steps = ['aceito', 'na_loja', 'coletado', 'no_cliente', 'entregue'];
+                                            const stepIdx = steps.indexOf(o.status);
+                                            const progressHtml = '<div class="progress-steps">' + steps.map(function(s, i) {
+                                                          var cls = i < stepIdx ? 'done' : (i === stepIdx ? 'active' : '');
+                                                          return '<div class="step ' + cls + '">' + STATUS_LABELS[s] + '</div>';
+                                            }).join('') + '</div>';
+                                            return '<div class="order-card mine">' +
+                                                          '<div class="order-header"><div class="order-id">Pedido #' + o.id + '</div>' +
+                                                          '<span class="badge badge-' + o.status + '">' + (STATUS_LABELS[o.status] || o.status) + '</span></div>' +
+                                                          progressHtml +
+                                                          '<div class="info-row"><span class="info-label">Cliente</span><span class="info-value">' + o.nome_cliente + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Tel</span><span class="info-value">' + (o.telefone_cliente || '-') + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Coleta</span><span class="info-value">' + (o.endereco_coleta || '-') + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Entrega</span><span class="info-value">' + o.endereco_entrega + '</span></div>' +
+                                                          '<div class="info-row"><span class="info-label">Ganho</span><span class="info-value" style="color:#ffcc00">R$ ' + parseFloat(o.valor_motoboy || 0).toFixed(2) + '</span></div>' +
+                                                          (next ? '<button class="btn ' + next.cls + '" onclick="advanceStatus(' + o.id + ',\'' + next.next + '\')">' + next.label + '</button>' : '') +
+                                                          '</div>';
+                                }).join('') + (done.length > 0 ? '<div class="section-title" style="margin-top:15px;color:#aaa;font-size:14px">Concluídas hoje</div>' +
+                                                       done.map(function(o) {
+                                                                     return '<div class="order-card" style="opacity:0.6">' +
+                                                                                     '<div class="order-header"><span>#' + o.id + ' - ' + o.nome_cliente + '</span>' +
+                                                                                     '<span class="badge badge-entregue">Entregue</span></div>' +
+                                                                                     '<div class="info-row"><span class="info-label">Ganho</span><span class="info-value">R$ ' + parseFloat(o.valor_motoboy || 0).toFixed(2) + '</span></div>' +
+                                                                                     '</div>';
+                                                       }).join('') : '');
+                      }
+
+                      document.getElementById('total-entregas').textContent = done.length;
+                      var totalGanhos = done.reduce(function(s, o) { return s + parseFloat(o.valor_motoboy || 0); }, 0);
+                      document.getElementById('total-ganhos').textContent = 'R$ ' + totalGanhos.toFixed(2);
+              } catch(e) { console.error(e); }
         }
 
-        function getStatusLabel(status){
-            const labels={pendente:'Pendente',em_rota:'Em Rota',entregue:'Entregue'};
-            return labels[status]||status;
+        async function acceptOrder(id) {
+              if (!user.online) { tg.showAlert('Você precisa estar Online para aceitar pedidos!'); return; }
+              try {
+                      await fetch(API + '/orders/' + id, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                            status: 'aceito',
+                                            motoboy_id: user.id,
+                                            motoboy_name: user.name,
+                                            t_aceito: new Date().toISOString()
+                                })
+                      });
+                      tg.showAlert('Entrega aceita! Va buscar o pedido na loja.');
+                      loadOrders();
+              } catch(e) { tg.showAlert('Erro ao aceitar entrega'); }
+        }
+
+        async function advanceStatus(id, newStatus) {
+              const timestamps = {
+                      na_loja: 't_na_loja',
+                      coletado: 't_coletado',
+                      no_cliente: 't_no_cliente',
+                      entregue: 't_entregue'
+              };
+              const update = { status: newStatus };
+              if (timestamps[newStatus]) update[timestamps[newStatus]] = new Date().toISOString();
+              try {
+                      await fetch(API + '/orders/' + id, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(update)
+                      });
+                      var msgs = {
+                                na_loja: 'Marcado: Na Loja!',
+                                coletado: 'Pedido coletado! Va entregar ao cliente.',
+                                no_cliente: 'Chegou no cliente! Conclua a entrega.',
+                                entregue: 'Entrega concluída! Saldo atualizado.'
+                      };
+                      tg.showAlert(msgs[newStatus] || 'Status atualizado!');
+                      loadOrders();
+                      if (newStatus === 'entregue') syncUser();
+              } catch(e) { tg.showAlert('Erro ao atualizar status'); }
+        }
+
+        async function init() {
+              document.getElementById('motoboy-name').textContent = user.name || 'Motoboy';
+              updateStatusUI();
+              await syncUser();
+              loadOrders();
+              setInterval(loadOrders, 10000);
+              setInterval(syncUser, 20000);
         }
 
         init();
     </script>
-</body>
+    </body>
 </html>
