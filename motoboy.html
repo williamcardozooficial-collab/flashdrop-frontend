@@ -36,9 +36,8 @@
     .info-label{color:#999}
     .info-value{font-weight:500;color:#fff;text-align:right;max-width:60%}
     .progress-steps{display:flex;justify-content:space-between;margin:12px 0;padding:10px;background:#1a1a1a;border-radius:8px}
-    .step{text-align:center;flex:1;font-size:10px;color:#555;position:relative}
+    .step{text-align:center;flex:1;font-size:10px;color:#555}
     .step.done{color:#28a745}
-    .step.done::after{content:" ✓"}
     .step.active{color:#ffcc00;font-weight:bold}
     .timer-box{display:flex;align-items:center;gap:8px;background:#1a1a1a;border:1px solid #ffa500;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:#ffa500}
     .timer-box.urgent{border-color:#f44336;color:#f44336;animation:pulse 1s infinite}
@@ -82,38 +81,32 @@
   <button class="btn-toggle" id="toggleStatus">&#9654;</button>
 
   <script>
-    const API = "https://flashdrop-backend-production.up.railway.app";
-    const tg = (window.Telegram && window.Telegram.WebApp)
+    var API = "https://flashdrop-backend-production.up.railway.app";
+    var tg = (window.Telegram && window.Telegram.WebApp)
       ? window.Telegram.WebApp
       : { showAlert: function(m){ alert(m); }, expand: function(){} };
     tg.expand();
 
-    let user = JSON.parse(localStorage.getItem("flashdrop_user") || "{}");
+    var user = JSON.parse(localStorage.getItem("flashdrop_user") || "{}");
     if (!user.id || user.role !== "motoboy") { window.location.href = "login.html"; }
 
-    // Cache de pedidos ativos para checar antes de ficar offline
-    let activeOrders = [];
-    const activeTimers = {};
+    var activeOrders = [];
+    var activeTimers = {};
+    var TIMER_DURATION = 15 * 60;
 
-    const STATUS_LABELS = {
-      pendente:   "Aguardando",
-      aceito:     "Aceito",
-      na_loja:    "Na Loja",
-      coletado:   "A Entregar",
-      no_cliente: "No Cliente",
-      entregue:   "Entregue",
-      cancelado:  "Cancelado"
+    var STATUS_LABELS = {
+      pendente:"Aguardando", aceito:"Aceito", na_loja:"Na Loja",
+      coletado:"A Entregar", no_cliente:"No Cliente",
+      entregue:"Entregue", cancelado:"Cancelado"
     };
 
-    const ACTION_MAP = {
-      pendente:   { label: "Aceitar",           icon: "✅", cls: "btn-accept",     next: "aceito",     msg: "Entrega aceita! Va buscar o pedido na loja.", startTimer: true },
-      aceito:     { label: "Cheguei na Loja",   icon: "🏪", cls: "btn-na_loja",    next: "na_loja",    msg: "Otimo! Colete o pedido.", stopTimer: true },
-      na_loja:    { label: "Coletei o Pedido",  icon: "📦", cls: "btn-coletado",   next: "coletado",   msg: "Pedido coletado! Va entregar ao cliente." },
-      coletado:   { label: "Cheguei no Cliente",icon: "🏠", cls: "btn-no_cliente", next: "no_cliente", msg: "Chegou no cliente! Conclua a entrega." },
-      no_cliente: { label: "Entreguei",          icon: "🎉", cls: "btn-entregue",   next: "entregue",   msg: "Entrega concluida! Saldo atualizado.", calcBalance: true }
+    var ACTION_MAP = {
+      pendente:   { label:"Aceitar",            icon:"✅", cls:"btn-accept",     next:"aceito",     msg:"Entrega aceita! Va buscar o pedido na loja.", startTimer:true },
+      aceito:     { label:"Cheguei na Loja",    icon:"🏪", cls:"btn-na_loja",    next:"na_loja",    msg:"Otimo! Colete o pedido.", stopTimer:true },
+      na_loja:    { label:"Coletei o Pedido",   icon:"📦", cls:"btn-coletado",   next:"coletado",   msg:"Pedido coletado! Va entregar ao cliente." },
+      coletado:   { label:"Cheguei no Cliente", icon:"🏠", cls:"btn-no_cliente", next:"no_cliente", msg:"Chegou no cliente! Conclua a entrega." },
+      no_cliente: { label:"Entreguei",           icon:"🎉", cls:"btn-entregue",   next:"entregue",   msg:"Entrega concluida! Saldo atualizado.", calcBalance:true }
     };
-
-    const TIMER_DURATION = 15 * 60;
 
     /* ── TIMER ── */
     function startTimer(orderId, elapsedSeconds) {
@@ -125,35 +118,25 @@
         updateTimerEl(orderId);
         if (activeTimers[orderId].remaining <= 0) {
           clearInterval(activeTimers[orderId].interval);
-          handleTimerExpired(orderId);
+          tg.showAlert("Atencao! Tempo limite de 15 min atingido para o pedido #" + orderId + ". Chegue o quanto antes!");
         }
       }, 1000);
     }
 
     function stopTimer(orderId) {
-      if (activeTimers[orderId]) {
-        clearInterval(activeTimers[orderId].interval);
-        delete activeTimers[orderId];
-      }
+      if (activeTimers[orderId]) { clearInterval(activeTimers[orderId].interval); delete activeTimers[orderId]; }
     }
 
     function updateTimerEl(orderId) {
       var el = document.getElementById("timer-" + orderId);
       if (!el) return;
       var rem = activeTimers[orderId] ? activeTimers[orderId].remaining : 0;
-      if (rem <= 0) {
-        el.className = "timer-box urgent";
-        el.querySelector(".timer-text").textContent = "Tempo esgotado! Chegar logo na loja.";
-        return;
-      }
-      var mins = Math.floor(rem / 60);
-      var secs = rem % 60;
-      el.querySelector(".timer-text").textContent = "Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs;
-      el.className = "timer-box " + (rem <= 120 ? "urgent" : rem <= 300 ? "" : "ok");
-    }
-
-    function handleTimerExpired(orderId) {
-      tg.showAlert("Atencao! Voce ultrapassou o tempo limite de 15 min para o pedido #" + orderId + ". Chegue o quanto antes!");
+      var mins = Math.floor(Math.max(rem,0) / 60);
+      var secs = Math.max(rem,0) % 60;
+      el.querySelector(".timer-text").textContent = rem <= 0
+        ? "Tempo esgotado! Chegue logo na loja."
+        : ("Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs);
+      el.className = "timer-box " + (rem <= 0 || rem <= 120 ? "urgent" : rem <= 300 ? "" : "ok");
     }
 
     /* ── STATUS UI ── */
@@ -161,43 +144,31 @@
       var badge = document.getElementById("status-badge");
       var btn   = document.getElementById("toggleStatus");
       if (user.online) {
-        badge.textContent = "Online";
-        badge.className   = "status-badge online";
-        btn.innerHTML     = "&#9646;&#9646;";
-        btn.className     = "btn-toggle online";
+        badge.textContent = "Online"; badge.className = "status-badge online";
+        btn.innerHTML = "&#9646;&#9646;"; btn.className = "btn-toggle online";
       } else {
-        badge.textContent = "Offline";
-        badge.className   = "status-badge offline";
-        btn.innerHTML     = "&#9654;";
-        btn.className     = "btn-toggle";
+        badge.textContent = "Offline"; badge.className = "status-badge offline";
+        btn.innerHTML = "&#9654;"; btn.className = "btn-toggle";
       }
     }
 
-    /* ── TOGGLE ONLINE/OFFLINE ── */
     document.getElementById("toggleStatus").addEventListener("click", async function() {
-      // Bloqueia ir offline se tiver pedido ativo
       if (user.online && activeOrders.length > 0) {
-        tg.showAlert("Voce nao pode ficar Offline com pedido em aberto! Conclua ou cancele a entrega primeiro.");
+        tg.showAlert("Voce nao pode ficar Offline com pedido em aberto! Conclua a entrega primeiro.");
         return;
       }
-
       var newOnline = !user.online;
       try {
         var resp = await fetch(API + "/users/" + user.id, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          method:"PUT", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ online: newOnline })
         });
         if (resp.ok) {
           user.online = newOnline;
           localStorage.setItem("flashdrop_user", JSON.stringify(user));
           updateStatusUI();
-        } else {
-          tg.showAlert("Erro ao alterar status. Tente novamente.");
-        }
-      } catch(e) {
-        tg.showAlert("Sem conexao. Verifique sua internet.");
-      }
+        } else { tg.showAlert("Erro ao alterar status. Tente novamente."); }
+      } catch(e) { tg.showAlert("Sem conexao. Verifique sua internet."); }
     });
 
     /* ── SYNC USER ── */
@@ -208,57 +179,110 @@
         if (u && u.id) {
           user = Object.assign({}, user, u);
           localStorage.setItem("flashdrop_user", JSON.stringify(user));
-          document.getElementById("user-balance").textContent = "R$ " + parseFloat(user.balance || 0).toFixed(2);
+          document.getElementById("user-balance").textContent = "R$ " + parseFloat(user.balance||0).toFixed(2);
           document.getElementById("motoboy-name").textContent = user.name;
           updateStatusUI();
         }
       } catch(e) {}
     }
 
-    /* ── TIMER HTML ── */
-    function buildTimerHtml(orderId, tAceito) {
+    /* ── CRIA CARD DOM (sem innerHTML para os botoes) ── */
+    function makeInfoRow(label, value) {
+      var row = document.createElement("div"); row.className = "info-row";
+      var l = document.createElement("span"); l.className = "info-label"; l.textContent = label;
+      var v = document.createElement("span"); v.className = "info-value"; v.textContent = value;
+      row.appendChild(l); row.appendChild(v);
+      return row;
+    }
+
+    function makeActionButton(orderId, status, action) {
+      var btn = document.createElement("button");
+      btn.className = "btn-action " + action.cls;
+      btn.innerHTML = "<span>" + action.icon + "</span> " + action.label;
+      btn.addEventListener("click", function() {
+        doAction(orderId, status);
+      });
+      return btn;
+    }
+
+    function makeTimerEl(orderId, tAceito) {
       var elapsed = tAceito ? Math.floor((Date.now() - new Date(tAceito).getTime()) / 1000) : 0;
       var remaining = TIMER_DURATION - elapsed;
       var rem = Math.max(remaining, 0);
-      var mins = Math.floor(rem / 60);
-      var secs = rem % 60;
-      var cls = remaining <= 0 ? "urgent" : (remaining <= 120 ? "urgent" : (remaining <= 300 ? "" : "ok"));
+      var mins = Math.floor(rem / 60); var secs = rem % 60;
+      var cls = remaining <= 0 || remaining <= 120 ? "urgent" : remaining <= 300 ? "" : "ok";
       var txt = remaining <= 0
-        ? "Tempo esgotado! Chegar logo na loja."
+        ? "Tempo esgotado! Chegue logo na loja."
         : ("Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs);
-      return "<div class=\"timer-box " + cls + "\" id=\"timer-" + orderId + "\">"
-           + "<span class=\"timer-icon\">\u23F1</span>"
-           + "<span class=\"timer-text\">" + txt + "</span>"
-           + "</div>";
+      var box = document.createElement("div");
+      box.className = "timer-box " + cls;
+      box.id = "timer-" + orderId;
+      box.innerHTML = "<span class=\"timer-icon\">&#x23F1;</span><span class=\"timer-text\">" + txt + "</span>";
+      return box;
     }
 
-    /* ── PROGRESS HTML ── */
-    function buildProgressHtml(status) {
+    function makeProgressEl(status) {
       var steps = ["aceito","na_loja","coletado","no_cliente","entregue"];
       var idx = steps.indexOf(status);
-      return "<div class=\"progress-steps\">"
-        + steps.map(function(s, i) {
-            var cls = i < idx ? "done" : (i === idx ? "active" : "");
-            return "<div class=\"step " + cls + "\">" + STATUS_LABELS[s] + "</div>";
-          }).join("")
-        + "</div>";
+      var wrap = document.createElement("div"); wrap.className = "progress-steps";
+      steps.forEach(function(s, i) {
+        var d = document.createElement("div");
+        d.className = "step " + (i < idx ? "done" : i === idx ? "active" : "");
+        d.textContent = STATUS_LABELS[s];
+        wrap.appendChild(d);
+      });
+      return wrap;
     }
 
-    /* ── BUILD BUTTON (usa data-attrs para evitar problema de aspas) ── */
-    function buildActionBtn(orderId, status, action) {
-      return "<button class=\"btn-action " + action.cls + "\"",
-             + " data-order=\"" + orderId + "\"",
-             + " data-status=\"" + status + "\"",
-             + " onclick=\"handleBtn(this)\">"
-             + "<span>" + action.icon + "</span> " + action.label
-             + "</button>";
-    }
+    function makeOrderCard(o, type) {
+      var card = document.createElement("div");
+      card.className = "order-card " + type;
 
-    /* ── HANDLER DO BOTAO (chamado via onclick="handleBtn(this)") ── */
-    function handleBtn(btn) {
-      var orderId = parseInt(btn.getAttribute("data-order"));
-      var status  = btn.getAttribute("data-status");
-      doAction(orderId, status);
+      // Header
+      var header = document.createElement("div"); header.className = "order-header";
+      var idEl = document.createElement("div"); idEl.className = "order-id";
+      idEl.textContent = "Pedido #" + o.id;
+      var badgeEl = document.createElement("span");
+      if (type === "pending") {
+        badgeEl.className = "badge badge-pendente"; badgeEl.textContent = "Disponivel";
+      } else {
+        badgeEl.className = "badge badge-" + o.status;
+        badgeEl.textContent = STATUS_LABELS[o.status] || o.status;
+      }
+      header.appendChild(idEl); header.appendChild(badgeEl);
+      card.appendChild(header);
+
+      // Progress (somente pedidos meus)
+      if (type === "mine") { card.appendChild(makeProgressEl(o.status)); }
+
+      // Timer (somente aceito)
+      if (type === "mine" && o.status === "aceito") {
+        card.appendChild(makeTimerEl(o.id, o.t_aceito));
+        if (!activeTimers[o.id]) {
+          var elapsed = o.t_aceito ? Math.floor((Date.now() - new Date(o.t_aceito).getTime())/1000) : 0;
+          startTimer(o.id, elapsed);
+        }
+      }
+
+      // Infos
+      if (o.loja_name)        card.appendChild(makeInfoRow("Loja",    o.loja_name));
+      if (o.endereco_coleta)  card.appendChild(makeInfoRow("Coleta",  o.endereco_coleta));
+      card.appendChild(makeInfoRow("Cliente", o.nome_cliente));
+      if (type === "mine" && o.telefone_cliente)
+        card.appendChild(makeInfoRow("Tel", o.telefone_cliente));
+      card.appendChild(makeInfoRow("Entrega", o.endereco_entrega));
+
+      // Ganho
+      var ganhoRow = makeInfoRow("Seu ganho", "R$ " + parseFloat(o.valor_motoboy||0).toFixed(2));
+      ganhoRow.querySelector(".info-value").style.color = "#ffcc00";
+      card.appendChild(ganhoRow);
+
+      // Botao de acao
+      var actionKey = type === "pending" ? "pendente" : o.status;
+      var action = ACTION_MAP[actionKey];
+      if (action) { card.appendChild(makeActionButton(o.id, actionKey, action)); }
+
+      return card;
     }
 
     /* ── LOAD ORDERS ── */
@@ -267,102 +291,52 @@
         var r = await fetch(API + "/orders");
         var orders = await r.json();
 
-        var available = orders.filter(function(o) {
-          return o.status === "pendente" && !o.motoboy_id;
-        });
-        var mine = orders.filter(function(o) {
-          return parseInt(o.motoboy_id) === parseInt(user.id);
-        });
-        var active = mine.filter(function(o) {
-          return o.status !== "entregue" && o.status !== "cancelado";
-        });
-        var done = mine.filter(function(o) {
-          return o.status === "entregue";
-        });
+        var available = orders.filter(function(o) { return o.status === "pendente" && !o.motoboy_id; });
+        var mine      = orders.filter(function(o) { return parseInt(o.motoboy_id) === parseInt(user.id); });
+        var active    = mine.filter(function(o)   { return o.status !== "entregue" && o.status !== "cancelado"; });
+        var done      = mine.filter(function(o)   { return o.status === "entregue"; });
 
-        // Guarda pedidos ativos no cache global para checar no toggle
         activeOrders = active;
 
-        /* ── Disponíveis ── */
+        /* Disponíveis */
         var avDiv = document.getElementById("available-orders");
+        avDiv.innerHTML = "";
         if (available.length === 0) {
           avDiv.innerHTML = "<div class=\"empty\">Nenhum pedido disponivel</div>";
         } else {
-          avDiv.innerHTML = available.map(function(o) {
-            var btn = buildActionBtn(o.id, "pendente", ACTION_MAP.pendente);
-            return "<div class=\"order-card pending\">"
-              + "<div class=\"order-header\"><div class=\"order-id\">Pedido #" + o.id + "</div>"
-              + "<span class=\"badge badge-pendente\">Disponivel</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Loja</span><span class=\"info-value\">" + (o.loja_name || "-") + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Coleta</span><span class=\"info-value\">" + (o.endereco_coleta || "-") + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Entrega</span><span class=\"info-value\">" + o.endereco_entrega + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Cliente</span><span class=\"info-value\">" + o.nome_cliente + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Seu ganho</span><span class=\"info-value\" style=\"color:#ffcc00\">R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2) + "</span></div>"
-              + btn
-              + "</div>";
-          }).join("");
+          available.forEach(function(o) { avDiv.appendChild(makeOrderCard(o, "pending")); });
         }
 
-        /* ── Minhas entregas ── */
+        /* Minhas entregas */
         var myDiv = document.getElementById("my-orders");
-        var html = "";
+        myDiv.innerHTML = "";
 
         if (active.length === 0 && done.length === 0) {
-          html = "<div class=\"empty\">Voce nao tem entregas ativas</div>";
+          myDiv.innerHTML = "<div class=\"empty\">Voce nao tem entregas ativas</div>";
         } else {
-          html += active.map(function(o) {
-            var action = ACTION_MAP[o.status];
-            var timerHtml = "";
-            if (o.status === "aceito") {
-              timerHtml = buildTimerHtml(o.id, o.t_aceito);
-              if (!activeTimers[o.id]) {
-                var elapsed = o.t_aceito ? Math.floor((Date.now() - new Date(o.t_aceito).getTime()) / 1000) : 0;
-                startTimer(o.id, elapsed);
-              }
-            }
-            var btn = action ? buildActionBtn(o.id, o.status, action) : "";
-            return "<div class=\"order-card mine\">"
-              + "<div class=\"order-header\"><div class=\"order-id\">Pedido #" + o.id + "</div>"
-              + "<span class=\"badge badge-" + o.status + "\">" + STATUS_LABELS[o.status] + "</span></div>"
-              + buildProgressHtml(o.status)
-              + timerHtml
-              + "<div class=\"info-row\"><span class=\"info-label\">Loja</span><span class=\"info-value\">" + (o.loja_name || "-") + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Coleta</span><span class=\"info-value\">" + (o.endereco_coleta || "-") + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Cliente</span><span class=\"info-value\">" + o.nome_cliente + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Tel</span><span class=\"info-value\">" + (o.telefone_cliente || "-") + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Entrega</span><span class=\"info-value\">" + o.endereco_entrega + "</span></div>"
-              + "<div class=\"info-row\"><span class=\"info-label\">Ganho</span><span class=\"info-value\" style=\"color:#ffcc00\">R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2) + "</span></div>"
-              + btn
-              + "</div>";
-          }).join("");
+          active.forEach(function(o) { myDiv.appendChild(makeOrderCard(o, "mine")); });
 
-          // Para timers de pedidos que nao sao mais aceito
+          // Para timers de pedidos que nao sao mais "aceito"
           Object.keys(activeTimers).forEach(function(tid) {
             var still = active.find(function(o){ return String(o.id) === String(tid) && o.status === "aceito"; });
             if (!still) stopTimer(tid);
           });
 
           if (done.length > 0) {
-            html += "<div class=\"section-title\" style=\"margin-top:20px;color:#aaa;font-size:14px\">Concluidas hoje</div>";
-            html += done.map(function(o) {
-              return "<div class=\"order-card done-card\">"
-                + "<div class=\"order-header\">"
-                + "<span class=\"order-id\">#" + o.id + " - " + o.nome_cliente + "</span>"
-                + "<span class=\"badge badge-entregue\">Entregue</span></div>"
-                + "<div class=\"info-row\"><span class=\"info-label\">Ganho</span><span class=\"info-value\" style=\"color:#ffcc00\">R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2) + "</span></div>"
-                + "</div>";
-            }).join("");
+            var title = document.createElement("div");
+            title.className = "section-title";
+            title.style.cssText = "margin-top:20px;color:#aaa;font-size:14px";
+            title.textContent = "Concluidas hoje";
+            myDiv.appendChild(title);
+            done.forEach(function(o) { myDiv.appendChild(makeOrderCard(o, "done-card")); });
           }
         }
 
-        myDiv.innerHTML = html;
         document.getElementById("total-entregas").textContent = done.length;
-        var totalGanhos = done.reduce(function(s, o){ return s + parseFloat(o.valor_motoboy || 0); }, 0);
+        var totalGanhos = done.reduce(function(s,o){ return s + parseFloat(o.valor_motoboy||0); }, 0);
         document.getElementById("total-ganhos").textContent = "R$ " + totalGanhos.toFixed(2);
 
-      } catch(e) {
-        console.error("loadOrders error:", e);
-      }
+      } catch(e) { console.error("loadOrders error:", e); }
     }
 
     /* ── ACAO PRINCIPAL ── */
@@ -379,11 +353,7 @@
         var update = { status: action.next };
         var tsMap = { aceito:"t_aceito", na_loja:"t_na_loja", coletado:"t_coletado", no_cliente:"t_no_cliente", entregue:"t_entregue" };
         if (tsMap[action.next]) update[tsMap[action.next]] = new Date().toISOString();
-
-        if (currentStatus === "pendente") {
-          update.motoboy_id   = user.id;
-          update.motoboy_name = user.name;
-        }
+        if (currentStatus === "pendente") { update.motoboy_id = user.id; update.motoboy_name = user.name; }
 
         if (action.calcBalance) {
           var orderResp = await fetch(API + "/orders/" + orderId);
@@ -391,8 +361,7 @@
           var ganho = parseFloat(order.valor_motoboy || 0);
           var novoSaldo = parseFloat(user.balance || 0) + ganho;
           await fetch(API + "/users/" + user.id, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            method:"PUT", headers:{"Content-Type":"application/json"},
             body: JSON.stringify({ balance: novoSaldo })
           });
           user.balance = novoSaldo;
@@ -400,8 +369,7 @@
         }
 
         await fetch(API + "/orders/" + orderId, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          method:"PUT", headers:{"Content-Type":"application/json"},
           body: JSON.stringify(update)
         });
 
@@ -418,7 +386,6 @@
       }
     }
 
-    /* ── INIT ── */
     async function init() {
       document.getElementById("motoboy-name").textContent = user.name || "Motoboy";
       updateStatusUI();
@@ -430,6 +397,5 @@
 
     init();
   </script>
-
 </body>
 </html>
