@@ -357,11 +357,16 @@
         if (tsMap[action.next]) update[tsMap[action.next]] = new Date().toISOString();
         if (currentStatus === "pendente") { update.motoboy_id = user.id; update.motoboy_name = user.name; }
 
-        /* calcBalance: usa cache local — GET /orders/:id nao existe no backend */
+        /* calcBalance: busca saldo atual do backend antes de somar — evita duplicidade */
         if (action.calcBalance) {
           var cached = allOrdersCache.find(function(o) { return String(o.id) === String(orderId); });
           var ganho = parseFloat((cached && cached.valor_motoboy) || 0);
-          var novoSaldo = parseFloat(user.balance || 0) + ganho;
+          /* Busca saldo ATUAL do servidor para nao usar valor defasado do localStorage */
+          var freshResp = await fetch(API + "/users/" + user.id);
+          if (!freshResp.ok) throw new Error("Erro ao buscar saldo atual");
+          var freshUser = await freshResp.json();
+          var saldoAtual = parseFloat(freshUser.balance || 0);
+          var novoSaldo = saldoAtual + ganho;
           var balResp = await fetch(API + "/users/" + user.id, {
             method: "PUT", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ balance: novoSaldo })
