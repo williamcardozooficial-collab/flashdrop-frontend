@@ -48,78 +48,78 @@
   </style>
  </head>
  <body>
-  <div class="header"><h1>FlashDrop Admin</h1></div>div>
+  <div class="header"><h1>FlashDrop Admin</h1></
  
  <div class="tabs" id="tabs">
-   <button class="tab-btn active" onclick="showTab('pedidos',this)">Pedidos</button>button>
-   <button class="tab-btn" onclick="showTab('lojas',this)">Lojas</button>button>
-   <button class="tab-btn" onclick="showTab('motoboys',this)">Motoboys</button>button>
-   <button class="tab-btn" onclick="showTab('financeiro',this)">Financeiro</button>button>
-   <button class="tab-btn" onclick="showTab('config',this)">&#9881; Ajustes de Corrida</button>button>
- </div>div>
+   <button class="tab-btn active" onclick="showTab('pedidos',this)">Pedidos</
+   <button class="tab-btn" onclick="showTab('lojas',this)">Lojas</
+   <button class="tab-btn" onclick="showTab('motoboys',this)">Motoboys</
+   <button class="tab-btn" onclick="showTab('financeiro',this)">Financeiro</
+   <button class="tab-btn" onclick="showTab('config',this)">&#9881; Ajustes de Corrida</
+ </
  
  <div class="content">
-   <div id="pedidos" class="section active"></div>div>
-   <div id="lojas" class="section"></div>div>
-   <div id="motoboys" class="section"></div>div>
+   <div id="pedidos" class="section active"></
+   <div id="lojas" class="section"></
+   <div id="motoboys" class="section"></
  
    <div id="financeiro" class="section">
        <div class="card">
              <div style="display:flex;gap:10px">
                      <input id="search-finance" class="input" placeholder="Buscar nome ou usuario..." oninput="filterFinance()">
-             </div>div>
-       </div>div>
-       <div id="finance-list"></div>div>
-   </div>div>
+             </
+       </
+       <div id="finance-list"></
+   </
  
    <div id="config" class="section">
        <div class="card">
              <h3 style="margin-bottom:15px;color:#ffcc00;">&#9881; Ajustes de Corrida</h3>
-             <div class="input-group"><label>Taxa Minima (R$)</label><input id="cfg-min" class="input" type="number" step="0.50"></div>div>
-             <div class="input-group"><label>Preco por KM (R$)</label><input id="cfg-km" class="input" type="number" step="0.10"></div>div>
-             <div class="input-group"><label>Taxa de Arrancada (R$)</label><input id="cfg-arr" class="input" type="number" step="0.50"></div>div>
-             <div class="input-group"><label>Comissao da Plataforma (R$)</label><input id="cfg-com" class="input" type="number" step="0.50"></div>div>
-             <div class="input-group"><label>Max pedidos por motoboy</label><input id="cfg-max" class="input" type="number"></div>div>
-             <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>button>
-       </div>div>
-   </div>div>
- </div>div>
+             <div class="input-group"><label>Taxa Minima (R$)</label><input id="cfg-min" class="input" type="number" step="0.50"></
+             <div class="input-group"><label>Preco por KM (R$)</label><input id="cfg-km" class="input" type="number" step="0.10"></
+             <div class="input-group"><label>Taxa de Arrancada (R$)</label><input id="cfg-arr" class="input" type="number" step="0.50"></
+             <div class="input-group"><label>Comissao da Plataforma (R$)</label><input id="cfg-com" class="input" type="number" step="0.50"></
+             <div class="input-group"><label>Max pedidos por motoboy</label><input id="cfg-max" class="input" type="number"></
+             <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</
+       </
+   </
+ </
  
- <button class="fab" onclick="openNewUser()">+</button>button>
+ <button class="fab" onclick="openNewUser()">+</
  
  <!-- Modals -->
  <div id="modal-user" class="modal">
    <div class="modal-content">
        <h3 id="user-modal-title">Usuario</h3>
-       <div id="user-fields"></div>div>
+       <div id="user-fields"></
        <div style="display:flex;gap:10px;margin-top:20px">
-             <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>button>
-             <button class="btn btn-primary" onclick="saveUser()">Salvar</button>button>
-       </div>div>
-   </div>div>
- </div>div>
+             <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</
+             <button class="btn btn-primary" onclick="saveUser()">Salvar</
+       </
+   </
+ </
  
  <div id="modal-order" class="modal">
    <div class="modal-content">
        <h3>Editar Pedido</h3>
-       <div id="order-fields"></div>div>
+       <div id="order-fields"></
        <div style="display:flex;gap:10px;margin-top:20px">
-             <button class="btn btn-outline" onclick="closeModal('modal-order')">Cancelar</button>button>
-             <button class="btn btn-primary" onclick="saveOrder()">Salvar</button>button>
-       </div>div>
-   </div>div>
- </div>div>
+             <button class="btn btn-outline" onclick="closeModal('modal-order')">Cancelar</
+             <button class="btn btn-primary" onclick="saveOrder()">Salvar</
+       </
+   </
+ </
  
  <div id="modal-finance" class="modal">
    <div class="modal-content">
        <h3 id="finance-modal-title">Ajustar Saldo</h3>
-       <div id="finance-fields"></div>div>
+       <div id="finance-fields"></
        <div style="display:flex;gap:10px;margin-top:20px">
-             <button class="btn btn-outline" onclick="closeModal('modal-finance')">Cancelar</button>button>
-             <button class="btn btn-primary" onclick="updateBalance()">Confirmar</button>button>
-       </div>div>
-   </div>div>
- </div>div>
+             <button class="btn btn-outline" onclick="closeModal('modal-finance')">Cancelar</
+             <button class="btn btn-primary" onclick="updateBalance()">Confirmar</
+       </
+   </
+ </
  
  <script>
   const API = 'https://flashdrop-backend-production.up.railway.app';
@@ -174,9 +174,9 @@
      var filterBar = '<div class="filter-bar">' + filters.map(function(f){
           var lbl = f === 'todos' ? 'Todos' : (STATUS_LABELS[f] || f);
           var active = currentOrderFilter === f ? ' active' : '';
-          return '<button class="filter-btn' + active + '" onclick="filterOrders(\'' + f + '\')">' + lbl + '</button>';
-     }).join('') + '</div>';
-     document.getElementById('pedidos').innerHTML = filterBar + '<div id="orders-list"></div>';
+          return '<button class="filter-btn' + active + '" onclick="filterOrders(\'' + f + '\')">' + lbl + '</';
+     }).join('') + '</';
+     document.getElementById('pedidos').innerHTML = filterBar + '<div id="orders-list"></';
      var filtered = currentOrderFilter === 'todos' ? orders : orders.filter(function(o){ return o.status === currentOrderFilter; });
      renderOrderCards(filtered);
   }
@@ -188,18 +188,18 @@
      list.innerHTML = orders.map(function(o) {
           var status = o.status || 'pendente';
           var label = STATUS_LABELS[status] || status;
-          var mb = o.motoboy_name ? '<div class="row"><span class="val">Motoboy:</span><span>' + o.motoboy_name + '</span></div>' : '';
+          var mb = o.motoboy_name ? '<div class="row"><span class="val">Motoboy:</span><span>' + o.motoboy_name + '</span></' : '';
           return '<div class="card">' +
                  '<div class="card-header"><strong>#' + o.id + ' - ' + (o.loja_name || o.loja_user) + '</strong>' +
-                 '<span class="badge badge-' + status + '">' + label + '</span></div>' +
-                 '<div class="row"><span class="val">Cliente:</span><span>' + o.nome_cliente + '</span></div>' +
-                 '<div class="row"><span class="val">Entrega:</span><span>' + o.endereco_entrega + '</span></div>' +
-                 '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' +
+                 '<span class="badge badge-' + status + '">' + label + '</span></' +
+                 '<div class="row"><span class="val">Cliente:</span><span>' + o.nome_cliente + '</span></' +
+                 '<div class="row"><span class="val">Entrega:</span><span>' + o.endereco_entrega + '</span></' +
+                 '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></' +
                  mb +
                  '<div style="display:flex;gap:8px">' +
-                 '<button class="btn btn-outline btn-sm" onclick="openEditOrder(' + o.id + ')">Editar</button>' +
-                 (status !== 'entregue' && status !== 'cancelado' ? '<button class="btn btn-danger btn-sm" onclick="cancelOrder(' + o.id + ')">Cancelar</button>' : '') +
-                 '</div></div>';
+                 '<button class="btn btn-outline btn-sm" onclick="openEditOrder(' + o.id + ')">Editar</' +
+                 (status !== 'entregue' && status !== 'cancelado' ? '<button class="btn btn-danger btn-sm" onclick="cancelOrder(' + o.id + ')">Cancelar</' : '') +
+                 '</</';
      }).join('');
   }
 
@@ -208,15 +208,15 @@
           var saldo = u.role === 'loja' ? u.credit : u.balance;
           return '<div class="card">' +
                  '<div class="card-header"><strong>' + u.name + '</strong>' +
-                 '<span><span class="online-dot ' + (u.online ? 'on' : 'off') + '"></span>' + (u.online ? 'Online' : 'Offline') + '</span></div>' +
-                 '<div class="row"><span class="val">Usuario:</span><span>@' + u.username + '</span></div>' +
-                 '<div class="row"><span class="val">Telefone:</span><span>' + (u.phone || '-') + '</span></div>' +
-                 '<div class="row"><span class="val">Saldo:</span><strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
-                 (u.blocked ? '<div style="color:#f44336;font-size:12px;margin-bottom:5px">BLOQUEADO</div>' : '') +
+                 '<span><span class="online-dot ' + (u.online ? 'on' : 'off') + '"></span>' + (u.online ? 'Online' : 'Offline') + '</span></' +
+                 '<div class="row"><span class="val">Usuario:</span><span>@' + u.username + '</span></' +
+                 '<div class="row"><span class="val">Telefone:</span><span>' + (u.phone || '-') + '</span></' +
+                 '<div class="row"><span class="val">Saldo:</span><strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></' +
+                 (u.blocked ? '<div style="color:#f44336;font-size:12px;margin-bottom:5px">BLOQUEADO</' : '') +
                  '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-                 '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">Editar</button>' +
-                 '<button class="btn btn-sm" style="background:' + (u.blocked ? '#4caf50' : '#f44336') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + u.blocked + ')">' + (u.blocked ? 'Desbloquear' : 'Bloquear') + '</button>' +
-                 '</div></div>';
+                 '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">Editar</' +
+                 '<button class="btn btn-sm" style="background:' + (u.blocked ? '#4caf50' : '#f44336') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + u.blocked + ')">' + (u.blocked ? 'Desbloquear' : 'Bloquear') + '</' +
+                 '</</';
      }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
   }
 
@@ -227,12 +227,12 @@
           var saldo = u.role === 'loja' ? u.credit : u.balance;
           var field = u.role === 'loja' ? 'credit' : 'balance';
           return '<div class="card">' +
-                 '<div class="card-header"><strong>' + u.name + ' (@' + u.username + ')</strong><span>' + (u.role === 'loja' ? 'Credito' : 'Saldo') + ': <strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></span></div>' +
+                 '<div class="card-header"><strong>' + u.name + ' (@' + u.username + ')</strong><span>' + (u.role === 'loja' ? 'Credito' : 'Saldo') + ': <strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></span></' +
                  '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-                 '<button class="btn btn-primary btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'add\')">Aumentar</button>' +
-                 '<button class="btn btn-danger btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'sub\')">Diminuir</button>' +
-                 '<button class="btn btn-sm" style="background:#333;color:#fff" onclick="zeroBalance(' + u.id + ',\'' + field + '\')">Zerar</button>' +
-                 '</div></div>';
+                 '<button class="btn btn-primary btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'add\')">Aumentar</' +
+                 '<button class="btn btn-danger btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'sub\')">Diminuir</' +
+                 '<button class="btn btn-sm" style="background:#333;color:#fff" onclick="zeroBalance(' + u.id + ',\'' + field + '\')">Zerar</' +
+                 '</</';
      }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
   }
 
@@ -244,7 +244,7 @@
      document.getElementById('finance-fields').innerHTML = '<div class="input-group"><label>Valor (R$)</label>' +
           '<input id="f-val" class="input" type="number" step="0.01" min="0">' +
           '<input type="hidden" id="f-type" value="' + type + '">' +
-          '<input type="hidden" id="f-action" value="' + action + '"></div>';
+          '<input type="hidden" id="f-action" value="' + action + '"></';
      openModal('modal-finance');
   }
 
@@ -278,12 +278,12 @@
      currentUserId = null;
      document.getElementById('user-modal-title').textContent = 'Novo Usuario';
      document.getElementById('user-fields').innerHTML =
-          '<div class="input-group"><label>Nome</label><input id="u-name" class="input"></div>' +
-          '<div class="input-group"><label>Usuario</label><input id="u-user" class="input"></div>' +
-          '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password"></div>' +
-          '<div class="input-group"><label>Tipo</label><select id="u-role" class="input"><option value="loja">Loja</option><option value="motoboy">Motoboy</option></select></div>' +
-          '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input"></div>' +
-          '<div class="input-group"><label>Endereco/Veiculo</label><input id="u-extra" class="input"></div>';
+          '<div class="input-group"><label>Nome</label><input id="u-name" class="input"></' +
+          '<div class="input-group"><label>Usuario</label><input id="u-user" class="input"></' +
+          '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password"></' +
+          '<div class="input-group"><label>Tipo</label><select id="u-role" class="input"><option value="loja">Loja</option><option value="motoboy">Motoboy</option></select></' +
+          '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input"></' +
+          '<div class="input-group"><label>Endereco/Veiculo</label><input id="u-extra" class="input"></';
      openModal('modal-user');
   }
 
@@ -293,10 +293,10 @@
      if (!u) return;
      document.getElementById('user-modal-title').textContent = 'Editar - ' + u.name;
      document.getElementById('user-fields').innerHTML =
-          '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></div>' +
-          '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
-          '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></div>' +
-          '<div class="input-group"><label>' + (u.role === 'loja' ? 'Endereco' : 'Veiculo') + '</label><input id="u-extra" class="input" value="' + (u.address || u.vehicle || '') + '"></div>';
+          '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></' +
+          '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></' +
+          '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></' +
+          '<div class="input-group"><label>' + (u.role === 'loja' ? 'Endereco' : 'Veiculo') + '</label><input id="u-extra" class="input" value="' + (u.address || u.vehicle || '') + '"></';
      openModal('modal-user');
   }
 
@@ -333,12 +333,12 @@
           '<select id="o-status" class="input">' +
           ['pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'].map(function(s){
                  return '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + (STATUS_LABELS[s] || s) + '</option>';
-          }).join('') + '</select></div>' +
-          '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (o.nome_cliente || '') + '"></div>' +
-          '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (o.endereco_entrega || '') + '"></div>' +
-          '<div class="input-group"><label>Valor Total (R$)</label><input id="o-valor" class="input" type="number" step="0.01" value="' + (o.valor_total || 0) + '"></div>' +
-          '<div class="input-group"><label>Ganho Motoboy (R$)</label><input id="o-motoboy" class="input" type="number" step="0.01" value="' + (o.valor_motoboy || 0) + '"></div>' +
-          '<div class="input-group"><label>Obs</label><input id="o-obs" class="input" value="' + (o.obs || '') + '"></div>';
+          }).join('') + '</select></' +
+          '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (o.nome_cliente || '') + '"></' +
+          '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (o.endereco_entrega || '') + '"></' +
+          '<div class="input-group"><label>Valor Total (R$)</label><input id="o-valor" class="input" type="number" step="0.01" value="' + (o.valor_total || 0) + '"></' +
+          '<div class="input-group"><label>Ganho Motoboy (R$)</label><input id="o-motoboy" class="input" type="number" step="0.01" value="' + (o.valor_motoboy || 0) + '"></' +
+          '<div class="input-group"><label>Obs</label><input id="o-obs" class="input" value="' + (o.obs || '') + '"></';
      openModal('modal-order');
   }
 
