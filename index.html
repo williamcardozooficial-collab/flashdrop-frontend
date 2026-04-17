@@ -444,8 +444,7 @@
         body: JSON.stringify(update)
       });
       closeModal('modal-order');
-      function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
-  loadData('pedidos');
+      loadData('pedidos');
       tg.showAlert('Pedido atualizado!');
     }
 
@@ -477,6 +476,7 @@
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+    function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
     loadData('pedidos');
   </script>
 
