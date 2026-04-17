@@ -325,12 +325,47 @@
       /* Infos */
       var lojaDisplay = o.loja_name || (allUsersCache.find(function(u){ return u.username === o.loja_user; }) || {}).name || o.loja_user;
       card.appendChild(makeInfoRow("Loja", lojaDisplay));
-      if (o.endereco_coleta) card.appendChild(makeInfoRow("Coleta",  o.endereco_coleta));
-      card.appendChild(makeInfoRow("Cliente", o.nome_cliente));
-      if (cardType === "mine" && o.telefone_cliente)
-        card.appendChild(makeInfoRow("Tel", o.telefone_cliente));
-      card.appendChild(makeInfoRow("Entrega", o.endereco_entrega));
-      card.appendChild(makeInfoRow("Ganho", "R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2), true));
+      if (o.endereco_coleta) card.appendChild(makeInfoRow("📦 Coleta", o.endereco_coleta));
+
+      /* Dados do cliente: só mostrar quando motoboy estiver a caminho (coletado ou no_cliente) */
+      var clienteVisivel = (o.status === "coletado" || o.status === "no_cliente");
+      if (clienteVisivel) {
+        if (o.nome_cliente) card.appendChild(makeInfoRow("👤 Cliente", o.nome_cliente));
+        if (o.telefone_cliente) {
+          var telRow = makeInfoRow("📱 Tel Cliente", o.telefone_cliente);
+          card.appendChild(telRow);
+        }
+        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+      } else if (o.status === "entregue") {
+        /* Após entrega: sumir dados do cliente */
+        var privDiv = document.createElement("div");
+        privDiv.style = "font-size:11px;color:#666;font-style:italic;margin:4px 0;";
+        privDiv.textContent = "🔒 Dados do cliente ocultados por privacidade.";
+        card.appendChild(privDiv);
+        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+      } else {
+        /* Antes de coletar: mostrar apenas endereço de entrega (sem cliente) */
+        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+        var privDiv2 = document.createElement("div");
+        privDiv2.style = "font-size:11px;color:#ff9500;font-style:italic;margin:4px 0;";
+        privDiv2.textContent = "🔒 Dados do cliente liberados ao coletar o pedido.";
+        card.appendChild(privDiv2);
+      }
+
+      /* Telefone da loja — sempre visível para o motoboy */
+      if (cardType === "mine" && o.telefone_loja) {
+        card.appendChild(makeInfoRow("📞 Tel Loja", o.telefone_loja));
+      }
+
+      card.appendChild(makeInfoRow("💰 Ganho", "R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2), true));
+
+      /* Observação da entrega (após entregue) */
+      if (o.observacao_entrega) {
+        var obsDiv = document.createElement("div");
+        obsDiv.style = "background:#1a2a1a;border:1px solid #27ae60;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#2ecc71;";
+        obsDiv.innerHTML = "<strong>📝 Obs. Entrega:</strong> " + o.observacao_entrega;
+        card.appendChild(obsDiv);
+      }
 
       /* Timeline de eventos */
     var tl = buildTimeline(o);
@@ -429,11 +464,27 @@
         return;
       }
 
+      /* Observação obrigatória ao finalizar entrega */
+      if (action.next === "entregue") {
+        var obs = prompt("📝 OBSERVAÇÃO DA ENTREGA (obrigatório)\n\nDescreva como foi a entrega:\nEx: Entregue no portão, cliente assinou, sem problemas, etc.");
+        if (obs === null) return; // cancelou
+        if (!obs.trim()) {
+          tg.showAlert("⚠️ A observação é obrigatória para finalizar a entrega.");
+          return;
+        }
+        // Salva obs para incluir no update
+        window._pendingObs = obs.trim();
+      }
+
       try {
         var update = { status: action.next };
         var tsMap = { aceito:"t_aceito", na_loja:"t_na_loja", coletado:"t_coletado", no_cliente:"t_no_cliente", entregue:"t_entregue" };
         if (tsMap[action.next]) update[tsMap[action.next]] = new Date().toISOString();
         if (currentStatus === "pendente") { update.motoboy_id = user.id; update.motoboy_name = user.name; }
+        if (action.next === "entregue" && window._pendingObs) {
+          update.observacao_entrega = window._pendingObs;
+          window._pendingObs = null;
+        }
 
         /* Saldo creditado automaticamente pelo backend ao marcar como entregue */
 
