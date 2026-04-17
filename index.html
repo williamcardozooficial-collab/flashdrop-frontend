@@ -229,6 +229,8 @@
         document.getElementById('cfg-max').value = data.max_per_motoboy;
         var savedDays = localStorage.getItem('flashdrop_cleanup_days');
         if (savedDays) document.getElementById('cfg-days').value = savedDays;
+      } else if (tab === 'cadastros') {
+        loadPending();
       }
     }
 
