@@ -272,6 +272,7 @@
             '<button class="btn btn-sm" style="background:' + (u.blocked ? '#4caf50' : '#f44336') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + u.blocked + ')">' +
               (u.blocked ? 'Desbloquear' : 'Bloquear') +
             '</button>' +
+            '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteUser(' + u.id + ',\'' + u.name + \')">Excluir</button>' +
           '</div>' +
         '</div>';
       }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
@@ -372,6 +373,7 @@
       if (!u) return;
       document.getElementById('user-modal-title').textContent = 'Editar - ' + u.name;
       document.getElementById('user-fields').innerHTML =
+        '<div class="input-group"><label>Login</label><input class="input" value="' + (u.username || '') + '" disabled style="opacity:0.5"></div>' +
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></div>' +
         '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></div>' +
@@ -476,7 +478,17 @@
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
+    async function deleteUser(id, name) {
+    if (!confirm('Excluir usuario "' + name + '"? Esta acao nao pode ser desfeita.')) return;
+    await fetch(API + '/users/' + id, { method: 'DELETE' });
+    var activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab) {
+      var txt = activeTab.textContent.trim();
+      loadData(txt.includes('Lojas') ? 'lojas' : 'motoboys');
+    }
+    tg.showAlert('Usuario excluido!');
+  }
+  function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
     loadData('pedidos');
   </script>
 
