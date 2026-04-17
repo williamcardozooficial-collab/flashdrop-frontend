@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FlashDrop – Cadastro</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh;padding:20px}
+.container{max-width:500px;margin:0 auto}
+.logo{text-align:center;margin-bottom:24px}
+.logo h1{font-size:28px;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+.logo p{color:#999;font-size:13px;margin-top:4px}
+.card{background:#1a1a2e;border-radius:16px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.section-title{font-size:12px;font-weight:700;color:#667eea;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:13px;color:#aaa;margin-bottom:6px;font-weight:500}
+.input-group input,.input-group select{width:100%;background:#0f0f1a;border:1.5px solid #2a2a4a;border-radius:10px;padding:12px 14px;color:#e0e0e0;font-size:14px;outline:none;transition:border-color .2s}
+.input-group input:focus,.input-group select:focus{border-color:#667eea}
+.input-group select option{background:#1a1a2e}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;transition:opacity .2s}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.error{background:#2d0a0a;border:1px solid #c0392b;border-radius:10px;padding:12px;color:#e74c3c;font-size:13px;margin-bottom:12px;display:none}
+.success{background:#0a2d1a;border:1px solid #27ae60;border-radius:10px;padding:12px;color:#2ecc71;font-size:13px;margin-bottom:12px;display:none}
+.login-link{text-align:center;margin-top:16px;font-size:13px;color:#999}
+.login-link a{color:#667eea;font-weight:600;text-decoration:none}
+.hint{font-size:11px;color:#666;margin-top:4px}
+.required{color:#e74c3c}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <h1>⚡ FlashDrop</h1>
+    <p>Cadastro de Motoboy</p>
+  </div>
+  <div class="card">
+    <div id="errorDiv" class="error"></div>
+    <div id="successDiv" class="success"></div>
+
+    <div class="section-title">📋 Dados de Acesso</div>
+    <div class="input-group">
+      <label>👤 Usuário <span class="required">*</span></label>
+      <input type="text" id="username" placeholder="Nome de usuário (sem espaços)" required/>
+    </div>
+    <div class="input-group">
+      <label>🔐 Senha <span class="required">*</span></label>
+      <input type="password" id="password" placeholder="Crie uma senha" required/>
+    </div>
+    <div class="input-group">
+      <label>🔐 Confirmar Senha <span class="required">*</span></label>
+      <input type="password" id="password2" placeholder="Repita a senha" required/>
+    </div>
+
+    <div class="section-title">👤 Dados Pessoais</div>
+    <div class="input-group">
+      <label>📛 Nome Completo <span class="required">*</span></label>
+      <input type="text" id="name" placeholder="Seu nome completo" required/>
+    </div>
+    <div class="input-group">
+      <label>📄 CPF <span class="required">*</span></label>
+      <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required/>
+      <div class="hint">Formato: 000.000.000-00</div>
+    </div>
+    <div class="input-group">
+      <label>📱 Telefone (WhatsApp) <span class="required">*</span></label>
+      <input type="text" id="phone" placeholder="(00) 0 0000-0000" maxlength="16" required/>
+      <div class="hint">Formato: (00) 0 0000-0000</div>
+    </div>
+    <div class="input-group">
+      <label>📍 Endereço</label>
+      <input type="text" id="address" placeholder="Rua, número, bairro, cidade"/>
+    </div>
+
+    <div class="section-title">🏍️ Dados da Moto</div>
+    <div class="input-group">
+      <label>🏍️ Veículo / Placa <span class="required">*</span></label>
+      <input type="text" id="vehicle" placeholder="Ex: Honda CG 160 – ABC-1234" required/>
+    </div>
+
+    <button class="btn btn-primary" id="registerBtn" onclick="doRegister()">📝 Solicitar Cadastro</button>
+    <p class="login-link">Já tem conta? <a href="login.html">Entrar</a></p>
+  </div>
+</div>
+<script>
+const API='https://flashdrop-backend-production.up.railway.app';
+let tg=window.Telegram?.WebApp;
+if(tg) tg.expand();
+
+/* Máscara CPF */
+document.getElementById('cpf').addEventListener('input',function(){
+  let v=this.value.replace(/\D/g,'');
+  if(v.length>11)v=v.slice(0,11);
+  v=v.replace(/(\d{3})(\d)/,'$1.$2');
+  v=v.replace(/(\d{3})(\d)/,'$1.$2');
+  v=v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  this.value=v;
+});
+
+/* Máscara telefone */
+document.getElementById('phone').addEventListener('input',function(){
+  let v=this.value.replace(/\D/g,'');
+  if(v.length>11)v=v.slice(0,11);
+  if(v.length<=10){
+    v=v.replace(/(\d{2})(\d)/,'($1) $2');
+    v=v.replace(/(\d{4})(\d)/,'$1-$2');
+  } else {
+    v=v.replace(/(\d{2})(\d)/,'($1) $2');
+    v=v.replace(/(\d{1})(\d{4})(\d)/,'$1 $2-$3');
+  }
+  this.value=v;
+});
+
+function showError(msg){
+  const d=document.getElementById('errorDiv');
+  d.textContent=msg; d.style.display='block';
+  document.getElementById('successDiv').style.display='none';
+}
+function showSuccess(msg){
+  const d=document.getElementById('successDiv');
+  d.textContent=msg; d.style.display='block';
+  document.getElementById('errorDiv').style.display='none';
+}
+
+async function doRegister(){
+  const btn=document.getElementById('registerBtn');
+  const username=document.getElementById('username').value.trim();
+  const password=document.getElementById('password').value;
+  const password2=document.getElementById('password2').value;
+  const name=document.getElementById('name').value.trim();
+  const cpf=document.getElementById('cpf').value.trim();
+  const phone=document.getElementById('phone').value.trim();
+  const address=document.getElementById('address').value.trim();
+  const vehicle=document.getElementById('vehicle').value.trim();
+
+  if(!username||!password||!name||!cpf||!phone||!vehicle){
+    showError('❌ Preencha todos os campos obrigatórios.'); return;
+  }
+  if(!/^\S+$/.test(username)){
+    showError('❌ Usuário não pode ter espaços.'); return;
+  }
+  if(password!==password2){
+    showError('❌ As senhas não coincidem.'); return;
+  }
+  if(password.length<6){
+    showError('❌ A senha deve ter pelo menos 6 caracteres.'); return;
+  }
+  if(!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)){
+    showError('❌ CPF inválido. Use o formato 000.000.000-00'); return;
+  }
+  if(!/^\(\d{2}\) \d \d{4}-\d{4}$/.test(phone)){
+    showError('❌ Telefone inválido. Use o formato (00) 0 0000-0000'); return;
+  }
+
+  btn.disabled=true; btn.textContent='Enviando...';
+  try {
+    const resp=await fetch(API+'/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,password,role:'motoboy',name,cpf,phone,address,vehicle})
+    });
+    const data=await resp.json();
+    if(!resp.ok){ showError('❌ '+( data.error||'Erro ao cadastrar.')); btn.disabled=false; btn.textContent='📝 Solicitar Cadastro'; return; }
+    showSuccess('✅ Cadastro enviado! Aguarde a aprovação do administrador.');
+    btn.textContent='Cadastro enviado!';
+  } catch(e){
+    showError('❌ Erro de conexão: '+e.message);
+    btn.disabled=false; btn.textContent='📝 Solicitar Cadastro';
+  }
+}
+</script>
+</body>
+</html>
