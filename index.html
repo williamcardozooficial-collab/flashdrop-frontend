@@ -45,7 +45,15 @@
     .online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
     .online-dot.on { background: #4caf50; }
     .online-dot.off { background: #666; }
-  </style>
+      .pending-card { background: #1a1a1a; border: 1.5px solid #ff9500; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .pending-card .field { font-size: 12px; color: #aaa; margin: 3px 0; }
+    .pending-card .field strong { color: #e0e0e0; }
+    .pending-card .field.private { color: #ff9500; }
+    .pending-btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; margin-right: 8px; margin-top: 10px; }
+    .pending-btn.approve { background: #27ae60; color: #fff; }
+    .pending-btn.reject { background: #c0392b; color: #fff; }
+    .badge { background: #e74c3c; color: #fff; border-radius: 50%; font-size: 11px; padding: 1px 6px; margin-left: 5px; vertical-align: top; display: none; }
+</style>
 </head>
 <body>
 
@@ -60,6 +68,7 @@
     <button class="tab-btn" onclick="showTab('motoboys', this)">Motoboys</button>
     <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
+    <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
   </div>
 
   <div class="content">
@@ -154,6 +163,14 @@
       <div style="display:flex;gap:10px;margin-top:20px">
         <button class="btn btn-outline" onclick="closeModal('modal-finance')">Cancelar</button>
         <button class="btn btn-primary" onclick="updateBalance()">Confirmar</button>
+      </div>
+    </div>
+
+    <div id="cadastros" class="section">
+      <div class="card">
+        <h3 style="margin-bottom:12px;color:#ffcc00;">📋 Cadastros Pendentes de Aprovação</h3>
+        <p id="pending-empty" style="color:#888;font-size:13px;">Nenhum cadastro pendente.</p>
+        <div id="pending-list"></div>
       </div>
     </div>
   </div>
@@ -306,15 +323,20 @@
             '<span><span class="online-dot ' + (u.online ? 'on' : 'off') + '"></span>' + (u.online ? 'Online' : 'Offline') + '</span>' +
           '</div>' +
           '<div class="row"><span class="val">Usuario:</span><span>@' + u.username + '</span></div>' +
-          '<div class="row"><span class="val">Telefone:</span><span>' + (u.phone || '-') + '</span></div>' +
-          '<div class="row"><span class="val">Saldo:</span><strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
-          (u.blocked ? '<div style="color:#f44336;font-size:12px;margin-bottom:5px">BLOQUEADO</div>' : '') +
+          '<div class="row"><span class="val">📱 Telefone:</span><span>' + (u.phone || '-') + '</span></div>' +
+          (u.role === 'motoboy' ? '<div class="row"><span class="val">🏍️ Veículo:</span><span>' + (u.vehicle || '-') + '</span></div>' : '') +
+          (u.role === 'motoboy' ? '<div class="row" style="color:#ff9500"><span class="val">📄 CPF:</span><span>' + (u.cpf || '—') + '</span></div>' : '') +
+          (u.role === 'motoboy' ? '<div class="row" style="color:#ff9500"><span class="val">📍 Endereço:</span><span>' + (u.address || '—') + '</span></div>' : '') +
+          '<div class="row"><span class="val">💰 Saldo:</span><strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
+          (u.blocked ? '<div style="color:#f44336;font-size:12px;margin-bottom:5px">⛔ BLOQUEADO</div>' : '') +
+          (u.blocked_until && Number(u.blocked_until) > Date.now() ? '<div style="color:#ff9500;font-size:12px;margin-bottom:5px">⏳ Penalidade: bloqueado até ' + new Date(Number(u.blocked_until)).toLocaleTimeString('pt-BR') + '</div>' : '') +
           '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
             '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">Editar</button>' +
             '<button class="btn btn-sm" style="background:' + (u.blocked ? '#4caf50' : '#f44336') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + u.blocked + ')">' +
               (u.blocked ? 'Desbloquear' : 'Bloquear') +
             '</button>' +
             '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteUser(' + u.id + ',\'' + u.name + '\')">Excluir</button>' +
+            (u.role === 'motoboy' && u.blocked_until && Number(u.blocked_until) > Date.now() ? '<button class="btn btn-sm" style="background:#ff9500;color:#000" onclick="removePenalty(' + u.id + ')">🔓 Remover Penalidade</button>' : '') +
           '</div>' +
         '</div>';
       }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
@@ -394,6 +416,15 @@
       });
       var tab = document.querySelector('.tab-btn.active');
       if (tab) loadData(tab.textContent.trim().includes('Lojas') ? 'lojas' : 'motoboys');
+    }
+
+    async function removePenalty(id) {
+      if (!confirm('Remover penalidade de bloqueio deste motoboy?')) return;
+      try {
+        await fetch(API + '/users/' + id + '/unblock-penalty', { method: 'POST' });
+        var tab = document.querySelector('.tab-btn.active');
+        if (tab) loadData(tab.getAttribute('onclick').match(/'([^']+)'/)[1]);
+      } catch(e) { alert('Erro: ' + e.message); }
     }
 
     function openNewUser() {
@@ -563,6 +594,76 @@
       document.getElementById('cleanup-msg').textContent = '\u2705 ' + toDelete.length + ' pedido(s) excluido(s)!';
       loadData('pedidos');
     }
+
+
+    /* ── CADASTROS PENDENTES ── */
+    async function loadPending() {
+      try {
+        var r = await fetch(API + '/users/pending');
+        var list = await r.json();
+        var container = document.getElementById('pending-list');
+        var emptyMsg = document.getElementById('pending-empty');
+        var badge = document.getElementById('pending-badge');
+        container.innerHTML = '';
+        if (!list || list.length === 0) {
+          emptyMsg.style.display = 'block';
+          badge.style.display = 'none';
+          return;
+        }
+        emptyMsg.style.display = 'none';
+        badge.textContent = list.length;
+        badge.style.display = 'inline';
+        list.forEach(function(u) {
+          var card = document.createElement('div');
+          card.className = 'pending-card';
+          card.innerHTML =
+            '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">👤 ' + u.name + '</div>' +
+            '<div class="field"><strong>Usuário:</strong> ' + u.username + '</div>' +
+            '<div class="field"><strong>Função:</strong> ' + u.role + '</div>' +
+            '<div class="field"><strong>📱 Telefone:</strong> ' + (u.phone || '—') + '</div>' +
+            '<div class="field"><strong>🏍️ Veículo:</strong> ' + (u.vehicle || '—') + '</div>' +
+            '<div class="field private"><strong>📄 CPF (confidencial):</strong> ' + (u.cpf || '—') + '</div>' +
+            '<div class="field private"><strong>📍 Endereço (confidencial):</strong> ' + (u.address || '—') + '</div>' +
+            '<div class="field" style="color:#888;font-size:11px;">Cadastrado em: ' + new Date(u.created_at).toLocaleString('pt-BR') + '</div>' +
+            '<button class="pending-btn approve" onclick="approvePending(' + u.id + ', this)">✅ Aprovar</button>' +
+            '<button class="pending-btn reject" onclick="rejectPending(' + u.id + ', this)">❌ Recusar</button>';
+          container.appendChild(card);
+        });
+      } catch(e) {
+        console.error('Erro ao carregar pendentes:', e);
+      }
+    }
+
+    async function approvePending(id, btn) {
+      btn.disabled = true; btn.textContent = 'Aprovando...';
+      try {
+        var r = await fetch(API + '/users/' + id + '/approve', { method: 'POST' });
+        if (!r.ok) throw new Error('Erro');
+        await loadPending();
+        alert('✅ Cadastro aprovado com sucesso!');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = '✅ Aprovar';
+        alert('Erro ao aprovar: ' + e.message);
+      }
+    }
+
+    async function rejectPending(id, btn) {
+      if (!confirm('Tem certeza que deseja recusar e excluir este cadastro?')) return;
+      btn.disabled = true; btn.textContent = 'Recusando...';
+      try {
+        var r = await fetch(API + '/users/' + id, { method: 'DELETE' });
+        if (!r.ok) throw new Error('Erro');
+        await loadPending();
+        alert('❌ Cadastro recusado e excluído.');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = '❌ Recusar';
+        alert('Erro ao recusar: ' + e.message);
+      }
+    }
+
+    /* Recarregar pendentes a cada 30s */
+    setInterval(loadPending, 30000);
+    loadPending();
 
     loadData('pedidos');
   </script>
