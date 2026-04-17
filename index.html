@@ -104,6 +104,18 @@
         </div>
         <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
       </div>
+      <div class="card" style="margin-top:15px">
+        <h3 style="margin-bottom:15px;color:#ffcc00;">🗑️ Limpeza do Histórico</h3>
+        <div class="input-group">
+          <label>Excluir pedidos entregues/cancelados com mais de (dias)</label>
+          <input id="cfg-days" class="input" type="number" min="1" max="365" value="30" placeholder="Ex: 30">
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="saveCleanupDays()" style="width:auto;padding:10px 20px">Salvar Prazo</button>
+          <button class="btn btn-danger" onclick="cleanupOrders()" style="width:auto;padding:10px 20px">Limpar Agora</button>
+        </div>
+        <p id="cleanup-msg" style="margin-top:10px;font-size:13px;color:#aaa"></p>
+      </div>
     </div>
 
   </div>
@@ -198,6 +210,8 @@
         document.getElementById('cfg-arr').value = data.arrancada;
         document.getElementById('cfg-com').value = data.commission;
         document.getElementById('cfg-max').value = data.max_per_motoboy;
+        var savedDays = localStorage.getItem('flashdrop_cleanup_days');
+        if (savedDays) document.getElementById('cfg-days').value = savedDays;
       }
     }
 
@@ -250,6 +264,7 @@
             (status !== 'entregue' && status !== 'cancelado'
               ? '<button class="btn btn-danger btn-sm" onclick="cancelOrder(' + o.id + ')">Cancelar</button>'
               : '') +
+            '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteOrder(' + o.id + ')">Excluir</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -489,6 +504,39 @@
     tg.showAlert('Usuario excluido!');
   }
   function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
+
+    async function deleteOrder(id) {
+      if (!confirm('Excluir pedido #' + id + '? Esta acao nao pode ser desfeita.')) return;
+      await fetch(API + '/orders/' + id, { method: 'DELETE' });
+      loadData('pedidos');
+      tg.showAlert('Pedido excluido!');
+    }
+
+    function saveCleanupDays() {
+      var days = parseInt(document.getElementById('cfg-days').value);
+      if (isNaN(days) || days < 1) { tg.showAlert('Informe um numero valido de dias.'); return; }
+      localStorage.setItem('flashdrop_cleanup_days', days);
+      document.getElementById('cleanup-msg').textContent = '\u2705 Prazo salvo: ' + days + ' dias.';
+    }
+
+    async function cleanupOrders() {
+      var days = parseInt(localStorage.getItem('flashdrop_cleanup_days') || document.getElementById('cfg-days').value || 30);
+      if (!confirm('Isso vai excluir todos os pedidos entregues ou cancelados com mais de ' + days + ' dias. Continuar?')) return;
+      var cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      var r = await fetch(API + '/orders');
+      var orders = await r.json();
+      var toDelete = orders.filter(function(o) {
+        return (o.status === 'entregue' || o.status === 'cancelado') && new Date(o.created_at) < cutoff;
+      });
+      if (toDelete.length === 0) { document.getElementById('cleanup-msg').textContent = '\u2705 Nenhum pedido para excluir.'; return; }
+      await Promise.all(toDelete.map(function(o) {
+        return fetch(API + '/orders/' + o.id, { method: 'DELETE' });
+      }));
+      document.getElementById('cleanup-msg').textContent = '\u2705 ' + toDelete.length + ' pedido(s) excluido(s)!';
+      loadData('pedidos');
+    }
+
     loadData('pedidos');
   </script>
 
