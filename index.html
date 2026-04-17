@@ -237,6 +237,32 @@
       renderOrderCards(filtered);
     }
 
+    function fmtDt(ts) {
+      if (!ts) return null;
+      var d = new Date(ts);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    }
+    function buildTimeline(o) {
+      var events = [
+        { label: 'Pedido criado',      icon: '🆕', ts: o.created_at },
+        { label: 'Aceito pelo motoboy',icon: '✅', ts: o.t_aceito },
+        { label: 'Motoboy na loja',    icon: '🏪', ts: o.t_na_loja },
+        { label: 'Pedido coletado',    icon: '📦', ts: o.t_coletado },
+        { label: 'Chegou no cliente',  icon: '🏠', ts: o.t_no_cliente },
+        { label: 'Entregue',           icon: '🎉', ts: o.t_entregue }
+      ].filter(function(e){ return !!e.ts; });
+      if (events.length === 0) return '';
+      return '<div style="margin-top:10px;border-top:1px solid #333;padding-top:8px">' +
+        '<div style="font-size:11px;color:#aaa;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Histórico</div>' +
+        events.map(function(e){
+          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px">' +
+            '<span style="font-size:14px">' + e.icon + '</span>' +
+            '<span style="color:#ccc;flex:1">' + e.label + '</span>' +
+            '<span style="color:#ffcc00;white-space:nowrap">' + fmtDt(e.ts) + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }
     function renderOrderCards(orders) {
       var list = document.getElementById('orders-list');
       if (!list) return;
@@ -259,6 +285,7 @@
           '<div class="row"><span class="val">Entrega:</span><span>' + o.endereco_entrega + '</span></div>' +
           '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' +
           mb +
+          buildTimeline(o) +
           '<div style="display:flex;gap:8px">' +
             '<button class="btn btn-outline btn-sm" onclick="openEditOrder(' + o.id + ')">Editar</button>' +
             (status !== 'entregue' && status !== 'cancelado'
