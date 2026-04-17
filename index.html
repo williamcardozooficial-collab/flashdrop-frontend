@@ -146,6 +146,7 @@
   </div>
 
   <script>
+    var _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
     const API = 'https://flashdrop-backend-production.up.railway.app';
     const tg = (window.Telegram && window.Telegram.WebApp)
       ? window.Telegram.WebApp
