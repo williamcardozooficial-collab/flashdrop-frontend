@@ -92,6 +92,7 @@
 
     var activeOrders = [];
     var allOrdersCache = [];   /* cache de todos os pedidos, usado no calcBalance */
+    var allUsersCache = [];
     var activeTimers = {};
     var TIMER_DURATION = 15 * 60;
 
@@ -304,7 +305,8 @@
       }
 
       /* Infos */
-      if (o.loja_name)       card.appendChild(makeInfoRow("Loja",    o.loja_name));
+      var lojaDisplay = o.loja_name || (allUsersCache.find(function(u){ return u.username === o.loja_user; }) || {}).name || o.loja_user;
+      card.appendChild(makeInfoRow("Loja", lojaDisplay));
       if (o.endereco_coleta) card.appendChild(makeInfoRow("Coleta",  o.endereco_coleta));
       card.appendChild(makeInfoRow("Cliente", o.nome_cliente));
       if (cardType === "mine" && o.telefone_cliente)
@@ -352,6 +354,7 @@
         var r = await fetch(API + "/orders");
         var orders = await r.json();
         allOrdersCache = orders;   /* salva cache para uso no doAction */
+        try { var ru = await fetch(API + "/users"); allUsersCache = await ru.json(); } catch(e2) {}
 
         var available = orders.filter(function(o) { return o.status === "pendente" && !o.motoboy_id; });
         var mine      = orders.filter(function(o) { return String(o.motoboy_id) === String(user.id); });
