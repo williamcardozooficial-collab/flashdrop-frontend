@@ -51,7 +51,7 @@
     .btn-na_loja{background:#6610f2;color:#fff}
     .btn-coletado{background:#fd7e14;color:#fff}
     .btn-no_cliente{background:#007bff;color:#fff}
-    .btn-entregue{background:#28a745;color:#fff}
+    .btn-entregue{background:#28a745;color:#fff} .btn-cancel{width:100%;padding:12px;border:2px solid #f44336;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;color:#f44336;transition:filter 0.15s} .btn-cancel:active{filter:brightness(0.85)}
     .btn-toggle{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;background:#6c757d}
     .btn-toggle.online{background:#28a745}
     .empty{text-align:center;padding:40px 20px;color:#666}
@@ -332,6 +332,17 @@
         card.appendChild(btn);
       }
 
+      /* Botao cancelar — so antes de coletar */
+      if (cardType === "mine" && (o.status === "aceito" || o.status === "na_loja")) {
+        var cancelBtn = document.createElement("button");
+        cancelBtn.className = "btn-cancel";
+        cancelBtn.innerHTML = "❌ Cancelar Entrega";
+        (function(oid) {
+          cancelBtn.addEventListener("click", function() { cancelOrder(oid); });
+        })(o.id);
+        card.appendChild(cancelBtn);
+      }
+
       return card;
     }
 
@@ -425,7 +436,30 @@
       }
     }
 
-    async function init() {
+    /* ── CANCELAR ENTREGA ── */
+  async function cancelOrder(orderId) {
+    if (!confirm("Cancelar esta entrega? O pedido voltará para fila de disponíveis.")) return;
+    try {
+      await fetch(API + "/orders/" + orderId, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "pendente",
+          motoboy_id: null,
+          motoboy_name: null,
+          t_aceito: null
+        })
+      });
+      stopTimer(orderId);
+      tg.showAlert("Entrega cancelada. O pedido voltou para a fila.");
+      await loadOrders();
+      await syncUser();
+    } catch(e) {
+      tg.showAlert("Erro ao cancelar: " + e.message);
+    }
+  }
+
+  async function init() {
       document.getElementById("motoboy-name").textContent = user.name || "Motoboy";
       updateStatusUI();
       await syncUser();
