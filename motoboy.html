@@ -230,6 +230,48 @@
       return box;
     }
 
+    /* ── TIMELINE ── */
+    function fmtDt(ts) {
+      if (!ts) return null;
+      var d = new Date(ts);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    }
+    function buildTimeline(o) {
+      var events = [
+        { label: 'Pedido criado',       icon: '🆕', ts: o.created_at },
+        { label: 'Aceito',              icon: '✅', ts: o.t_aceito },
+        { label: 'Chegou na loja',      icon: '🏪', ts: o.t_na_loja },
+        { label: 'Pedido coletado',     icon: '📦', ts: o.t_coletado },
+        { label: 'Chegou no cliente',   icon: '🏠', ts: o.t_no_cliente },
+        { label: 'Entregue',            icon: '🎉', ts: o.t_entregue }
+      ].filter(function(e){ return !!e.ts; });
+      if (events.length === 0) return null;
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'margin-top:10px;border-top:1px solid #3a3a3a;padding-top:8px';
+      var title = document.createElement('div');
+      title.style.cssText = 'font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px';
+      title.textContent = 'Histórico';
+      wrap.appendChild(title);
+      events.forEach(function(e) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px';
+        var icon = document.createElement('span');
+        icon.style.fontSize = '13px';
+        icon.textContent = e.icon;
+        var label = document.createElement('span');
+        label.style.cssText = 'color:#aaa;flex:1';
+        label.textContent = e.label;
+        var time = document.createElement('span');
+        time.style.cssText = 'color:#ffcc00;font-weight:600;white-space:nowrap;font-size:11px';
+        time.textContent = fmtDt(e.ts);
+        row.appendChild(icon);
+        row.appendChild(label);
+        row.appendChild(time);
+        wrap.appendChild(row);
+      });
+      return wrap;
+    }
+
     /* ── CRIA CARD VIA DOM ── */
     function makeOrderCard(o, cardType) {
       var card = document.createElement("div");
@@ -270,7 +312,11 @@
       card.appendChild(makeInfoRow("Entrega", o.endereco_entrega));
       card.appendChild(makeInfoRow("Ganho", "R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2), true));
 
-      /* Botao de acao */
+      /* Timeline de eventos */
+    var tl = buildTimeline(o);
+    if (tl) card.appendChild(tl);
+
+    /* Botao de acao */
       var actionKey = cardType === "pending" ? "pendente" : o.status;
       var action = ACTION_MAP[actionKey];
       if (action && cardType !== "done-card") {
