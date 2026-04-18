@@ -68,7 +68,7 @@
     <button class="tab-btn" onclick="showTab('motoboys', this)">Motoboys</button>
     <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
-    <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
+    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
   </div>
 
   <div class="content">
@@ -137,6 +137,13 @@
     </div>
   </div>
 
+  <div id="saques" class="section">
+    <div class="card">
+      <h3 style="margin-bottom:12px;color:#ffcc00;">💸 Solicitações de Saque</h3>
+      <p id="saques-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p>
+      <div id="saques-list"></div>
+    </div>
+  </div>
   <button class="fab" onclick="openNewUser()">+</button>
 
   <!-- Modal Usuario -->
@@ -562,6 +569,8 @@
       loadData(txt.includes('Lojas') ? 'lojas' : 'motoboys');
     }
     tg.showAlert('Usuario excluido!');
+  } else if (tab === 'saques') {
+    loadSaques();
   }
   function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
 
@@ -599,7 +608,65 @@
 
 
     /* ── CADASTROS PENDENTES ── */
-    async function loadPending() {
+    async function loadSaques() {
+  try {
+    var r = await fetch(API + '/withdrawals');
+    var list = await r.json();
+    var container = document.getElementById('saques-list');
+    var emptyMsg = document.getElementById('saques-empty');
+    var badge = document.getElementById('saques-badge');
+    container.innerHTML = '';
+    var pending = list.filter(function(w){ return w.status === 'pendente'; });
+    var all = list;
+    if (!all || all.length === 0) {
+      emptyMsg.style.display = 'block';
+      badge.style.display = 'none';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+    if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
+    var statusColor = { pendente: '#ffa500', aprovado: '#4caf50', recusado: '#f44336' };
+    var statusLabel = { pendente: '⏳ Pendente', aprovado: '✅ Aprovado', recusado: '❌ Recusado' };
+    container.innerHTML = all.map(function(w) {
+      var dt = new Date(w.created_at).toLocaleDateString('pt-BR') + ' ' + new Date(w.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+      return '<div class="card" style="border-left:3px solid ' + (statusColor[w.status]||'#555') + ';margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<strong style="font-size:16px">R$ ' + parseFloat(w.valor).toFixed(2) + '</strong>' +
+        '<span style="color:' + (statusColor[w.status]||'#aaa') + ';font-weight:700">' + (statusLabel[w.status]||w.status) + '</span>' +
+        '</div>' +
+        '<div class="row"><span class="val">Motoboy:</span><span>' + (w.motoboy_name||'—') + '</span></div>' +
+        '<div class="row"><span class="val">Chave PIX:</span><span style="word-break:break-all">' + w.pix_key + '</span></div>' +
+        '<div class="row"><span class="val">Data:</span><span>' + dt + '</span></div>' +
+        (w.obs ? '<div class="row"><span class="val">Obs:</span><span>' + w.obs + '</span></div>' : '') +
+        (w.status === 'pendente' ?
+          '<div style="display:flex;gap:8px;margin-top:10px">' +
+          '<button class="btn btn-primary btn-sm" onclick="processWithdrawal(' + w.id + ','aprovado')">✅ Aprovar</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="processWithdrawal(' + w.id + ','recusado')">❌ Recusar</button>' +
+          '</div>' : '') +
+        '</div>';
+    }).join('');
+  } catch(e) { console.error('Erro ao carregar saques:', e); }
+}
+
+async function processWithdrawal(id, status) {
+  var msg = status === 'aprovado' ? 'Aprovar este saque? O valor será debitado do saldo do motoboy.' : 'Recusar este saque?';
+  if (!confirm(msg)) return;
+  var obs = status === 'recusado' ? prompt('Motivo da recusa (opcional):') : null;
+  try {
+    var r = await fetch(API + '/withdrawals/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: status, obs: obs || null })
+    });
+    var data = await r.json();
+    if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Tente novamente.')); return; }
+    tg.showAlert(status === 'aprovado' ? '✅ Saque aprovado! Saldo debitado.' : '❌ Saque recusado.');
+    loadSaques();
+  } catch(e) { tg.showAlert('Erro: ' + e.message); }
+}
+
+async function loadPending() {
       try {
         var r = await fetch(API + '/users/pending');
         var list = await r.json();
@@ -665,6 +732,8 @@
 
     /* Recarregar pendentes a cada 30s */
     setInterval(loadPending, 30000);
+setInterval(loadSaques, 30000);
+loadSaques();
     loadPending();
 
     loadData('pedidos');
