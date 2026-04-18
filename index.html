@@ -569,8 +569,6 @@
       loadData(txt.includes('Lojas') ? 'lojas' : 'motoboys');
     }
     tg.showAlert('Usuario excluido!');
-  } else if (tab === 'saques') {
-    loadSaques();
   }
   function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
 
@@ -641,8 +639,8 @@
         (w.obs ? '<div class="row"><span class="val">Obs:</span><span>' + w.obs + '</span></div>' : '') +
         (w.status === 'pendente' ?
           '<div style="display:flex;gap:8px;margin-top:10px">' +
-          '<button class="btn btn-primary btn-sm" onclick="processWithdrawal(' + w.id + ','aprovado')">✅ Aprovar</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="processWithdrawal(' + w.id + ','recusado')">❌ Recusar</button>' +
+          '<button class="btn btn-primary btn-sm" onclick="processWithdrawal(' + w.id + ',\'aprovado\')">✅ Aprovar</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="processWithdrawal(' + w.id + ',\'recusado\')">❌ Recusar</button>' +
           '</div>' : '') +
         '</div>';
     }).join('');
