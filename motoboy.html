@@ -473,8 +473,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     var vPedido   = parseFloat(o.valor_pedido || 0);
     var isDinheiro = o.tipo_pagamento === "dinheiro";
     if (isDinheiro) {
-      var ganhoLiq = vMotoboy - vComissao;
-      card.appendChild(makeInfoRow("💰 Ganho Líquido", "R$ " + ganhoLiq.toFixed(2), true));
+          card.appendChild(makeInfoRow("💰 Ganho Líquido", "R$ " + vMotoboy.toFixed(2), true));
       /* Nota de débito */
       var debitDiv = document.createElement("div");
       debitDiv.style.cssText = "background:#2a1a00;border:1px solid #ff9500;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#ff9500;";
