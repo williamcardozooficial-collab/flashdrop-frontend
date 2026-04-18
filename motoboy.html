@@ -401,8 +401,11 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       }
 
       /* Infos */
-      var lojaDisplay = o.loja_name || (allUsersCache.find(function(u){ return u.username === o.loja_user; }) || {}).name || o.loja_user;
-      card.appendChild(makeInfoRow("Loja", lojaDisplay));
+      var _lojaUser = allUsersCache.find(function(u){ return u.username === o.loja_user; }) || {};
+      var lojaDisplay = o.loja_name || _lojaUser.name || o.loja_user;
+      var lojaId = _lojaUser.custom_id || '';
+      var lojaInfoRow = makeInfoRow("🏪 Loja", lojaDisplay + (lojaId ? ' — ' + lojaId : ''));
+      card.appendChild(lojaInfoRow);
       if (o.endereco_coleta) {
         card.appendChild(makeInfoRow("📦 Coleta", o.endereco_coleta));
         /* Botoes de navegação para COLETA — sempre visíveis para pedidos aceitos */
@@ -481,7 +484,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
 
       /* Telefone da loja — sempre visível para o motoboy */
       if (cardType === "mine" && o.telefone_loja) {
-        card.appendChild(makeInfoRow("📞 Tel Loja", o.telefone_loja));
+        card.appendChild(makeInfoRow("📞 Tel Loja", o.telefone_loja || "—"));
       }
 
       var vMotoboy = parseFloat(o.valor_motoboy || 0);
