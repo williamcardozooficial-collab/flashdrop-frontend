@@ -416,6 +416,18 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         privDiv.textContent = "🔒 Dados do cliente ocultados por privacidade.";
         card.appendChild(privDiv);
         if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+        /* Botao de retorno ao ponto de coleta — apenas pedidos com maquina de cartao apos entrega */
+        if (o.tipo_pagamento === "maquina" && o.endereco_coleta) {
+          var retornoDiv = document.createElement("div");
+          retornoDiv.style.cssText = "background:#2a1a00;border:1px solid #ff9500;border-radius:8px;padding:10px;margin:8px 0;";
+          var retornoTitle = document.createElement("div");
+          retornoTitle.style.cssText = "font-size:12px;color:#ff9500;font-weight:700;margin-bottom:6px;";
+          retornoTitle.textContent = "🔄 Retornar ao ponto de coleta";
+          retornoDiv.appendChild(retornoTitle);
+          var navRet = makeNavBtns("Retorno", o.endereco_coleta);
+          if (navRet) retornoDiv.appendChild(navRet);
+          card.appendChild(retornoDiv);
+        }
       } else {
         /* Antes de coletar: mostrar apenas endereço de entrega (sem cliente) */
         if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
