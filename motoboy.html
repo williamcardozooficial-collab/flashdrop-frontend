@@ -30,7 +30,7 @@
     .badge-na_loja{background:#6610f2;color:#fff}
     .badge-coletado{background:#fd7e14;color:#fff}
     .badge-no_cliente{background:#007bff;color:#fff}
-    .badge-entregue{background:#28a745;color:#fff}
+    .badge-entregue{background:#28a745;color:#fff} .badge-retornado{background:#ff9500;color:#000}
     .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #3a3a3a;font-size:14px}
     .info-row:last-of-type{border:none}
     .info-label{color:#999}
@@ -168,7 +168,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     var STATUS_LABELS = {
       pendente:"Aguardando", aceito:"Aceito", na_loja:"Na Loja",
       coletado:"A Entregar", no_cliente:"No Cliente",
-      entregue:"Entregue", cancelado:"Cancelado"
+      entregue:"Entregue", retornado:"Retornado", cancelado:"Cancelado"
     };
 
     var ACTION_MAP = {
@@ -323,7 +323,8 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         { label: 'Chegou na loja',      icon: '🏪', ts: o.t_na_loja },
         { label: 'Pedido coletado',     icon: '📦', ts: o.t_coletado },
         { label: 'Chegou no cliente',   icon: '🏠', ts: o.t_no_cliente },
-        { label: 'Entregue',            icon: '🎉', ts: o.t_entregue }
+        { label: 'Entregue',            icon: '🎉', ts: o.t_entregue },
+        { label: 'Retornado',           icon: '🔄', ts: o.t_retornado }
       ].filter(function(e){ return !!e.ts; });
       if (events.length === 0) return null;
       var wrap = document.createElement('div');
@@ -427,6 +428,19 @@ var API = "https://flashdrop-backend-production.up.railway.app";
           var navRet = makeNavBtns("Retorno", o.endereco_coleta);
           if (navRet) retornoDiv.appendChild(navRet);
           card.appendChild(retornoDiv);
+          /* Botao finalizar retorno */
+          var btnRetorno = document.createElement("button");
+          btnRetorno.className = "btn-action btn-entregue";
+          btnRetorno.style.cssText = "margin-top:10px;background:#ff9500;";
+          btnRetorno.innerHTML = "✅ Finalizei o Retorno";
+          (function(oid) {
+            btnRetorno.addEventListener("click", function() {
+              showConfirm("Finalizar Retorno", "Confirmar que você retornou ao ponto de coleta?", function() {
+                doActionRetorno(oid);
+              });
+            });
+          })(o.id);
+          card.appendChild(btnRetorno);
         }
       } else {
         /* Antes de coletar: mostrar apenas endereço de entrega (sem cliente) */
@@ -502,8 +516,8 @@ var API = "https://flashdrop-backend-production.up.railway.app";
 
         var available = orders.filter(function(o) { return o.status === "pendente" && !o.motoboy_id; });
         var mine      = orders.filter(function(o) { return String(o.motoboy_id) === String(user.id); });
-        var active    = mine.filter(function(o)   { return o.status !== "entregue" && o.status !== "cancelado"; });
-        var done      = mine.filter(function(o)   { return o.status === "entregue"; });
+        var active    = mine.filter(function(o)   { return o.status !== "entregue" && o.status !== "retornado" && o.status !== "cancelado"; });
+        var done      = mine.filter(function(o)   { return o.status === "entregue" || o.status === "retornado"; });
         activeOrders  = active;
 
         /* Disponíveis */
@@ -604,7 +618,22 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       }
     }
 
-    /* ── CANCELAR ENTREGA ── */
+    /* ── FINALIZAR RETORNO (maquina de cartao) ── */
+  async function doActionRetorno(orderId) {
+    try {
+      var resp = await fetch(API + "/orders/" + orderId, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "retornado" })
+      });
+      if (!resp.ok) { var err = await resp.json(); tg.showAlert(err.error || "Erro."); return; }
+      tg.showAlert("✅ Retorno finalizado! Entrega concluída.");
+      await loadOrders();
+      await syncUser();
+    } catch(e) { tg.showAlert("Erro: " + e.message); }
+  }
+
+  /* ── CANCELAR ENTREGA ── */
   function cancelOrder(orderId) {
     showConfirm(
       "⚠️ ATENÇÃO — PENALIDADE",
