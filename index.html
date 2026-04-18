@@ -302,7 +302,7 @@
           '</div>' +
           '<div class="row"><span class="val">Cliente:</span><span>' + o.nome_cliente + '</span></div>' +
           '<div class="row"><span class="val">Entrega:</span><span>' + o.endereco_entrega + '</span></div>' +
-          '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' +
+          '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' + '<div class="row"><span class="val">💳 Pagamento:</span><span>' + ({dinheiro:"💵 Dinheiro",maquina:"💳 Máquina de Cartão",pix:"📱 PIX"}[o.tipo_pagamento] || o.tipo_pagamento || "—") + '</span></div>' + (o.tipo_pagamento === "dinheiro" && Number(o.valor_pedido) > 0 ? '<div class="row" style="color:#4caf50"><span class="val">💰 Cobrado:</span><strong>R$ ' + Number(o.valor_pedido).toFixed(2) + '</strong></div>' : '') +
           mb +
           buildTimeline(o) +
           '<div style="display:flex;gap:8px">' +
