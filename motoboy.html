@@ -219,11 +219,10 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       } else {
         badge.textContent = "⚫ Offline — toque para entrar";
         badge.className = "status-badge offline";
-        btn.innerHTML = "&#9654;"; btn.className = "btn-toggle";
       }
     }
 
-    document.getElementById("toggleStatus").addEventListener("click", async function() {
+    async function toggleOnline() {
       if (user.online && activeOrders.length > 0) {
         tg.showAlert("Voce nao pode ficar Offline com pedido em aberto! Conclua a entrega primeiro.");
         return;
@@ -234,15 +233,9 @@ var API = "https://flashdrop-backend-production.up.railway.app";
           method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ online: newOnline })
         });
-        if (resp.ok) {
-          user.online = newOnline;
-          localStorage.setItem("flashdrop_user", JSON.stringify(user));
-          updateStatusUI();
-        } else {
-          tg.showAlert("Erro ao alterar status. Tente novamente.");
-        }
-      } catch(e) { tg.showAlert("Sem conexao. Verifique sua internet."); }
-    });
+        if (resp.ok) { user.online = newOnline; syncUser(); }
+      } catch(e) { tg.showAlert("Erro ao atualizar status."); }
+    };
 
     /* ── SYNC USER ── */
     async function syncUser() {
