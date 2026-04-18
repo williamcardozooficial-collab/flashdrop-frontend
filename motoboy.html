@@ -52,8 +52,20 @@
     .btn-coletado{background:#fd7e14;color:#fff}
     .btn-no_cliente{background:#007bff;color:#fff}
     .btn-entregue{background:#28a745;color:#fff} .btn-cancel{width:100%;padding:12px;border:2px solid #f44336;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;color:#f44336;transition:filter 0.15s} .btn-cancel:active{filter:brightness(0.85)}
-    .btn-toggle{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;background:#6c757d}
-    .btn-toggle.online{background:#28a745}
+    .btn-nav{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;margin:3px;transition:opacity .2s}
+    .btn-nav-gmaps{background:#4285F4;color:#fff}
+    .btn-nav-waze{background:#33CCFF;color:#000}
+    .btn-nav-group{margin:8px 0 4px;display:flex;flex-wrap:wrap;gap:4px}
+    .nav-label{font-size:11px;color:#888;margin-bottom:2px}
+    .status-badge.online{cursor:pointer;box-shadow:0 0 8px rgba(40,167,69,0.5)}
+    .status-badge.offline{cursor:pointer}
+    .confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:2000;display:flex;align-items:center;justify-content:center}
+    .confirm-box{background:#2a2a2a;border-radius:16px;padding:24px;max-width:320px;width:90%;text-align:center}
+    .confirm-box h3{color:#fff;margin-bottom:12px;font-size:16px}
+    .confirm-box p{color:#ccc;font-size:14px;margin-bottom:20px;line-height:1.5}
+    .confirm-btns{display:flex;gap:12px;justify-content:center}
+    .confirm-btn-sim{flex:1;padding:12px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+    .confirm-btn-nao{flex:1;padding:12px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
     .empty{text-align:center;padding:40px 20px;color:#666} .penalty-banner{background:#3a1a1a;border:2px solid #f44336;border-radius:12px;padding:14px;margin:0 15px 15px;text-align:center;font-size:13px;color:#f44336;font-weight:600} .penalty-banner span{display:block;font-size:11px;color:#aaa;margin-top:4px;font-weight:400}
   </style>
 </head>
@@ -62,7 +74,7 @@
   <div class="header">
     <h1>FlashDrop Motoboy</h1>
     <div id="motoboy-name" style="color:#aaa;font-size:14px">Carregando...</div>
-    <span class="status-badge offline" id="status-badge">Offline</span>
+    <span class="status-badge offline" id="status-badge" onclick="toggleOnline()" style="cursor:pointer;user-select:none;" title="Clique para alternar Online/Offline">Offline</span>
   </div>
 
   <div class="stats">
@@ -79,10 +91,66 @@
     <div id="my-orders"></div>
   </div>
 
-  <button class="btn-toggle" id="toggleStatus">&#9654;</button>
+  
 
   <script>
-    var API = "https://flashdrop-backend-production.up.railway.app";
+    /* ── CONFIRM PERSONALIZADO ── */
+    function showConfirm(title, msg, onSim, onNao) {
+      var overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.id = 'confirm-overlay';
+      overlay.innerHTML =
+        '<div class="confirm-box">' +
+          '<h3>' + title + '</h3>' +
+          '<p>' + msg + '</p>' +
+          '<div class="confirm-btns">' +
+            '<button class="confirm-btn-sim" id="confirm-sim">✅ Sim</button>' +
+            '<button class="confirm-btn-nao" id="confirm-nao">❌ Não</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+      document.getElementById('confirm-sim').onclick = function() {
+        overlay.remove(); if(onSim) onSim();
+      };
+      document.getElementById('confirm-nao').onclick = function() {
+        overlay.remove(); if(onNao) onNao();
+      };
+    }
+
+    /* ── NAVEGAÇÃO ── */
+    function openNav(app, address) {
+      var encoded = encodeURIComponent(address);
+      var url = app === 'waze'
+        ? 'https://waze.com/ul?q=' + encoded + '&navigate=yes'
+        : 'https://www.google.com/maps/dir/?api=1&destination=' + encoded;
+      window.open(url, '_blank');
+    }
+
+    function makeNavBtns(label, address) {
+      if (!address) return null;
+      var wrap = document.createElement('div');
+      wrap.style = 'margin:6px 0 2px';
+      var lbl = document.createElement('div');
+      lbl.className = 'nav-label';
+      lbl.textContent = '🗺️ Navegar até ' + label + ':';
+      var gmaps = document.createElement('button');
+      gmaps.className = 'btn-nav btn-nav-gmaps';
+      gmaps.innerHTML = '📍 Google Maps';
+      gmaps.onclick = function() { openNav('gmaps', address); };
+      var waze = document.createElement('button');
+      waze.className = 'btn-nav btn-nav-waze';
+      waze.innerHTML = '🚗 Waze';
+      waze.onclick = function() { openNav('waze', address); };
+      var grp = document.createElement('div');
+      grp.className = 'btn-nav-group';
+      grp.appendChild(gmaps);
+      grp.appendChild(waze);
+      wrap.appendChild(lbl);
+      wrap.appendChild(grp);
+      return wrap;
+    }
+
+var API = "https://flashdrop-backend-production.up.railway.app";
     var tg = (window.Telegram && window.Telegram.WebApp)
       ? window.Telegram.WebApp
       : { showAlert: function(m){ alert(m); }, expand: function(){} };
@@ -145,12 +213,12 @@
     /* ── STATUS UI ── */
     function updateStatusUI() {
       var badge = document.getElementById("status-badge");
-      var btn   = document.getElementById("toggleStatus");
       if (user.online) {
-        badge.textContent = "Online"; badge.className = "status-badge online";
-        btn.innerHTML = "&#9646;&#9646;"; btn.className = "btn-toggle online";
+        badge.textContent = "🟢 Online — toque para sair";
+        badge.className = "status-badge online";
       } else {
-        badge.textContent = "Offline"; badge.className = "status-badge offline";
+        badge.textContent = "⚫ Offline — toque para entrar";
+        badge.className = "status-badge offline";
         btn.innerHTML = "&#9654;"; btn.className = "btn-toggle";
       }
     }
@@ -325,7 +393,14 @@
       /* Infos */
       var lojaDisplay = o.loja_name || (allUsersCache.find(function(u){ return u.username === o.loja_user; }) || {}).name || o.loja_user;
       card.appendChild(makeInfoRow("Loja", lojaDisplay));
-      if (o.endereco_coleta) card.appendChild(makeInfoRow("📦 Coleta", o.endereco_coleta));
+      if (o.endereco_coleta) {
+        card.appendChild(makeInfoRow("📦 Coleta", o.endereco_coleta));
+        /* Botoes de navegação para COLETA — sempre visíveis para pedidos aceitos */
+        if (cardType === "mine") {
+          var navColeta = makeNavBtns("Coleta", o.endereco_coleta);
+          if (navColeta) card.appendChild(navColeta);
+        }
+      }
 
       /* Dados do cliente: só mostrar quando motoboy estiver a caminho (coletado ou no_cliente) */
       var clienteVisivel = (o.status === "coletado" || o.status === "no_cliente");
@@ -335,7 +410,12 @@
           var telRow = makeInfoRow("📱 Tel Cliente", o.telefone_cliente);
           card.appendChild(telRow);
         }
-        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+        if (o.endereco_entrega) {
+          card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+          /* Botoes de navegação para ENTREGA — apenas quando dados liberados */
+          var navEntrega = makeNavBtns("Entrega", o.endereco_entrega);
+          if (navEntrega) card.appendChild(navEntrega);
+        }
       } else if (o.status === "entregue") {
         /* Após entrega: sumir dados do cliente */
         var privDiv = document.createElement("div");
@@ -380,10 +460,16 @@
         var icon = document.createElement("span"); icon.textContent = action.icon;
         btn.appendChild(icon);
         btn.appendChild(document.createTextNode(" " + action.label));
-        /* Captura orderId e actionKey no closure */
-        (function(oid, akey) {
-          btn.addEventListener("click", function() { doAction(oid, akey); });
-        })(o.id, actionKey);
+        /* Captura orderId e actionKey no closure — confirmacao com Sim/Nao */
+        (function(oid, akey, alabel) {
+          btn.addEventListener("click", function() {
+            showConfirm(
+              alabel,
+              "Confirmar ação: <strong>" + alabel + "</strong>?",
+              function() { doAction(oid, akey); }
+            );
+          });
+        })(o.id, actionKey, action.label);
         card.appendChild(btn);
       }
 
@@ -514,33 +600,27 @@
     }
 
     /* ── CANCELAR ENTREGA ── */
-  async function cancelOrder(orderId) {
-    var aviso = "⚠️ ATENÇÃO — PENALIDADE\n\n" +
-      "Se cancelar esta entrega você ficará BLOQUEADO por 10 minutos e não poderá aceitar novos pedidos.\n\n" +
-      "Só é possível desbloquear antes do prazo se a loja ou o administrador removerem a penalidade.\n\n" +
-      "Deseja continuar com o cancelamento?";
-    if (!confirm(aviso)) return;
-    try {
-      var resp = await fetch(API + "/orders/" + orderId, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "pendente",
-          motoboy_id: null,
-          motoboy_name: null,
-          t_aceito: null
-        })
-      });
-      if (!resp.ok) {
-        var err = await resp.json();
-        tg.showAlert(err.error || "Erro ao cancelar.");
-        return;
-      }
-      stopTimer(orderId);
-      tg.showAlert("Entrega cancelada. Você está bloqueado por 10 minutos.");
-      await loadOrders();
-      await syncUser();
-    } catch(e) {
+  function cancelOrder(orderId) {
+    showConfirm(
+      "⚠️ ATENÇÃO — PENALIDADE",
+      "Se cancelar você ficará <strong>BLOQUEADO por 10 minutos</strong> e não poderá aceitar novos pedidos.\nDeseja continuar?",
+      async function() {
+        try {
+          var resp = await fetch(API + "/orders/" + orderId, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "pendente", motoboy_id: null, motoboy_name: null, t_aceito: null })
+          });
+          if (!resp.ok) {
+            var err = await resp.json();
+            tg.showAlert(err.error || "Erro ao cancelar.");
+            return;
+          }
+          stopTimer(orderId);
+          tg.showAlert("Entrega cancelada. Você está bloqueado por 10 minutos.");
+          await loadOrders();
+          await syncUser();
+        } catch(e) {
       tg.showAlert("Erro ao cancelar: " + e.message);
     }
   }
