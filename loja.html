@@ -16,9 +16,11 @@ function buildTimeline(o){var events=[{label:'Pedido criado',icon:'🆕',ts:o.cr
   const mb = allUsers.find(function(u){ return u.id == o.motoboy_id; });
   const phone = mb ? (mb.phone||'-') : '-';
   const vehicle = mb ? (mb.vehicle||'-') : '-';
+  const mbCid = mb ? (mb.custom_id||'') : '';
   return '<div style="margin-top:8px;background:#f0f4ff;border-radius:8px;padding:10px;border-left:3px solid #667eea">'
     + '<div style="font-size:11px;color:#667eea;font-weight:700;text-transform:uppercase;margin-bottom:6px">🛵 Motoboy</div>'
-    + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#666">Nome</span><span style="font-weight:600">' + (o.motoboy_name||'-') + '</span></div>'
+    + (mbCid ? '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;padding:4px 0;border-bottom:1px solid #ddd"><span style="color:#666;font-weight:600">🪪 ID</span><span style="font-weight:900;color:#667eea;font-size:15px;letter-spacing:1px">' + mbCid + '</span></div>' : '') +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#666">Nome</span><span style="font-weight:600">' + (o.motoboy_name||'-') + '</span></div>'
     + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#666">Telefone</span><span style="font-weight:600">' + phone + '</span></div>'
     + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#666">Veículo</span><span style="font-weight:600">' + vehicle + '</span></div>'
     + '</div>';
