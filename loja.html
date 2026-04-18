@@ -23,7 +23,7 @@ function buildTimeline(o){var events=[{label:'Pedido criado',icon:'🆕',ts:o.cr
     + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#666">Veículo</span><span style="font-weight:600">' + vehicle + '</span></div>'
     + '</div>';
 }
-const tg=window.Telegram.WebApp;if(!tg.showAlert)tg.showAlert=(m)=>alert(m);if(!tg.expand)tg.expand=()=>{};tg.expand();let user=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');let settings={};let calculatedFee=0;let calculatedDist=0;let calculatedPrevisao='';if(!user.id)location.href='login.html';/* Monta o campo hidden "dest" combinando rua+bairro+cidade */
+const tg=window.Telegram.WebApp;const _origAlert=tg.showAlert;tg.showAlert=(m)=>{try{if(_origAlert)_origAlert.call(tg,m);else alert(m);}catch(e){alert(m)}};if(!tg.expand)tg.expand=()=>{};tg.expand();let user=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');let settings={};let calculatedFee=0;let calculatedDist=0;let calculatedPrevisao='';if(!user.id)location.href='login.html';/* Monta o campo hidden "dest" combinando rua+bairro+cidade */
 function buildDest(){
   var rua=document.getElementById('dest-rua').value.trim();
   var bairro=document.getElementById('dest-bairro').value.trim();
