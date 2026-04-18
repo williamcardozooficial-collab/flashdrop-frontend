@@ -59,7 +59,7 @@
 
   <div class="header" style="display:flex;align-items:center;justify-content:space-between;">
     <h1>FlashDrop Admin</h1>
-    <button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;">Sair</button>
+    <button onclick="location.reload()" style="background:#333;color:#ffcc00;border:1px solid #ffcc00;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:bold;cursor:pointer;margin-right:8px;">🔄 Atualizar</button><button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;">Sair</button>
   </div>
 
   <div class="tabs" id="tabs">
@@ -69,6 +69,7 @@
     <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
     <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
+    <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
   </div>
 
   <div class="content">
@@ -144,6 +145,22 @@
       <div id="saques-list"></div>
     </div>
   </div>
+<div id="avisos" class="section">
+  <div class="card">
+    <h3 style="margin-bottom:12px;color:#ffcc00;">📢 Gerenciar Avisos</h3>
+    <div class="input-group"><label>Título do Aviso</label><input id="aviso-title" class="input" placeholder="Ex: Manutenção programada"></div>
+    <div class="input-group"><label>Texto</label><textarea id="aviso-body" class="input" rows="3" placeholder="Texto do aviso..." style="resize:vertical;min-height:80px"></textarea></div>
+    <div class="input-group"><label>Destinatário</label>
+      <select id="aviso-target" class="input">
+        <option value="all">Todos (Lojas e Motoboys)</option>
+        <option value="loja">Apenas Lojas</option>
+        <option value="motoboy">Apenas Motoboys</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="postAviso()">📤 Publicar Aviso</button>
+  </div>
+  <div id="avisos-list"></div>
+</div>
   <button class="fab" onclick="openNewUser()">+</button>
 
   <!-- Modal Usuario -->
@@ -238,6 +255,8 @@
         if (savedDays) document.getElementById('cfg-days').value = savedDays;
       } else if (tab === 'cadastros') {
         loadPending();
+      } else if (tab === 'avisos') {
+        loadAvisos();
       }
     }
 
@@ -332,6 +351,7 @@
             '<span><span class="online-dot ' + (u.online ? 'on' : 'off') + '"></span>' + (u.online ? 'Online' : 'Offline') + '</span>' +
           '</div>' +
           '<div class="row"><span class="val">Usuario:</span><span>@' + u.username + '</span></div>' +
+        (u.custom_id ? '<div class="row"><span class="val">🪪 ID:</span><strong style="color:#ffcc00;font-size:15px">' + u.custom_id + '</strong></div>' : '') + +
           '<div class="row"><span class="val">📱 Telefone:</span><span>' + (u.phone || '-') + '</span></div>' +
           (u.role === 'motoboy' ? '<div class="row"><span class="val">🏍️ Veículo:</span><span>' + (u.vehicle || '-') + '</span></div>' : '') +
           (u.role === 'motoboy' ? '<div class="row" style="color:#ff9500"><span class="val">📄 CPF:</span><span>' + (u.cpf || '—') + '</span></div>' : '') +
@@ -354,7 +374,7 @@
     function renderFinance(users) {
       var term = (document.getElementById('search-finance') && document.getElementById('search-finance').value || '').toLowerCase();
       var filtered = users.filter(function(u){
-        return u.role !== 'admin' && (u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term));
+        return u.role !== 'admin' && (u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term) || (u.custom_id||'').toLowerCase().includes(term));
       });
       document.getElementById('finance-list').innerHTML = filtered.map(function(u) {
         var saldo = u.role === 'loja' ? u.credit : u.balance;
@@ -456,6 +476,7 @@
       document.getElementById('user-modal-title').textContent = 'Editar - ' + u.name;
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (u.username || '') + '" disabled style="opacity:0.5"></div>' +
+                '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></div>' +
         '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></div>' +
@@ -464,10 +485,12 @@
     }
 
     async function saveUser() {
-      var data = {
+      var cidEl = document.getElementById('u-cid');
+    var data = {
         name: document.getElementById('u-name').value,
         phone: document.getElementById('u-phone').value
-      };
+    };
+    if (cidEl && cidEl.value.trim()) data.custom_id = cidEl.value.trim().toUpperCase();
       var pass = document.getElementById('u-pass').value;
       if (pass) data.password = pass;
       if (!currentUserId) {
@@ -736,6 +759,59 @@ loadSaques();
     loadPending();
 
     loadData('pedidos');
+
+    /* ── AVISOS ── */
+    async function loadAvisos() {
+      try {
+        var r = await fetch(API + '/notices');
+        var list = await r.json();
+        var container = document.getElementById('avisos-list');
+        if (!list || list.length === 0) {
+          container.innerHTML = '<div class="card"><p style="color:#888;font-size:13px">Nenhum aviso publicado.</p></div>';
+          return;
+        }
+        var targetLabel = { all:'Todos', loja:'Lojas', motoboy:'Motoboys' };
+        container.innerHTML = list.map(function(n) {
+          var dt = new Date(n.created_at).toLocaleString('pt-BR');
+          return '<div class="card" style="border-left:3px solid #ffcc00;margin-bottom:10px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">' +
+            '<strong style="font-size:15px;color:#fff">' + n.title + '</strong>' +
+            '<span style="font-size:11px;background:#333;color:#ffcc00;padding:2px 8px;border-radius:10px">' + (targetLabel[n.target]||n.target) + '</span>' +
+            '</div>' +
+            '<div style="color:#ccc;font-size:13px;margin-bottom:8px;line-height:1.5">' + n.body + '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<span style="font-size:11px;color:#666">' + dt + '</span>' +
+            '<button class="btn btn-danger btn-sm" onclick="deleteAviso(' + n.id + ')">🗑️ Excluir</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+      } catch(e) { console.error('Erro avisos:', e); }
+    }
+
+    async function postAviso() {
+      var title = document.getElementById('aviso-title').value.trim();
+      var body = document.getElementById('aviso-body').value.trim();
+      var target = document.getElementById('aviso-target').value;
+      if (!title) { tg.showAlert('Informe o título do aviso.'); return; }
+      if (!body) { tg.showAlert('Informe o texto do aviso.'); return; }
+      try {
+        var r = await fetch(API + '/notices', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, body, target, created_by: 'admin' })
+        });
+        if (!r.ok) { var e = await r.json(); tg.showAlert('Erro: ' + e.error); return; }
+        document.getElementById('aviso-title').value = '';
+        document.getElementById('aviso-body').value = '';
+        tg.showAlert('✅ Aviso publicado!');
+        loadAvisos();
+      } catch(e) { tg.showAlert('Erro: ' + e.message); }
+    }
+
+    async function deleteAviso(id) {
+      if (!confirm('Excluir este aviso?')) return;
+      await fetch(API + '/notices/' + id, { method: 'DELETE' });
+      loadAvisos();
+    }
   </script>
 
 </body>
