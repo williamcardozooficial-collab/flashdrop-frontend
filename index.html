@@ -351,7 +351,7 @@
             '<span><span class="online-dot ' + (u.online ? 'on' : 'off') + '"></span>' + (u.online ? 'Online' : 'Offline') + '</span>' +
           '</div>' +
           '<div class="row"><span class="val">Usuario:</span><span>@' + u.username + '</span></div>' +
-        (u.custom_id ? '<div class="row"><span class="val">🪪 ID:</span><strong style="color:#ffcc00;font-size:15px">' + u.custom_id + '</strong></div>' : '') + +
+        (u.custom_id ? '<div class="row"><span class="val">🪪 ID:</span><strong style="color:#ffcc00;font-size:15px">' + u.custom_id + '</strong></div>' : '') +
           '<div class="row"><span class="val">📱 Telefone:</span><span>' + (u.phone || '-') + '</span></div>' +
           (u.role === 'motoboy' ? '<div class="row"><span class="val">🏍️ Veículo:</span><span>' + (u.vehicle || '-') + '</span></div>' : '') +
           (u.role === 'motoboy' ? '<div class="row" style="color:#ff9500"><span class="val">📄 CPF:</span><span>' + (u.cpf || '—') + '</span></div>' : '') +
