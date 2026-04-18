@@ -110,7 +110,7 @@
         <div class="input-group">
           <label>Max pedidos por motoboy</label>
           <input id="cfg-max" class="input" type="number">
-        </div>
+        </div> <div class="input-group"> <label>⏳ Delay de Preparo (minutos, 1-99)</label> <input id="cfg-delay" class="input" type="number" min="1" max="99"> <small style="color:#888;font-size:11px">Tempo que o pedido fica em preparo antes de ir ao sistema automaticamente.</small> </div>
         <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
       </div>
       <div class="card" style="margin-top:15px">
@@ -195,7 +195,7 @@
     let currentOrderFilter = 'todos';
 
     const STATUS_LABELS = {
-      pendente: 'Pendente',
+ em_preparo: '🔄 Em Preparo',      pendente: 'Pendente',
       aceito: 'Aceito',
       na_loja: 'Na Loja',
       coletado: 'Coletado',
@@ -233,7 +233,7 @@
         document.getElementById('cfg-km').value = data.price_per_km;
         document.getElementById('cfg-arr').value = data.arrancada;
         document.getElementById('cfg-com').value = data.commission;
-        document.getElementById('cfg-max').value = data.max_per_motoboy;
+        document.getElementById('cfg-max').value = data.max_per_motoboy; document.getElementById('cfg-delay').value = data.launch_delay_minutes || 60;
         var savedDays = localStorage.getItem('flashdrop_cleanup_days');
         if (savedDays) document.getElementById('cfg-days').value = savedDays;
       } else if (tab === 'cadastros') {
@@ -250,7 +250,7 @@
     }
 
     function renderOrders(orders) {
-      var filters = ['todos','pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'];
+      var filters = ['todos','em_preparo','pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'];
       var filterBar = '<div class="filter-bar">' +
         filters.map(function(f){
           var lbl = f === 'todos' ? 'Todos' : (STATUS_LABELS[f] || f);
@@ -551,7 +551,8 @@
           price_per_km: document.getElementById('cfg-km').value,
           arrancada: document.getElementById('cfg-arr').value,
           commission: document.getElementById('cfg-com').value,
-          max_per_motoboy: document.getElementById('cfg-max').value
+          max_per_motoboy: document.getElementById('cfg-max').value,
+        launch_delay_minutes: document.getElementById('cfg-delay').value
         })
       });
       tg.showAlert('Ajustes salvos!');
