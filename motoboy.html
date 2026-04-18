@@ -596,7 +596,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
   function cancelOrder(orderId) {
     showConfirm(
       "⚠️ ATENÇÃO — PENALIDADE",
-      "Se cancelar você ficará <strong>BLOQUEADO por 10 minutos</strong> e não poderá aceitar novos pedidos.\nDeseja continuar?",
+      "Se cancelar você ficará BLOQUEADO por 10 minutos e não poderá aceitar novos pedidos. Deseja continuar?",
       async function() {
         try {
           var resp = await fetch(API + "/orders/" + orderId, {
@@ -614,8 +614,10 @@ var API = "https://flashdrop-backend-production.up.railway.app";
           await loadOrders();
           await syncUser();
         } catch(e) {
-      tg.showAlert("Erro ao cancelar: " + e.message);
-    }
+          tg.showAlert("Erro ao cancelar: " + e.message);
+        }
+      }
+    );
   }
 
   async function init() {
