@@ -37,7 +37,7 @@ function toggleValorPedido(){}async function init(){document.getElementById('sto
   <div style="font-size:13px;margin:4px 0;"><strong>👤 Cliente:</strong> ${o.nome_cliente||'—'}</div>
   <div style="font-size:13px;margin:4px 0;"><strong>📱 Tel Cliente:</strong> ${o.telefone_cliente||'—'}</div>
   <div style="font-size:13px;margin:4px 0;"><strong>📍 Entrega:</strong> ${o.endereco_entrega||'—'}</div>
-  <div style="text-align:right;color:#667eea;font-weight:bold">R$ ${parseFloat(o.valor_total).toFixed(2)}</div>
+   <div style="font-size:13px;margin:4px 0;"><strong>💳 Pagamento:</strong> ${({dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX"})[o.tipo_pagamento]||o.tipo_pagamento||"—"}</div> ${o.tipo_pagamento==="dinheiro"&&o.valor_pedido>0?"<div style='font-size:13px;margin:4px 0;color:#27ae60;'><strong>💰 Valor Cobrado:</strong> R$ "+parseFloat(o.valor_pedido).toFixed(2)+"</div>":""}<div style="text-align:right;color:#667eea;font-weight:bold">R$ ${parseFloat(o.valor_total).toFixed(2)}</div>
   ${o.observacao_entrega ? '<div style="background:#0a2d1a;border:1px solid #27ae60;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#2ecc71;"><strong>📝 Obs Motoboy:</strong> '+o.observacao_entrega+'</div>' : ''}
   ${buildMotoboyInfo(o)}${buildTimeline(o)}
   <div style="margin-top:8px">${(o.status !== 'entregue' && o.status !== 'retornado' && o.status !== 'cancelado') ? '<button class=\"btn-edit\" onclick=\"openEditModal('+o.id+')\">✏️ Editar</button>' : ''}${(o.status !== 'entregue' && o.status !== 'retornado' && o.status !== 'coletado' && o.status !== 'no_cliente' && o.status !== 'cancelado') ? '<button class=\"btn-delete\" onclick=\"cancelOrderLoja('+o.id+')\" style=\"background:#e67e22;color:#fff\">❌ Cancelar Pedido</button>' : ''}</div>
