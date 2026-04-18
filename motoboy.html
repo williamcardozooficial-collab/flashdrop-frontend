@@ -85,9 +85,9 @@
 </head>
 <body>
 
-  <div class="header">
+  <div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.1);color:#ffcc00;border:1px solid #555;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button>
     <h1>FlashDrop Motoboy</h1>
-    <div id="motoboy-name" style="color:#aaa;font-size:14px">Carregando...</div>
+    <div id="motoboy-name" style="color:#aaa;font-size:14px">Carregando...</div><div id="motoboy-custom-id" style="font-size:12px;color:#ffcc00;font-weight:700;letter-spacing:1px;margin-top:2px"></div>
     <span class="status-badge offline" id="status-badge" onclick="toggleOnline()" style="cursor:pointer;user-select:none;" title="Clique para alternar Online/Offline">Offline</span>
   </div>
 
@@ -99,7 +99,7 @@
 
   <div id="penalty-banner" class="penalty-banner" style="display:none">🚫 Você está bloqueado por cancelamento<span id="penalty-timer"></span></div>
   <div class="orders">
-    <button class="btn-pedir-saque" onclick="openSaqueModal()">💸 Solicitar Saque</button>
+    <div id="avisos-mb-banner" style="display:none;background:#1a1a00;border:1px solid #ffcc00;border-radius:10px;padding:12px;margin-bottom:12px;"></div><button class="btn-pedir-saque" onclick="openSaqueModal()">💸 Solicitar Saque</button>
 <div class="section-title">Pedidos Disponíveis</div>
     <div id="available-orders"></div>
     <div class="section-title" style="margin-top:20px">Minhas Entregas</div>
@@ -262,6 +262,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
           localStorage.setItem("flashdrop_user", JSON.stringify(user));
           document.getElementById("user-balance").textContent = "R$ " + parseFloat(user.balance || 0).toFixed(2);
           document.getElementById("motoboy-name").textContent = user.name;
+    var cidEl = document.getElementById("motoboy-custom-id"); if(cidEl && user.custom_id) cidEl.textContent = "🪪 "+user.custom_id;
           updateStatusUI();
           updatePenaltyBanner(u.blocked_until);
         }
@@ -764,13 +765,16 @@ async function submitSaque() {
   }
 }
 
-async function init() {
+async function loadAvisosMotboy(){try{var r=await fetch(API+'/notices?target=motoboy');var list=await r.json();var banner=document.getElementById('avisos-mb-banner');if(!list||list.length===0){banner.style.display='none';return;}banner.style.display='block';banner.innerHTML='<div style="font-size:11px;color:#ffcc00;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📢 Avisos do Admin</div>'+list.map(function(n){return'<div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #2a2a00">'+'<div style="font-weight:600;color:#fff;font-size:13px;margin-bottom:2px">'+n.title+'</div>'+'<div style="color:#ccc;font-size:12px;line-height:1.4">'+n.body+'</div>'+'</div>';}).join('');}catch(e){}}
+  async function init() {
       document.getElementById("motoboy-name").textContent = user.name || "Motoboy";
       updateStatusUI();
       await syncUser();
       await loadOrders();
       setInterval(loadOrders, 10000);
       setInterval(syncUser, 30000);
+      loadAvisosMotboy();
+      setInterval(loadAvisosMotboy, 60000);
     }
 
     init();
