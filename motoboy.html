@@ -409,6 +409,18 @@ var API = "https://flashdrop-backend-production.up.railway.app";
           /* Botoes de navegação para ENTREGA — apenas quando dados liberados */
           var navEntrega = makeNavBtns("Entrega", o.endereco_entrega);
           if (navEntrega) card.appendChild(navEntrega);
+          /* Caixa de cobrança — somente pedidos dinheiro */
+          if (o.tipo_pagamento === "dinheiro") {
+            var valorPedido  = parseFloat(o.valor_pedido  || 0);
+            var valorEntrega = parseFloat(o.valor_total   || 0);
+            var totalCobrar  = valorPedido + valorEntrega;
+            var cobrarDiv = document.createElement("div");
+            cobrarDiv.style.cssText = "background:#1a2a00;border:2px solid #ffcc00;border-radius:10px;padding:12px;margin:10px 0;text-align:center;";
+            cobrarDiv.innerHTML = "<div style='font-size:11px;color:#ffcc00;font-weight:700;text-transform:uppercase;margin-bottom:4px;'>💵 Cobrar do Cliente</div>"
+              + "<div style='font-size:22px;font-weight:900;color:#ffcc00;'>R$ " + totalCobrar.toFixed(2) + "</div>"
+              + "<div style='font-size:11px;color:#aaa;margin-top:4px;'>Produto: R$ " + valorPedido.toFixed(2) + " + Entrega: R$ " + valorEntrega.toFixed(2) + "</div>";
+            card.appendChild(cobrarDiv);
+          }
         }
       } else if (o.status === "entregue") {
         /* Após entrega: sumir dados do cliente */
@@ -456,7 +468,21 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         card.appendChild(makeInfoRow("📞 Tel Loja", o.telefone_loja));
       }
 
-      card.appendChild(makeInfoRow("💰 Ganho", "R$ " + parseFloat(o.valor_motoboy || 0).toFixed(2), true));
+      var vMotoboy = parseFloat(o.valor_motoboy || 0);
+    var vComissao = parseFloat(o.comissao || 0);
+    var vPedido   = parseFloat(o.valor_pedido || 0);
+    var isDinheiro = o.tipo_pagamento === "dinheiro";
+    if (isDinheiro) {
+      var ganhoLiq = vMotoboy - vComissao;
+      card.appendChild(makeInfoRow("💰 Ganho Líquido", "R$ " + ganhoLiq.toFixed(2), true));
+      /* Nota de débito */
+      var debitDiv = document.createElement("div");
+      debitDiv.style.cssText = "background:#2a1a00;border:1px solid #ff9500;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#ff9500;";
+      debitDiv.innerHTML = "💵 <strong>Dinheiro:</strong> R$ " + vPedido.toFixed(2) + " do produto será debitado do seu saldo (valor que você cobrou da loja).";
+      card.appendChild(debitDiv);
+    } else {
+      card.appendChild(makeInfoRow("💰 Ganho", "R$ " + vMotoboy.toFixed(2), true));
+    }
 
       /* Observação da entrega (após entregue) */
       if (o.observacao_entrega) {
