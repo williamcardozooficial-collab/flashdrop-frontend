@@ -96,7 +96,7 @@ function renderLojaOrders(orders){
       var lbl=s==='todos'?'Todos':(statusLabels[s]||s);
       var active=_lojaFilter===s?' active':'';
       var badge=count>0?' <span class="filter-badge">'+count+'</span>':'';
-      return '<button class="filter-btn-loja'+active+'" onclick="filterLojaOrders(''+s+'')">'+lbl+badge+'</button>';
+      return '<button class="filter-btn-loja'+active+'" data-s="'+s+'" onclick="filterLojaOrders(this.dataset.s)">'+lbl+badge+'</button>';
     }).join('');
   }
   var filtered=_lojaFilter==='todos'?orders:orders.filter(function(o){return o.status===_lojaFilter;});
