@@ -59,7 +59,7 @@
 
   <div class="header" style="display:flex;align-items:center;justify-content:space-between;">
     <h1>FlashDrop Admin</h1>
-    <button onclick="location.reload()" style="background:#333;color:#ffcc00;border:1px solid #ffcc00;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:bold;cursor:pointer;margin-right:8px;">🔄 Atualizar</button><button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;">Sair</button>
+    <button onclick="location.reload()" style="background:#333;color:#ffcc00;border:1px solid #ffcc00;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:bold;cursor:pointer;margin-right:8px;">ð Atualizar</button><button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;">Sair</button>
   </div>
 
   <div class="tabs" id="tabs">
@@ -68,8 +68,8 @@
     <button class="tab-btn" onclick="showTab('motoboys', this)">Motoboys</button>
     <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
-    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
-    <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
+    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">ð¸ Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">ð Cadastros<span id="pending-badge" class="badge">0</span></button>
+    <button class="tab-btn" onclick="showTab('avisos', this)">ð¢ Avisos</button>
   </div>
 
   <div class="content">
@@ -111,11 +111,11 @@
         <div class="input-group">
           <label>Max pedidos por motoboy</label>
           <input id="cfg-max" class="input" type="number">
-        </div> <div class="input-group"> <label>⏳ Delay de Preparo (minutos, 1-99)</label> <input id="cfg-delay" class="input" type="number" min="1" max="99"> <small style="color:#888;font-size:11px">Tempo que o pedido fica em preparo antes de ir ao sistema automaticamente.</small> </div>
+        </div> <div class="input-group"> <label>â³ Delay de Preparo (minutos, 1-99)</label> <input id="cfg-delay" class="input" type="number" min="1" max="99"> <small style="color:#888;font-size:11px">Tempo que o pedido fica em preparo antes de ir ao sistema automaticamente.</small> </div>
         <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
       </div>
       <div class="card" style="margin-top:15px">
-        <h3 style="margin-bottom:15px;color:#ffcc00;">🗑️ Limpeza do Histórico</h3>
+        <h3 style="margin-bottom:15px;color:#ffcc00;">ðï¸ Limpeza do HistÃ³rico</h3>
         <div class="input-group">
           <label>Excluir pedidos entregues/cancelados com mais de (dias)</label>
           <input id="cfg-days" class="input" type="number" min="1" max="365" value="30" placeholder="Ex: 30">
@@ -131,7 +131,7 @@
 
     <div id="cadastros" class="section">
       <div class="card">
-        <h3 style="margin-bottom:12px;color:#ffcc00;">📋 Cadastros Pendentes de Aprovação</h3>
+        <h3 style="margin-bottom:12px;color:#ffcc00;">ð Cadastros Pendentes de AprovaÃ§Ã£o</h3>
         <p id="pending-empty" style="color:#888;font-size:13px;">Nenhum cadastro pendente.</p>
         <div id="pending-list"></div>
       </div>
@@ -140,24 +140,24 @@
 
   <div id="saques" class="section">
     <div class="card">
-      <h3 style="margin-bottom:12px;color:#ffcc00;">💸 Solicitações de Saque</h3>
-      <p id="saques-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p>
+      <h3 style="margin-bottom:12px;color:#ffcc00;">ð¸ SolicitaÃ§Ãµes de Saque</h3>
+      <p id="saques-empty" style="color:#888;font-size:13px;">Nenhuma solicitaÃ§Ã£o pendente.</p>
       <div id="saques-list"></div>
     </div>
   </div>
 <div id="avisos" class="section">
   <div class="card">
-    <h3 style="margin-bottom:12px;color:#ffcc00;">📢 Gerenciar Avisos</h3>
-    <div class="input-group"><label>Título do Aviso</label><input id="aviso-title" class="input" placeholder="Ex: Manutenção programada"></div>
+    <h3 style="margin-bottom:12px;color:#ffcc00;">ð¢ Gerenciar Avisos</h3>
+    <div class="input-group"><label>TÃ­tulo do Aviso</label><input id="aviso-title" class="input" placeholder="Ex: ManutenÃ§Ã£o programada"></div>
     <div class="input-group"><label>Texto</label><textarea id="aviso-body" class="input" rows="3" placeholder="Texto do aviso..." style="resize:vertical;min-height:80px"></textarea></div>
-    <div class="input-group"><label>Destinatário</label>
+    <div class="input-group"><label>DestinatÃ¡rio</label>
       <select id="aviso-target" class="input">
         <option value="all">Todos (Lojas e Motoboys)</option>
         <option value="loja">Apenas Lojas</option>
         <option value="motoboy">Apenas Motoboys</option>
       </select>
     </div>
-    <button class="btn btn-primary" onclick="postAviso()">📤 Publicar Aviso</button>
+    <button class="btn btn-primary" onclick="postAviso()">ð¤ Publicar Aviso</button>
   </div>
   <div id="avisos-list"></div>
 </div>
@@ -212,7 +212,7 @@
     let currentOrderFilter = 'todos';
 
     const STATUS_LABELS = {
- em_preparo: '🔄 Em Preparo',      pendente: 'Pendente',
+ em_preparo: 'ð Em Preparo',      pendente: 'Pendente',
       aceito: 'Aceito',
       na_loja: 'Na Loja',
       coletado: 'Coletado',
@@ -289,16 +289,16 @@
     }
     function buildTimeline(o) {
       var events = [
-        { label: 'Pedido criado',      icon: '🆕', ts: o.created_at },
-        { label: 'Aceito pelo motoboy',icon: '✅', ts: o.t_aceito },
-        { label: 'Motoboy na loja',    icon: '🏪', ts: o.t_na_loja },
-        { label: 'Pedido coletado',    icon: '📦', ts: o.t_coletado },
-        { label: 'Chegou no cliente',  icon: '🏠', ts: o.t_no_cliente },
-        { label: 'Entregue',           icon: '🎉', ts: o.t_entregue }
+        { label: 'Pedido criado',      icon: 'ð', ts: o.created_at },
+        { label: 'Aceito pelo motoboy',icon: 'â', ts: o.t_aceito },
+        { label: 'Motoboy na loja',    icon: 'ðª', ts: o.t_na_loja },
+        { label: 'Pedido coletado',    icon: 'ð¦', ts: o.t_coletado },
+        { label: 'Chegou no cliente',  icon: 'ð ', ts: o.t_no_cliente },
+        { label: 'Entregue',           icon: 'ð', ts: o.t_entregue }
       ].filter(function(e){ return !!e.ts; });
       if (events.length === 0) return '';
       return '<div style="margin-top:10px;border-top:1px solid #333;padding-top:8px">' +
-        '<div style="font-size:11px;color:#aaa;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Histórico</div>' +
+        '<div style="font-size:11px;color:#aaa;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">HistÃ³rico</div>' +
         events.map(function(e){
           return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px">' +
             '<span style="font-size:14px">' + e.icon + '</span>' +
@@ -328,7 +328,7 @@
           '</div>' +
           '<div class="row"><span class="val">Cliente:</span><span>' + o.nome_cliente + '</span></div>' +
           '<div class="row"><span class="val">Entrega:</span><span>' + o.endereco_entrega + '</span></div>' +
-          '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' + '<div class="row"><span class="val">💳 Pagamento:</span><span>' + ({dinheiro:"💵 Dinheiro",maquina:"💳 Máquina de Cartão",pix:"📱 PIX"}[o.tipo_pagamento] || o.tipo_pagamento || "—") + '</span></div>' + (o.tipo_pagamento === "dinheiro" && Number(o.valor_pedido) > 0 ? '<div class="row" style="color:#4caf50"><span class="val">💰 Cobrado:</span><strong>R$ ' + Number(o.valor_pedido).toFixed(2) + '</strong></div>' : '') +
+          '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' + '<div class="row"><span class="val">ð³ Pagamento:</span><span>' + ({dinheiro:"ðµ Dinheiro",maquina:"ð³ MÃ¡quina de CartÃ£o",pix:"ð± PIX"}[o.tipo_pagamento] || o.tipo_pagamento || "â") + '</span></div>' + (o.tipo_pagamento === "dinheiro" && Number(o.valor_pedido) > 0 ? '<div class="row" style="color:#4caf50"><span class="val">ð° Cobrado:</span><strong>R$ ' + Number(o.valor_pedido).toFixed(2) + '</strong></div>' : '') +
           mb +
           buildTimeline(o) +
           '<div style="display:flex;gap:8px">' +
@@ -355,7 +355,7 @@
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
           '<div>' +
             '<div style="font-size:16px;font-weight:700;color:#fff">' + u.name + '</div>' +
-            (u.custom_id ? '<div style="font-size:18px;font-weight:900;color:#ffcc00;letter-spacing:2px;margin-top:2px">🪪 ' + u.custom_id + '</div>' : '') +
+            (u.custom_id ? '<div style="font-size:18px;font-weight:900;color:#ffcc00;letter-spacing:2px;margin-top:2px">ðªª ' + u.custom_id + '</div>' : '') +
           '</div>' +
           '<span style="font-size:12px;display:flex;align-items:center;gap:4px">' +
             '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (u.online ? '#4caf50' : '#666') + '"></span>' +
@@ -365,25 +365,26 @@
 
         // Info block
         '<div style="background:#111;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px">' +
-          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">👤 Login</span><span style="color:#ddd">@' + u.username + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📱 Telefone</span><span style="color:#ddd">' + (u.phone || '—') + '</span></div>' +
-          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">🏍️ Veículo</span><span style="color:#ddd">' + (u.vehicle || '—') + '</span></div>' : '') +
-          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📄 CPF</span><span style="color:#ff9500">' + (u.cpf || '—') + '</span></div>' : '') +
-          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📍 Endereço</span><span style="color:#ff9500;text-align:right;max-width:60%">' + (u.address || '—') + '</span></div>' : '') +
-          (!isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📍 Endereço</span><span style="color:#ddd;text-align:right;max-width:60%">' + (u.address || '—') + '</span></div>' : '') +
-          '<div style="display:flex;justify-content:space-between;border-top:1px solid #222;padding-top:6px;margin-top:4px"><span style="color:#888">💰 ' + (u.role === 'loja' ? 'Crédito' : 'Saldo') + '</span><strong style="color:#4caf50">R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">ð¤ Login</span><span style="color:#ddd">@' + u.username + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">ð± Telefone</span><span style="color:#ddd">' + (u.phone || 'â') + '</span></div>' +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">ðï¸ VeÃ­culo</span><span style="color:#ddd">' + (u.vehicle || 'â') + '</span></div>' : '') +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">ð CPF</span><span style="color:#ff9500">' + (u.cpf || 'â') + '</span></div>' : '') +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">ð EndereÃ§o</span><span style="color:#ff9500;text-align:right;max-width:60%">' + (u.address || 'â') + '</span></div>' : '') +
+          (!isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">ð EndereÃ§o</span><span style="color:#ddd;text-align:right;max-width:60%">' + (u.address || 'â') + '</span></div>' : '') +
+          '<div style="display:flex;justify-content:space-between;border-top:1px solid #222;padding-top:6px;margin-top:4px"><span style="color:#888">ð° ' + (u.role === 'loja' ? 'CrÃ©dito' : 'Saldo') + '</span><strong style="color:#4caf50">R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
+        (isMotoboy ? '<div style="display:flex;justify-content:space-between;padding-top:4px;margin-top:2px"><span style="color:#888">💳 Limite de Crédito</span><strong style="color:' + (parseFloat(u.credit_limit||0)>0?'#ffcc00':'#666') + '">R$ ' + Number(u.credit_limit||0).toFixed(2) + '</strong></div>' : '') +
         '</div>' +
 
         // Alertas
-        (isBlocked ? '<div style="background:#2a0000;border:1px solid #f44336;border-radius:6px;padding:6px 10px;font-size:12px;color:#f44336;margin-bottom:8px">⛔ CONTA BLOQUEADA</div>' : '') +
-        (hasPenalty ? '<div style="background:#2a1a00;border:1px solid #ff9500;border-radius:6px;padding:6px 10px;font-size:12px;color:#ff9500;margin-bottom:8px">⏳ Penalidade até ' + new Date(Number(u.blocked_until)).toLocaleTimeString('pt-BR') + '</div>' : '') +
+        (isBlocked ? '<div style="background:#2a0000;border:1px solid #f44336;border-radius:6px;padding:6px 10px;font-size:12px;color:#f44336;margin-bottom:8px">â CONTA BLOQUEADA</div>' : '') +
+        (hasPenalty ? '<div style="background:#2a1a00;border:1px solid #ff9500;border-radius:6px;padding:6px 10px;font-size:12px;color:#ff9500;margin-bottom:8px">â³ Penalidade atÃ© ' + new Date(Number(u.blocked_until)).toLocaleTimeString('pt-BR') + '</div>' : '') +
 
-        // Botões
+        // BotÃµes
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-          '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">✏️ Editar</button>' +
-          '<button class="btn btn-sm" style="background:' + (isBlocked ? '#4caf50' : '#c0392b') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + isBlocked + ')">' + (isBlocked ? '✅ Desbloquear' : '🚫 Bloquear') + '</button>' +
-          '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteUser(' + u.id + ',\'' + u.name + '\')">🗑️ Excluir</button>' +
-          (hasPenalty ? '<button class="btn btn-sm" style="background:#ff9500;color:#000" onclick="removePenalty(' + u.id + ')">🔓 Remover Penalidade</button>' : '') +
+          '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">âï¸ Editar</button>' +
+          '<button class="btn btn-sm" style="background:' + (isBlocked ? '#4caf50' : '#c0392b') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + isBlocked + ')">' + (isBlocked ? 'â Desbloquear' : 'ð« Bloquear') + '</button>' +
+          '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteUser(' + u.id + ',\'' + u.name + '\')">ðï¸ Excluir</button>' +
+          (hasPenalty ? '<button class="btn btn-sm" style="background:#ff9500;color:#000" onclick="removePenalty(' + u.id + ')">ð Remover Penalidade</button>' : '') +
         '</div>' +
 
       '</div>';
@@ -495,11 +496,12 @@
       document.getElementById('user-modal-title').textContent = 'Editar - ' + u.name;
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (u.username || '') + '" disabled style="opacity:0.5"></div>' +
-                '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
+                '<div class="input-group"><label>ðªª ID (' + (u.role==='motoboy'?'Motoboy: M+4 dÃ­gitos':'Loja: L+6 dÃ­gitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></div>' +
         '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></div>' +
-        '<div class="input-group"><label>' + (u.role === 'loja' ? 'Endereco' : 'Veiculo') + '</label><input id="u-extra" class="input" value="' + (u.address || u.vehicle || '') + '"></div>';
+        '<div class="input-group"><label>' + (u.role === 'loja' ? 'Endereco' : 'Veiculo') + '</label><input id="u-extra" class="input" value="' + (u.address || u.vehicle || '') + '"></div>' +
+    (u.role === 'motoboy' ? '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + Number(u.credit_limit || 0).toFixed(2) + '"></div>' : '');
       openModal('modal-user');
     }
 
@@ -521,6 +523,8 @@
         var u = allUsers.find(function(x){ return x.id === currentUserId; });
         var extra = document.getElementById('u-extra').value;
         if (u.role === 'loja') data.address = extra; else data.vehicle = extra;
+      var clEl = document.getElementById('u-credit-limit');
+      if (clEl) data.credit_limit = parseFloat(clEl.value) || 0;
       }
       await fetch(API + '/users' + (currentUserId ? '/' + currentUserId : ''), {
         method: currentUserId ? 'PUT' : 'POST',
@@ -648,7 +652,7 @@
     }
 
 
-    /* ── CADASTROS PENDENTES ── */
+    /* ââ CADASTROS PENDENTES ââ */
     async function loadSaques() {
   try {
     var r = await fetch(API + '/withdrawals');
@@ -668,7 +672,7 @@
     if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'inline'; }
     else { badge.style.display = 'none'; }
     var statusColor = { pendente: '#ffa500', aprovado: '#4caf50', recusado: '#f44336' };
-    var statusLabel = { pendente: '⏳ Pendente', aprovado: '✅ Aprovado', recusado: '❌ Recusado' };
+    var statusLabel = { pendente: 'â³ Pendente', aprovado: 'â Aprovado', recusado: 'â Recusado' };
     container.innerHTML = all.map(function(w) {
       var dt = new Date(w.created_at).toLocaleDateString('pt-BR') + ' ' + new Date(w.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
       return '<div class="card" style="border-left:3px solid ' + (statusColor[w.status]||'#555') + ';margin-bottom:10px">' +
@@ -676,14 +680,14 @@
         '<strong style="font-size:16px">R$ ' + parseFloat(w.valor).toFixed(2) + '</strong>' +
         '<span style="color:' + (statusColor[w.status]||'#aaa') + ';font-weight:700">' + (statusLabel[w.status]||w.status) + '</span>' +
         '</div>' +
-        '<div class="row"><span class="val">Motoboy:</span><span>' + (w.motoboy_name||'—') + '</span></div>' +
+        '<div class="row"><span class="val">Motoboy:</span><span>' + (w.motoboy_name||'â') + '</span></div>' +
         '<div class="row"><span class="val">Chave PIX:</span><span style="word-break:break-all">' + w.pix_key + '</span></div>' +
         '<div class="row"><span class="val">Data:</span><span>' + dt + '</span></div>' +
         (w.obs ? '<div class="row"><span class="val">Obs:</span><span>' + w.obs + '</span></div>' : '') +
         (w.status === 'pendente' ?
           '<div style="display:flex;gap:8px;margin-top:10px">' +
-          '<button class="btn btn-primary btn-sm" onclick="processWithdrawal(' + w.id + ',\'aprovado\')">✅ Aprovar</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="processWithdrawal(' + w.id + ',\'recusado\')">❌ Recusar</button>' +
+          '<button class="btn btn-primary btn-sm" onclick="processWithdrawal(' + w.id + ',\'aprovado\')">â Aprovar</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="processWithdrawal(' + w.id + ',\'recusado\')">â Recusar</button>' +
           '</div>' : '') +
         '</div>';
     }).join('');
@@ -691,7 +695,7 @@
 }
 
 async function processWithdrawal(id, status) {
-  var msg = status === 'aprovado' ? 'Aprovar este saque? O valor será debitado do saldo do motoboy.' : 'Recusar este saque?';
+  var msg = status === 'aprovado' ? 'Aprovar este saque? O valor serÃ¡ debitado do saldo do motoboy.' : 'Recusar este saque?';
   if (!confirm(msg)) return;
   var obs = status === 'recusado' ? prompt('Motivo da recusa (opcional):') : null;
   try {
@@ -702,7 +706,7 @@ async function processWithdrawal(id, status) {
     });
     var data = await r.json();
     if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Tente novamente.')); return; }
-    tg.showAlert(status === 'aprovado' ? '✅ Saque aprovado! Saldo debitado.' : '❌ Saque recusado.');
+    tg.showAlert(status === 'aprovado' ? 'â Saque aprovado! Saldo debitado.' : 'â Saque recusado.');
     loadSaques();
   } catch(e) { tg.showAlert('Erro: ' + e.message); }
 }
@@ -727,16 +731,16 @@ async function loadPending() {
           var card = document.createElement('div');
           card.className = 'pending-card';
           card.innerHTML =
-            '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">👤 ' + u.name + '</div>' +
-            '<div class="field"><strong>Usuário:</strong> ' + u.username + '</div>' +
-            '<div class="field"><strong>Função:</strong> ' + u.role + '</div>' +
-            '<div class="field"><strong>📱 Telefone:</strong> ' + (u.phone || '—') + '</div>' +
-            '<div class="field"><strong>🏍️ Veículo:</strong> ' + (u.vehicle || '—') + '</div>' +
-            '<div class="field private"><strong>📄 CPF (confidencial):</strong> ' + (u.cpf || '—') + '</div>' +
-            '<div class="field private"><strong>📍 Endereço (confidencial):</strong> ' + (u.address || '—') + '</div>' +
+            '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">ð¤ ' + u.name + '</div>' +
+            '<div class="field"><strong>UsuÃ¡rio:</strong> ' + u.username + '</div>' +
+            '<div class="field"><strong>FunÃ§Ã£o:</strong> ' + u.role + '</div>' +
+            '<div class="field"><strong>ð± Telefone:</strong> ' + (u.phone || 'â') + '</div>' +
+            '<div class="field"><strong>ðï¸ VeÃ­culo:</strong> ' + (u.vehicle || 'â') + '</div>' +
+            '<div class="field private"><strong>ð CPF (confidencial):</strong> ' + (u.cpf || 'â') + '</div>' +
+            '<div class="field private"><strong>ð EndereÃ§o (confidencial):</strong> ' + (u.address || 'â') + '</div>' +
             '<div class="field" style="color:#888;font-size:11px;">Cadastrado em: ' + new Date(u.created_at).toLocaleString('pt-BR') + '</div>' +
-            '<button class="pending-btn approve" onclick="approvePending(' + u.id + ', this)">✅ Aprovar</button>' +
-            '<button class="pending-btn reject" onclick="rejectPending(' + u.id + ', this)">❌ Recusar</button>';
+            '<button class="pending-btn approve" onclick="approvePending(' + u.id + ', this)">â Aprovar</button>' +
+            '<button class="pending-btn reject" onclick="rejectPending(' + u.id + ', this)">â Recusar</button>';
           container.appendChild(card);
         });
       } catch(e) {
@@ -750,9 +754,9 @@ async function loadPending() {
         var r = await fetch(API + '/users/' + id + '/approve', { method: 'POST' });
         if (!r.ok) throw new Error('Erro');
         await loadPending();
-        alert('✅ Cadastro aprovado com sucesso!');
+        alert('â Cadastro aprovado com sucesso!');
       } catch(e) {
-        btn.disabled = false; btn.textContent = '✅ Aprovar';
+        btn.disabled = false; btn.textContent = 'â Aprovar';
         alert('Erro ao aprovar: ' + e.message);
       }
     }
@@ -764,9 +768,9 @@ async function loadPending() {
         var r = await fetch(API + '/users/' + id, { method: 'DELETE' });
         if (!r.ok) throw new Error('Erro');
         await loadPending();
-        alert('❌ Cadastro recusado e excluído.');
+        alert('â Cadastro recusado e excluÃ­do.');
       } catch(e) {
-        btn.disabled = false; btn.textContent = '❌ Recusar';
+        btn.disabled = false; btn.textContent = 'â Recusar';
         alert('Erro ao recusar: ' + e.message);
       }
     }
@@ -779,7 +783,7 @@ loadSaques();
 
     loadData('pedidos');
 
-    /* ── AVISOS ── */
+    /* ââ AVISOS ââ */
     async function loadAvisos() {
       try {
         var r = await fetch(API + '/notices');
@@ -800,7 +804,7 @@ loadSaques();
             '<div style="color:#ccc;font-size:13px;margin-bottom:8px;line-height:1.5">' + n.body + '</div>' +
             '<div style="display:flex;justify-content:space-between;align-items:center">' +
             '<span style="font-size:11px;color:#666">' + dt + '</span>' +
-            '<button class="btn btn-danger btn-sm" onclick="deleteAviso(' + n.id + ')">🗑️ Excluir</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="deleteAviso(' + n.id + ')">ðï¸ Excluir</button>' +
             '</div>' +
             '</div>';
         }).join('');
@@ -811,7 +815,7 @@ loadSaques();
       var title = document.getElementById('aviso-title').value.trim();
       var body = document.getElementById('aviso-body').value.trim();
       var target = document.getElementById('aviso-target').value;
-      if (!title) { tg.showAlert('Informe o título do aviso.'); return; }
+      if (!title) { tg.showAlert('Informe o tÃ­tulo do aviso.'); return; }
       if (!body) { tg.showAlert('Informe o texto do aviso.'); return; }
       try {
         var r = await fetch(API + '/notices', {
@@ -821,7 +825,7 @@ loadSaques();
         if (!r.ok) { var e = await r.json(); tg.showAlert('Erro: ' + e.error); return; }
         document.getElementById('aviso-title').value = '';
         document.getElementById('aviso-body').value = '';
-        tg.showAlert('✅ Aviso publicado!');
+        tg.showAlert('â Aviso publicado!');
         loadAvisos();
       } catch(e) { tg.showAlert('Erro: ' + e.message); }
     }
