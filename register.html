@@ -81,6 +81,12 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
       <input type="text" id="vehicle" placeholder="Ex: Honda CG 160 – ABC-1234" required/>
     </div>
 
+    <div class="input-group">
+      <label>🔗 Codigo de quem te indicou (opcional)</label>
+      <input type="text" id="referral-code" placeholder="Ex: JOAO123" style="text-transform:uppercase"/>
+      <div class="hint">Se um motoboy te indicou, coloque o codigo dele aqui</div>
+    </div>
+
     <button class="btn btn-primary" id="registerBtn" onclick="doRegister()">📝 Solicitar Cadastro</button>
     <p class="login-link">Já tem conta? <a href="login.html">Entrar</a></p>
   </div>
@@ -135,6 +141,7 @@ async function doRegister(){
   const phone=document.getElementById('phone').value.trim();
   const address=document.getElementById('address').value.trim();
   const vehicle=document.getElementById('vehicle').value.trim();
+  const referralCode=document.getElementById('referral-code').value.trim().toUpperCase();
 
   if(!username||!password||!name||!cpf||!phone||!vehicle){
     showError('❌ Preencha todos os campos obrigatórios.'); return;
@@ -160,7 +167,7 @@ async function doRegister(){
     const resp=await fetch(API+'/register',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username,password,role:'motoboy',name,cpf,phone,address,vehicle})
+      body:JSON.stringify({username,password,role:'motoboy',name,cpf,phone,address,vehicle,referral_code:referralCode||null})
     });
     const data=await resp.json();
     if(!resp.ok){ showError('❌ '+( data.error||'Erro ao cadastrar.')); btn.disabled=false; btn.textContent='📝 Solicitar Cadastro'; return; }
