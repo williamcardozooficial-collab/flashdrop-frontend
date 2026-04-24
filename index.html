@@ -165,7 +165,7 @@
   <button class="fab" onclick="openNewUser()">+</button>
 
   <!-- ════ INDICAÇÕES ════ -->
-  <div id="indicacoes" style="display:none">
+  <div id="indicacoes" class="section">
     <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px">
       <h3 style="color:#ffcc00;margin:0 0 14px;font-size:15px">&#9881;&#65039; Regras do Programa</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -306,9 +306,9 @@
         loadPending();
       } else if (tab === 'avisos') {
         loadAvisos();
-    if (tab === 'indicacoes') { loadIndicacoes(); loadReferralSettings(); }
-      }
+      } else if (tab === 'indicacoes') { loadIndicacoes(); loadReferralSettings(); }
     }
+  }
 
     function filterOrders(status) {
       currentOrderFilter = status;
