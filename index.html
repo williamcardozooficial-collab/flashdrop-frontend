@@ -494,14 +494,19 @@
       var u = allUsers.find(function(x){ return x.id === id; });
       if (!u) return;
       document.getElementById('user-modal-title').textContent = 'Editar - ' + u.name;
+      var motoboyCampos = u.role === 'motoboy'
+        ? '<div class="input-group"><label>🏍️ Veículo</label><input id="u-vehicle" class="input" value="' + (u.vehicle || '') + '"></div>' +
+          '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (u.address || '') + '"></div>' +
+          '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (u.cpf || '') + '"></div>' +
+          '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>'
+        : '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (u.address || '') + '"></div>';
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (u.username || '') + '" disabled style="opacity:0.5"></div>' +
-                '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
+        '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></div>' +
         '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></div>' +
-        '<div class="input-group"><label>' + (u.role === 'loja' ? 'Endereco' : 'Veiculo') + '</label><input id="u-extra" class="input" value="' + (u.address || u.vehicle || '') + '"></div>' +
-    (u.role === 'motoboy' ? '<div class="input-group"><label>&#128179; Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + Number(u.credit_limit || 0).toFixed(2) + '"></div>' : '');
+        motoboyCampos;
       openModal('modal-user');
     }
 
@@ -521,10 +526,17 @@
         if (data.role === 'loja') data.address = extra; else data.vehicle = extra;
       } else {
         var u = allUsers.find(function(x){ return x.id === currentUserId; });
-        var extra = document.getElementById('u-extra').value;
-        if (u.role === 'loja') data.address = extra; else data.vehicle = extra;
-      var clEl = document.getElementById('u-credit-limit');
-      if (clEl) data.credit_limit = parseFloat(clEl.value) || 0;
+        var vehicleEl = document.getElementById('u-vehicle');
+        var addressEl = document.getElementById('u-address');
+        var cpfEl = document.getElementById('u-cpf');
+        if (vehicleEl) data.vehicle = vehicleEl.value;
+        if (addressEl) data.address = addressEl.value;
+        if (cpfEl && cpfEl.value.trim()) data.cpf = cpfEl.value.trim();
+        var clEl = document.getElementById('u-credit-limit');
+        if (clEl) {
+          var clVal = parseFloat(clEl.value);
+          data.custom_credit_limit = isNaN(clVal) || clVal <= 0 ? null : clVal;
+        }
       }
       await fetch(API + '/users' + (currentUserId ? '/' + currentUserId : ''), {
         method: currentUserId ? 'PUT' : 'POST',
