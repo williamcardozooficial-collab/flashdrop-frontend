@@ -418,7 +418,8 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       var lojaInfoRow = makeInfoRow("🏪 Loja", lojaDisplay + (lojaId ? ' — ' + lojaId : ''));
       card.appendChild(lojaInfoRow);
       if (o.endereco_coleta) {
-        card.appendChild(makeInfoRow("📦 Coleta", o.endereco_coleta));
+        card.appendChild(makeInfoRow("📦 Coleta", o.endereco_coleta + (o.complemento_coleta ? " — " + o.complemento_coleta : "")));
+      if (o.obs_coleta) { var obsColetaDiv = document.createElement("div"); obsColetaDiv.style.cssText = "background:#1a2a1a;border:1px solid #4caf50;border-radius:7px;padding:7px 10px;margin:4px 0;font-size:12px;color:#81c784;"; obsColetaDiv.innerHTML = "<strong>📝 Obs Coleta:</strong> " + o.obs_coleta; card.appendChild(obsColetaDiv); }
         /* Botoes de navegação para COLETA — sempre visíveis para pedidos aceitos */
         if (cardType === "mine") {
           var navColeta = makeNavBtns("Coleta", o.endereco_coleta);
@@ -435,7 +436,8 @@ var API = "https://flashdrop-backend-production.up.railway.app";
           card.appendChild(telRow);
         }
         if (o.endereco_entrega) {
-          card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+          card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega + (o.complemento_entrega ? " — " + o.complemento_entrega : ""));
+          if (o.obs_entrega_loja) { var obsEntDiv = document.createElement("div"); obsEntDiv.style.cssText = "background:#1a2210;border:1px solid #ffcc00;border-radius:7px;padding:7px 10px;margin:4px 0;font-size:12px;color:#ffcc00;"; obsEntDiv.innerHTML = "<strong>📝 Obs da Loja:</strong> " + o.obs_entrega_loja; card.appendChild(obsEntDiv); }
           /* Botoes de navegação para ENTREGA — apenas quando dados liberados */
           var navEntrega = makeNavBtns("Entrega", o.endereco_entrega);
           if (navEntrega) card.appendChild(navEntrega);
@@ -458,7 +460,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         privDiv.style = "font-size:11px;color:#666;font-style:italic;margin:4px 0;";
         privDiv.textContent = "🔒 Dados do cliente ocultados por privacidade.";
         card.appendChild(privDiv);
-        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega + (o.complemento_entrega ? " — " + o.complemento_entrega : "")));
         /* Botao de retorno ao ponto de coleta — apenas pedidos com maquina de cartao apos entrega */
         if (o.tipo_pagamento === "maquina" && o.endereco_coleta) {
           var retornoDiv = document.createElement("div");
@@ -486,7 +488,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         }
       } else {
         /* Antes de coletar: mostrar apenas endereço de entrega (sem cliente) */
-        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega));
+        if (o.endereco_entrega) card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega + (o.complemento_entrega ? " — " + o.complemento_entrega : "")));
         var privDiv2 = document.createElement("div");
         privDiv2.style = "font-size:11px;color:#ff9500;font-style:italic;margin:4px 0;";
         privDiv2.textContent = "🔒 Dados do cliente liberados ao coletar o pedido.";
