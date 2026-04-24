@@ -108,34 +108,39 @@
   <button class="tab-btn" id="tab-btn-done" onclick="switchTab('done')">
     <span class="tab-icon">✅</span>Entregues
   </button>
+  <button class="tab-btn" id="tab-btn-saldo" onclick="switchTab('saldo')">
+    <span class="tab-icon">💰</span>Saldo
+  </button>
 </div>
 <div class="orders">
   <div id="avisos-mb-banner" style="display:none;background:#1a1a00;border:1px solid #ffcc00;border-radius:10px;padding:12px;margin-bottom:12px;"></div>
-  <button class="btn-pedir-saque" onclick="openSaqueModal()">💸 Solicitar Saque</button>
-
-  <!-- ════ MINHA INDICAÇÃO ════ -->
-  <div id="indicacao-panel" style="background:#1a1a00;border:1px solid #ffcc00;border-radius:10px;padding:14px;margin:10px 0;display:none">
-    <div style="font-size:13px;font-weight:700;color:#ffcc00;margin-bottom:10px">&#128279; Meu C&#243;digo de Indica&#231;&#227;o</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div id="mb-ref-code" style="font-size:22px;font-weight:900;color:#fff;letter-spacing:4px;flex:1;text-align:center;background:#222;border-radius:8px;padding:10px">--</div>
-      <button onclick="copyRefCode()" style="padding:10px 14px;background:#ffcc00;border:none;border-radius:8px;color:#000;font-weight:700;cursor:pointer;font-size:13px">&#128203;</button>
-    </div>
-    <div style="font-size:11px;color:#aaa;text-align:center;margin-bottom:10px">Compartilhe este c&#243;digo. Quem usar no cadastro gera comiss&#245;es para voc&#234;!</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div style="background:#222;border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:20px;font-weight:900;color:#ffcc00" id="mb-total-indicados">0</div>
-        <div style="font-size:10px;color:#aaa">Total Indicados</div>
-      </div>
-      <div style="background:#222;border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:20px;font-weight:900;color:#4caf50" id="mb-total-ganhos">R$ 0,00</div>
-        <div style="font-size:10px;color:#aaa">Total Ganhos</div>
-      </div>
-    </div>
-    <div id="mb-indicados-list" style="font-size:12px;color:#888;text-align:center">Nenhum indicado ainda.</div>
-  </div>
-  <div id="tab-panel-available" class="tab-panel active"><div id="available-orders"></div></div>
+    <div id="tab-panel-available" class="tab-panel active"><div id="available-orders"></div></div>
   <div id="tab-panel-mine" class="tab-panel"><div id="my-orders"></div></div>
   <div id="tab-panel-done" class="tab-panel"><div id="done-orders"></div></div>
+  <div id="tab-panel-saldo" class="tab-panel">
+    <button class="btn-pedir-saque" onclick="openSaqueModal()">💸 Solicitar Saque</button>
+    
+      <!-- ════ MINHA INDICAÇÃO ════ -->
+      <div id="indicacao-panel" style="background:#1a1a00;border:1px solid #ffcc00;border-radius:10px;padding:14px;margin:10px 0;display:none">
+        <div style="font-size:13px;font-weight:700;color:#ffcc00;margin-bottom:10px">&#128279; Meu C&#243;digo de Indica&#231;&#227;o</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div id="mb-ref-code" style="font-size:22px;font-weight:900;color:#fff;letter-spacing:4px;flex:1;text-align:center;background:#222;border-radius:8px;padding:10px">--</div>
+          <button onclick="copyRefCode()" style="padding:10px 14px;background:#ffcc00;border:none;border-radius:8px;color:#000;font-weight:700;cursor:pointer;font-size:13px">&#128203;</button>
+        </div>
+        <div style="font-size:11px;color:#aaa;text-align:center;margin-bottom:10px">Compartilhe este c&#243;digo. Quem usar no cadastro gera comiss&#245;es para voc&#234;!</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="background:#222;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:900;color:#ffcc00" id="mb-total-indicados">0</div>
+            <div style="font-size:10px;color:#aaa">Total Indicados</div>
+          </div>
+          <div style="background:#222;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:900;color:#4caf50" id="mb-total-ganhos">R$ 0,00</div>
+            <div style="font-size:10px;color:#aaa">Total Ganhos</div>
+          </div>
+        </div>
+        <div id="mb-indicados-list" style="font-size:12px;color:#888;text-align:center">Nenhum indicado ainda.</div>
+      </div>
+  </div>
 </div>
 
   
@@ -588,7 +593,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     var _activeTab = 'available';
     function switchTab(tab) {
       _activeTab = tab;
-      ['available','mine','done'].forEach(function(t) {
+      ['available','mine','done','saldo'].forEach(function(t) {
         var btn = document.getElementById('tab-btn-' + t);
         var panel = document.getElementById('tab-panel-' + t);
         if (btn) btn.className = 'tab-btn' + (t === tab ? ' active' : '');
