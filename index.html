@@ -236,6 +236,18 @@
     </div>
   </div>
 
+  <!-- Modal Indicacao -->
+  <div id="modal-indicacao" class="modal">
+    <div class="modal-content">
+      <h3 style="color:#ffcc00;margin:0 0 16px">&#9999;&#65039; Editar Indica&#231;&#227;o</h3>
+      <div id="indicacao-fields"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-outline" onclick="closeModal('modal-indicacao')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveIndicacao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     var _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
     const API = 'https://flashdrop-backend-production.up.railway.app';
@@ -722,22 +734,51 @@
     }
 
     async function editIndicacao(id) {
-      var novoReferrer = prompt('ID do novo motoboy indicador (vazio para manter):');
-      var novaDataFim = prompt('Nova data fim YYYY-MM-DD (vazio para manter):');
-      var novaMeta = prompt('Nova meta de pedidos (vazio para manter):');
-      var novoBonus = prompt('Novo valor do bônus (vazio para manter):');
-      var novoStatus = prompt('Novo status ativo/expirado/concluido/cancelado (vazio para manter):');
-      var body = {};
-      if (novoReferrer) body.referrer_id = parseInt(novoReferrer);
-      if (novaDataFim) body.data_fim = novaDataFim;
-      if (novaMeta) body.meta_pedidos = parseInt(novaMeta);
-      if (novoBonus) body.bonus_valor = parseFloat(novoBonus);
-      if (novoStatus) body.status_ref = novoStatus;
-      if (!Object.keys(body).length) return;
-      var r = await fetch(API + '/referrals/' + id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      if (r.ok) { alert('Atualizado!'); loadIndicacoes(); } else alert('Erro ao atualizar.');
+      try {
+        var resp = await fetch(API + '/referrals');
+        var refs = await resp.json();
+        var ref = refs.find(function(r){ return r.id === id; });
+        if (!ref) { alert('Indicação não encontrada.'); return; }
+        window._editingIndicacaoId = id;
+        var dataFimVal = ref.data_fim ? ref.data_fim.substring(0,10) : '';
+        document.getElementById('indicacao-fields').innerHTML =
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Indicado</label>' +
+          '<input type="text" value="' + ref.referred_name + '" disabled style="width:100%;padding:7px;background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#666;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Indicador</label>' +
+          '<input type="text" value="' + ref.referrer_name + '" disabled style="width:100%;padding:7px;background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#666;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Status</label>' +
+          '<select id="ind-status" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff"><option value="ativo"' + (ref.status_ref==="ativo"?" selected":"") + '>Ativo</option><option value="concluido"' + (ref.status_ref==="concluido"?" selected":"") + '>Concluído</option><option value="expirado"' + (ref.status_ref==="expirado"?" selected":"") + '>Expirado</option><option value="cancelado"' + (ref.status_ref==="cancelado"?" selected":"") + '>Cancelado</option></select></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Data fim</label>' +
+          '<input type="date" id="ind-data-fim" value="' + dataFimVal + '" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Meta pedidos</label>' +
+          '<input type="number" id="ind-meta" value="' + (ref.meta_pedidos||'') + '" min="1" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Bônus (R$)</label>' +
+          '<input type="number" id="ind-bonus" step="0.01" value="' + (ref.bonus_valor||'') + '" min="0" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Bônus pago?</label>' +
+          '<select id="ind-bonus-pago" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff"><option value="false"' + (!ref.bonus_pago?' selected':'') + '>❌ Não</option><option value="true"' + (ref.bonus_pago?' selected':'') + '>✅ Sim</option></select></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Pedidos válidos</label>' +
+          '<input type="number" id="ind-ped-validos" value="' + (ref.total_pedidos_validos||0) + '" min="0" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '</div>';
+        openModal('modal-indicacao');
+      } catch(e) { alert('Erro ao carregar indicação: ' + e.message); }
     }
 
+    async function saveIndicacao() {
+      var id = window._editingIndicacaoId;
+      var body = {
+        status_ref: document.getElementById('ind-status').value,
+        data_fim: document.getElementById('ind-data-fim').value || null,
+        meta_pedidos: parseInt(document.getElementById('ind-meta').value) || null,
+        bonus_valor: parseFloat(document.getElementById('ind-bonus').value) || null,
+        bonus_pago: document.getElementById('ind-bonus-pago').value === 'true',
+        total_pedidos_validos: parseInt(document.getElementById('ind-ped-validos').value) || 0
+      };
+      try {
+        var r = await fetch(API + '/referrals/' + id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if (r.ok) { closeModal('modal-indicacao'); loadIndicacoes(); } else { var er = await r.json(); alert('Erro: ' + (er.error||'desconhecido')); }
+      } catch(e) { alert('Erro: ' + e.message); }
+    }
     async function deleteIndicacao(id) {
       if (!confirm('Remover esta indicação definitivamente?')) return;
       await fetch(API + '/referrals/' + id, {method:'DELETE'});
