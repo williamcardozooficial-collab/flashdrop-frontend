@@ -70,6 +70,7 @@
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
     <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
     <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
+      <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
   </div>
 
   <div class="content">
@@ -162,6 +163,42 @@
   <div id="avisos-list"></div>
 </div>
   <button class="fab" onclick="openNewUser()">+</button>
+
+  <!-- ════ INDICAÇÕES ════ -->
+  <div id="indicacoes" style="display:none">
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px">
+      <h3 style="color:#ffcc00;margin:0 0 14px;font-size:15px">&#9881;&#65039; Regras do Programa</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Ativo?</label>
+          <select id="ref-ativo" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff">
+            <option value="true">&#9989; Sim</option><option value="false">&#10060; N&#227;o</option>
+          </select></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Comiss&#227;o pedido de loja (R$)</label>
+          <input id="ref-com-loja" type="number" step="0.01" min="0" placeholder="0.50" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">B&#244;nus meta motoboy (R$)</label>
+          <input id="ref-bonus-mb" type="number" step="0.01" min="0" placeholder="150.00" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Meta de pedidos (motoboy)</label>
+          <input id="ref-meta-ped" type="number" min="1" placeholder="100" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Prazo meta motoboy (dias)</label>
+          <input id="ref-prazo-mb" type="number" min="1" placeholder="30" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Validade indica&#231;&#227;o loja (dias)</label>
+          <input id="ref-validade-loja" type="number" min="1" placeholder="90" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>
+      </div>
+      <button onclick="saveReferralSettings()" style="width:100%;padding:10px;background:#ffcc00;border:none;border-radius:8px;color:#000;font-weight:700;cursor:pointer">&#128190; Salvar Regras</button>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="color:#ffcc00;margin:0;font-size:15px">&#127942; Ranking de Indicadores</h3>
+        <button onclick="loadIndicacoes()" style="padding:6px 12px;background:#333;border:1px solid #555;border-radius:6px;color:#fff;font-size:11px;cursor:pointer">&#128260; Atualizar</button>
+      </div>
+      <div id="ref-summary-list" style="font-size:13px;color:#aaa;text-align:center;padding:10px">Carregando...</div>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px">
+      <h3 style="color:#ffcc00;margin:0 0 12px;font-size:15px">&#128101; Todas as Indica&#231;&#245;es</h3>
+      <div id="ref-list" style="font-size:13px;color:#aaa;text-align:center;padding:10px">Carregando...</div>
+    </div>
+    <button onclick="runReferralCleanup()" style="width:100%;padding:10px;background:#2a1a00;border:1px solid #ff9500;border-radius:8px;color:#ff9500;font-weight:600;cursor:pointer;margin-bottom:10px">&#128465; Limpeza Autom&#225;tica (registros &gt; 20 dias encerrados)</button>
+  </div>
 
   <!-- Modal Usuario -->
   <div id="modal-user" class="modal">
@@ -257,6 +294,7 @@
         loadPending();
       } else if (tab === 'avisos') {
         loadAvisos();
+    if (tab === 'indicacoes') { loadIndicacoes(); loadReferralSettings(); }
       }
     }
 
@@ -614,6 +652,104 @@
         })
       });
       tg.showAlert('Ajustes salvos!');
+    }
+
+    async function loadReferralSettings() {
+      try {
+        const r = await fetch(API + '/referral-settings');
+        const s = await r.json();
+        document.getElementById('ref-ativo').value = s.ativo ? 'true' : 'false';
+        document.getElementById('ref-com-loja').value = s.comissao_por_pedido_loja || '';
+        document.getElementById('ref-bonus-mb').value = s.bonus_motoboy_meta || '';
+        document.getElementById('ref-meta-ped').value = s.meta_pedidos_motoboy || '';
+        document.getElementById('ref-prazo-mb').value = s.prazo_meta_dias || '';
+        document.getElementById('ref-validade-loja').value = s.validade_indicacao_loja_dias || '';
+      } catch(e) { console.error(e); }
+    }
+
+    async function saveReferralSettings() {
+      try {
+        const body = {
+          ativo: document.getElementById('ref-ativo').value === 'true',
+          comissao_por_pedido_loja: parseFloat(document.getElementById('ref-com-loja').value) || 0,
+          bonus_motoboy_meta: parseFloat(document.getElementById('ref-bonus-mb').value) || 0,
+          meta_pedidos_motoboy: parseInt(document.getElementById('ref-meta-ped').value) || 100,
+          prazo_meta_dias: parseInt(document.getElementById('ref-prazo-mb').value) || 30,
+          validade_indicacao_loja_dias: parseInt(document.getElementById('ref-validade-loja').value) || 90
+        };
+        const r = await fetch(API + '/referral-settings', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if (r.ok) alert('Regras salvas!'); else alert('Erro ao salvar.');
+      } catch(e) { alert('Erro: ' + e.message); }
+    }
+
+    async function loadIndicacoes() {
+      try {
+        const rs = await fetch(API + '/referrals/summary');
+        const summary = await rs.json();
+        const sumEl = document.getElementById('ref-summary-list');
+        if (!summary.length) { sumEl.innerHTML = '<div style="color:#555;text-align:center;padding:20px">Nenhum indicador ainda.</div>'; }
+        else { sumEl.innerHTML = summary.map(function(s) {
+          return '<div style="background:#222;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">' +
+            '<span style="font-weight:700;color:#fff;flex:1">' + s.referrer_name + '</span>' +
+            '<span style="color:#aaa;font-size:12px">Indicados: <strong style="color:#fff">' + s.total_indicados + '</strong></span>' +
+            '<span style="color:#aaa;font-size:12px">Ativos: <strong style="color:#4caf50">' + s.indicacoes_ativas + '</strong></span>' +
+            '<span style="color:#aaa;font-size:12px">Ganhos: <strong style="color:#ffcc00">R$ ' + parseFloat(s.total_ganhos).toFixed(2) + '</strong></span>' +
+          '</div>';
+        }).join(''); }
+        const rl = await fetch(API + '/referrals');
+        const refs = await rl.json();
+        const listEl = document.getElementById('ref-list');
+        if (!refs.length) { listEl.innerHTML = '<div style="color:#555;text-align:center;padding:20px">Nenhuma indicação registrada.</div>'; return; }
+        listEl.innerHTML = refs.map(function(r) {
+          var role = r.referred_role === 'loja' ? '🏪' : '🛵';
+          var statusColor = r.status_ref === 'ativo' ? '#4caf50' : r.status_ref === 'concluido' ? '#2196f3' : '#ff9500';
+          var dataFim = r.data_fim ? new Date(r.data_fim).toLocaleDateString('pt-BR') : 'Sem prazo';
+          var progress = r.referred_role === 'motoboy' && r.meta_pedidos > 0
+            ? '<div style="margin-top:6px;background:#333;border-radius:4px;height:6px"><div style="background:#ffcc00;height:6px;border-radius:4px;width:' + Math.min(100, Math.round(r.total_pedidos_validos/r.meta_pedidos*100)) + '%"></div></div><div style="font-size:10px;color:#aaa;margin-top:2px">' + r.total_pedidos_validos + '/' + r.meta_pedidos + ' pedidos</div>'
+            : (r.referred_role === 'loja' ? '<div style="font-size:11px;color:#aaa;margin-top:4px">Pedidos válidos: ' + r.total_pedidos_validos + ' | Ganho: R$ ' + parseFloat(r.total_ganho).toFixed(2) + '</div>' : '');
+          return '<div style="background:#222;border-radius:8px;padding:10px 14px;margin-bottom:8px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+            '<span>' + role + ' <strong style="color:#fff">' + r.referred_name + '</strong> <span style="color:#888;font-size:11px">(por ' + r.referrer_name + ')</span></span>' +
+            '<span style="font-size:12px;font-weight:700;color:' + statusColor + '">' + r.status_ref.toUpperCase() + '</span></div>' +
+            '<div style="font-size:11px;color:#aaa">Validade: ' + dataFim + ' | Bônus pago: ' + (r.bonus_pago ? '✅' : '❌') + ' | Ganho: R$ ' + parseFloat(r.total_ganho).toFixed(2) + '</div>' +
+            progress +
+            '<div style="margin-top:8px;display:flex;gap:6px">' +
+            '<button onclick="editIndicacao(' + r.id + ')" style="padding:4px 10px;background:#333;border:1px solid #555;border-radius:5px;color:#fff;font-size:11px;cursor:pointer">✏️ Editar</button>' +
+            '<button onclick="deleteIndicacao(' + r.id + ')" style="padding:4px 10px;background:#2a0000;border:1px solid #f44336;border-radius:5px;color:#f44336;font-size:11px;cursor:pointer">🗑 Remover</button>' +
+            '</div></div>';
+        }).join('');
+      } catch(e) { console.error(e); }
+    }
+
+    async function editIndicacao(id) {
+      var novoReferrer = prompt('ID do novo motoboy indicador (vazio para manter):');
+      var novaDataFim = prompt('Nova data fim YYYY-MM-DD (vazio para manter):');
+      var novaMeta = prompt('Nova meta de pedidos (vazio para manter):');
+      var novoBonus = prompt('Novo valor do bônus (vazio para manter):');
+      var novoStatus = prompt('Novo status ativo/expirado/concluido/cancelado (vazio para manter):');
+      var body = {};
+      if (novoReferrer) body.referrer_id = parseInt(novoReferrer);
+      if (novaDataFim) body.data_fim = novaDataFim;
+      if (novaMeta) body.meta_pedidos = parseInt(novaMeta);
+      if (novoBonus) body.bonus_valor = parseFloat(novoBonus);
+      if (novoStatus) body.status_ref = novoStatus;
+      if (!Object.keys(body).length) return;
+      var r = await fetch(API + '/referrals/' + id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if (r.ok) { alert('Atualizado!'); loadIndicacoes(); } else alert('Erro ao atualizar.');
+    }
+
+    async function deleteIndicacao(id) {
+      if (!confirm('Remover esta indicação definitivamente?')) return;
+      await fetch(API + '/referrals/' + id, {method:'DELETE'});
+      loadIndicacoes();
+    }
+
+    async function runReferralCleanup() {
+      if (!confirm('Executar limpeza automática de registros encerrados há mais de 20 dias?')) return;
+      var r = await fetch(API + '/referrals/cleanup', {method:'POST'});
+      var d = await r.json();
+      alert('Limpeza concluída! Indicações removidas: ' + d.refs_deletados + ', Ganhos removidos: ' + d.earnings_deletados);
+      loadIndicacoes();
     }
 
     function openModal(id) { document.getElementById(id).classList.add('active'); }
