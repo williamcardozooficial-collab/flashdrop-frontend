@@ -72,7 +72,6 @@
     <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
       <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
     <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
-    <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
   </div>
 
   <div class="content">
@@ -165,33 +164,7 @@
   <div id="avisos-list"></div>
 </div>
   <!-- CAIXA DA PLATAFORMA -->
-  <div id="caixa" class="section">
-    <div class="card" style="background:linear-gradient(135deg,#1a2a1a,#0d1f0d);border:1px solid #2e7d32;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h3 style="color:#4caf50;margin:0;font-size:15px">&#128176; Saldo da Plataforma</h3>
-        <button onclick="loadCaixa()" style="background:#2e7d32;color:#fff;font-size:11px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer">&#128260; Atualizar</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-        <div style="background:rgba(76,175,80,0.12);border-radius:8px;padding:10px;text-align:center">
-          <div id="pw-balance" style="font-size:22px;font-weight:900;color:#4caf50">R$ 0,00</div>
-          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO ATUAL</div>
-        </div>
-        <div style="background:rgba(255,204,0,0.10);border-radius:8px;padding:10px;text-align:center">
-          <div id="pw-ganho" style="font-size:18px;font-weight:700;color:#ffcc00">R$ 0,00</div>
-          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL GANHO</div>
-        </div>
-        <div style="background:rgba(229,57,53,0.10);border-radius:8px;padding:10px;text-align:center">
-          <div id="pw-sacado" style="font-size:18px;font-weight:700;color:#e53935">R$ 0,00</div>
-          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL SACADO</div>
-        </div>
-      </div>
-      <button onclick="openCaixaSaque()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">&#128184; Retirar do Caixa</button>
-    </div>
-    <div class="card">
-      <h3 style="color:#ffcc00;margin:0 0 12px;font-size:14px">&#128203; Eventos das últimas 48h</h3>
-      <div id="caixa-events" style="font-size:13px;color:#aaa">Carregando...</div>
-    </div>
-  </div>
+
 
   <!-- Modal Saque Caixa -->
   <div id="modal-caixa-saque" class="modal">
@@ -1190,8 +1163,7 @@ loadSaques();
       if (!valor || valor <= 0) { tg.showAlert('Informe um valor válido.'); return; }
       if (!motivo) { tg.showAlert('Informe o motivo da retirada.'); return; }
       if (valor > _pwBalance) { tg.showAlert('Valor maior que o saldo (R$ ' + _pwBalance.toFixed(2) + ').'); return; }
-      if (!confirm('Confirmar retirada de R$ ' + valor.toFixed(2) + '?
-Motivo: ' + motivo)) return;
+      if (!confirm('Confirmar retirada de R$ ' + valor.toFixed(2) + '? Motivo: ' + motivo)) return;
       try {
         var r = await fetch(API + '/platform/withdraw', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
