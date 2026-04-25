@@ -353,6 +353,16 @@
   </div>
 
   <script>
+    // PROTECAO XSS - escapar HTML em todos os dados exibidos
+    function esc(v) {
+      if (v === null || v === undefined) return '';
+      return String(v)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#x27;');
+    }
     var _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
     const API = 'https://flashdrop-backend-production.up.railway.app';
     const tg = (window.Telegram && window.Telegram.WebApp)
@@ -477,16 +487,16 @@
       list.innerHTML = orders.map(function(o) {
         var status = o.status || 'pendente';
         var label = STATUS_LABELS[status] || status;
-        var mb = o.motoboy_name
-          ? '<div class="row"><span class="val">Motoboy:</span><span>' + o.motoboy_name + '</span></div>'
+        var mb = esc(o.motoboy_name)
+          ? '<div class="row"><span class="val">Motoboy:</span><span>' + esc(o.motoboy_name) + '</span></div>'
           : '';
         return '<div class="card">' +
           '<div class="card-header">' +
-            '<strong>#' + o.id + ' - ' + (o.loja_name || o.loja_user) + '</strong>' +
+            '<strong>#' + o.id + ' - ' + (esc(o.loja_name) || esc(o.loja_user)) + '</strong>' +
             '<span class="badge badge-' + status + '">' + label + '</span>' +
           '</div>' +
-          '<div class="row"><span class="val">Cliente:</span><span>' + o.nome_cliente + '</span></div>' +
-          '<div class="row"><span class="val">Entrega:</span><span>' + o.endereco_entrega + (o.complemento_entrega ? ' — ' + o.complemento_entrega : '') + '</span></div>' + (o.obs_entrega_loja ? '<div class="row"><span class="val" style="color:#ffcc00">📝 Obs:</span><span style="color:#ffcc00">' + o.obs_entrega_loja + '</span></div>' : '') +
+          '<div class="row"><span class="val">Cliente:</span><span>' + esc(o.nome_cliente) + '</span></div>' +
+          '<div class="row"><span class="val">Entrega:</span><span>' + esc(o.endereco_entrega) + (o.complemento_entrega ? ' — ' + o.complemento_entrega : '') + '</span></div>' + (o.obs_entrega_loja ? '<div class="row"><span class="val" style="color:#ffcc00">📝 Obs:</span><span style="color:#ffcc00">' + o.obs_entrega_loja + '</span></div>' : '') +
           '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' + '<div class="row"><span class="val">💳 Pagamento:</span><span>' + ({dinheiro:"💵 Dinheiro",maquina:"💳 Máquina de Cartão",pix:"📱 PIX"}[o.tipo_pagamento] || o.tipo_pagamento || "—") + '</span></div>' + (o.tipo_pagamento === "dinheiro" && Number(o.valor_pedido) > 0 ? '<div class="row" style="color:#4caf50"><span class="val">💰 Cobrado:</span><strong>R$ ' + Number(o.valor_pedido).toFixed(2) + '</strong></div>' : '') +
           mb +
           buildTimeline(o) +
@@ -513,7 +523,7 @@
         // Header: Nome + status online
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
           '<div>' +
-            '<div style="font-size:16px;font-weight:700;color:#fff">' + u.name + '</div>' +
+            '<div style="font-size:16px;font-weight:700;color:#fff">' + esc(u.name) + '</div>' +
             (u.custom_id ? '<div style="font-size:18px;font-weight:900;color:#ffcc00;letter-spacing:2px;margin-top:2px">🪪 ' + u.custom_id + '</div>' : '') +
           '</div>' +
           '<span style="font-size:12px;display:flex;align-items:center;gap:4px">' +
@@ -524,12 +534,12 @@
 
         // Info block
         '<div style="background:#111;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px">' +
-          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">👤 Login</span><span style="color:#ddd">@' + u.username + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📱 Telefone</span><span style="color:#ddd">' + (u.phone || '—') + '</span></div>' +
-          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">🏍️ Veículo</span><span style="color:#ddd">' + (u.vehicle || '—') + '</span></div>' : '') +
-          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📄 CPF</span><span style="color:#ff9500">' + (u.cpf || '—') + '</span></div>' : '') +
-          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📍 Endereço</span><span style="color:#ff9500;text-align:right;max-width:60%">' + (u.address || '—') + '</span></div>' : '') +
-          (!isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📍 Endereço</span><span style="color:#ddd;text-align:right;max-width:60%">' + (u.address || '—') + '</span></div>' : '') +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">👤 Login</span><span style="color:#ddd">@' + esc(u.username) + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📱 Telefone</span><span style="color:#ddd">' + (esc(u.phone) || '—') + '</span></div>' +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">🏍️ Veículo</span><span style="color:#ddd">' + (esc(u.vehicle) || '—') + '</span></div>' : '') +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📄 CPF</span><span style="color:#ff9500">' + (esc(u.cpf) || '—') + '</span></div>' : '') +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📍 Endereço</span><span style="color:#ff9500;text-align:right;max-width:60%">' + (esc(u.address) || '—') + '</span></div>' : '') +
+          (!isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📍 Endereço</span><span style="color:#ddd;text-align:right;max-width:60%">' + (esc(u.address) || '—') + '</span></div>' : '') +
           '<div style="display:flex;justify-content:space-between;border-top:1px solid #222;padding-top:6px;margin-top:4px"><span style="color:#888">💰 ' + (u.role === 'loja' ? 'Crédito' : 'Saldo') + '</span><strong style="color:#4caf50">R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
         (isMotoboy ? '<div style="display:flex;justify-content:space-between;padding-top:4px;margin-top:2px"><span style="color:#888">&#128179; Limite de Crédito</span><strong style="color:' + (parseFloat(u.custom_credit_limit||0)>0?'#ffcc00':'#666') + '">R$ ' + Number(u.custom_credit_limit||0).toFixed(2) + '</strong></div>' : '') +
         '</div>' +
@@ -542,7 +552,7 @@
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
           '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">✏️ Editar</button>' +
           '<button class="btn btn-sm" style="background:' + (isBlocked ? '#4caf50' : '#c0392b') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + isBlocked + ')">' + (isBlocked ? '✅ Desbloquear' : '🚫 Bloquear') + '</button>' +
-          '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteUser(' + u.id + ',\'' + u.name + '\')">🗑️ Excluir</button>' +
+          '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteUser(' + u.id + ',\'' + esc(u.name) + '\')">🗑️ Excluir</button>' +
           (hasPenalty ? '<button class="btn btn-sm" style="background:#ff9500;color:#000" onclick="removePenalty(' + u.id + ')">🔓 Remover Penalidade</button>' : '') +
         '</div>' +
 
@@ -553,14 +563,14 @@
   function renderFinance(users) {
       var term = (document.getElementById('search-finance') && document.getElementById('search-finance').value || '').toLowerCase();
       var filtered = users.filter(function(u){
-        return u.role !== 'admin' && (u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term) || (u.custom_id||'').toLowerCase().includes(term));
+        return u.role !== 'admin' && (esc(u.name).toLowerCase().includes(term) || esc(u.username).toLowerCase().includes(term) || (u.custom_id||'').toLowerCase().includes(term));
       });
       document.getElementById('finance-list').innerHTML = filtered.map(function(u) {
         var saldo = u.role === 'loja' ? u.credit : u.balance;
         var field = u.role === 'loja' ? 'credit' : 'balance';
         return '<div class="card">' +
           '<div class="card-header">' +
-            '<strong>' + u.name + ' (@' + u.username + ')</strong>' +
+            '<strong>' + esc(u.name) + ' (@' + esc(u.username) + ')</strong>' +
             '<span>' + (u.role === 'loja' ? 'Credito' : 'Saldo') + ': <strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></span>' +
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -667,19 +677,19 @@
       currentUserId = id;
       var u = allUsers.find(function(x){ return x.id === id; });
       if (!u) return;
-      document.getElementById('user-modal-title').textContent = 'Editar - ' + u.name;
+      document.getElementById('user-modal-title').textContent = 'Editar - ' + esc(u.name);
       var motoboyCampos = u.role === 'motoboy'
-        ? '<div class="input-group"><label>🏍️ Veículo</label><input id="u-vehicle" class="input" value="' + (u.vehicle || '') + '"></div>' +
-          '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (u.address || '') + '"></div>' +
-          '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (u.cpf || '') + '"></div>' +
+        ? '<div class="input-group"><label>🏍️ Veículo</label><input id="u-vehicle" class="input" value="' + (esc(u.vehicle) || '') + '"></div>' +
+          '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (esc(u.address) || '') + '"></div>' +
+          '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
           '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>'
-        : '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (u.address || '') + '"></div>';
+        : '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (esc(u.address) || '') + '"></div>';
       document.getElementById('user-fields').innerHTML =
-        '<div class="input-group"><label>Login</label><input class="input" value="' + (u.username || '') + '" disabled style="opacity:0.5"></div>' +
+        '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
         '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
-        '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (u.name || '') + '"></div>' +
+        '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (esc(u.name) || '') + '"></div>' +
         '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
-        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (u.phone || '') + '"></div>' +
+        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (esc(u.phone) || '') + '"></div>' +
         motoboyCampos;
       openModal('modal-user');
     }
@@ -747,8 +757,8 @@
           return '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + (STATUS_LABELS[s] || s) + '</option>';
         }).join('') +
         '</select></div>' +
-        '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (o.nome_cliente || '') + '"></div>' +
-        '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (o.endereco_entrega || '') + '"></div>' + '<div class="input-group"><label>Complemento Entrega</label><input id="o-comp-entrega" class="input" value="' + (o.complemento_entrega || '') + '"></div>' + '<div class="input-group"><label>Obs Entrega (Loja)</label><input id="o-obs-entrega" class="input" value="' + (o.obs_entrega_loja || '') + '"></div>' +
+        '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (esc(o.nome_cliente) || '') + '"></div>' +
+        '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (esc(o.endereco_entrega) || '') + '"></div>' + '<div class="input-group"><label>Complemento Entrega</label><input id="o-comp-entrega" class="input" value="' + (o.complemento_entrega || '') + '"></div>' + '<div class="input-group"><label>Obs Entrega (Loja)</label><input id="o-obs-entrega" class="input" value="' + (o.obs_entrega_loja || '') + '"></div>' +
         '<div class="input-group"><label>Valor Total (R$)</label><input id="o-valor" class="input" type="number" step="0.01" value="' + (o.valor_total || 0) + '"></div>' +
         '<div class="input-group"><label>Ganho Motoboy (R$)</label><input id="o-motoboy" class="input" type="number" step="0.01" value="' + (o.valor_motoboy || 0) + '"></div>' +
         '<div class="input-group"><label>Obs</label><input id="o-obs" class="input" value="' + (o.obs || '') + '"></div>';
@@ -1054,13 +1064,13 @@ async function loadPending() {
           var card = document.createElement('div');
           card.className = 'pending-card';
           card.innerHTML =
-            '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">👤 ' + u.name + '</div>' +
-            '<div class="field"><strong>Usuário:</strong> ' + u.username + '</div>' +
+            '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">👤 ' + esc(u.name) + '</div>' +
+            '<div class="field"><strong>Usuário:</strong> ' + esc(u.username) + '</div>' +
             '<div class="field"><strong>Função:</strong> ' + u.role + '</div>' +
-            '<div class="field"><strong>📱 Telefone:</strong> ' + (u.phone || '—') + '</div>' +
-            '<div class="field"><strong>🏍️ Veículo:</strong> ' + (u.vehicle || '—') + '</div>' +
-            '<div class="field private"><strong>📄 CPF (confidencial):</strong> ' + (u.cpf || '—') + '</div>' +
-            '<div class="field private"><strong>📍 Endereço (confidencial):</strong> ' + (u.address || '—') + '</div>' +
+            '<div class="field"><strong>📱 Telefone:</strong> ' + (esc(u.phone) || '—') + '</div>' +
+            '<div class="field"><strong>🏍️ Veículo:</strong> ' + (esc(u.vehicle) || '—') + '</div>' +
+            '<div class="field private"><strong>📄 CPF (confidencial):</strong> ' + (esc(u.cpf) || '—') + '</div>' +
+            '<div class="field private"><strong>📍 Endereço (confidencial):</strong> ' + (esc(u.address) || '—') + '</div>' +
             '<div class="field" style="color:#888;font-size:11px;">Cadastrado em: ' + new Date(u.created_at).toLocaleString('pt-BR') + '</div>' +
             '<button class="pending-btn approve" onclick="approvePending(' + u.id + ', this)">✅ Aprovar</button>' +
             '<button class="pending-btn reject" onclick="rejectPending(' + u.id + ', this)">❌ Recusar</button>';
@@ -1232,7 +1242,7 @@ loadSaques();
             var repetirLabel = p.repetir ? 'Repete todo dia' : 'Apenas hoje';
             return '<div class="card" style="background:#111;border:1px solid #333;margin-bottom:10px;">' +
               '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
-              '<div><strong style="color:#ffcc00;">' + p.nome + '</strong><br>' +
+              '<div><strong style="color:#ffcc00;">' + esc(p.nome) + '</strong><br>' +
               '<span style="color:#aaa;font-size:12px;">Meta: ' + p.meta_entregas + ' entregas | Bonus: R$ ' + parseFloat(p.valor_bonus).toFixed(2) + ' | ' + repetirLabel + '</span><br>' +
               '<span style="font-size:12px;">' + ativaLabel + '</span></div>' +
               '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
@@ -1280,7 +1290,7 @@ loadSaques();
         if (!p) return;
         document.getElementById('promo-modal-title').textContent = 'Editar Promocao';
         document.getElementById('promo-edit-id').value = p.id;
-        document.getElementById('promo-nome').value = p.nome;
+        document.getElementById('promo-nome').value = esc(p.nome);
         document.getElementById('promo-meta').value = p.meta_entregas;
         document.getElementById('promo-bonus').value = parseFloat(p.valor_bonus);
         document.getElementById('promo-tipo').value = p.tipo;
@@ -1315,7 +1325,7 @@ loadSaques();
         var promos = await r.json();
         var p = promos.find(function(x) { return x.id === id; });
         if (!p) return;
-        await fetch(API + '/promotions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome: p.nome, meta_entregas: p.meta_entregas, valor_bonus: p.valor_bonus, tipo: p.tipo, repetir: p.repetir, ativa: novoStatus}) });
+        await fetch(API + '/promotions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome: esc(p.nome), meta_entregas: p.meta_entregas, valor_bonus: p.valor_bonus, tipo: p.tipo, repetir: p.repetir, ativa: novoStatus}) });
         loadPromocoes();
       } catch(e) { tg.showAlert('Erro.'); }
     }
