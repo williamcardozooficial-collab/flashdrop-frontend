@@ -72,6 +72,7 @@
     <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
       <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
     <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
+    <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
   </div>
 
   <div class="content">
@@ -214,6 +215,47 @@
     </div>
   </div>
 
+  <div id="caixa" class="section">
+    <div class="card" style="background:linear-gradient(135deg,#1a2a1a,#0d1f0d);border:1px solid #2e7d32;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="color:#4caf50;margin:0;font-size:15px">&#128176; Saldo da Plataforma</h3>
+        <button onclick="loadCaixa()" style="background:#2e7d32;color:#fff;font-size:11px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer">&#128260; Atualizar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:rgba(76,175,80,0.12);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-balance" style="font-size:22px;font-weight:900;color:#4caf50">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO ATUAL</div>
+        </div>
+        <div style="background:rgba(255,204,0,0.10);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-ganho" style="font-size:18px;font-weight:700;color:#ffcc00">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL GANHO</div>
+        </div>
+        <div style="background:rgba(229,57,53,0.10);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-sacado" style="font-size:18px;font-weight:700;color:#e53935">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL SACADO</div>
+        </div>
+      </div>
+      <button onclick="openCaixaSaque()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">&#128184; Retirar do Caixa</button>
+    </div>
+    <div class="card">
+      <h3 style="color:#ffcc00;margin:0 0 12px;font-size:14px">&#128203; Eventos das ultimas 48h</h3>
+      <div id="caixa-events" style="font-size:13px;color:#aaa">Carregando...</div>
+    </div>
+  </div>
+  <div id="modal-caixa-saque" class="modal">
+    <div class="modal-content">
+      <h3 style="color:#e53935;margin-bottom:16px">&#128184; Retirar do Caixa</h3>
+      <div style="background:#1a2a1a;border:1px solid #2e7d32;border-radius:8px;padding:10px;margin-bottom:14px;text-align:center">
+        <span style="color:#aaa;font-size:12px">Saldo disponivel: </span><strong id="modal-caixa-saldo-val" style="color:#4caf50">R$ 0,00</strong>
+      </div>
+      <div class="input-group"><label>Valor do Saque (R$)</label><input id="caixa-saque-valor" class="input" type="number" step="0.01" min="0.01" placeholder="Ex: 50.00"></div>
+      <div class="input-group"><label>Motivo / Descricao</label><input id="caixa-saque-motivo" class="input" placeholder="Ex: Pagamento fornecedor, lucro mensal..."></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" onclick="confirmCaixaSaque()" style="flex:1;background:#e53935;border-color:#e53935">Confirmar</button>
+        <button class="btn btn-outline" onclick="closeModal('modal-caixa-saque')" style="flex:1">Cancelar</button>
+      </div>
+    </div>
+  </div>
   <button class="fab" onclick="openNewUser()">+</button>
 
   <!-- ════ INDICAÇÕES ════ -->
@@ -1158,7 +1200,7 @@ Motivo: ' + motivo)) return;
         var data = await r.json();
         if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Falha.')); return; }
         closeModal('modal-caixa-saque');
-        tg.showAlert('✅ Retirada de R$ ' + valor.toFixed(2) + ' registrada!');
+        tg.showAlert('Retirada de R$ ' + valor.toFixed(2) + ' registrada!');
         loadCaixa();
       } catch(e) { tg.showAlert('Erro de conexão.'); }
     }
