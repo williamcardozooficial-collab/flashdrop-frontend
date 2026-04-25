@@ -71,6 +71,7 @@
     <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
     <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
       <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
+    <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
   </div>
 
   <div class="content">
@@ -162,6 +163,57 @@
   </div>
   <div id="avisos-list"></div>
 </div>
+  <!-- CAIXA DA PLATAFORMA -->
+  <div id="caixa" class="section">
+    <div class="card" style="background:linear-gradient(135deg,#1a2a1a,#0d1f0d);border:1px solid #2e7d32;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="color:#4caf50;margin:0;font-size:15px">&#128176; Saldo da Plataforma</h3>
+        <button onclick="loadCaixa()" style="background:#2e7d32;color:#fff;font-size:11px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer">&#128260; Atualizar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:rgba(76,175,80,0.12);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-balance" style="font-size:22px;font-weight:900;color:#4caf50">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO ATUAL</div>
+        </div>
+        <div style="background:rgba(255,204,0,0.10);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-ganho" style="font-size:18px;font-weight:700;color:#ffcc00">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL GANHO</div>
+        </div>
+        <div style="background:rgba(229,57,53,0.10);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-sacado" style="font-size:18px;font-weight:700;color:#e53935">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL SACADO</div>
+        </div>
+      </div>
+      <button onclick="openCaixaSaque()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">&#128184; Retirar do Caixa</button>
+    </div>
+    <div class="card">
+      <h3 style="color:#ffcc00;margin:0 0 12px;font-size:14px">&#128203; Eventos das últimas 48h</h3>
+      <div id="caixa-events" style="font-size:13px;color:#aaa">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Modal Saque Caixa -->
+  <div id="modal-caixa-saque" class="modal">
+    <div class="modal-content">
+      <h3 style="color:#e53935;margin-bottom:16px">&#128184; Retirar do Caixa</h3>
+      <div style="background:#1a2a1a;border:1px solid #2e7d32;border-radius:8px;padding:10px;margin-bottom:14px;text-align:center">
+        <span style="color:#aaa;font-size:12px">Saldo disponível: </span><strong id="modal-caixa-saldo-val" style="color:#4caf50">R$ 0,00</strong>
+      </div>
+      <div class="input-group">
+        <label>Valor do Saque (R$)</label>
+        <input id="caixa-saque-valor" class="input" type="number" step="0.01" min="0.01" placeholder="Ex: 50.00">
+      </div>
+      <div class="input-group">
+        <label>Motivo / Descrição</label>
+        <input id="caixa-saque-motivo" class="input" placeholder="Ex: Pagamento fornecedor, lucro mensal...">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" onclick="confirmCaixaSaque()" style="flex:1;background:#e53935;border-color:#e53935">&#10003; Confirmar</button>
+        <button class="btn btn-outline" onclick="closeModal('modal-caixa-saque')" style="flex:1">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <button class="fab" onclick="openNewUser()">+</button>
 
   <!-- ════ INDICAÇÕES ════ -->
@@ -307,6 +359,7 @@
       } else if (tab === 'avisos') {
         loadAvisos();
       } else if (tab === 'indicacoes') { loadIndicacoes(); loadReferralSettings(); }
+      else if (tab === 'caixa') { loadCaixa(); }
     }
 
     function filterOrders(status) {
@@ -1048,6 +1101,68 @@ loadSaques();
       await fetch(API + '/notices/' + id, { method: 'DELETE' });
       loadAvisos();
     }
+
+    // ── CAIXA DA PLATAFORMA ─────────────────────────────────────────
+    var _pwBalance = 0;
+    async function loadCaixa() {
+      try {
+        var wr = await fetch(API + '/platform/wallet');
+        var wallet = await wr.json();
+        _pwBalance = parseFloat(wallet.balance || 0);
+        document.getElementById('pw-balance').textContent = 'R$ ' + _pwBalance.toFixed(2).replace('.', ',');
+        document.getElementById('pw-ganho').textContent = 'R$ ' + parseFloat(wallet.total_ganho || 0).toFixed(2).replace('.', ',');
+        document.getElementById('pw-sacado').textContent = 'R$ ' + parseFloat(wallet.total_sacado || 0).toFixed(2).replace('.', ',');
+      } catch(e) { console.error('loadCaixa:', e); }
+      try {
+        var er = await fetch(API + '/platform/events');
+        var events = await er.json();
+        if (!events.length) {
+          document.getElementById('caixa-events').innerHTML = '<p style="color:#666;text-align:center;padding:20px 0">Nenhum evento nas últimas 48h</p>';
+          return;
+        }
+        var icons = { comissao: '✅', saque: '💸' };
+        var colors = { comissao: '#4caf50', saque: '#e53935' };
+        document.getElementById('caixa-events').innerHTML = events.map(function(ev) {
+          var dt = new Date(ev.created_at);
+          var dtStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+          var col = colors[ev.tipo] || '#aaa';
+          var icon = icons[ev.tipo] || '📌';
+          var sinal = ev.tipo === 'saque' ? '− ' : '+ ';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222">' +
+            '<div><span>' + icon + ' </span><span style="color:#ddd;font-size:13px">' + (ev.descricao || ev.tipo) + '</span><br>' +
+            '<span style="color:#666;font-size:11px">' + dtStr + '</span></div>' +
+            '<strong style="color:' + col + ';font-size:15px;white-space:nowrap;margin-left:10px">' + sinal + 'R$ ' + parseFloat(ev.valor).toFixed(2).replace('.', ',') + '</strong>' +
+            '</div>';
+        }).join('');
+      } catch(e) { document.getElementById('caixa-events').innerHTML = '<p style="color:#e53935">Erro ao carregar eventos</p>'; }
+    }
+    function openCaixaSaque() {
+      document.getElementById('caixa-saque-valor').value = '';
+      document.getElementById('caixa-saque-motivo').value = '';
+      document.getElementById('modal-caixa-saldo-val').textContent = 'R$ ' + _pwBalance.toFixed(2).replace('.', ',');
+      openModal('modal-caixa-saque');
+    }
+    async function confirmCaixaSaque() {
+      var valor = parseFloat(document.getElementById('caixa-saque-valor').value);
+      var motivo = document.getElementById('caixa-saque-motivo').value.trim();
+      if (!valor || valor <= 0) { tg.showAlert('Informe um valor válido.'); return; }
+      if (!motivo) { tg.showAlert('Informe o motivo da retirada.'); return; }
+      if (valor > _pwBalance) { tg.showAlert('Valor maior que o saldo (R$ ' + _pwBalance.toFixed(2) + ').'); return; }
+      if (!confirm('Confirmar retirada de R$ ' + valor.toFixed(2) + '?
+Motivo: ' + motivo)) return;
+      try {
+        var r = await fetch(API + '/platform/withdraw', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ valor: valor, motivo: motivo })
+        });
+        var data = await r.json();
+        if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Falha.')); return; }
+        closeModal('modal-caixa-saque');
+        tg.showAlert('✅ Retirada de R$ ' + valor.toFixed(2) + ' registrada!');
+        loadCaixa();
+      } catch(e) { tg.showAlert('Erro de conexão.'); }
+    }
+    // ────────────────────────────────────────────────────────────────
   </script>
 
 </body>
