@@ -72,6 +72,7 @@
     <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
       <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
     <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
+    <button class="tab-btn" onclick="showTab('promocoes', this)">🎯 Promoções</button>
   </div>
 
   <div class="content">
@@ -213,6 +214,42 @@
     <div class="card">
       <h3 style="color:#ffcc00;margin:0 0 12px;font-size:14px">&#128203; Eventos das ultimas 48h</h3>
       <div id="caixa-events" style="font-size:13px;color:#aaa">Carregando...</div>
+    </div>
+  </div>
+  <!-- PROMOCOES -->
+  <div id="promocoes" class="section">
+    <div class="card" style="background:#1a2a1a;border:1px solid #2e7d32;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="color:#66bb6a;margin:0;">Promocoes dos Motoboys</h3>
+        <button class="btn btn-primary" onclick="openNovaPromocao()" style="background:#2e7d32;padding:8px 14px;font-size:13px;">+ Nova Promocao</button>
+      </div>
+      <div id="promo-list">Carregando...</div>
+    </div>
+    <div class="card" style="background:#1a1a2a;border:1px solid #303f9f;margin-top:12px;">
+      <h3 style="color:#7986cb;margin:0 0 12px 0;">Progresso Hoje</h3>
+      <div id="promo-progress-list">Carregando...</div>
+    </div>
+  </div>
+  <div id="modal-promocao" class="modal">
+    <div class="modal-content">
+      <h3 id="promo-modal-title" style="margin:0 0 16px 0;color:#66bb6a;">Nova Promocao</h3>
+      <input type="hidden" id="promo-edit-id">
+      <div class="input-group"><label>Nome da Promocao</label><input id="promo-nome" class="input" placeholder="Ex: Promocao do Dia - 25 entregas"></div>
+      <div class="input-group"><label>Meta de Entregas</label><input id="promo-meta" class="input" type="number" min="1" value="25"></div>
+      <div class="input-group"><label>Valor do Bonus (R$)</label><input id="promo-bonus" class="input" type="number" min="1" step="1" value="30"></div>
+      <div class="input-group"><label>Tipo</label><select id="promo-tipo" class="input"><option value="dia">Por Dia (zera todo dia a meia-noite)</option></select></div>
+      <div class="input-group" style="display:flex;align-items:center;gap:10px;">
+        <input id="promo-repetir" type="checkbox" style="width:20px;height:20px;">
+        <label style="margin:0;">Repetir automaticamente (nao precisa recriar todo dia)</label>
+      </div>
+      <div class="input-group" style="display:flex;align-items:center;gap:10px;">
+        <input id="promo-ativa" type="checkbox" checked style="width:20px;height:20px;">
+        <label style="margin:0;">Promocao ativa agora</label>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-promocao')" style="flex:1;">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarPromocao()" style="flex:1;background:#2e7d32;">Salvar</button>
+      </div>
     </div>
   </div>
   <div id="modal-caixa-saque" class="modal">
@@ -375,6 +412,7 @@
         loadAvisos();
       } else if (tab === 'indicacoes') { loadIndicacoes(); loadReferralSettings(); }
       else if (tab === 'caixa') { loadCaixa(); }
+      } else if (tab === 'promocoes') { loadPromocoes();
     }
 
     function filterOrders(status) {
@@ -1177,6 +1215,113 @@ loadSaques();
       } catch(e) { tg.showAlert('Erro de conexão.'); }
     }
     // ────────────────────────────────────────────────────────────────
+    // PROMOCOES
+    async function loadPromocoes() {
+      try {
+        var r = await fetch(API + '/promotions');
+        var promos = await r.json();
+        var el = document.getElementById('promo-list');
+        if (!promos.length) { el.innerHTML = '<p style="color:#888;text-align:center;">Nenhuma promocao criada.</p>'; }
+        else {
+          el.innerHTML = promos.map(function(p) {
+            var ativaLabel = p.ativa ? '<span style="color:#66bb6a;font-weight:bold;">ATIVA</span>' : '<span style="color:#e53935;">INATIVA</span>';
+            var repetirLabel = p.repetir ? 'Repete todo dia' : 'Apenas hoje';
+            return '<div class="card" style="background:#111;border:1px solid #333;margin-bottom:10px;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+              '<div><strong style="color:#ffcc00;">' + p.nome + '</strong><br>' +
+              '<span style="color:#aaa;font-size:12px;">Meta: ' + p.meta_entregas + ' entregas | Bonus: R$ ' + parseFloat(p.valor_bonus).toFixed(2) + ' | ' + repetirLabel + '</span><br>' +
+              '<span style="font-size:12px;">' + ativaLabel + '</span></div>' +
+              '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+              '<button class="btn" onclick="editarPromocao(' + p.id + ')" style="padding:6px 10px;font-size:12px;background:#1565c0;">Editar</button>' +
+              '<button class="btn" onclick="togglePromo(' + p.id + ',' + (!p.ativa) + ')" style="padding:6px 10px;font-size:12px;background:' + (p.ativa ? '#c62828' : '#2e7d32') + ';">' + (p.ativa ? 'Desativar' : 'Ativar') + '</button>' +
+              '<button class="btn" onclick="deletarPromocao(' + p.id + ')" style="padding:6px 10px;font-size:12px;background:#b71c1c;">Excluir</button>' +
+              '</div></div></div>';
+          }).join('');
+        }
+      } catch(e) { document.getElementById('promo-list').innerHTML = '<p style="color:#e53935">Erro.</p>'; }
+      try {
+        var r2 = await fetch(API + '/promotions/progress');
+        var progress = await r2.json();
+        var el2 = document.getElementById('promo-progress-list');
+        if (!progress.length) { el2.innerHTML = '<p style="color:#888;text-align:center;">Nenhum progresso hoje.</p>'; return; }
+        el2.innerHTML = progress.map(function(pp) {
+          var pct = Math.min(100, Math.round((pp.contagem / pp.meta_entregas) * 100));
+          var pagoLabel = pp.pago ? ' - BONUS PAGO!' : '';
+          return '<div style="margin-bottom:12px;">' +
+            '<div style="display:flex;justify-content:space-between;">' +
+            '<span style="color:#fff;">' + (pp.motoboy_name || 'Motoboy') + '</span>' +
+            '<span style="color:#aaa;font-size:12px;">' + pp.contagem + '/' + pp.meta_entregas + pagoLabel + '</span></div>' +
+            '<div style="background:#333;border-radius:8px;height:8px;margin-top:4px;">' +
+            '<div style="background:' + (pp.pago ? '#66bb6a' : '#ffcc00') + ';width:' + pct + '%;height:8px;border-radius:8px;"></div></div>' +
+            '<div style="color:#888;font-size:11px;margin-top:2px;">' + pp.nome + '</div></div>';
+        }).join('');
+      } catch(e) { document.getElementById('promo-progress-list').innerHTML = '<p style="color:#e53935">Erro progresso.</p>'; }
+    }
+    function openNovaPromocao() {
+      document.getElementById('promo-modal-title').textContent = 'Nova Promocao';
+      document.getElementById('promo-edit-id').value = '';
+      document.getElementById('promo-nome').value = '';
+      document.getElementById('promo-meta').value = '25';
+      document.getElementById('promo-bonus').value = '30';
+      document.getElementById('promo-tipo').value = 'dia';
+      document.getElementById('promo-repetir').checked = false;
+      document.getElementById('promo-ativa').checked = true;
+      openModal('modal-promocao');
+    }
+    async function editarPromocao(id) {
+      try {
+        var r = await fetch(API + '/promotions');
+        var promos = await r.json();
+        var p = promos.find(function(x) { return x.id === id; });
+        if (!p) return;
+        document.getElementById('promo-modal-title').textContent = 'Editar Promocao';
+        document.getElementById('promo-edit-id').value = p.id;
+        document.getElementById('promo-nome').value = p.nome;
+        document.getElementById('promo-meta').value = p.meta_entregas;
+        document.getElementById('promo-bonus').value = parseFloat(p.valor_bonus);
+        document.getElementById('promo-tipo').value = p.tipo;
+        document.getElementById('promo-repetir').checked = p.repetir;
+        document.getElementById('promo-ativa').checked = p.ativa;
+        openModal('modal-promocao');
+      } catch(e) { tg.showAlert('Erro ao carregar.'); }
+    }
+    async function salvarPromocao() {
+      var nome = document.getElementById('promo-nome').value.trim();
+      var meta = parseInt(document.getElementById('promo-meta').value);
+      var bonus = parseFloat(document.getElementById('promo-bonus').value);
+      var tipo = document.getElementById('promo-tipo').value;
+      var repetir = document.getElementById('promo-repetir').checked;
+      var ativa = document.getElementById('promo-ativa').checked;
+      var editId = document.getElementById('promo-edit-id').value;
+      if (!nome) { tg.showAlert('Informe o nome.'); return; }
+      if (!meta || meta < 1) { tg.showAlert('Meta invalida.'); return; }
+      if (!bonus || bonus < 1) { tg.showAlert('Bonus invalido.'); return; }
+      try {
+        var url = editId ? (API + '/promotions/' + editId) : (API + '/promotions');
+        var method = editId ? 'PUT' : 'POST';
+        var resp = await fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome: nome, meta_entregas: meta, valor_bonus: bonus, tipo: tipo, repetir: repetir, ativa: ativa}) });
+        if (!resp.ok) { tg.showAlert('Erro ao salvar.'); return; }
+        closeModal('modal-promocao');
+        loadPromocoes();
+      } catch(e) { tg.showAlert('Erro de conexao.'); }
+    }
+    async function togglePromo(id, novoStatus) {
+      try {
+        var r = await fetch(API + '/promotions');
+        var promos = await r.json();
+        var p = promos.find(function(x) { return x.id === id; });
+        if (!p) return;
+        await fetch(API + '/promotions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome: p.nome, meta_entregas: p.meta_entregas, valor_bonus: p.valor_bonus, tipo: p.tipo, repetir: p.repetir, ativa: novoStatus}) });
+        loadPromocoes();
+      } catch(e) { tg.showAlert('Erro.'); }
+    }
+    async function deletarPromocao(id) {
+      if (!confirm('Excluir esta promocao? O progresso sera apagado.')) return;
+      try {
+        await fetch(API + '/promotions/' + id, { method: 'DELETE' });
+        loadPromocoes();
+      } catch(e) { tg.showAlert('Erro.'); }
+    }
   </script>
 
 </body>
