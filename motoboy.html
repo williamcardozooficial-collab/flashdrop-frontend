@@ -114,6 +114,7 @@
 </div>
 <div class="orders">
   <div id="avisos-mb-banner" style="display:none;background:#1a1a00;border:1px solid #ffcc00;border-radius:10px;padding:12px;margin-bottom:12px;"></div>
+  <div id="promo-mb-banner" style="display:none;background:#1a2a1a;border:1px solid #2e7d32;border-radius:10px;margin:8px 12px;padding:10px 14px;"></div>
     <div id="tab-panel-available" class="tab-panel active"><div id="available-orders"></div></div>
   <div id="tab-panel-mine" class="tab-panel"><div id="my-orders"></div></div>
   <div id="tab-panel-done" class="tab-panel"><div id="done-orders"></div></div>
@@ -830,6 +831,7 @@ async function submitSaque() {
 }
 
 async function loadAvisosMotboy(){try{var r=await fetch(API+'/notices?target=motoboy');var list=await r.json();var banner=document.getElementById('avisos-mb-banner');if(!list||list.length===0){banner.style.display='none';return;}banner.style.display='block';banner.innerHTML='<div style="font-size:11px;color:#ffcc00;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📢 Avisos do Admin</div>'+list.map(function(n){return'<div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #2a2a00">'+'<div style="font-weight:600;color:#fff;font-size:13px;margin-bottom:2px">'+n.title+'</div>'+'<div style="color:#ccc;font-size:12px;line-height:1.4">'+n.body+'</div>'+'</div>';}).join('');}catch(e){}}
+async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch(API+'/promotions/motoboy/'+user.id);var promos=await r.json();var el=document.getElementById('promo-mb-banner');if(!promos||!promos.length){el.style.display='none';return;}var html=promos.map(function(p){var pct=Math.min(100,Math.round((p.contagem/p.meta_entregas)*100));var restam=p.meta_entregas-p.contagem;var msg=p.pago?'BONUS PAGO! Parabens!':'Faltam '+restam+' entrega(s) para ganhar R$ '+parseFloat(p.valor_bonus).toFixed(2)+'!';return '<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#ffcc00;">Promocao: '+p.nome+'</strong><span style="color:#aaa;font-size:12px;">'+p.contagem+'/'+p.meta_entregas+'</span></div><div style="background:#333;border-radius:6px;height:8px;margin:4px 0;"><div style="background:'+(p.pago?'#66bb6a':'#ffcc00')+';width:'+pct+'%;height:8px;border-radius:6px;"></div></div><div style="color:'+(p.pago?'#66bb6a':'#fff')+';font-size:12px;">'+msg+'</div></div>';}).join('');el.innerHTML='<div style="color:#66bb6a;font-size:12px;font-weight:bold;margin-bottom:6px;">PROMOCAO ATIVA</div>'+html;el.style.display='block';}catch(e){}}
   async function init() {
       document.getElementById("motoboy-name").textContent = user.name || "Motoboy";
       updateStatusUI();
@@ -839,6 +841,8 @@ async function loadAvisosMotboy(){try{var r=await fetch(API+'/notices?target=mot
       setInterval(syncUser, 30000);
       loadAvisosMotboy();
       setInterval(loadAvisosMotboy, 60000);
+      loadPromoBanner();
+      setInterval(loadPromoBanner, 30000);
   loadMbIndicacao();
     }
 
