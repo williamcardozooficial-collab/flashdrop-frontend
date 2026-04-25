@@ -529,13 +529,28 @@
       currentUserId = null;
       document.getElementById('user-modal-title').textContent = 'Novo Usuario';
       document.getElementById('user-fields').innerHTML =
-        '<div class="input-group"><label>Nome</label><input id="u-name" class="input"></div>' +
-        '<div class="input-group"><label>Usuario</label><input id="u-user" class="input"></div>' +
-        '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password"></div>' +
-        '<div class="input-group"><label>Tipo</label><select id="u-role" class="input"><option value="loja">Loja</option><option value="motoboy">Motoboy</option></select></div>' +
-        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input"></div>' +
-        '<div class="input-group"><label>Endereco/Veiculo</label><input id="u-extra" class="input"></div>';
+        '<div class="input-group"><label>Nome</label><input id="u-name" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Login (usuario)</label><input id="u-user" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password" autocomplete="new-password"></div>' +
+        '<div class="input-group"><label>Tipo</label><select id="u-role" class="input" onchange="updateNewUserFields()"><option value="loja">Loja</option><option value="motoboy">Motoboy</option></select></div>' +
+        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>ID Personalizado (opcional)</label><input id="u-cid-new" class="input" placeholder="Ex: L000010 ou M0010" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Endereço</label><input id="u-address-new" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>CPF/CNPJ</label><input id="u-cpf-new" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Telegram ID (número)</label><input id="u-tg-new" class="input" type="number" placeholder="Opcional" autocomplete="off"></div>' +
+        '<div id="u-extra-fields"><div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div></div>';
       openModal('modal-user');
+    }
+
+    function updateNewUserFields() {
+      var role = document.getElementById('u-role').value;
+      var extra = document.getElementById('u-extra-fields');
+      if (role === 'motoboy') {
+        extra.innerHTML = '<div class="input-group"><label>Veículo</label><input id="u-vehicle-new" class="input" autocomplete="off"></div>' +
+          '<div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div>';
+      } else {
+        extra.innerHTML = '<div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div>';
+      }
     }
 
     function openEditUser(id) {
@@ -571,8 +586,18 @@
       if (!currentUserId) {
         data.username = document.getElementById('u-user').value;
         data.role = document.getElementById('u-role').value;
-        var extra = document.getElementById('u-extra').value;
-        if (data.role === 'loja') data.address = extra; else data.vehicle = extra;
+        var cidNewEl = document.getElementById('u-cid-new');
+        if (cidNewEl && cidNewEl.value.trim()) data.custom_id = cidNewEl.value.trim().toUpperCase();
+        var addrNewEl = document.getElementById('u-address-new');
+        if (addrNewEl) data.address = addrNewEl.value;
+        var cpfNewEl = document.getElementById('u-cpf-new');
+        if (cpfNewEl && cpfNewEl.value.trim()) data.cpf = cpfNewEl.value.trim();
+        var tgNewEl = document.getElementById('u-tg-new');
+        if (tgNewEl && tgNewEl.value.trim()) data.telegram_id = tgNewEl.value.trim();
+        var creditNewEl = document.getElementById('u-credit-new');
+        if (creditNewEl) { var cv = parseFloat(creditNewEl.value); data.custom_credit_limit = (!isNaN(cv) && cv > 0) ? cv : null; }
+        var vehicleNewEl = document.getElementById('u-vehicle-new');
+        if (vehicleNewEl) data.vehicle = vehicleNewEl.value;
       } else {
         var u = allUsers.find(function(x){ return x.id === currentUserId; });
         var vehicleEl = document.getElementById('u-vehicle');
