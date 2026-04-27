@@ -126,4 +126,105 @@ var _editProdId=null;
 function openNovoProduto(){_editProdId=null;document.getElementById('mp-titulo').textContent='Novo Produto';['mp-nome','mp-desc','mp-preco','mp-cat','mp-foto','mp-ordem'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('mp-ativo').checked=true;document.getElementById('modal-produto').style.display='flex';}
 function editarProduto(id){_editProdId=id;fetch(API+'/produtos?loja_id='+JSON.parse(localStorage.getItem('flashdrop_user')||'{}').id).then(function(r){return r.json();}).then(function(prods){var p=prods.find(function(x){return x.id===id;});if(!p)return;document.getElementById('mp-titulo').textContent='Editar Produto';document.getElementById('mp-nome').value=p.nome||'';document.getElementById('mp-desc').value=p.descricao||'';document.getElementById('mp-preco').value=p.preco||'';document.getElementById('mp-cat').value=p.categoria||'';document.getElementById('mp-foto').value=p.foto_url||'';document.getElementById('mp-ordem').value=p.ordem||'';document.getElementById('mp-ativo').checked=p.ativo!==false;document.getElementById('modal-produto').style.display='flex';});}
 async function salvarProduto(){var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');var payload={loja_id:u.id,nome:document.getElementById('mp-nome').value.trim(),descricao:document.getElementById('mp-desc').value.trim()||null,preco:parseFloat(document.getElementById('mp-preco').value)||0,categoria:document.getElementById('mp-cat').value.trim()||null,foto_url:document.getElementById('mp-foto').value.trim()||null,ativo:document.getElementById('mp-ativo').checked,ordem:parseInt(document.getElementById('mp-ordem').value)||0};if(!payload.nome){tg.showAlert('Nome obrigatorio');return;}try{var url=_editProdId?API+'/produtos/'+_editProdId:API+'/produtos';var method=_editProdId?'PUT':'POST';var r=await fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(r.ok){document.getElementById('modal-produto').style.display='none';loadProdutosLoja();}else{var e2=await r.json();tg.showAlert('Erro: '+(e2.error||'?'));}}catch(e){tg.showAlert('Erro: '+e.message);}}
-async function excluirProduto(id){if(!confirm('Excluir produto?'))return;try{await fetch(API+'/produtos/'+id,{method:'DELETE'});loadProdutosLoja();}catch(e){}}</script></body></html>
+async function excluirProduto(id){if(!confirm('Excluir produto?'))return;try{await fetch(API+'/produtos/'+id,{method:'DELETE'});loadProdutosLoja();}catch(e){}}
+/* ── PAGAR AO RESTAURANTE - NOTIFICACAO URGENTE LOJA ── */
+var _pagRestInterval = null;
+var _pagRestCountdown = null;
+var _pagRestAtual = null;
+
+async function checkPagamentoPendenteLoja() {
+  var u = JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+  if (!u || !u.username) return;
+  try {
+    var r = await fetch(API+'/pagamento-restaurante/loja/'+u.username);
+    var lista = await r.json();
+    if (lista && lista.length > 0 && lista[0].status === 'pendente') {
+      mostrarModalPagarRestLoja(lista[0]);
+    } else {
+      fecharModalPagarRestLoja();
+    }
+  } catch(e) {}
+}
+
+function mostrarModalPagarRestLoja(pag) {
+  if (_pagRestAtual && _pagRestAtual.id === pag.id) return;
+  _pagRestAtual = pag;
+  var elMotoboy = document.getElementById('pag-rest-loja-motoboy');
+  var elValor = document.getElementById('pag-rest-loja-valor');
+  var elPedido = document.getElementById('pag-rest-loja-pedido');
+  var elModal = document.getElementById('pag-rest-loja-modal');
+  if(elMotoboy) elMotoboy.textContent = pag.motoboy_name || 'Motoboy';
+  if(elValor) elValor.textContent = 'R$ ' + parseFloat(pag.valor).toFixed(2);
+  if(elPedido) elPedido.textContent = '#' + pag.order_id;
+  if(elModal) elModal.style.display = 'flex';
+  if (_pagRestCountdown) clearInterval(_pagRestCountdown);
+  _pagRestCountdown = setInterval(function() {
+    var expiresAt = new Date(pag.expires_at).getTime();
+    var remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+    var min = Math.floor(remaining / 60);
+    var sec = remaining % 60;
+    var elTimer = document.getElementById('pag-rest-loja-timer');
+    if(elTimer) elTimer.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+    if (remaining <= 0) {
+      clearInterval(_pagRestCountdown);
+      _pagRestCountdown = null;
+      _pagRestAtual = null;
+      if(elModal) elModal.style.display = 'none';
+    }
+  }, 1000);
+}
+
+function fecharModalPagarRestLoja() {
+  if (_pagRestAtual) {
+    _pagRestAtual = null;
+    if (_pagRestCountdown) { clearInterval(_pagRestCountdown); _pagRestCountdown = null; }
+    var elModal = document.getElementById('pag-rest-loja-modal');
+    if(elModal) elModal.style.display = 'none';
+  }
+}
+
+async function responderPagRestLoja(decisao) {
+  if (!_pagRestAtual) return;
+  var valorFmt = 'R$ ' + parseFloat(_pagRestAtual.valor).toFixed(2);
+  var confirmMsg = decisao === 'aceito' ? 'Aceitar o pagamento de ' + valorFmt + ' do motoboy?' : 'Recusar o pagamento?';
+  if (!confirm(confirmMsg)) return;
+  var u = JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+  try {
+    var r = await fetch(API+'/pagamento-restaurante/'+_pagRestAtual.id+'/responder', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ decisao: decisao, loja_user: u.username })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      fecharModalPagarRestLoja();
+      if(typeof tg !== 'undefined' && tg.showAlert) tg.showAlert(decisao === 'aceito' ? 'Pagamento aceito! Seu saldo foi atualizado.' : 'Pagamento recusado.');
+      else alert(decisao === 'aceito' ? 'Pagamento aceito!' : 'Pagamento recusado.');
+    } else {
+      if(typeof tg !== 'undefined' && tg.showAlert) tg.showAlert('Erro: ' + (d.error || 'Falha'));
+      else alert('Erro: ' + (d.error || 'Falha'));
+    }
+  } catch(e) {
+    if(typeof tg !== 'undefined' && tg.showAlert) tg.showAlert('Erro: ' + e.message);
+    else alert('Erro: ' + e.message);
+  }
+}
+
+if (!window._pagRestLojaStarted) {
+  window._pagRestLojaStarted = true;
+  setInterval(checkPagamentoPendenteLoja, 15000);
+  checkPagamentoPendenteLoja();
+}
+</script>
+<div id="pag-rest-loja-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:99999;align-items:center;justify-content:center;flex-direction:column;">
+  <div style="background:#1a0a00;border:3px solid #ff6600;border-radius:14px;padding:28px;width:92%;max-width:400px;text-align:center;">
+    <div style="font-size:13px;font-weight:700;color:#ff6600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">&#x26A0;&#xFE0F; SOLICITAÇÃO URGENTE</div>
+    <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:8px;">&#x1F4B5; Pagamento ao Restaurante</div>
+    <div style="font-size:13px;color:#aaa;margin-bottom:4px;">Motoboy: <span id="pag-rest-loja-motoboy" style="color:#fff;font-weight:700;"></span></div>
+    <div style="font-size:13px;color:#aaa;margin-bottom:4px;">Pedido: <span id="pag-rest-loja-pedido" style="color:#fff;font-weight:700;"></span></div>
+    <div style="font-size:28px;font-weight:900;color:#27ae60;margin:14px 0;">Valor: <span id="pag-rest-loja-valor"></span></div>
+    <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Tempo restante:</div>
+    <div id="pag-rest-loja-timer" style="font-size:36px;font-weight:900;color:#ff6600;margin-bottom:20px;font-family:monospace;">10:00</div>
+    <button onclick="responderPagRestLoja('aceito')" style="width:100%;padding:14px;background:#1a472a;border:2px solid #27ae60;border-radius:10px;color:#27ae60;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;">&#x2705; ACEITAR</button>
+    <button onclick="responderPagRestLoja('recusado')" style="width:100%;padding:14px;background:#4a0000;border:2px solid #cc0000;border-radius:10px;color:#ff4444;font-size:16px;font-weight:700;cursor:pointer;">&#x274C; RECUSAR</button>
+  </div>
+</div></body></html>
