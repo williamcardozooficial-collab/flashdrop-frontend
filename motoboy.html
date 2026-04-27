@@ -548,6 +548,15 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         obsDiv.style = "background:#1a2a1a;border:1px solid #27ae60;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#2ecc71;";
         obsDiv.innerHTML = "<strong>📝 Obs. Entrega:</strong> " + o.observacao_entrega;
         card.appendChild(obsDiv);
+
+      /* ── Pagar ao Restaurante (dinheiro) ── */
+      if (['aceito','na_loja','coletado','no_cliente'].includes(o.status)) {
+        var btnPagarRest = document.createElement('button');
+        btnPagarRest.textContent = String.fromCodePoint(128184)+' Pagar ao Restaurante';
+        btnPagarRest.style.cssText = 'width:100%;margin:8px 0;padding:10px;background:#1a472a;border:2px solid #27ae60;border-radius:8px;color:#27ae60;font-size:13px;font-weight:700;cursor:pointer;';
+        (function(ord){btnPagarRest.onclick=function(){abrirModalPagarRestaurante(ord);};})(o);
+        card.appendChild(btnPagarRest);
+      }
       }
 
       /* Timeline de eventos */
@@ -887,6 +896,55 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
   }
 
     init();
+
+  /* ── PAGAR AO RESTAURANTE ── */
+  var _pagarRestOrder = null;
+  function abrirModalPagarRestaurante(o) {
+    _pagarRestOrder = o;
+    document.getElementById('pagar-rest-max').textContent = 'Calculando...';
+    document.getElementById('pagar-rest-valor').value = '';
+    document.getElementById('pagar-rest-modal').style.display = 'flex';
+    fetch(API+'/orders/'+o.id+'/pagar-restaurante/info').then(function(r){return r.json();}).then(function(info){
+      var maxVal = parseFloat(info.max_valor)||0;
+      document.getElementById('pagar-rest-max').textContent = 'R$ '+maxVal.toFixed(2);
+      document.getElementById('pagar-rest-valor').max = maxVal;
+      if (info.has_pending) {
+        document.getElementById('pagar-rest-status').textContent = 'Ja existe solicitacao pendente para este pedido.';
+        document.getElementById('pagar-rest-status').style.color = '#ffcc00';
+      } else {
+        document.getElementById('pagar-rest-status').textContent = '';
+      }
+    }).catch(function(e){
+      document.getElementById('pagar-rest-max').textContent = 'Erro ao carregar';
+    });
+  }
+  function fecharModalPagarRestaurante() {
+    document.getElementById('pagar-rest-modal').style.display = 'none';
+    _pagarRestOrder = null;
+  }
+  async function confirmarPagarRestaurante() {
+    if (!_pagarRestOrder) return;
+    var u = JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+    var valStr = document.getElementById('pagar-rest-valor').value;
+    var val = parseFloat(valStr);
+    if (!valStr || isNaN(val) || val <= 0) { tg.showAlert('Informe um valor valido.'); return; }
+    var maxVal = parseFloat(document.getElementById('pagar-rest-valor').max||0);
+    if (maxVal > 0 && val > maxVal) { tg.showAlert('Valor excede o maximo de R$ '+maxVal.toFixed(2)); return; }
+    if (!confirm('Confirmar pagamento de R$ '+val.toFixed(2)+' ao restaurante?')) return;
+    try {
+      var r = await fetch(API+'/orders/'+_pagarRestOrder.id+'/pagar-restaurante', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({motoboy_id: u.id, valor: val})
+      });
+      var d = await r.json();
+      if (d.ok) {
+        fecharModalPagarRestaurante();
+        tg.showAlert('Solicitacao enviada! O restaurante tem 10 minutos para aceitar ou recusar.');
+      } else {
+        tg.showAlert('Erro: '+(d.error||'Falha ao enviar'));
+      }
+    } catch(e) { tg.showAlert('Erro: '+e.message); }
+  }
   </script>
 
 <!-- MODAL SAQUE -->
@@ -902,6 +960,17 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
       <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Histórico de Saques</div>
       <div id="saque-history-list"><div style="color:#555;font-size:12px;text-align:center">Carregando...</div></div>
     </div>
+  </div>
+</div>
+<!-- MODAL PAGAR AO RESTAURANTE -->
+<div id="pagar-rest-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
+  <div style="background:#1a1a2e;border:2px solid #27ae60;border-radius:12px;padding:24px;width:90%;max-width:380px;">
+    <div style="font-size:16px;font-weight:700;color:#27ae60;margin-bottom:4px;">&#128184; Pagar ao Restaurante</div>
+    <div style="font-size:11px;color:#aaa;margin-bottom:4px;">Valor maximo disponivel: <span id="pagar-rest-max" style="color:#fff;font-weight:700;">Calculando...</span></div>
+    <div id="pagar-rest-status" style="font-size:11px;margin-bottom:10px;min-height:14px;"></div>
+    <input id="pagar-rest-valor" type="number" min="0.01" step="0.01" placeholder="Valor a pagar (R$)" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1.5px solid #27ae60;background:#0d0d1a;color:#fff;font-size:15px;margin-bottom:14px;">
+    <button onclick="confirmarPagarRestaurante()" style="width:100%;padding:12px;background:#1a472a;border:2px solid #27ae60;border-radius:8px;color:#27ae60;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">Confirmar Pagamento</button>
+    <button onclick="fecharModalPagarRestaurante()" style="width:100%;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:13px;cursor:pointer;">Cancelar</button>
   </div>
 </div>
 </body>
