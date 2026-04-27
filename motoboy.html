@@ -548,16 +548,15 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         obsDiv.style = "background:#1a2a1a;border:1px solid #27ae60;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#2ecc71;";
         obsDiv.innerHTML = "<strong>📝 Obs. Entrega:</strong> " + o.observacao_entrega;
         card.appendChild(obsDiv);
-
-      /* ── Pagar ao Restaurante (dinheiro) ── */
-      if (['aceito','na_loja','coletado','no_cliente'].includes(o.status)) {
-        var btnPagarRest = document.createElement('button');
-        btnPagarRest.textContent = String.fromCodePoint(128184)+' Pagar ao Restaurante';
-        btnPagarRest.style.cssText = 'width:100%;margin:8px 0;padding:10px;background:#1a472a;border:2px solid #27ae60;border-radius:8px;color:#27ae60;font-size:13px;font-weight:700;cursor:pointer;';
-        (function(ord){btnPagarRest.onclick=function(){abrirModalPagarRestaurante(ord);};})(o);
-        card.appendChild(btnPagarRest);
       }
-      }
+    /* ── Pagar ao Restaurante (dinheiro) ── */
+    if (isDinheiro && ['aceito','na_loja','coletado','no_cliente'].includes(o.status)) {
+      var btnPagarRest = document.createElement('button');
+      btnPagarRest.textContent = String.fromCodePoint(128692)+' Pagar ao Restaurante';
+      btnPagarRest.style.cssText = 'width:100%;margin:8px 0;padding:10px;background:#1a472a;border:2px solid #27ae60;border-radius:8px;color:#27ae60;font-size:13px;font-weight:700;cursor:pointer;';
+      (function(ord){btnPagarRest.onclick=function(){abrirModalPagarRestaurante(ord);};})(o);
+      card.appendChild(btnPagarRest);
+    }
 
       /* Timeline de eventos */
     var tl = buildTimeline(o);
