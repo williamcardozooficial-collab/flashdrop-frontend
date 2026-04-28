@@ -115,6 +115,10 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
         <label>🏬 Razão Social / Nome da Loja</label>
         <input type="text" id="razao-social" placeholder="Ex: Restaurante do João LTDA"/>
       </div>
+      <div class="input-group">
+        <label>🔗 Código de quem te indicou (opcional)</label>
+        <input type="text" id="referral-loja" placeholder="Código do motoboy indicador">
+      </div>
     </div><!-- /loja-extra -->
 
     <button class="btn btn-primary" id="registerBtn" onclick="doRegister()">📝 Solicitar Cadastro</button>
@@ -195,10 +199,11 @@ function showSuccess(msg){
       vehicle=document.getElementById('vehicle').value.trim();
       referralCode=document.getElementById('referral-code').value.trim().toUpperCase()||null;
     }
-    var cnpj='', razaoSocial='';
+    var cnpj='', razaoSocial='', referralLoja='';
     if (!isMotoboy) {
       cnpj=document.getElementById('cnpj').value.trim();
       razaoSocial=document.getElementById('razao-social').value.trim();
+      referralLoja=document.getElementById('referral-loja').value.trim().toUpperCase();
     }
     if(!username||!password||!name||!phone){
       showError('❌ Preencha todos os campos obrigatórios.'); return;
@@ -228,7 +233,7 @@ function showSuccess(msg){
     }
     var body = {username: username, password: password, role: tipo, name: name, phone: phone, address: address};
     if (isMotoboy) {
-      body.cpf = cpf; body.vehicle = vehicle; body.referral_code = referralCode || null;
+      body.referral_code = referralLoja || null; body.cnpj = cnpj || null; body.razao_social = razaoSocial || null;
     } else {
       body.cpf = cnpj || null; body.vehicle = razaoSocial || null;
     }
