@@ -93,7 +93,7 @@
 
   <div class="stats">
     <div class="stat-card"><div class="stat-value" id="total-entregas">0</div><div class="stat-label">Entregas</div></div>
-    <div class="stat-card"><div class="stat-value" id="total-ganhos">R$ 0</div><div class="stat-label">Ganhos</div></div>
+    <div class="stat-card"><div class="stat-value" id="total-ganhos">R$ 0</div><div class="stat-label">Ganho Hoje</div></div>
     <div class="stat-card"><div class="stat-value" id="user-balance">R$ 0</div><div class="stat-label">Saldo</div></div>
   </div>
 
@@ -136,12 +136,18 @@
           </div>
           <div style="background:#222;border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:20px;font-weight:900;color:#4caf50" id="mb-total-ganhos">R$ 0,00</div>
-            <div style="font-size:10px;color:#aaa">Total Ganhos</div>
+            <div style="font-size:10px;color:#aaa">Ganho Hoje</div>
           </div>
         </div>
         <div id="mb-indicados-list" style="font-size:12px;color:#888;text-align:center">Nenhum indicado ainda.</div>
       </div>
   </div>
+
+      <!-- ── EVENTOS DE SALDO (últimas 24h) ── -->
+      <div class="card" style="margin-top:16px;background:#1e1e1e;border-radius:12px;padding:16px">
+        <h3 style="color:#ffcc00;margin-bottom:10px;font-size:14px">&#9201; Saldo &mdash; Últimas 24h</h3>
+        <div id="mb-wallet-events-list"><p style="color:#aaa;font-size:12px">Carregando...</p></div>
+      </div>
 </div>
 
   
@@ -664,7 +670,9 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         }
 
         document.getElementById("total-entregas").textContent = done.length;
-        var totalGanhos = done.reduce(function(s, o) { return s + parseFloat(o.valor_motoboy || 0); }, 0);
+          var hoje = new Date().toISOString().slice(0, 10);
+          var doneHoje = done.filter(function(o) { return o.created_at && o.created_at.slice(0,10) === hoje; });
+          var totalGanhos = doneHoje.reduce(function(s, o) { return s + parseFloat(o.valor_motoboy || 0); }, 0);
         document.getElementById("total-ganhos").textContent = "R$ " + totalGanhos.toFixed(2);
         updateTabBadge('available', available.length);
         updateTabBadge('mine', active.length);
@@ -841,6 +849,31 @@ async function submitSaque() {
 async function loadAvisosMotboy(){try{var r=await fetch(API+'/notices?target=motoboy');var list=await r.json();var banner=document.getElementById('avisos-mb-banner');if(!list||list.length===0){banner.style.display='none';return;}banner.style.display='block';banner.innerHTML='<div style="font-size:11px;color:#ffcc00;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📢 Avisos do Admin</div>'+list.map(function(n){return'<div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #2a2a00">'+'<div style="font-weight:600;color:#fff;font-size:13px;margin-bottom:2px">'+n.title+'</div>'+'<div style="color:#ccc;font-size:12px;line-height:1.4">'+n.body+'</div>'+'</div>';}).join('');}catch(e){}}
 async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch(API+'/promotions/motoboy/'+user.id);var promos=await r.json();var el=document.getElementById('promo-mb-banner');if(!promos||!promos.length){el.style.display='none';return;}var html=promos.map(function(p){var pct=Math.min(100,Math.round((p.contagem/p.meta_entregas)*100));var restam=p.meta_entregas-p.contagem;var msg=p.pago?'BONUS PAGO! Parabens!':'Faltam '+restam+' entrega(s) para ganhar R$ '+parseFloat(p.valor_bonus).toFixed(2)+'!';return '<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#ffcc00;">Promocao: '+p.nome+'</strong><span style="color:#aaa;font-size:12px;">'+p.contagem+'/'+p.meta_entregas+'</span></div><div style="background:#333;border-radius:6px;height:8px;margin:4px 0;"><div style="background:'+(p.pago?'#66bb6a':'#ffcc00')+';width:'+pct+'%;height:8px;border-radius:6px;"></div></div><div style="color:'+(p.pago?'#66bb6a':'#fff')+';font-size:12px;">'+msg+'</div></div>';}).join('');el.innerHTML='<div style="color:#66bb6a;font-size:12px;font-weight:bold;margin-bottom:6px;">PROMOCAO ATIVA</div>'+html;el.style.display='block';}catch(e){}}
   async function init() {
+
+    async function loadWalletEvents() {
+      try {
+        var resp = await fetch(API + '/users/' + user.id + '/wallet-events');
+        var events = await resp.json();
+        var listEl = document.getElementById('mb-wallet-events-list');
+        if (!listEl) return;
+        if (!events || !events.length) {
+          listEl.innerHTML = '<p style="color:#aaa;font-size:12px;text-align:center">Nenhum evento nas últimas 24h</p>';
+          return;
+        }
+        var tipoLabel = { corrida: '&#128665; Corrida', bonus_promo: '&#127881; Bonus Promo', bonus_indicacao: '&#129309; Bonus Indicacao' };
+        listEl.innerHTML = events.map(function(ev) {
+          var dt = new Date(ev.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          var label = tipoLabel[ev.tipo] || ev.tipo;
+          var valor = parseFloat(ev.valor || 0).toFixed(2).replace('.', ',');
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #333">' +
+            '<div><div style="font-size:13px">' + label + '</div>' +
+            '<div style="font-size:11px;color:#aaa">' + dt + ' &mdash; ' + (ev.descricao || '') + '</div></div>' +
+            '<div style="color:#4caf50;font-weight:bold;font-size:14px">+R$ ' + valor + '</div>' +
+            '</div>';
+        }).join('');
+      } catch(e) { console.error('loadWalletEvents:', e); }
+    }
+
       document.getElementById("motoboy-name").textContent = user.name || "Motoboy";
       updateStatusUI();
       await syncUser();
@@ -852,6 +885,7 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
       loadPromoBanner();
       setInterval(loadPromoBanner, 30000);
   loadMbIndicacao();
+      loadWalletEvents();
     }
 
   async function loadMbIndicacao() {
