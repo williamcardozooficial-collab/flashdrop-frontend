@@ -725,6 +725,11 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         tg.showAlert("🚫 " + (errData.error || "Ação não permitida."));
         return;
       }
+      if (orderResp.status === 400) {
+        var errD4 = await orderResp.json();
+        tg.showAlert("❌ Código de entrega incorreto. Verifique com o cliente e tente novamente.");
+        return;
+      }
       if (!orderResp.ok) throw new Error("Erro ao atualizar pedido");
 
         if (action.startTimer) startTimer(orderId, 0);
