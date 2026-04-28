@@ -652,7 +652,7 @@
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" autocomplete="off"></div>' +
         '<div class="input-group"><label>Login (usuario)</label><input id="u-user" class="input" autocomplete="off"></div>' +
         '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password" autocomplete="new-password"></div>' +
-        '<div class="input-group"><label>Tipo</label><select id="u-role" class="input" onchange="updateNewUserFields()"><option value="loja">Loja</option><option value="motoboy">Motoboy</option></select></div>' +
+        '<div class="input-group"><label>Tipo</label><select id="u-role" class="input" onchange="updateNewUserFields()"><option value="motoboy">Motoboy</option><option value="loja">Loja</option></select></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" autocomplete="off"></div>' +
         '<div class="input-group"><label>ID Personalizado (opcional)</label><input id="u-cid-new" class="input" placeholder="Ex: L000010 ou M0010" autocomplete="off"></div>' +
         '<div class="input-group"><label>Endereço</label><input id="u-address-new" class="input" autocomplete="off"></div>' +
@@ -669,7 +669,7 @@
         extra.innerHTML = '<div class="input-group"><label>Veículo</label><input id="u-vehicle-new" class="input" autocomplete="off"></div>' +
           '<div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div>';
       } else {
-        extra.innerHTML = '<div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div>';
+        extra.innerHTML = '<div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div>' + '<div class="input-group"><label>\uD83D\uDD17 Código de Indicação (opcional)</label><input id="u-ref-loja-new" class="input" placeholder="Ex: REF1234" autocomplete="off"></div>';
       }
     }
 
@@ -730,6 +730,10 @@
         if (clEl) {
           var clVal = parseFloat(clEl.value);
           data.custom_credit_limit = isNaN(clVal) || clVal <= 0 ? null : clVal;
+          var refLojaEl = document.getElementById('u-ref-loja-new');
+          if (refLojaEl && refLojaEl.value.trim()) {
+            data.referral_code = refLojaEl.value.trim().toUpperCase();
+          }
         }
       }
       await fetch(API + '/users' + (currentUserId ? '/' + currentUserId : ''), {
