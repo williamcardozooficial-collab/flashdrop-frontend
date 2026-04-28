@@ -70,7 +70,7 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
 
     <div class="section-title">👤 Dados Pessoais</div>
     <div class="input-group">
-      <label>📛 Nome Completo <span class="required">*</span></label>
+      <label id="lbl-nome-campo">📛 Nome Completo <span class="required">*</span></label>
       <input type="text" id="name" placeholder="Seu nome completo" required/>
     </div>
 <div id="div-motoboy-cpf" class="motoboy-only">
@@ -141,6 +141,8 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
     // Atualizar título e required
     document.getElementById('reg-title').textContent = isMotoboy ? 'Cadastro de Motoboy' : 'Cadastro de Loja';
     document.querySelector('title').textContent = isMotoboy ? 'FlashDrop – Cadastro Motoboy' : 'FlashDrop – Cadastro Loja';
+    document.getElementById('lbl-nome-campo').innerHTML = isMotoboy ? '📛 Nome Completo <span class="required">*</span>' : '🏪 Razão Social / Nome da Loja <span class="required">*</span>';
+    document.getElementById('name').placeholder = isMotoboy ? 'Seu nome completo' : 'Nome da loja ou razão social';
     // Destacar o radio selecionado
     document.getElementById('lbl-motoboy').style.borderColor = isMotoboy ? '#667eea' : '#333';
     document.getElementById('lbl-loja').style.borderColor = isMotoboy ? '#333' : '#667eea';
@@ -235,7 +237,7 @@ function showSuccess(msg){
     if (isMotoboy) {
       body.referral_code = referralLoja || null; body.cnpj = cnpj || null; body.razao_social = razaoSocial || null;
     } else {
-      body.cpf = cnpj || null; body.vehicle = razaoSocial || null;
+      body.referral_code = referralLoja || null; body.cnpj = cnpj || null; body.razao_social = razaoSocial || null;
     }
     document.getElementById('registerBtn').disabled=true;
     try {
