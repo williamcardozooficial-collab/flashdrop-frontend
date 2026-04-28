@@ -202,7 +202,7 @@
         </div>
         <div style="background:rgba(255,204,0,0.10);border-radius:8px;padding:10px;text-align:center">
           <div id="pw-ganho" style="font-size:18px;font-weight:700;color:#ffcc00">R$ 0,00</div>
-          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL GANHO</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">GANHO HOJE</div>
         </div>
         <div style="background:rgba(229,57,53,0.10);border-radius:8px;padding:10px;text-align:center">
           <div id="pw-sacado" style="font-size:18px;font-weight:700;color:#e53935">R$ 0,00</div>
@@ -1177,7 +1177,7 @@ loadSaques();
         var wallet = await wr.json();
         _pwBalance = parseFloat(wallet.balance || 0);
         document.getElementById('pw-balance').textContent = 'R$ ' + _pwBalance.toFixed(2).replace('.', ',');
-        document.getElementById('pw-ganho').textContent = 'R$ ' + parseFloat(wallet.total_ganho || 0).toFixed(2).replace('.', ',');
+        document.getElementById('pw-ganho').textContent = 'R$ ' + parseFloat(wallet.ganho_hoje || 0).toFixed(2).replace('.', ',');
         document.getElementById('pw-sacado').textContent = 'R$ ' + parseFloat(wallet.total_sacado || 0).toFixed(2).replace('.', ',');
       } catch(e) { console.error('loadCaixa:', e); }
       try {
