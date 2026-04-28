@@ -208,7 +208,7 @@ function showSuccess(msg){
     if(!username||!password||!name||!phone){
       showError('❌ Preencha todos os campos obrigatórios.'); return;
     }
-    if(!/^S+$/.test(username)){
+    if(!/^\S+$/.test(username)){
       showError('❌ Usuário não pode ter espaços.'); return;
     }
     if(password!==password2){
@@ -217,14 +217,14 @@ function showSuccess(msg){
     if(password.length<6){
       showError('❌ A senha deve ter pelo menos 6 caracteres.'); return;
     }
-    if(!/^(d{2}) d d{4}-d{4}$/.test(phone)){
+    if(!/^\(\d{2}\) \d \d{4}-\d{4}$/.test(phone)){
       showError('❌ Telefone inválido. Use o formato (00) 0 0000-0000'); return;
     }
     if (isMotoboy) {
       if(!cpf||!vehicle){
         showError('❌ Preencha CPF e Veículo/Placa.'); return;
       }
-      if(!/^d{3}.d{3}.d{3}-d{2}$/.test(cpf)){
+      if(!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)){
         showError('❌ CPF inválido. Use o formato 000.000.000-00'); return;
       }
     }
