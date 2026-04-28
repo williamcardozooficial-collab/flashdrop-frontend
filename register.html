@@ -35,12 +35,25 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
 <div class="container">
   <div class="logo">
     <h1>⚡ FlashDrop</h1>
-    <p>Cadastro de Motoboy</p>
+    <p id="reg-title">Cadastro de Motoboy</p>
   </div>
   <div class="card">
     <div id="errorDiv" class="error"></div>
     <div id="successDiv" class="success"></div>
 
+
+    <!-- SELEÇÃO DO TIPO DE CADASTRO -->
+    <div class="section-title">Tipo de Cadastro</div>
+    <div class="input-group" style="display:flex;gap:10px;margin-bottom:18px">
+      <label style="flex:1;display:flex;align-items:center;gap:8px;background:#0f0f1a;border:2px solid #667eea;border-radius:10px;padding:12px;cursor:pointer" id="lbl-motoboy">
+        <input type="radio" name="reg-tipo" id="tipo-motoboy" value="motoboy" checked onchange="onTipoChange()" style="width:auto;accent-color:#667eea">
+        <span>🏍️ Motoboy</span>
+      </label>
+      <label style="flex:1;display:flex;align-items:center;gap:8px;background:#0f0f1a;border:2px solid #333;border-radius:10px;padding:12px;cursor:pointer" id="lbl-loja">
+        <input type="radio" name="reg-tipo" id="tipo-loja" value="loja" onchange="onTipoChange()" style="width:auto;accent-color:#667eea">
+        <span>🏪 Loja</span>
+      </label>
+    </div>
     <div class="section-title">📋 Dados de Acesso</div>
     <div class="input-group">
       <label>👤 Usuário <span class="required">*</span></label>
@@ -60,11 +73,13 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
       <label>📛 Nome Completo <span class="required">*</span></label>
       <input type="text" id="name" placeholder="Seu nome completo" required/>
     </div>
+<div id="div-motoboy-cpf" class="motoboy-only">
     <div class="input-group">
       <label>📄 CPF <span class="required">*</span></label>
       <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required/>
       <div class="hint">Formato: 000.000.000-00</div>
     </div>
+</div><!-- /motoboy-cpf -->
     <div class="input-group">
       <label>📱 Telefone (WhatsApp) <span class="required">*</span></label>
       <input type="text" id="phone" placeholder="(00) 0 0000-0000" maxlength="16" required/>
@@ -75,6 +90,7 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
       <input type="text" id="address" placeholder="Rua, número, bairro, cidade"/>
     </div>
 
+<div id="div-motoboy-extra" class="motoboy-only">
     <div class="section-title">🏍️ Dados da Moto</div>
     <div class="input-group">
       <label>🏍️ Veículo / Placa <span class="required">*</span></label>
@@ -86,12 +102,45 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
       <input type="text" id="referral-code" placeholder="Ex: JOAO123" style="text-transform:uppercase"/>
       <div class="hint">Se um motoboy te indicou, coloque o codigo dele aqui</div>
     </div>
+</div><!-- /motoboy-extra -->
+
+    <!-- CAMPOS SOMENTE PARA LOJA -->
+    <div id="div-loja-extra" class="loja-only" style="display:none">
+      <div class="section-title">🏪 Dados da Loja</div>
+      <div class="input-group">
+        <label>📄 CNPJ (opcional)</label>
+        <input type="text" id="cnpj" placeholder="00.000.000/0000-00"/>
+      </div>
+      <div class="input-group">
+        <label>🏬 Razão Social / Nome da Loja</label>
+        <input type="text" id="razao-social" placeholder="Ex: Restaurante do João LTDA"/>
+      </div>
+    </div><!-- /loja-extra -->
 
     <button class="btn btn-primary" id="registerBtn" onclick="doRegister()">📝 Solicitar Cadastro</button>
     <p class="login-link">Já tem conta? <a href="login.html">Entrar</a></p>
   </div>
 </div>
 <script>
+
+  // ── LÓGICA DE TIPO DE CADASTRO ─────────────────────────────────────
+  function onTipoChange() {
+    var tipo = document.querySelector('input[name="reg-tipo"]:checked').value;
+    var isMotoboy = (tipo === 'motoboy');
+    // Mostrar/ocultar campos
+    document.querySelectorAll('.motoboy-only').forEach(function(el) {
+      el.style.display = isMotoboy ? '' : 'none';
+    });
+    document.querySelectorAll('.loja-only').forEach(function(el) {
+      el.style.display = isMotoboy ? 'none' : '';
+    });
+    // Atualizar título e required
+    document.getElementById('reg-title').textContent = isMotoboy ? 'Cadastro de Motoboy' : 'Cadastro de Loja';
+    document.querySelector('title').textContent = isMotoboy ? 'FlashDrop – Cadastro Motoboy' : 'FlashDrop – Cadastro Loja';
+    // Destacar o radio selecionado
+    document.getElementById('lbl-motoboy').style.borderColor = isMotoboy ? '#667eea' : '#333';
+    document.getElementById('lbl-loja').style.borderColor = isMotoboy ? '#333' : '#667eea';
+  }
 const API='https://flashdrop-backend-production.up.railway.app';
 let tg=window.Telegram?.WebApp;
 if(tg) tg.expand();
@@ -131,53 +180,67 @@ function showSuccess(msg){
   document.getElementById('errorDiv').style.display='none';
 }
 
-async function doRegister(){
-  const btn=document.getElementById('registerBtn');
-  const username=document.getElementById('username').value.trim();
-  const password=document.getElementById('password').value;
-  const password2=document.getElementById('password2').value;
-  const name=document.getElementById('name').value.trim();
-  const cpf=document.getElementById('cpf').value.trim();
-  const phone=document.getElementById('phone').value.trim();
-  const address=document.getElementById('address').value.trim();
-  const vehicle=document.getElementById('vehicle').value.trim();
-  const referralCode=document.getElementById('referral-code').value.trim().toUpperCase();
-
-  if(!username||!password||!name||!cpf||!phone||!vehicle){
-    showError('❌ Preencha todos os campos obrigatórios.'); return;
+  async function doRegister(){
+    var tipo = document.querySelector('input[name="reg-tipo"]:checked').value;
+    var isMotoboy = (tipo === 'motoboy');
+    var username=document.getElementById('username').value.trim();
+    var password=document.getElementById('password').value;
+    var password2=document.getElementById('password2').value;
+    var name=document.getElementById('name').value.trim();
+    var phone=document.getElementById('phone').value.trim();
+    var address=document.getElementById('address').value.trim();
+    var cpf='', vehicle='', referralCode='';
+    if (isMotoboy) {
+      cpf=document.getElementById('cpf').value.trim();
+      vehicle=document.getElementById('vehicle').value.trim();
+      referralCode=document.getElementById('referral-code').value.trim().toUpperCase()||null;
+    }
+    var cnpj='', razaoSocial='';
+    if (!isMotoboy) {
+      cnpj=document.getElementById('cnpj').value.trim();
+      razaoSocial=document.getElementById('razao-social').value.trim();
+    }
+    if(!username||!password||!name||!phone){
+      showError('❌ Preencha todos os campos obrigatórios.'); return;
+    }
+    if(!/^S+$/.test(username)){
+      showError('❌ Usuário não pode ter espaços.'); return;
+    }
+    if(password!==password2){
+      showError('❌ As senhas não coincidem.'); return;
+    }
+    if(password.length<6){
+      showError('❌ A senha deve ter pelo menos 6 caracteres.'); return;
+    }
+    if(!/^(d{2}) d d{4}-d{4}$/.test(phone)){
+      showError('❌ Telefone inválido. Use o formato (00) 0 0000-0000'); return;
+    }
+    if (isMotoboy) {
+      if(!cpf||!vehicle){
+        showError('❌ Preencha CPF e Veículo/Placa.'); return;
+      }
+      if(!/^d{3}.d{3}.d{3}-d{2}$/.test(cpf)){
+        showError('❌ CPF inválido. Use o formato 000.000.000-00'); return;
+      }
+    }
+    if (!isMotoboy && !razaoSocial) {
+      showError('❌ Informe o Nome/Razão Social da loja.'); return;
+    }
+    var body = {username: username, password: password, role: tipo, name: name, phone: phone, address: address};
+    if (isMotoboy) {
+      body.cpf = cpf; body.vehicle = vehicle; body.referral_code = referralCode || null;
+    } else {
+      body.cpf = cnpj || null; body.vehicle = razaoSocial || null;
+    }
+    document.getElementById('registerBtn').disabled=true;
+    try {
+      var resp=await fetch(API+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      var d=await resp.json();
+      if(!resp.ok){ showError('❌ '+(d.error||'Erro ao cadastrar.')); }
+      else { showSuccess('✅ Cadastro enviado! Aguarde a aprovação do administrador.'); }
+    } catch(e){ showError('❌ Erro de conexão: '+e.message); }
+    document.getElementById('registerBtn').disabled=false;
   }
-  if(!/^\S+$/.test(username)){
-    showError('❌ Usuário não pode ter espaços.'); return;
-  }
-  if(password!==password2){
-    showError('❌ As senhas não coincidem.'); return;
-  }
-  if(password.length<6){
-    showError('❌ A senha deve ter pelo menos 6 caracteres.'); return;
-  }
-  if(!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)){
-    showError('❌ CPF inválido. Use o formato 000.000.000-00'); return;
-  }
-  if(!/^\(\d{2}\) \d \d{4}-\d{4}$/.test(phone)){
-    showError('❌ Telefone inválido. Use o formato (00) 0 0000-0000'); return;
-  }
-
-  btn.disabled=true; btn.textContent='Enviando...';
-  try {
-    const resp=await fetch(API+'/register',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username,password,role:'motoboy',name,cpf,phone,address,vehicle,referral_code:referralCode||null})
-    });
-    const data=await resp.json();
-    if(!resp.ok){ showError('❌ '+( data.error||'Erro ao cadastrar.')); btn.disabled=false; btn.textContent='📝 Solicitar Cadastro'; return; }
-    showSuccess('✅ Cadastro enviado! Aguarde a aprovação do administrador.');
-    btn.textContent='Cadastro enviado!';
-  } catch(e){
-    showError('❌ Erro de conexão: '+e.message);
-    btn.disabled=false; btn.textContent='📝 Solicitar Cadastro';
-  }
-}
 </script>
 </body>
 </html>
