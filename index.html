@@ -495,6 +495,9 @@
             '<strong>#' + o.id + ' - ' + (esc(o.loja_name) || esc(o.loja_user)) + '</strong>' +
             '<span class="badge badge-' + status + '">' + label + '</span>' +
           '</div>' +
+          '<div style="background:#1a2a1a;border:1px solid #4caf50;border-radius:6px;padding:6px 10px;margin:6px 0;text-align:center">' +
+            (o.delivery_code ? '<span style="color:#4caf50;font-size:11px;font-weight:700">&#128273; Código de Entrega</span><br><span style="color:#fff;font-size:22px;font-weight:900;letter-spacing:6px">' + esc(o.delivery_code) + '</span>' : '') +
+          '</div>' +
           '<div class="row"><span class="val">Cliente:</span><span>' + esc(o.nome_cliente) + '</span></div>' +
           '<div class="row"><span class="val">Entrega:</span><span>' + esc(o.endereco_entrega) + (o.complemento_entrega ? ' — ' + o.complemento_entrega : '') + '</span></div>' + (o.obs_entrega_loja ? '<div class="row"><span class="val" style="color:#ffcc00">📝 Obs:</span><span style="color:#ffcc00">' + o.obs_entrega_loja + '</span></div>' : '') +
           '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' + '<div class="row"><span class="val">💳 Pagamento:</span><span>' + ({dinheiro:"💵 Dinheiro",maquina:"💳 Máquina de Cartão",pix:"📱 PIX"}[o.tipo_pagamento] || o.tipo_pagamento || "—") + '</span></div>' + (o.tipo_pagamento === "dinheiro" && Number(o.valor_pedido) > 0 ? '<div class="row" style="color:#4caf50"><span class="val">💰 Cobrado:</span><strong>R$ ' + Number(o.valor_pedido).toFixed(2) + '</strong></div>' : '') +
