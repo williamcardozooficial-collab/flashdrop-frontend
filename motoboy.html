@@ -693,10 +693,10 @@ var API = "https://flashdrop-backend-production.up.railway.app";
 
       /* Observação obrigatória ao finalizar entrega */
       if (action.next === "entregue") {
-        var obs = prompt("📝 OBSERVAÇÃO DA ENTREGA (obrigatório)\n\nDescreva como foi a entrega:\nEx: Entregue no portão, cliente assinou, sem problemas, etc.");
+        var obs = prompt("🔑 CÓDIGO DE ENTREGA\n\nDigite o código de 4 dígitos que o cliente informou:");
         if (obs === null) return; // cancelou
         if (!obs.trim()) {
-          tg.showAlert("⚠️ A observação é obrigatória para finalizar a entrega.");
+          tg.showAlert("⚠️ O código de entrega é obrigatório para finalizar.");
           return;
         }
         // Salva obs para incluir no update
