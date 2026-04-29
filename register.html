@@ -235,7 +235,7 @@ function showSuccess(msg){
     }
     var body = {username: username, password: password, role: tipo, name: name, phone: phone, address: address};
     if (isMotoboy) {
-      body.cpf = cpf; body.vehicle = vehicle; body.referral_code = referralLoja || null; body.cnpj = cnpj || null; body.razao_social = razaoSocial || null;
+      body.cpf = cpf; body.vehicle = vehicle; body.referral_code = referralCode || null; body.cnpj = cnpj || null; body.razao_social = razaoSocial || null;
     } else {
       body.referral_code = referralLoja || null; body.cnpj = cnpj || null; body.razao_social = razaoSocial || null;
     }
