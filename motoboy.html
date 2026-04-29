@@ -691,16 +691,16 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         return;
       }
 
-      /* Observação obrigatória ao finalizar entrega */
+      /* Codigo de entrega ao finalizar */
+      var codigoDigitado = null;
       if (action.next === "entregue") {
-        var obs = prompt("🔑 CÓDIGO DE ENTREGA\n\nDigite o código de 4 dígitos que o cliente informou:");
-        if (obs === null) return; // cancelou
-        if (!obs.trim()) {
+        codigoDigitado = prompt("🔑 CÓDIGO DE ENTREGA\n\nDigite o código de 4 dígitos que o cliente informou:");
+        if (codigoDigitado === null) return;
+        codigoDigitado = codigoDigitado.trim();
+        if (!codigoDigitado) {
           tg.showAlert("⚠️ O código de entrega é obrigatório para finalizar.");
           return;
         }
-        // Salva obs para incluir no update
-        window._pendingObs = obs.trim();
       }
 
       try {
@@ -708,9 +708,8 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         var tsMap = { aceito:"t_aceito", na_loja:"t_na_loja", coletado:"t_coletado", no_cliente:"t_no_cliente", entregue:"t_entregue" };
         if (tsMap[action.next]) update[tsMap[action.next]] = new Date().toISOString();
         if (currentStatus === "pendente") { update.motoboy_id = user.id; update.motoboy_name = user.name; }
-        if (action.next === "entregue" && window._pendingObs) {
-          update.observacao_entrega = window._pendingObs;
-          window._pendingObs = null;
+        if (action.next === "entregue" && codigoDigitado) {
+          update.observacao_entrega = codigoDigitado;
         }
 
         /* Saldo creditado automaticamente pelo backend ao marcar como entregue */
