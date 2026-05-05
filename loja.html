@@ -41,7 +41,7 @@ function buildDest(){
 function onTipoPagChange(){ var tipo=document.getElementById('tipoPagamento').value; document.getElementById('valorPedidoGroup').style.display=(tipo==='dinheiro')?'block':'none'; document.getElementById('retornoGroup').style.display=(tipo==='maquina')?'block':'none'; document.getElementById('cobrarCliente').value=(tipo==='dinheiro')?'sim':'nao'; if(calculatedDist>0) recalcWithRetorno(); }
 function onRetornoChange(){}
 function recalcWithRetorno(){ var tipo=document.getElementById('tipoPagamento').value; var maquina=(tipo==='maquina'); var dist=maquina?calculatedDist*2:calculatedDist; if(dist<=0)return; calculatedFee=Math.ceil(Math.max(parseFloat(settings.min_fee),parseFloat(settings.arrancada)+(dist*parseFloat(settings.price_per_km))));
-  // ── TAXAS CHUVA E NOTURNA ───────────────────────────────────
+  // TAXAS CHUVA E NOTURNA
   if (settings.taxa_chuva_ativa && parseFloat(settings.taxa_chuva) > 0) {
     calculatedFee += parseFloat(settings.taxa_chuva);
   }
@@ -51,8 +51,7 @@ function recalcWithRetorno(){ var tipo=document.getElementById('tipoPagamento').
     var fim = settings.taxa_noturna_hora_fim || '06:00';
     var isNoturno = ini > fim ? (nowH >= ini || nowH < fim) : (nowH >= ini && nowH < fim);
     if (isNoturno) calculatedFee += parseFloat(settings.taxa_noturna);
-  }
-  // ────────────────────────────────────────────────── document.getElementById('fee-val').textContent='R$ '+calculatedFee.toFixed(2)+(maquina?' (ida+volta — máquina)':''); }
+  } document.getElementById('fee-val').textContent='R$ '+calculatedFee.toFixed(2)+(maquina?' (ida+volta — máquina)':''); }
 function toggleValorPedido(){}
 /* ── TIMER DE PREPARO ── */
 var _prepTimers = {};
