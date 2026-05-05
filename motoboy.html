@@ -222,6 +222,10 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     var allOrdersCache = [];   /* cache de todos os pedidos, usado no calcBalance */
     var allUsersCache = [];
     var activeTimers = {};
+  /* ── AUTO-OFFLINE 60min ── */
+  var _autoOfflineTimer = null;
+  var _onlineAt = null;
+  var AUTO_OFFLINE_MS = 60 * 60 * 1000;
     var TIMER_DURATION = 15 * 60;
 
     var STATUS_LABELS = {
@@ -281,7 +285,34 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       }
     }
 
-    async function toggleOnline() {
+      async function autoOfflineCheck() {
+    if (!user.online || !_onlineAt) return;
+    var elapsed = Date.now() - _onlineAt;
+    if (elapsed < AUTO_OFFLINE_MS) {
+      _autoOfflineTimer = setTimeout(autoOfflineCheck, AUTO_OFFLINE_MS - elapsed);
+      return;
+    }
+    if (activeOrders && activeOrders.length > 0) {
+      _autoOfflineTimer = setTimeout(autoOfflineCheck, 5 * 60 * 1000);
+      return;
+    }
+    try {
+      var resp2 = await fetch(API + "/users/" + user.id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ online: false })
+      });
+      if (resp2.ok) {
+        user.online = false;
+        _onlineAt = null;
+        _autoOfflineTimer = null;
+        syncUser();
+        tg.showAlert("\u23F0 Voc\u00EA foi colocado Offline automaticamente ap\u00F3s 60 minutos.");
+      }
+    } catch(e2) { console.error("auto-offline:", e2); }
+  }
+
+async function toggleOnline() {
       if (user.online && activeOrders.length > 0) {
         tg.showAlert("Voce nao pode ficar Offline com pedido em aberto! Conclua a entrega primeiro.");
         return;
@@ -292,7 +323,18 @@ var API = "https://flashdrop-backend-production.up.railway.app";
           method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ online: newOnline })
         });
-        if (resp.ok) { user.online = newOnline; syncUser(); }
+        if (resp.ok) {
+        user.online = newOnline;
+        if (newOnline) {
+          _onlineAt = Date.now();
+          if (_autoOfflineTimer) clearTimeout(_autoOfflineTimer);
+          _autoOfflineTimer = setTimeout(autoOfflineCheck, AUTO_OFFLINE_MS);
+        } else {
+          _onlineAt = null;
+          if (_autoOfflineTimer) { clearTimeout(_autoOfflineTimer); _autoOfflineTimer = null; }
+        }
+        syncUser();
+      }
       } catch(e) { tg.showAlert("Erro ao atualizar status."); }
     };
 
@@ -676,7 +718,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         document.getElementById("total-ganhos").textContent = "R$ " + totalGanhos.toFixed(2);
         updateTabBadge('available', available.length);
         updateTabBadge('mine', active.length);
-        if (active.length > 0 && _activeTab === 'available') switchTab('mine');
+        /* auto-switch removido: motoboy escolhe a aba manualmente */
 
       } catch(e) { console.error("loadOrders error:", e); }
     }
@@ -883,6 +925,11 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
       await syncUser();
       await loadOrders();
       setInterval(loadOrders, 10000);
+      /* auto-offline: se ja estiver online ao carregar, iniciar timer */
+      if (user.online) {
+        _onlineAt = Date.now();
+        _autoOfflineTimer = setTimeout(autoOfflineCheck, AUTO_OFFLINE_MS);
+      }
       setInterval(syncUser, 30000);
       loadAvisosMotboy();
       setInterval(loadAvisosMotboy, 60000);
