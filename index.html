@@ -882,6 +882,1455 @@
     }
 
     async function saveSettings() {
+      const taxaChuvaAtiva = document.getElementById('cfg-chuva-ativa').checked;
+      const taxaNoturnaAtiva = document.getElementById('cfg-noturna-ativa').checked;
+      await fetch(API + '/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          min_fee: document.getElementById('cfg-min').value,
+          price_per_km: document.getElementById('cfg-km').value,
+          arrancada: document.getElementById('cfg-arr').value,
+          commission: document.getElementById('cfg-com').value,
+          max_per_motoboy: document.getElementById('cfg-max').value,
+          launch_delay_minutes: document.getElementById('cfg-delay').value,
+          taxa_chuva: parseFloat(document.getElementById('cfg-chuva-valor').value) || 0,
+          taxa_chuva_ativa: taxaChuvaAtiva,
+          taxa_chuva_desconto_de: document.getElementById('cfg-chuva-desconto').value || 'admin',
+          taxa_noturna: parseFloat(document.getElementById('cfg-noturna-valor').value) || 0,
+          taxa_noturna_ativa: taxaNoturnaAtiva,
+          taxa_noturna_hora_inicio: document.getElementById('cfg-noturna-inicio').value || '22:00',
+          taxa_noturna_hora_fim: document.getElementById('cfg-noturna-fim').value || '06:00'
+        })
+      });
+      tg.showAlert('Ajustes salvos!');
+    }
+
+    async function loadReferralSettings() {
+      try {
+        const r = await fetch(API + '/referral-settings');
+        const s = await r.json();
+        document.getElementById('ref-ativo').value = s.ativo ? 'true' : 'false';
+        document.getElementById('ref-com-loja').value = s.comissao_por_pedido_loja || '';
+        document.getElementById('ref-bonus-mb').value = s.bonus_motoboy_meta || '';
+        document.getElementById('ref-meta-ped').value = s.meta_pedidos_motoboy || '';
+        document.getElementById('ref-prazo-mb').value = s.prazo_meta_dias || '';
+        document.getElementById('ref-validade-loja').value = s.validade_indicacao_loja_dias || '';
+      } catch(e) { console.error(e); }
+    }
+
+    async function saveReferralSettings() {
+      try {
+        const body = {
+          ativo: document.getElementById('ref-ativo').value === 'true',
+          comissao_por_pedido_loja: parseFloat(document.getElementById('ref-com-loja').value) || 0,
+          bonus_motoboy_meta: parseFloat(document.getElementById('ref-bonus-mb').value) || 0,
+          meta_pedidos_motoboy: parseInt(document.getElementById('ref-meta-ped').value) || 100,
+          prazo_meta_dias: parseInt(document.getElementById('ref-prazo-mb').value) || 30,
+          validade_indicacao_loja_dias: parseInt(document.getElementById('ref-validade-loja').value) || 90
+        };
+        const r = await fetch(API + '/referral-settings', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if (r.ok) alert('Regras salvas!'); else alert('Erro ao salvar.');
+      } catch(e) { alert('Erro: ' + e.message); }
+    }
+
+    async function loadIndicacoes() {
+      try {
+        const rs = await fetch(API + '/referrals/summary');
+        const summary = await rs.json();
+        const sumEl = document.getElementById('ref-summary-list');
+        if (!summary.length) { sumEl.innerHTML = '<div style="color:#555;text-align:center;padding:20px">Nenhum indicador ainda.</div>'; }
+        else { sumEl.innerHTML = summary.map(function(s) {
+          return '<div style="background:#222;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">' +
+            '<span style="font-weight:700;color:#fff;flex:1">' + s.referrer_name + '</span>' +
+            '<span style="color:#aaa;font-size:12px">Indicados: <strong style="color:#fff">' + s.total_indicados + '</strong></span>' +
+            '<span style="color:#aaa;font-size:12px">Ativos: <strong style="color:#4caf50">' + s.indicacoes_ativas + '</strong></span>' +
+            '<span style="color:#aaa;font-size:12px">Ganhos: <strong style="color:#ffcc00">R$ ' + parseFloat(s.total_ganhos).toFixed(2) + '</strong></span>' +
+          '</div>';
+        }).join(''); }
+        const rl = await fetch(API + '/referrals');
+        const refs = await rl.json();
+        const listEl = document.getElementById('ref-list');
+        if (!refs.length) { listEl.innerHTML = '<div style="color:#555;text-align:center;padding:20px">Nenhuma indicação registrada.</div>'; return; }
+        listEl.innerHTML = refs.map(function(r) {
+          var role = r.referred_role === 'loja' ? '🏪' : '🛵';
+          var statusColor = r.status_ref === 'ativo' ? '#4caf50' : r.status_ref === 'concluido' ? '#2196f3' : '#ff9500';
+          var dataFim = r.data_fim ? new Date(r.data_fim).toLocaleDateString('pt-BR') : 'Sem prazo';
+          var progress = r.referred_role === 'motoboy' && r.meta_pedidos > 0
+            ? '<div style="margin-top:6px;background:#333;border-radius:4px;height:6px"><div style="background:#ffcc00;height:6px;border-radius:4px;width:' + Math.min(100, Math.round(r.total_pedidos_validos/r.meta_pedidos*100)) + '%"></div></div><div style="font-size:10px;color:#aaa;margin-top:2px">' + r.total_pedidos_validos + '/' + r.meta_pedidos + ' pedidos</div>'
+            : (r.referred_role === 'loja' ? '<div style="font-size:11px;color:#aaa;margin-top:4px">Pedidos válidos: ' + r.total_pedidos_validos + ' | Ganho: R$ ' + parseFloat(r.total_ganho).toFixed(2) + '</div>' : '');
+          return '<div style="background:#222;border-radius:8px;padding:10px 14px;margin-bottom:8px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+            '<span>' + role + ' <strong style="color:#fff">' + r.referred_name + '</strong> <span style="color:#888;font-size:11px">(por ' + r.referrer_name + ')</span></span>' +
+            '<span style="font-size:12px;font-weight:700;color:' + statusColor + '">' + r.status_ref.toUpperCase() + '</span></div>' +
+            '<div style="font-size:11px;color:#aaa">Validade: ' + dataFim + ' | Bônus pago: ' + (r.bonus_pago ? '✅' : '❌') + ' | Ganho: R$ ' + parseFloat(r.total_ganho).toFixed(2) + '</div>' +
+            progress +
+            '<div style="margin-top:8px;display:flex;gap:6px">' +
+            '<button onclick="editIndicacao(' + r.id + ')" style="padding:4px 10px;background:#333;border:1px solid #555;border-radius:5px;color:#fff;font-size:11px;cursor:pointer">✏️ Editar</button>' +
+            '<button onclick="deleteIndicacao(' + r.id + ')" style="padding:4px 10px;background:#2a0000;border:1px solid #f44336;border-radius:5px;color:#f44336;font-size:11px;cursor:pointer">🗑 Remover</button>' +
+            '</div></div>';
+        }).join('');
+      } catch(e) { console.error(e); }
+    }
+
+    async function editIndicacao(id) {
+      try {
+        var resp = await fetch(API + '/referrals');
+        var refs = await resp.json();
+        var ref = refs.find(function(r){ return r.id === id; });
+        if (!ref) { alert('Indicação não encontrada.'); return; }
+        window._editingIndicacaoId = id;
+        var dataFimVal = ref.data_fim ? ref.data_fim.substring(0,10) : '';
+        document.getElementById('indicacao-fields').innerHTML =
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Indicado</label>' +
+          '<input type="text" value="' + ref.referred_name + '" disabled style="width:100%;padding:7px;background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#666;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Indicador</label>' +
+          '<input type="text" value="' + ref.referrer_name + '" disabled style="width:100%;padding:7px;background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#666;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Status</label>' +
+          '<select id="ind-status" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff"><option value="ativo"' + (ref.status_ref==="ativo"?" selected":"") + '>Ativo</option><option value="concluido"' + (ref.status_ref==="concluido"?" selected":"") + '>Concluído</option><option value="expirado"' + (ref.status_ref==="expirado"?" selected":"") + '>Expirado</option><option value="cancelado"' + (ref.status_ref==="cancelado"?" selected":"") + '>Cancelado</option></select></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Data fim</label>' +
+          '<input type="date" id="ind-data-fim" value="' + dataFimVal + '" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Meta pedidos</label>' +
+          '<input type="number" id="ind-meta" value="' + (ref.meta_pedidos||'') + '" min="1" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Bônus (R$)</label>' +
+          '<input type="number" id="ind-bonus" step="0.01" value="' + (ref.bonus_valor||'') + '" min="0" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Bônus pago?</label>' +
+          '<select id="ind-bonus-pago" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff"><option value="false"' + (!ref.bonus_pago?' selected':'') + '>❌ Não</option><option value="true"' + (ref.bonus_pago?' selected':'') + '>✅ Sim</option></select></div>' +
+          '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Pedidos válidos</label>' +
+          '<input type="number" id="ind-ped-validos" value="' + (ref.total_pedidos_validos||0) + '" min="0" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '</div>';
+        openModal('modal-indicacao');
+      } catch(e) { alert('Erro ao carregar indicação: ' + e.message); }
+    }
+
+    async function saveIndicacao() {
+      var id = window._editingIndicacaoId;
+      var body = {
+        status_ref: document.getElementById('ind-status').value,
+        data_fim: document.getElementById('ind-data-fim').value || null,
+        meta_pedidos: parseInt(document.getElementById('ind-meta').value) || null,
+        bonus_valor: parseFloat(document.getElementById('ind-bonus').value) || null,
+        bonus_pago: document.getElementById('ind-bonus-pago').value === 'true',
+        total_pedidos_validos: parseInt(document.getElementById('ind-ped-validos').value) || 0
+      };
+      try {
+        var r = await fetch(API + '/referrals/' + id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if (r.ok) { closeModal('modal-indicacao'); loadIndicacoes(); } else { var er = await r.json(); alert('Erro: ' + (er.error||'desconhecido')); }
+      } catch(e) { alert('Erro: ' + e.message); }
+    }
+    async function deleteIndicacao(id) {
+      if (!confirm('Remover esta indicação definitivamente?')) return;
+      await fetch(API + '/referrals/' + id, {method:'DELETE'});
+      loadIndicacoes();
+    }
+
+    async function runReferralCleanup() {
+      if (!confirm('Executar limpeza automática de registros encerrados há mais de 20 dias?')) return;
+      var r = await fetch(API + '/referrals/cleanup', {method:'POST'});
+      var d = await r.json();
+      alert('Limpeza concluída! Indicações removidas: ' + d.refs_deletados + ', Ganhos removidos: ' + d.earnings_deletados);
+      loadIndicacoes();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    async function deleteUser(id, name) {
+    if (!confirm('Excluir usuario "' + name + '"? Esta acao nao pode ser desfeita.')) return;
+    await fetch(API + '/users/' + id, { method: 'DELETE' });
+    var activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab) {
+      var txt = activeTab.textContent.trim();
+      loadData(txt.includes('Lojas') ? 'lojas' : 'motoboys');
+    }
+    tg.showAlert('Usuario excluido!');
+  }
+  function logout(){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}
+
+    async function deleteOrder(id) {
+      if (!confirm('Excluir pedido #' + id + '? Esta acao nao pode ser desfeita.')) return;
+      await fetch(API + '/orders/' + id, { method: 'DELETE' });
+      loadData('pedidos');
+      tg.showAlert('Pedido excluido!');
+    }
+
+    function saveCleanupDays() {
+      var days = parseInt(document.getElementById('cfg-days').value);
+      if (isNaN(days) || days < 1) { tg.showAlert('Informe um numero valido de dias.'); return; }
+      localStorage.setItem('flashdrop_cleanup_days', days);
+      document.getElementById('cleanup-msg').textContent = '\u2705 Prazo salvo: ' + days + ' dias.';
+    }
+
+    async function cleanupOrders() {
+      var days = parseInt(localStorage.getItem('flashdrop_cleanup_days') || document.getElementById('cfg-days').value || 30);
+      if (!confirm('Isso vai excluir todos os pedidos entregues ou cancelados com mais de ' + days + ' dias. Continuar?')) return;
+      var cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      var r = await fetch(API + '/orders');
+      var orders = await r.json();
+      var toDelete = orders.filter(function(o) {
+        return (o.status === 'entregue' || o.status === 'cancelado') && new Date(o.created_at) < cutoff;
+      });
+      if (toDelete.length === 0) { document.getElementById('cleanup-msg').textContent = '\u2705 Nenhum pedido para excluir.'; return; }
+      await Promise.all(toDelete.map(function(o) {
+        return fetch(API + '/orders/' + o.id, { method: 'DELETE' });
+      }));
+      document.getElementById('cleanup-msg').textContent = '\u2705 ' + toDelete.length + ' pedido(s) excluido(s)!';
+      loadData('pedidos');
+    }
+
+
+    /* ── CADASTROS PENDENTES ── */
+    async function loadSaques() {
+  try {
+    var r = await fetch(API + '/withdrawals');
+    var list = await r.json();
+    var container = document.getElementById('saques-list');
+    var emptyMsg = document.getElementById('saques-empty');
+    var badge = document.getElementById('saques-badge');
+    container.innerHTML = '';
+    var pending = list.filter(function(w){ return w.status === 'pendente'; });
+    var all = list;
+    if (!all || all.length === 0) {
+      emptyMsg.style.display = 'block';
+      badge.style.display = 'none';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+    if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
+    var statusColor = { pendente: '#ffa500', aprovado: '#4caf50', recusado: '#f44336' };
+    var statusLabel = { pendente: '⏳ Pendente', aprovado: '✅ Aprovado', recusado: '❌ Recusado' };
+    container.innerHTML = all.map(function(w) {
+      var dt = new Date(w.created_at).toLocaleDateString('pt-BR') + ' ' + new Date(w.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+      return '<div class="card" style="border-left:3px solid ' + (statusColor[w.status]||'#555') + ';margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<strong style="font-size:16px">R$ ' + parseFloat(w.valor).toFixed(2) + '</strong>' +
+        '<span style="color:' + (statusColor[w.status]||'#aaa') + ';font-weight:700">' + (statusLabel[w.status]||w.status) + '</span>' +
+        '</div>' +
+        '<div class="row"><span class="val">Motoboy:</span><span>' + (w.motoboy_name||'—') + '</span></div>' +
+        '<div class="row"><span class="val">Chave PIX:</span><span style="word-break:break-all">' + w.pix_key + '</span></div>' +
+        '<div class="row"><span class="val">Data:</span><span>' + dt + '</span></div>' +
+        (w.obs ? '<div class="row"><span class="val">Obs:</span><span>' + w.obs + '</span></div>' : '') +
+        (w.status === 'pendente' ?
+          '<div style="display:flex;gap:8px;margin-top:10px">' +
+          '<button class="btn btn-primary btn-sm" onclick="processWithdrawal(' + w.id + ',\'aprovado\')">✅ Aprovar</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="processWithdrawal(' + w.id + ',\'recusado\')">❌ Recusar</button>' +
+          '</div>' : '') +
+        '</div>';
+    }).join('');
+  } catch(e) { console.error('Erro ao carregar saques:', e); }
+}
+
+async function processWithdrawal(id, status) {
+  var msg = status === 'aprovado' ? 'Aprovar este saque? O valor será debitado do saldo do motoboy.' : 'Recusar este saque?';
+  if (!confirm(msg)) return;
+  var obs = status === 'recusado' ? prompt('Motivo da recusa (opcional):') : null;
+  try {
+    var r = await fetch(API + '/withdrawals/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: status, obs: obs || null })
+    });
+    var data = await r.json();
+    if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Tente novamente.')); return; }
+    tg.showAlert(status === 'aprovado' ? '✅ Saque aprovado! Saldo debitado.' : '❌ Saque recusado.');
+    loadSaques();
+  } catch(e) { tg.showAlert('Erro: ' + e.message); }
+}
+
+async function loadPending() {
+      try {
+        var r = await fetch(API + '/users/pending');
+        var list = await r.json();
+        var container = document.getElementById('pending-list');
+        var emptyMsg = document.getElementById('pending-empty');
+        var badge = document.getElementById('pending-badge');
+        container.innerHTML = '';
+        if (!list || list.length === 0) {
+          emptyMsg.style.display = 'block';
+          badge.style.display = 'none';
+          return;
+        }
+        emptyMsg.style.display = 'none';
+        badge.textContent = list.length;
+        badge.style.display = 'inline';
+        list.forEach(function(u) {
+          var card = document.createElement('div');
+          card.className = 'pending-card';
+          card.innerHTML =
+            '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">👤 ' + esc(u.name) + '</div>' +
+            '<div class="field"><strong>Usuário:</strong> ' + esc(u.username) + '</div>' +
+            '<div class="field"><strong>Função:</strong> ' + u.role + '</div>' +
+            '<div class="field"><strong>📱 Telefone:</strong> ' + (esc(u.phone) || '—') + '</div>' +
+            '<div class="field"><strong>🏍️ Veículo:</strong> ' + (esc(u.vehicle) || '—') + '</div>' +
+            '<div class="field private"><strong>📄 CPF (confidencial):</strong> ' + (esc(u.cpf) || '—') + '</div>' +
+            '<div class="field private"><strong>📍 Endereço (confidencial):</strong> ' + (esc(u.address) || '—') + '</div>' +
+            '<div class="field" style="color:#888;font-size:11px;">Cadastrado em: ' + new Date(u.created_at).toLocaleString('pt-BR') + '</div>' +
+            '<button class="pending-btn approve" onclick="approvePending(' + u.id + ', this)">✅ Aprovar</button>' +
+            '<button class="pending-btn reject" onclick="rejectPending(' + u.id + ', this)">❌ Recusar</button>';
+          container.appendChild(card);
+        });
+      } catch(e) {
+        console.error('Erro ao carregar pendentes:', e);
+      }
+    }
+
+    async function approvePending(id, btn) {
+      btn.disabled = true; btn.textContent = 'Aprovando...';
+      try {
+        var r = await fetch(API + '/users/' + id + '/approve', { method: 'POST' });
+        if (!r.ok) throw new Error('Erro');
+        await loadPending();
+        alert('✅ Cadastro aprovado com sucesso!');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = '✅ Aprovar';
+        alert('Erro ao aprovar: ' + e.message);
+      }
+    }
+
+    async function rejectPending(id, btn) {
+      if (!confirm('Tem certeza que deseja recusar e excluir este cadastro?')) return;
+      btn.disabled = true; btn.textContent = 'Recusando...';
+      try {
+        var r = await fetch(API + '/users/' + id, { method: 'DELETE' });
+        if (!r.ok) throw new Error('Erro');
+        await loadPending();
+        alert('❌ Cadastro recusado e excluído.');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = '❌ Recusar';
+        alert('Erro ao recusar: ' + e.message);
+      }
+    }
+
+    /* Recarregar pendentes a cada 30s */
+    setInterval(loadPending, 30000);
+setInterval(loadSaques, 30000);
+loadSaques();
+    loadPending();
+
+    loadData('pedidos');
+
+    /* ── AVISOS ── */
+    async function loadAvisos() {
+      try {
+        var r = await fetch(API + '/notices');
+        var list = await r.json();
+        var container = document.getElementById('avisos-list');
+        if (!list || list.length === 0) {
+          container.innerHTML = '<div class="card"><p style="color:#888;font-size:13px">Nenhum aviso publicado.</p></div>';
+          return;
+        }
+        var targetLabel = { all:'Todos', loja:'Lojas', motoboy:'Motoboys' };
+        container.innerHTML = list.map(function(n) {
+          var dt = new Date(n.created_at).toLocaleString('pt-BR');
+          return '<div class="card" style="border-left:3px solid #ffcc00;margin-bottom:10px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">' +
+            '<strong style="font-size:15px;color:#fff">' + n.title + '</strong>' +
+            '<span style="font-size:11px;background:#333;color:#ffcc00;padding:2px 8px;border-radius:10px">' + (targetLabel[n.target]||n.target) + '</span>' +
+            '</div>' +
+            '<div style="color:#ccc;font-size:13px;margin-bottom:8px;line-height:1.5">' + n.body + '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<span style="font-size:11px;color:#666">' + dt + '</span>' +
+            '<button class="btn btn-danger btn-sm" onclick="deleteAviso(' + n.id + ')">🗑️ Excluir</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+      } catch(e) { console.error('Erro avisos:', e); }
+    }
+
+    async function postAviso() {
+      var title = document.getElementById('aviso-title').value.trim();
+      var body = document.getElementById('aviso-body').value.trim();
+      var target = document.getElementById('aviso-target').value;
+      if (!title) { tg.showAlert('Informe o título do aviso.'); return; }
+      if (!body) { tg.showAlert('Informe o texto do aviso.'); return; }
+      try {
+        var r = await fetch(API + '/notices', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, body, target, created_by: 'admin' })
+        });
+        if (!r.ok) { var e = await r.json(); tg.showAlert('Erro: ' + e.error); return; }
+        document.getElementById('aviso-title').value = '';
+        document.getElementById('aviso-body').value = '';
+        tg.showAlert('✅ Aviso publicado!');
+        loadAvisos();
+      } catch(e) { tg.showAlert('Erro: ' + e.message); }
+    }
+
+    async function deleteAviso(id) {
+      if (!confirm('Excluir este aviso?')) return;
+      await fetch(API + '/notices/' + id, { method: 'DELETE' });
+      loadAvisos();
+    }
+
+    // ── CAIXA DA PLATAFORMA ─────────────────────────────────────────
+    var _pwBalance = 0;
+    async function loadCaixa() {
+      try {
+        var wr = await fetch(API + '/platform/wallet');
+        var wallet = await wr.json();
+        _pwBalance = parseFloat(wallet.balance || 0);
+        document.getElementById('pw-balance').textContent = 'R$ ' + _pwBalance.toFixed(2).replace('.', ',');
+        document.getElementById('pw-ganho').textContent = 'R$ ' + parseFloat(wallet.ganho_hoje || 0).toFixed(2).replace('.', ',');
+        document.getElementById('pw-sacado').textContent = 'R$ ' + parseFloat(wallet.total_sacado || 0).toFixed(2).replace('.', ',');
+      } catch(e) { console.error('loadCaixa:', e); }
+      try {
+        var er = await fetch(API + '/platform/events');
+        var events = await er.json();
+        if (!events.length) {
+          document.getElementById('caixa-events').innerHTML = '<p style="color:#666;text-align:center;padding:20px 0">Nenhum evento nas últimas 48h</p>';
+          return;
+        }
+        var icons = { comissao: '✅', saque: '💸' };
+        var colors = { comissao: '#4caf50', saque: '#e53935' };
+        document.getElementById('caixa-events').innerHTML = events.map(function(ev) {
+          var dt = new Date(ev.created_at);
+          var dtStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+          var col = colors[ev.tipo] || '#aaa';
+          var icon = icons[ev.tipo] || '📌';
+          var sinal = ev.tipo === 'saque' ? '− ' : '+ ';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222">' +
+            '<div><span>' + icon + ' </span><span style="color:#ddd;font-size:13px">' + (ev.descricao || ev.tipo) + '</span><br>' +
+            '<span style="color:#666;font-size:11px">' + dtStr + '</span></div>' +
+            '<strong style="color:' + col + ';font-size:15px;white-space:nowrap;margin-left:10px">' + sinal + 'R$ ' + parseFloat(ev.valor).toFixed(2).replace('.', ',') + '</strong>' +
+            '</div>';
+        }).join('');
+      } catch(e) { document.getElementById('caixa-events').innerHTML = '<p style="color:#e53935">Erro ao carregar eventos</p>'; }
+    }
+    function openCaixaSaque() {
+      document.getElementById('caixa-saque-valor').value = '';
+      document.getElementById('caixa-saque-motivo').value = '';
+      document.getElementById('modal-caixa-saldo-val').textContent = 'R$ ' + _pwBalance.toFixed(2).replace('.', ',');
+      openModal('modal-caixa-saque');
+    }
+    async function confirmCaixaSaque() {
+      var valor = parseFloat(document.getElementById('caixa-saque-valor').value);
+      var motivo = document.getElementById('caixa-saque-motivo').value.trim();
+      if (!valor || valor <= 0) { tg.showAlert('Informe um valor válido.'); return; }
+      if (!motivo) { tg.showAlert('Informe o motivo da retirada.'); return; }
+      if (valor > _pwBalance) { tg.showAlert('Valor maior que o saldo (R$ ' + _pwBalance.toFixed(2) + ').'); return; }
+      if (!confirm('Confirmar retirada de R$ ' + valor.toFixed(2) + '? Motivo: ' + motivo)) return;
+      try {
+        var r = await fetch(API + '/platform/withdraw', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ valor: valor, motivo: motivo })
+        });
+        var data = await r.json();
+        if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Falha.')); return; }
+        closeModal('modal-caixa-saque');
+        tg.showAlert('Retirada de R$ ' + valor.toFixed(2) + ' registrada!');
+        loadCaixa();
+      } catch(e) { tg.showAlert('Erro de conexão.'); }
+    }
+    // ────────────────────────────────────────────────────────────────
+    // PROMOCOES
+    async function loadPromocoes() {
+      try {
+        var r = await fetch(API + '/promotions');
+        var promos = await r.json();
+        var el = document.getElementById('promo-list');
+        if (!promos.length) { el.innerHTML = '<p style="color:#888;text-align:center;">Nenhuma promocao criada.</p>'; }
+        else {
+          el.innerHTML = promos.map(function(p) {
+            var ativaLabel = p.ativa ? '<span style="color:#66bb6a;font-weight:bold;">ATIVA</span>' : '<span style="color:#e53935;">INATIVA</span>';
+            var repetirLabel = p.repetir ? 'Repete todo dia' : 'Apenas hoje';
+            return '<div class="card" style="background:#111;border:1px solid #333;margin-bottom:10px;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+              '<div><strong style="color:#ffcc00;">' + esc(p.nome) + '</strong><br>' +
+              '<span style="color:#aaa;font-size:12px;">Meta: ' + p.meta_entregas + ' entregas | Bonus: R$ ' + parseFloat(p.valor_bonus).toFixed(2) + ' | ' + repetirLabel + '</span><br>' +
+              '<span style="font-size:12px;">' + ativaLabel + '</span></div>' +
+              '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+              '<button class="btn" onclick="editarPromocao(' + p.id + ')" style="padding:6px 10px;font-size:12px;background:#1565c0;">Editar</button>' +
+              '<button class="btn" onclick="togglePromo(' + p.id + ',' + (!p.ativa) + ')" style="padding:6px 10px;font-size:12px;background:' + (p.ativa ? '#c62828' : '#2e7d32') + ';">' + (p.ativa ? 'Desativar' : 'Ativar') + '</button>' +
+              '<button class="btn" onclick="deletarPromocao(' + p.id + ')" style="padding:6px 10px;font-size:12px;background:#b71c1c;">Excluir</button>' +
+              '</div></div></div>';
+          }).join('');
+        }
+      } catch(e) { document.getElementById('promo-list').innerHTML = '<p style="color:#e53935">Erro.</p>'; }
+      try {
+        var r2 = await fetch(API + '/promotions/progress');
+        var progress = await r2.json();
+        var el2 = document.getElementById('promo-progress-list');
+        if (!progress.length) { el2.innerHTML = '<p style="color:#888;text-align:center;">Nenhum progresso hoje.</p>'; return; }
+        el2.innerHTML = progress.map(function(pp) {
+          var pct = Math.min(100, Math.round((pp.contagem / pp.meta_entregas) * 100));
+          var pagoLabel = pp.pago ? ' - BONUS PAGO!' : '';
+          return '<div style="margin-bottom:12px;">' +
+            '<div style="display:flex;justify-content:space-between;">' +
+            '<span style="color:#fff;">' + (pp.motoboy_name || 'Motoboy') + '</span>' +
+            '<span style="color:#aaa;font-size:12px;">' + pp.contagem + '/' + pp.meta_entregas + pagoLabel + '</span></div>' +
+            '<div style="background:#333;border-radius:8px;height:8px;margin-top:4px;">' +
+            '<div style="background:' + (pp.pago ? '#66bb6a' : '#ffcc00') + ';width:' + pct + '%;height:8px;border-radius:8px;"></div></div>' +
+            '<div style="color:#888;font-size:11px;margin-top:2px;">' + pp.nome + '</div></div>';
+        }).join('');
+      } catch(e) { document.getElementById('promo-progress-list').innerHTML = '<p style="color:#e53935">Erro progresso.</p>'; }
+    }
+    function openNovaPromocao() {
+      document.getElementById('promo-modal-title').textContent = 'Nova Promocao';
+      document.getElementById('promo-edit-id').value = '';
+      document.getElementById('promo-nome').value = '';
+      document.getElementById('promo-meta').value = '25';
+      document.getElementById('promo-bonus').value = '30';
+      document.getElementById('promo-tipo').value = 'dia';
+      document.getElementById('promo-repetir').checked = false;
+      document.getElementById('promo-ativa').checked = true;
+      openModal('modal-promocao');
+    }
+    async function editarPromocao(id) {
+      try {
+        var r = await fetch(API + '/promotions');
+        var promos = await r.json();
+        var p = promos.find(function(x) { return x.id === id; });
+        if (!p) return;
+        document.getElementById('promo-modal-title').textContent = 'Editar Promocao';
+        document.getElementById('promo-edit-id').value = p.id;
+        document.getElementById('promo-nome').value = esc(p.nome);
+        document.getElementById('promo-meta').value = p.meta_entregas;
+        document.getElementById('promo-bonus').value = parseFloat(p.valor_bonus);
+        document.getElementById('promo-tipo').value = p.tipo;
+        document.getElementById('promo-repetir').checked = p.repetir;
+        document.getElementById('promo-ativa').checked = p.ativa;
+        openModal('modal-promocao');
+      } catch(e) { tg.showAlert('Erro ao carregar.'); }
+    }
+    async function salvarPromocao() {
+      var nome = document.getElementById('promo-nome').value.trim();
+      var meta = parseInt(document.getElementById('promo-meta').value);
+      var bonus = parseFloat(document.getElementById('promo-bonus').value);
+      var tipo = document.getElementById('promo-tipo').value;
+      var repetir = document.getElementById('promo-repetir').checked;
+      var ativa = document.getElementById('promo-ativa').checked;
+      var editId = document.getElementById('promo-edit-id').value;
+      if (!nome) { tg.showAlert('Informe o nome.'); return; }
+      if (!meta || meta < 1) { tg.showAlert('Meta invalida.'); return; }
+      if (!bonus || bonus < 1) { tg.showAlert('Bonus invalido.'); return; }
+      try {
+        var url = editId ? (API + '/promotions/' + editId) : (API + '/promotions');
+        var method = editId ? 'PUT' : 'POST';
+        var resp = await fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome: nome, meta_entregas: meta, valor_bonus: bonus, tipo: tipo, repetir: repetir, ativa: ativa}) });
+        if (!resp.ok) { tg.showAlert('Erro ao salvar.'); return; }
+        closeModal('modal-promocao');
+        loadPromocoes();
+      } catch(e) { tg.showAlert('Erro de conexao.'); }
+    }
+    async function togglePromo(id, novoStatus) {
+      try {
+        var r = await fetch(API + '/promotions');
+        var promos = await r.json();
+        var p = promos.find(function(x) { return x.id === id; });
+        if (!p) return;
+        await fetch(API + '/promotions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome: esc(p.nome), meta_entregas: p.meta_entregas, valor_bonus: p.valor_bonus, tipo: p.tipo, repetir: p.repetir, ativa: novoStatus}) });
+        loadPromocoes();
+      } catch(e) { tg.showAlert('Erro.'); }
+    }
+    async function deletarPromocao(id) {
+      if (!confirm('Excluir esta promocao? O progresso sera apagado.')) return;
+      try {
+        await fetch(API + '/promotions/' + id, { method: 'DELETE' });
+        loadPromocoes();
+      } catch(e) { tg.showAlert('Erro.'); }
+    }
+  
+    function toggleTaxaCard(tipo) {
+      var ativa = document.getElementById('cfg-' + tipo + '-ativa').checked;
+      var card = document.getElementById('taxa-' + tipo + '-card');
+      if (ativa) { card.classList.add('ativa'); } else { card.classList.remove('ativa'); }
+    }
+    function selecionarDesconto(tipo, valor) {
+      document.getElementById('cfg-' + tipo + '-desconto').value = valor;
+      document.getElementById('btn-' + tipo + '-admin').classList.toggle('selected', valor === 'admin');
+      document.getElementById('btn-' + tipo + '-loja').classList.toggle('selected', valor === 'loja');
+    }
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>FlashDrop Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: #0f0f0f; color: #fff; min-height: 100vh; padding-bottom: 80px; }
+    .header { background: #1a1a1a; padding: 20px; text-align: center; border-bottom: 1px solid #333; }
+    .header h1 { font-size: 24px; color: #ffcc00; }
+    .tabs { display: flex; overflow-x: auto; background: #1a1a1a; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 100; }
+    .tab-btn { padding: 10px 20px; background: #333; border: none; border-radius: 20px; color: #fff; white-space: nowrap; cursor: pointer; font-size: 13px; }
+    .tab-btn.active { background: #ffcc00; color: #000; font-weight: bold; }
+    .content { padding: 15px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .card { background: #1a1a1a; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; text-transform: uppercase; font-weight: 600; }
+    .badge-pendente { background: #ff9800; color: #000; }
+    .badge-aceito { background: #17a2b8; color: #fff; }
+    .badge-na_loja { background: #6610f2; color: #fff; }
+    .badge-coletado { background: #fd7e14; color: #fff; }
+    .badge-no_cliente { background: #007bff; color: #fff; }
+    .badge-entregue { background: #4caf50; color: #fff; }
+    .badge-cancelado { background: #f44336; color: #fff; }
+    .row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+    .val { color: #aaa; }
+    .btn { padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    .btn-primary { background: #ffcc00; color: #000; width: 100%; }
+    .btn-outline { background: transparent; border: 1px solid #ffcc00; color: #ffcc00; width: 100%; }
+    .btn-danger { background: #f44336; color: #fff; width: 100%; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; margin-top: 0; }
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 200; padding: 20px; overflow-y: auto; }
+    .modal.active { display: block; }
+    .modal-content { background: #1a1a1a; border-radius: 12px; padding: 20px; max-width: 500px; margin: 0 auto; }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #ccc; }
+    .input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; font-size: 14px; }
+    .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background: #ffcc00; border-radius: 28px; display: flex; align-items: center; justify-content: center; color: #000; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; z-index: 150; border: none; }
+    .filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .filter-btn { padding: 6px 14px; background: #333; border: none; border-radius: 16px; color: #fff; white-space: nowrap; cursor: pointer; font-size: 12px; }
+    .filter-btn.active { background: #ffcc00; color: #000; font-weight: bold; }
+    .online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+    .online-dot.on { background: #4caf50; }
+    .online-dot.off { background: #666; }
+      .pending-card { background: #1a1a1a; border: 1.5px solid #ff9500; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .pending-card .field { font-size: 12px; color: #aaa; margin: 3px 0; }
+    .pending-card .field strong { color: #e0e0e0; }
+    .pending-card .field.private { color: #ff9500; }
+    .pending-btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; margin-right: 8px; margin-top: 10px; }
+    .pending-btn.approve { background: #27ae60; color: #fff; }
+    .pending-btn.reject { background: #c0392b; color: #fff; }
+    .badge { background: #e74c3c; color: #fff; border-radius: 50%; font-size: 11px; padding: 1px 6px; margin-left: 5px; vertical-align: top; display: none; }
+
+    .toggle-switch{position:relative;display:inline-block;width:52px;height:28px;vertical-align:middle}
+    .toggle-switch input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#444;transition:.3s;border-radius:28px}
+    .toggle-slider:before{position:absolute;content:"";height:22px;width:22px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%}
+    input:checked+.toggle-slider{background:#28a745}
+    input:checked+.toggle-slider:before{transform:translateX(24px)}
+    .taxa-card{background:#111;border:2px solid #333;border-radius:12px;padding:16px;margin-top:16px;transition:border-color .3s}
+    .taxa-card.ativa{border-color:#28a745 !important}
+    .taxa-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .taxa-card-title{font-size:15px;font-weight:700;color:#ffcc00}
+    .desconto-btn{padding:8px 14px;border-radius:8px;border:2px solid #555;background:#222;color:#aaa;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;margin-right:6px;margin-bottom:4px}
+    .desconto-btn.selected{border-color:#ffcc00;background:#2a2a00;color:#ffcc00}
+</style>
+</head>
+<body>
+
+  <div class="header" style="display:flex;align-items:center;justify-content:space-between;">
+    <h1>FlashDrop Admin</h1>
+    <button onclick="location.reload()" style="background:#333;color:#ffcc00;border:1px solid #ffcc00;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:bold;cursor:pointer;margin-right:8px;">🔄 Atualizar</button><button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;">Sair</button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" onclick="showTab('pedidos', this)">Pedidos</button>
+    <button class="tab-btn" onclick="showTab('lojas', this)">Lojas</button>
+    <button class="tab-btn" onclick="showTab('motoboys', this)">Motoboys</button>
+    <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
+    <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
+    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
+    <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
+      <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
+    <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
+    <button class="tab-btn" onclick="showTab('promocoes', this)">🎯 Promoções</button>
+  </div>
+
+  <div class="content">
+
+    <div id="pedidos" class="section active"></div>
+
+    <div id="lojas" class="section"></div>
+
+    <div id="motoboys" class="section"></div>
+
+    <div id="financeiro" class="section">
+      <div class="card">
+        <div style="display:flex;gap:10px">
+          <input id="search-finance" class="input" placeholder="Buscar nome ou usuario..." oninput="filterFinance()">
+        </div>
+      </div>
+      <div id="finance-list"></div>
+    </div>
+
+    <div id="config" class="section">
+      <div class="card">
+        <h3 style="margin-bottom:15px;color:#ffcc00;">&#9881; Ajustes de Corrida</h3>
+        <div class="input-group">
+          <label>Taxa Minima (R$)</label>
+          <input id="cfg-min" class="input" type="number" step="0.50">
+        </div>
+        <div class="input-group">
+          <label>Preco por KM (R$)</label>
+          <input id="cfg-km" class="input" type="number" step="0.10">
+        </div>
+        <div class="input-group">
+          <label>Taxa de Arrancada (R$)</label>
+          <input id="cfg-arr" class="input" type="number" step="0.50">
+        </div>
+        <div class="input-group">
+          <label>Comissao da Plataforma (R$)</label>
+          <input id="cfg-com" class="input" type="number" step="0.50">
+        </div>
+        <div class="input-group">
+          <label>Max pedidos por motoboy</label>
+          <input id="cfg-max" class="input" type="number">
+        </div> <div class="input-group"> <label>⏳ Delay de Preparo (minutos, 1-99)</label> <input id="cfg-delay" class="input" type="number" min="1" max="99"> <small style="color:#888;font-size:11px">Tempo que o pedido fica em preparo antes de ir ao sistema automaticamente.</small> </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
+
+      <!-- TAXA DE CHUVA -->
+      <div class="taxa-card" id="taxa-chuva-card">
+        <div class="taxa-card-header">
+          <span class="taxa-card-title">🌧️ Taxa de Chuva</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="cfg-chuva-ativa" onchange="toggleTaxaCard('chuva')">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="input-group" style="margin-bottom:10px">
+          <label>Valor da Taxa (R$)</label>
+          <input id="cfg-chuva-valor" class="input" type="number" step="0.50" min="0" placeholder="Ex: 3.00">
+        </div>
+        <div class="input-group" style="margin-bottom:4px">
+          <label style="margin-bottom:8px;display:block">Descontar de:</label>
+          <div>
+            <button class="desconto-btn selected" id="btn-chuva-admin" onclick="selecionarDesconto('chuva','admin')">&#127962; Admin</button>
+            <button class="desconto-btn" id="btn-chuva-loja" onclick="selecionarDesconto('chuva','loja')">&#127978; Loja</button>
+          </div>
+          <input type="hidden" id="cfg-chuva-desconto" value="admin">
+          <small style="color:#888;font-size:11px;display:block;margin-top:6px">Define quem absorve a taxa extra ao motoboy.</small>
+        </div>
+      </div>
+
+      <!-- TAXA NOTURNA -->
+      <div class="taxa-card" id="taxa-noturna-card">
+        <div class="taxa-card-header">
+          <span class="taxa-card-title">&#127769; Taxa Noturna</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="cfg-noturna-ativa" onchange="toggleTaxaCard('noturna')">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="input-group" style="margin-bottom:10px">
+          <label>Valor da Taxa (R$)</label>
+          <input id="cfg-noturna-valor" class="input" type="number" step="0.50" min="0" placeholder="Ex: 5.00">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="input-group" style="margin-bottom:0">
+            <label>Hor&#225;rio In&#237;cio</label>
+            <input id="cfg-noturna-inicio" class="input" type="time" value="22:00">
+          </div>
+          <div class="input-group" style="margin-bottom:0">
+            <label>Hor&#225;rio Fim</label>
+            <input id="cfg-noturna-fim" class="input" type="time" value="06:00">
+          </div>
+        </div>
+        <small style="color:#888;font-size:11px">Taxa aplicada automaticamente nos pedidos dentro do hor&#225;rio noturno.</small>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:16px">Salvar Todos os Ajustes</button>
+      </div>
+      <div class="card" style="margin-top:15px">
+        <h3 style="margin-bottom:15px;color:#ffcc00;">🗑️ Limpeza do Histórico</h3>
+        <div class="input-group">
+          <label>Excluir pedidos entregues/cancelados com mais de (dias)</label>
+          <input id="cfg-days" class="input" type="number" min="1" max="365" value="30" placeholder="Ex: 30">
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="saveCleanupDays()" style="width:auto;padding:10px 20px">Salvar Prazo</button>
+          <button class="btn btn-danger" onclick="cleanupOrders()" style="width:auto;padding:10px 20px">Limpar Agora</button>
+        </div>
+        <p id="cleanup-msg" style="margin-top:10px;font-size:13px;color:#aaa"></p>
+      </div>
+    </div>
+
+
+    <div id="cadastros" class="section">
+      <div class="card">
+        <h3 style="margin-bottom:12px;color:#ffcc00;">📋 Cadastros Pendentes de Aprovação</h3>
+        <p id="pending-empty" style="color:#888;font-size:13px;">Nenhum cadastro pendente.</p>
+        <div id="pending-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="saques" class="section">
+    <div class="card">
+      <h3 style="margin-bottom:12px;color:#ffcc00;">💸 Solicitações de Saque</h3>
+      <p id="saques-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p>
+      <div id="saques-list"></div>
+    </div>
+  </div>
+<div id="avisos" class="section">
+  <div class="card">
+    <h3 style="margin-bottom:12px;color:#ffcc00;">📢 Gerenciar Avisos</h3>
+    <div class="input-group"><label>Título do Aviso</label><input id="aviso-title" class="input" placeholder="Ex: Manutenção programada"></div>
+    <div class="input-group"><label>Texto</label><textarea id="aviso-body" class="input" rows="3" placeholder="Texto do aviso..." style="resize:vertical;min-height:80px"></textarea></div>
+    <div class="input-group"><label>Destinatário</label>
+      <select id="aviso-target" class="input">
+        <option value="all">Todos (Lojas e Motoboys)</option>
+        <option value="loja">Apenas Lojas</option>
+        <option value="motoboy">Apenas Motoboys</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="postAviso()">📤 Publicar Aviso</button>
+  </div>
+  <div id="avisos-list"></div>
+</div>
+  <!-- CAIXA DA PLATAFORMA -->
+
+
+  <!-- Modal Saque Caixa -->
+  <div id="modal-caixa-saque" class="modal">
+    <div class="modal-content">
+      <h3 style="color:#e53935;margin-bottom:16px">&#128184; Retirar do Caixa</h3>
+      <div style="background:#1a2a1a;border:1px solid #2e7d32;border-radius:8px;padding:10px;margin-bottom:14px;text-align:center">
+        <span style="color:#aaa;font-size:12px">Saldo disponível: </span><strong id="modal-caixa-saldo-val" style="color:#4caf50">R$ 0,00</strong>
+      </div>
+      <div class="input-group">
+        <label>Valor do Saque (R$)</label>
+        <input id="caixa-saque-valor" class="input" type="number" step="0.01" min="0.01" placeholder="Ex: 50.00">
+      </div>
+      <div class="input-group">
+        <label>Motivo / Descrição</label>
+        <input id="caixa-saque-motivo" class="input" placeholder="Ex: Pagamento fornecedor, lucro mensal...">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" onclick="confirmCaixaSaque()" style="flex:1;background:#e53935;border-color:#e53935">&#10003; Confirmar</button>
+        <button class="btn btn-outline" onclick="closeModal('modal-caixa-saque')" style="flex:1">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="caixa" class="section">
+    <div class="card" style="background:linear-gradient(135deg,#1a2a1a,#0d1f0d);border:1px solid #2e7d32;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="color:#4caf50;margin:0;font-size:15px">&#128176; Saldo da Plataforma</h3>
+        <button onclick="loadCaixa()" style="background:#2e7d32;color:#fff;font-size:11px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer">&#128260; Atualizar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:rgba(76,175,80,0.12);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-balance" style="font-size:22px;font-weight:900;color:#4caf50">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO ATUAL</div>
+        </div>
+        <div style="background:rgba(255,204,0,0.10);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-ganho" style="font-size:18px;font-weight:700;color:#ffcc00">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">GANHO HOJE</div>
+        </div>
+        <div style="background:rgba(229,57,53,0.10);border-radius:8px;padding:10px;text-align:center">
+          <div id="pw-sacado" style="font-size:18px;font-weight:700;color:#e53935">R$ 0,00</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">TOTAL SACADO</div>
+        </div>
+      </div>
+      <button onclick="openCaixaSaque()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">&#128184; Retirar do Caixa</button>
+    </div>
+    <div class="card">
+      <h3 style="color:#ffcc00;margin:0 0 12px;font-size:14px">&#128203; Eventos das ultimas 48h</h3>
+      <div id="caixa-events" style="font-size:13px;color:#aaa">Carregando...</div>
+    </div>
+  </div>
+  <!-- PROMOCOES -->
+  <div id="promocoes" class="section">
+    <div class="card" style="background:#1a2a1a;border:1px solid #2e7d32;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="color:#66bb6a;margin:0;">Promocoes dos Motoboys</h3>
+        <button class="btn btn-primary" onclick="openNovaPromocao()" style="background:#2e7d32;padding:8px 14px;font-size:13px;">+ Nova Promocao</button>
+      </div>
+      <div id="promo-list">Carregando...</div>
+    </div>
+    <div class="card" style="background:#1a1a2a;border:1px solid #303f9f;margin-top:12px;">
+      <h3 style="color:#7986cb;margin:0 0 12px 0;">Progresso Hoje</h3>
+      <div id="promo-progress-list">Carregando...</div>
+    </div>
+  </div>
+  <div id="modal-promocao" class="modal">
+    <div class="modal-content">
+      <h3 id="promo-modal-title" style="margin:0 0 16px 0;color:#66bb6a;">Nova Promocao</h3>
+      <input type="hidden" id="promo-edit-id">
+      <div class="input-group"><label>Nome da Promocao</label><input id="promo-nome" class="input" placeholder="Ex: Promocao do Dia - 25 entregas"></div>
+      <div class="input-group"><label>Meta de Entregas</label><input id="promo-meta" class="input" type="number" min="1" value="25"></div>
+      <div class="input-group"><label>Valor do Bonus (R$)</label><input id="promo-bonus" class="input" type="number" min="1" step="1" value="30"></div>
+      <div class="input-group"><label>Tipo</label><select id="promo-tipo" class="input"><option value="dia">Por Dia (zera todo dia a meia-noite)</option></select></div>
+      <div class="input-group" style="display:flex;align-items:center;gap:10px;">
+        <input id="promo-repetir" type="checkbox" style="width:20px;height:20px;">
+        <label style="margin:0;">Repetir automaticamente (nao precisa recriar todo dia)</label>
+      </div>
+      <div class="input-group" style="display:flex;align-items:center;gap:10px;">
+        <input id="promo-ativa" type="checkbox" checked style="width:20px;height:20px;">
+        <label style="margin:0;">Promocao ativa agora</label>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-promocao')" style="flex:1;">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarPromocao()" style="flex:1;background:#2e7d32;">Salvar</button>
+      </div>
+    </div>
+  </div>
+  <div id="modal-caixa-saque" class="modal">
+    <div class="modal-content">
+      <h3 style="color:#e53935;margin-bottom:16px">&#128184; Retirar do Caixa</h3>
+      <div style="background:#1a2a1a;border:1px solid #2e7d32;border-radius:8px;padding:10px;margin-bottom:14px;text-align:center">
+        <span style="color:#aaa;font-size:12px">Saldo disponivel: </span><strong id="modal-caixa-saldo-val" style="color:#4caf50">R$ 0,00</strong>
+      </div>
+      <div class="input-group"><label>Valor do Saque (R$)</label><input id="caixa-saque-valor" class="input" type="number" step="0.01" min="0.01" placeholder="Ex: 50.00"></div>
+      <div class="input-group"><label>Motivo / Descricao</label><input id="caixa-saque-motivo" class="input" placeholder="Ex: Pagamento fornecedor, lucro mensal..."></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" onclick="confirmCaixaSaque()" style="flex:1;background:#e53935;border-color:#e53935">Confirmar</button>
+        <button class="btn btn-outline" onclick="closeModal('modal-caixa-saque')" style="flex:1">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <button class="fab" onclick="openNewUser()">+</button>
+
+  <!-- ════ INDICAÇÕES ════ -->
+  <div id="indicacoes" class="section">
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px">
+      <h3 style="color:#ffcc00;margin:0 0 14px;font-size:15px">&#9733; Indicação de Loja</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Ativo?</label>
+          <select id="ref-ativo" class="input">
+            <option value="true">&#9989; Sim</option>
+            <option value="false">&#10060; Não</option>
+          </select></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Comissão pedido de loja (R$)</label>
+          <input id="ref-com-loja" type="number" step="0.01" class="input" placeholder="0.50" style="width:100%;box-sizing:border-box"></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Validade indicação loja (dias)</label>
+          <input id="ref-validade-loja" type="number" class="input" placeholder="90" style="width:100%;box-sizing:border-box"></div>
+      </div>
+      <button onclick="saveReferralSettings()" style="background:#ffcc00;color:#000;border:none;padding:10px;border-radius:6px;width:100%;font-weight:bold;cursor:pointer;font-size:13px">&#128190; Salvar Indicação de Loja</button>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px">
+      <h3 style="color:#ffcc00;margin:0 0 14px;font-size:15px">&#127949; Indicação de Motoboy</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Bônus meta motoboy (R$)</label>
+          <input id="ref-bonus-mb" type="number" step="0.01" class="input" placeholder="150.00" style="width:100%;box-sizing:border-box"></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Meta de pedidos (motoboy)</label>
+          <input id="ref-meta-ped" type="number" class="input" placeholder="100" style="width:100%;box-sizing:border-box"></div>
+        <div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Prazo meta motoboy (dias)</label>
+          <input id="ref-prazo-mb" type="number" class="input" placeholder="30" style="width:100%;box-sizing:border-box"></div>
+      </div>
+      <button onclick="saveReferralSettings()" style="background:#ffcc00;color:#000;border:none;padding:10px;border-radius:6px;width:100%;font-weight:bold;cursor:pointer;font-size:13px">&#128190; Salvar Indicação de Motoboy</button>
+    </div>
+    <div>
+              <h3 style="color:#ffcc00;margin:0;font-size:15px">&#127942; Ranking de Indicadores</h3>
+              <button onclick="loadIndicacoes()" style="padding:6px 12px;background:#333;border:1px solid #555;border-radius:6px;color:#fff;font-size:11px;cursor:pointer">&#128260; Atualizar</button>
+    </div>
+          <div id="ref-summary-list" style="font-size:13px;color:#aaa;text-align:center;padding:10px">Carregando...</div>
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px">
+            <h3 style="color:#ffcc00;margin:0 0 12px;font-size:15px">&#128101; Todas as Indica&#231;&#245;es</h3>
+            <div id="ref-list" style="font-size:13px;color:#aaa;text-align:center;padding:10px">Carregando...</div>
+          </div>
+        <button onclick="runReferralCleanup()" style="width:100%;padding:10px;background:#2a1a00;border:1px solid #ff9500;border-radius:8px;color:#ff9500;font-weight:600;cursor:pointer;margin-bottom:10px">&#128465; Limpeza Autom&#225;tica (registros &gt; 20 dias encerrados)</button>
+  </div>
+
+  <!-- Modal Usuario -->
+  <div id="modal-user" class="modal">
+    <div class="modal-content">
+      <h3 id="user-modal-title">Usuario</h3>
+      <div id="user-fields"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveUser()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pedido -->
+  <div id="modal-order" class="modal">
+    <div class="modal-content">
+      <h3>Editar Pedido</h3>
+      <div id="order-fields"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-outline" onclick="closeModal('modal-order')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveOrder()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Financeiro -->
+  <div id="modal-finance" class="modal">
+    <div class="modal-content">
+      <h3 id="finance-modal-title">Ajustar Saldo</h3>
+      <div id="finance-fields"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-outline" onclick="closeModal('modal-finance')">Cancelar</button>
+        <button class="btn btn-primary" onclick="updateBalance()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Indicacao -->
+  <div id="modal-indicacao" class="modal">
+    <div class="modal-content">
+      <h3 style="color:#ffcc00;margin:0 0 16px">&#9999;&#65039; Editar Indica&#231;&#227;o</h3>
+      <div id="indicacao-fields"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-outline" onclick="closeModal('modal-indicacao')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveIndicacao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // PROTECAO XSS - escapar HTML em todos os dados exibidos
+    function esc(v) {
+      if (v === null || v === undefined) return '';
+      return String(v)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#x27;');
+    }
+    var _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
+    const API = 'https://flashdrop-backend-production.up.railway.app';
+    const tg = (window.Telegram && window.Telegram.WebApp)
+      ? window.Telegram.WebApp
+      : { showAlert: function(m){ alert(m); }, expand: function(){} };
+    tg.expand();
+
+    let currentUserId = null, currentOrderId = null;
+    let allUsers = [], allOrders = [];
+    let currentOrderFilter = 'todos';
+
+    const STATUS_LABELS = {
+ em_preparo: '🔄 Em Preparo',      pendente: 'Pendente',
+      aceito: 'Aceito',
+      na_loja: 'Na Loja',
+      coletado: 'Coletado',
+      no_cliente: 'No Cliente',
+      entregue: 'Entregue',
+      cancelado: 'Cancelado'
+    };
+
+    function showTab(id, btn) {
+      document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+      if (btn) btn.classList.add('active');
+      loadData(id);
+    }
+
+    async function loadData(tab) {
+      tab = tab || 'pedidos';
+      if (tab === 'pedidos') {
+        const r = await fetch(API + '/orders');
+        allOrders = await r.json();
+        renderOrders(allOrders);
+      } else if (tab === 'lojas' || tab === 'motoboys') {
+        const r = await fetch(API + '/users');
+        allUsers = await r.json();
+        renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }), tab);
+      } else if (tab === 'financeiro') {
+        const r = await fetch(API + '/users');
+        allUsers = await r.json();
+        renderFinance(allUsers);
+      } else if (tab === 'config') {
+        const r = await fetch(API + '/settings');
+        const data = await r.json();
+        document.getElementById('cfg-min').value = data.min_fee;
+        document.getElementById('cfg-km').value = data.price_per_km;
+        document.getElementById('cfg-arr').value = data.arrancada;
+        document.getElementById('cfg-com').value = data.commission;
+        document.getElementById('cfg-max').value = data.max_per_motoboy; document.getElementById('cfg-delay').value = data.launch_delay_minutes || 60;
+        // ── Taxas ──
+        document.getElementById('cfg-chuva-valor').value = data.taxa_chuva || 0;
+        document.getElementById('cfg-chuva-ativa').checked = !!data.taxa_chuva_ativa;
+        toggleTaxaCard('chuva');
+        selecionarDesconto('chuva', data.taxa_chuva_desconto_de || 'admin');
+        document.getElementById('cfg-noturna-valor').value = data.taxa_noturna || 0;
+        document.getElementById('cfg-noturna-ativa').checked = !!data.taxa_noturna_ativa;
+        toggleTaxaCard('noturna');
+        document.getElementById('cfg-noturna-inicio').value = data.taxa_noturna_hora_inicio || '22:00';
+        document.getElementById('cfg-noturna-fim').value = data.taxa_noturna_hora_fim || '06:00';
+        var savedDays = localStorage.getItem('flashdrop_cleanup_days');
+        if (savedDays) document.getElementById('cfg-days').value = savedDays;
+      } else if (tab === 'cadastros') {
+        loadPending();
+      } else if (tab === 'avisos') {
+        loadAvisos();
+      } else if (tab === 'indicacoes') {
+        loadIndicacoes(); loadReferralSettings();
+      } else if (tab === 'caixa') {
+        loadCaixa();
+      } else if (tab === 'promocoes') {
+        loadPromocoes();
+      }
+    }
+
+    function filterOrders(status) {
+      currentOrderFilter = status;
+      document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      event.target.classList.add('active');
+      var filtered = status === 'todos' ? allOrders : allOrders.filter(function(o){ return o.status === status; });
+      renderOrderCards(filtered);
+    }
+
+    function renderOrders(orders) {
+      var filters = ['todos','em_preparo','pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'];
+      var filterBar = '<div class="filter-bar">' +
+        filters.map(function(f){
+          var lbl = f === 'todos' ? 'Todos' : (STATUS_LABELS[f] || f);
+          var active = currentOrderFilter === f ? ' active' : '';
+          return '<button class="filter-btn' + active + '" onclick="filterOrders(\'' + f + '\')">' + lbl + '</button>';
+        }).join('') +
+        '</div>';
+      document.getElementById('pedidos').innerHTML = filterBar + '<div id="orders-list"></div>';
+      var filtered = currentOrderFilter === 'todos' ? orders : orders.filter(function(o){ return o.status === currentOrderFilter; });
+      renderOrderCards(filtered);
+    }
+
+    function fmtDt(ts) {
+      if (!ts) return null;
+      var d = new Date(ts);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    }
+    function buildTimeline(o) {
+      var events = [
+        { label: 'Pedido criado',      icon: '🆕', ts: o.created_at },
+        { label: 'Aceito pelo motoboy',icon: '✅', ts: o.t_aceito },
+        { label: 'Motoboy na loja',    icon: '🏪', ts: o.t_na_loja },
+        { label: 'Pedido coletado',    icon: '📦', ts: o.t_coletado },
+        { label: 'Chegou no cliente',  icon: '🏠', ts: o.t_no_cliente },
+        { label: 'Entregue',           icon: '🎉', ts: o.t_entregue }
+      ].filter(function(e){ return !!e.ts; });
+      if (events.length === 0) return '';
+      return '<div style="margin-top:10px;border-top:1px solid #333;padding-top:8px">' +
+        '<div style="font-size:11px;color:#aaa;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Histórico</div>' +
+        events.map(function(e){
+          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px">' +
+            '<span style="font-size:14px">' + e.icon + '</span>' +
+            '<span style="color:#ccc;flex:1">' + e.label + '</span>' +
+            '<span style="color:#ffcc00;white-space:nowrap">' + fmtDt(e.ts) + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }
+    function renderOrderCards(orders) {
+      var list = document.getElementById('orders-list');
+      if (!list) return;
+      if (orders.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:#666;padding:30px">Sem pedidos.</p>';
+        return;
+      }
+      list.innerHTML = orders.map(function(o) {
+        var status = o.status || 'pendente';
+        var label = STATUS_LABELS[status] || status;
+        var mb = esc(o.motoboy_name)
+          ? '<div class="row"><span class="val">Motoboy:</span><span>' + esc(o.motoboy_name) + '</span></div>'
+          : '';
+        return '<div class="card">' +
+          '<div class="card-header">' +
+            '<strong>#' + o.id + ' - ' + (esc(o.loja_name) || esc(o.loja_user)) + '</strong>' +
+            '<span class="badge badge-' + status + '">' + label + '</span>' +
+          '</div>' +
+          '<div style="background:#1a2a1a;border:1px solid #4caf50;border-radius:6px;padding:6px 10px;margin:6px 0;text-align:center">' +
+            (o.delivery_code ? '<span style="color:#4caf50;font-size:11px;font-weight:700">&#128273; Código de Entrega</span><br><span style="color:#fff;font-size:22px;font-weight:900;letter-spacing:6px">' + esc(o.delivery_code) + '</span>' : '') +
+          '</div>' +
+          '<div class="row"><span class="val">Cliente:</span><span>' + esc(o.nome_cliente) + '</span></div>' +
+          '<div class="row"><span class="val">Entrega:</span><span>' + esc(o.endereco_entrega) + (o.complemento_entrega ? ' — ' + o.complemento_entrega : '') + '</span></div>' + (o.obs_entrega_loja ? '<div class="row"><span class="val" style="color:#ffcc00">📝 Obs:</span><span style="color:#ffcc00">' + o.obs_entrega_loja + '</span></div>' : '') +
+          '<div class="row"><span class="val">Valor:</span><strong>R$ ' + Number(o.valor_total).toFixed(2) + '</strong></div>' + '<div class="row"><span class="val">💳 Pagamento:</span><span>' + ({dinheiro:"💵 Dinheiro",maquina:"💳 Máquina de Cartão",pix:"📱 PIX"}[o.tipo_pagamento] || o.tipo_pagamento || "—") + '</span></div>' + (o.tipo_pagamento === "dinheiro" && Number(o.valor_pedido) > 0 ? '<div class="row" style="color:#4caf50"><span class="val">💰 Cobrado:</span><strong>R$ ' + Number(o.valor_pedido).toFixed(2) + '</strong></div>' : '') +
+          mb +
+          buildTimeline(o) +
+          '<div style="display:flex;gap:8px">' +
+            '<button class="btn btn-outline btn-sm" onclick="openEditOrder(' + o.id + ')">Editar</button>' +
+            (status !== 'entregue' && status !== 'cancelado'
+              ? '<button class="btn btn-danger btn-sm" onclick="cancelOrder(' + o.id + ')">Cancelar</button>'
+              : '') +
+            '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteOrder(' + o.id + ')">Excluir</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderUsers(users, tab) {
+    document.getElementById(tab).innerHTML = users.map(function(u) {
+      var saldo = u.role === 'loja' ? u.credit : u.balance;
+      var isMotoboy = u.role === 'motoboy';
+      var isBlocked = !!u.blocked;
+      var hasPenalty = u.blocked_until && Number(u.blocked_until) > Date.now();
+
+      return '<div class="card" style="border-left:4px solid ' + (isBlocked ? '#f44336' : u.online ? '#4caf50' : '#555') + '">' +
+
+        // Header: Nome + status online
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+          '<div>' +
+            '<div style="font-size:16px;font-weight:700;color:#fff">' + esc(u.name) + '</div>' +
+            (u.custom_id ? '<div style="font-size:18px;font-weight:900;color:#ffcc00;letter-spacing:2px;margin-top:2px">🪪 ' + u.custom_id + '</div>' : '') +
+          '</div>' +
+          '<span style="font-size:12px;display:flex;align-items:center;gap:4px">' +
+            '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (u.online ? '#4caf50' : '#666') + '"></span>' +
+            (u.online ? '<span style="color:#4caf50">Online</span>' : '<span style="color:#888">Offline</span>') +
+          '</span>' +
+        '</div>' +
+
+        // Info block
+        '<div style="background:#111;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px">' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">👤 Login</span><span style="color:#ddd">@' + esc(u.username) + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📱 Telefone</span><span style="color:#ddd">' + (esc(u.phone) || '—') + '</span></div>' +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">🏍️ Veículo</span><span style="color:#ddd">' + (esc(u.vehicle) || '—') + '</span></div>' : '') +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📄 CPF</span><span style="color:#ff9500">' + (esc(u.cpf) || '—') + '</span></div>' : '') +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📍 Endereço</span><span style="color:#ff9500;text-align:right;max-width:60%">' + (esc(u.address) || '—') + '</span></div>' : '') +
+          (!isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📍 Endereço</span><span style="color:#ddd;text-align:right;max-width:60%">' + (esc(u.address) || '—') + '</span></div>' : '') +
+          '<div style="display:flex;justify-content:space-between;border-top:1px solid #222;padding-top:6px;margin-top:4px"><span style="color:#888">💰 ' + (u.role === 'loja' ? 'Crédito' : 'Saldo') + '</span><strong style="color:#4caf50">R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
+        (isMotoboy ? '<div style="display:flex;justify-content:space-between;padding-top:4px;margin-top:2px"><span style="color:#888">&#128179; Limite de Crédito</span><strong style="color:' + (parseFloat(u.custom_credit_limit||0)>0?'#ffcc00':'#666') + '">R$ ' + Number(u.custom_credit_limit||0).toFixed(2) + '</strong></div>' : '') +
+        '</div>' +
+
+        // Alertas
+        (isBlocked ? '<div style="background:#2a0000;border:1px solid #f44336;border-radius:6px;padding:6px 10px;font-size:12px;color:#f44336;margin-bottom:8px">⛔ CONTA BLOQUEADA</div>' : '') +
+        (hasPenalty ? '<div style="background:#2a1a00;border:1px solid #ff9500;border-radius:6px;padding:6px 10px;font-size:12px;color:#ff9500;margin-bottom:8px">⏳ Penalidade até ' + new Date(Number(u.blocked_until)).toLocaleTimeString('pt-BR') + '</div>' : '') +
+
+        // Botões
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<button class="btn btn-outline btn-sm" onclick="openEditUser(' + u.id + ')">✏️ Editar</button>' +
+          '<button class="btn btn-sm" style="background:' + (isBlocked ? '#4caf50' : '#c0392b') + ';color:#fff" onclick="toggleBlock(' + u.id + ',' + isBlocked + ')">' + (isBlocked ? '✅ Desbloquear' : '🚫 Bloquear') + '</button>' +
+          '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteUser(' + u.id + ',\'' + esc(u.name) + '\')">🗑️ Excluir</button>' +
+          (hasPenalty ? '<button class="btn btn-sm" style="background:#ff9500;color:#000" onclick="removePenalty(' + u.id + ')">🔓 Remover Penalidade</button>' : '') +
+        '</div>' +
+
+      '</div>';
+    }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
+  }
+  
+  function renderFinance(users) {
+      var term = (document.getElementById('search-finance') && document.getElementById('search-finance').value || '').toLowerCase();
+      var filtered = users.filter(function(u){
+        return u.role !== 'admin' && (esc(u.name).toLowerCase().includes(term) || esc(u.username).toLowerCase().includes(term) || (u.custom_id||'').toLowerCase().includes(term));
+      });
+      document.getElementById('finance-list').innerHTML = filtered.map(function(u) {
+        var saldo = u.role === 'loja' ? u.credit : u.balance;
+        var field = u.role === 'loja' ? 'credit' : 'balance';
+        return '<div class="card">' +
+          '<div class="card-header">' +
+            '<strong>' + esc(u.name) + ' (@' + esc(u.username) + ')</strong>' +
+            '<span>' + (u.role === 'loja' ? 'Credito' : 'Saldo') + ': <strong>R$ ' + Number(saldo || 0).toFixed(2) + '</strong></span>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+            '<button class="btn btn-primary btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'add\')">Aumentar</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + field + '\',\'sub\')">Diminuir</button>' +
+            '<button class="btn btn-sm" style="background:#333;color:#fff" onclick="zeroBalance(' + u.id + ',\'' + field + '\')">Zerar</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
+    }
+
+    function filterFinance() {
+      renderFinance(allUsers);
+    }
+
+    function openFinanceModal(id, type, action) {
+      currentUserId = id;
+      document.getElementById('finance-modal-title').textContent = action === 'add' ? 'Aumentar Saldo' : 'Diminuir Saldo';
+      document.getElementById('finance-fields').innerHTML =
+        '<div class="input-group"><label>Valor (R$)</label>' +
+        '<input id="f-val" class="input" type="number" step="0.01" min="0">' +
+        '<input type="hidden" id="f-type" value="' + type + '">' +
+        '<input type="hidden" id="f-action" value="' + action + '">' +
+        '</div>';
+      openModal('modal-finance');
+    }
+
+    async function updateBalance() {
+      var val = parseFloat(document.getElementById('f-val').value);
+      if (isNaN(val) || val <= 0) { tg.showAlert('Valor invalido'); return; }
+      var type = document.getElementById('f-type').value;
+      var action = document.getElementById('f-action').value;
+      var u = allUsers.find(function(x){ return x.id === currentUserId; });
+      var newVal = parseFloat(u[type] || 0) + (action === 'sub' ? -val : val);
+      await fetch(API + '/users/' + currentUserId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [type]: newVal })
+      });
+      closeModal('modal-finance');
+      loadData('financeiro');
+      tg.showAlert('Saldo atualizado!');
+    }
+
+    async function zeroBalance(id, field) {
+      if (!confirm('Zerar o saldo deste usuario?')) return;
+      await fetch(API + '/users/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: 0 })
+      });
+      loadData('financeiro');
+      tg.showAlert('Saldo zerado!');
+    }
+
+    async function toggleBlock(id, blocked) {
+      await fetch(API + '/users/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blocked: !blocked })
+      });
+      var tab = document.querySelector('.tab-btn.active');
+      if (tab) loadData(tab.textContent.trim().includes('Lojas') ? 'lojas' : 'motoboys');
+    }
+
+    async function removePenalty(id) {
+      if (!confirm('Remover penalidade de bloqueio deste motoboy?')) return;
+      try {
+        await fetch(API + '/users/' + id + '/unblock-penalty', { method: 'POST' });
+        var tab = document.querySelector('.tab-btn.active');
+        if (tab) loadData(tab.getAttribute('onclick').match(/'([^']+)'/)[1]);
+      } catch(e) { alert('Erro: ' + e.message); }
+    }
+
+    function openNewUser() {
+      currentUserId = null;
+      document.getElementById('user-modal-title').textContent = 'Novo Usuario';
+      document.getElementById('user-fields').innerHTML =
+        '<div class="input-group"><label>Nome</label><input id="u-name" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Login (usuario)</label><input id="u-user" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password" autocomplete="new-password"></div>' +
+        '<div class="input-group"><label>Tipo</label><select id="u-role" class="input" onchange="updateNewUserFields()"><option value="motoboy">Motoboy</option><option value="loja">Loja</option></select></div>' +
+        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>ID Personalizado (opcional)</label><input id="u-cid-new" class="input" placeholder="Ex: L000010 ou M0010" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Endereço</label><input id="u-address-new" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>CPF/CNPJ</label><input id="u-cpf-new" class="input" autocomplete="off"></div>' +
+        '<div class="input-group"><label>Telegram ID (número)</label><input id="u-tg-new" class="input" type="number" placeholder="Opcional" autocomplete="off"></div>' +
+        '<div id="u-extra-fields"><div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div></div>';
+      openModal('modal-user');
+    }
+
+    function updateNewUserFields() {
+      var role = document.getElementById('u-role').value;
+      var extra = document.getElementById('u-extra-fields');
+      if (role === 'motoboy') {
+        extra.innerHTML = '<div class="input-group"><label>Veículo</label><input id="u-vehicle-new" class="input" autocomplete="off"></div>' +
+          '<div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div>';
+      } else {
+        extra.innerHTML = '<div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div>' + '<div class="input-group"><label>\uD83D\uDD17 Código de Indicação (opcional)</label><input id="u-ref-loja-new" class="input" placeholder="Ex: REF1234" autocomplete="off"></div>';
+      }
+    }
+
+    function openEditUser(id) {
+      currentUserId = id;
+      var u = allUsers.find(function(x){ return x.id === id; });
+      if (!u) return;
+      document.getElementById('user-modal-title').textContent = 'Editar - ' + esc(u.name);
+      var motoboyCampos = u.role === 'motoboy'
+        ? '<div class="input-group"><label>🏍️ Veículo</label><input id="u-vehicle" class="input" value="' + (esc(u.vehicle) || '') + '"></div>' +
+          '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (esc(u.address) || '') + '"></div>' +
+          '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
+          '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>'
+        : '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (esc(u.address) || '') + '"></div>';
+      document.getElementById('user-fields').innerHTML =
+        '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
+        '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
+        '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (esc(u.name) || '') + '"></div>' +
+        '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
+        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (esc(u.phone) || '') + '"></div>' +
+        motoboyCampos;
+      openModal('modal-user');
+    }
+
+    async function saveUser() {
+      var cidEl = document.getElementById('u-cid');
+    var data = {
+        name: document.getElementById('u-name').value,
+        phone: document.getElementById('u-phone').value
+    };
+    if (cidEl && cidEl.value.trim()) data.custom_id = cidEl.value.trim().toUpperCase();
+      var pass = document.getElementById('u-pass').value;
+      if (pass) data.password = pass;
+      if (!currentUserId) {
+        data.username = document.getElementById('u-user').value;
+        data.role = document.getElementById('u-role').value;
+        var cidNewEl = document.getElementById('u-cid-new');
+        if (cidNewEl && cidNewEl.value.trim()) data.custom_id = cidNewEl.value.trim().toUpperCase();
+        var addrNewEl = document.getElementById('u-address-new');
+        if (addrNewEl) data.address = addrNewEl.value;
+        var cpfNewEl = document.getElementById('u-cpf-new');
+        if (cpfNewEl && cpfNewEl.value.trim()) data.cpf = cpfNewEl.value.trim();
+        var tgNewEl = document.getElementById('u-tg-new');
+        if (tgNewEl && tgNewEl.value.trim()) data.telegram_id = tgNewEl.value.trim();
+        var creditNewEl = document.getElementById('u-credit-new');
+        if (creditNewEl) { var cv = parseFloat(creditNewEl.value); data.custom_credit_limit = (!isNaN(cv) && cv > 0) ? cv : null; }
+        var vehicleNewEl = document.getElementById('u-vehicle-new');
+        if (vehicleNewEl) data.vehicle = vehicleNewEl.value;
+      } else {
+        var u = allUsers.find(function(x){ return x.id === currentUserId; });
+        var vehicleEl = document.getElementById('u-vehicle');
+        var addressEl = document.getElementById('u-address');
+        var cpfEl = document.getElementById('u-cpf');
+        if (vehicleEl) data.vehicle = vehicleEl.value;
+        if (addressEl) data.address = addressEl.value;
+        if (cpfEl && cpfEl.value.trim()) data.cpf = cpfEl.value.trim();
+        var clEl = document.getElementById('u-credit-limit');
+        if (clEl) {
+          var clVal = parseFloat(clEl.value);
+          data.custom_credit_limit = isNaN(clVal) || clVal <= 0 ? null : clVal;
+          var refLojaEl = document.getElementById('u-ref-loja-new');
+          if (refLojaEl && refLojaEl.value.trim()) {
+            data.referral_code = refLojaEl.value.trim().toUpperCase();
+          }
+        }
+      }
+      await fetch(API + '/users' + (currentUserId ? '/' + currentUserId : ''), {
+        method: currentUserId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      closeModal('modal-user');
+      var activeTab = document.querySelector('.tab-btn.active');
+      if (activeTab) {
+        var txt = activeTab.textContent.trim();
+        loadData(txt.includes('Lojas') ? 'lojas' : txt.includes('Motoboys') ? 'motoboys' : 'pedidos');
+      }
+      tg.showAlert('Usuario salvo!');
+    }
+
+    function openEditOrder(id) {
+      currentOrderId = id;
+      var o = allOrders.find(function(x){ return x.id === id; });
+      if (!o) return;
+      document.getElementById('order-fields').innerHTML =
+        '<div class="input-group"><label>Status</label>' +
+        '<select id="o-status" class="input">' +
+        ['pendente','aceito','na_loja','coletado','no_cliente','entregue','cancelado'].map(function(s){
+          return '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + (STATUS_LABELS[s] || s) + '</option>';
+        }).join('') +
+        '</select></div>' +
+        '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (esc(o.nome_cliente) || '') + '"></div>' +
+        '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (esc(o.endereco_entrega) || '') + '"></div>' + '<div class="input-group"><label>Complemento Entrega</label><input id="o-comp-entrega" class="input" value="' + (o.complemento_entrega || '') + '"></div>' + '<div class="input-group"><label>Obs Entrega (Loja)</label><input id="o-obs-entrega" class="input" value="' + (o.obs_entrega_loja || '') + '"></div>' +
+        '<div class="input-group"><label>Valor Total (R$)</label><input id="o-valor" class="input" type="number" step="0.01" value="' + (o.valor_total || 0) + '"></div>' +
+        '<div class="input-group"><label>Ganho Motoboy (R$)</label><input id="o-motoboy" class="input" type="number" step="0.01" value="' + (o.valor_motoboy || 0) + '"></div>' +
+        '<div class="input-group"><label>Obs</label><input id="o-obs" class="input" value="' + (o.obs || '') + '"></div>';
+      openModal('modal-order');
+    }
+
+    async function saveOrder() {
+      var update = {
+        status: document.getElementById('o-status').value,
+        nome_cliente: document.getElementById('o-cliente').value,
+        endereco_entrega: document.getElementById('o-endereco').value,
+        valor_total: parseFloat(document.getElementById('o-valor').value),
+        valor_motoboy: parseFloat(document.getElementById('o-motoboy').value),
+        obs: document.getElementById('o-obs').value, complemento_entrega: (document.getElementById('o-comp-entrega')||{}).value || null, obs_entrega_loja: (document.getElementById('o-obs-entrega')||{}).value || null
+      };
+      await fetch(API + '/orders/' + currentOrderId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(update)
+      });
+      closeModal('modal-order');
+      loadData('pedidos');
+      tg.showAlert('Pedido atualizado!');
+    }
+
+    async function cancelOrder(id) {
+      if (!confirm('Cancelar pedido #' + id + '?')) return;
+      await fetch(API + '/orders/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelado' })
+      });
+      loadData('pedidos');
+    }
+
+    async function saveSettings() {
       await fetch(API + '/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
