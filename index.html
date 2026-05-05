@@ -53,6 +53,19 @@
     .pending-btn.approve { background: #27ae60; color: #fff; }
     .pending-btn.reject { background: #c0392b; color: #fff; }
     .badge { background: #e74c3c; color: #fff; border-radius: 50%; font-size: 11px; padding: 1px 6px; margin-left: 5px; vertical-align: top; display: none; }
+
+    .toggle-switch{position:relative;display:inline-block;width:52px;height:28px;vertical-align:middle}
+    .toggle-switch input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#444;transition:.3s;border-radius:28px}
+    .toggle-slider:before{position:absolute;content:"";height:22px;width:22px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%}
+    input:checked+.toggle-slider{background:#28a745}
+    input:checked+.toggle-slider:before{transform:translateX(24px)}
+    .taxa-card{background:#111;border:2px solid #333;border-radius:12px;padding:16px;margin-top:16px;transition:border-color .3s}
+    .taxa-card.ativa{border-color:#28a745 !important}
+    .taxa-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .taxa-card-title{font-size:15px;font-weight:700;color:#ffcc00}
+    .desconto-btn{padding:8px 14px;border-radius:8px;border:2px solid #555;background:#222;color:#aaa;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;margin-right:6px;margin-bottom:4px}
+    .desconto-btn.selected{border-color:#ffcc00;background:#2a2a00;color:#ffcc00}
 </style>
 </head>
 <body>
@@ -116,6 +129,58 @@
           <input id="cfg-max" class="input" type="number">
         </div> <div class="input-group"> <label>⏳ Delay de Preparo (minutos, 1-99)</label> <input id="cfg-delay" class="input" type="number" min="1" max="99"> <small style="color:#888;font-size:11px">Tempo que o pedido fica em preparo antes de ir ao sistema automaticamente.</small> </div>
         <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
+
+      <!-- TAXA DE CHUVA -->
+      <div class="taxa-card" id="taxa-chuva-card">
+        <div class="taxa-card-header">
+          <span class="taxa-card-title">🌧️ Taxa de Chuva</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="cfg-chuva-ativa" onchange="toggleTaxaCard('chuva')">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="input-group" style="margin-bottom:10px">
+          <label>Valor da Taxa (R$)</label>
+          <input id="cfg-chuva-valor" class="input" type="number" step="0.50" min="0" placeholder="Ex: 3.00">
+        </div>
+        <div class="input-group" style="margin-bottom:4px">
+          <label style="margin-bottom:8px;display:block">Descontar de:</label>
+          <div>
+            <button class="desconto-btn selected" id="btn-chuva-admin" onclick="selecionarDesconto('chuva','admin')">&#127962; Admin</button>
+            <button class="desconto-btn" id="btn-chuva-loja" onclick="selecionarDesconto('chuva','loja')">&#127978; Loja</button>
+          </div>
+          <input type="hidden" id="cfg-chuva-desconto" value="admin">
+          <small style="color:#888;font-size:11px;display:block;margin-top:6px">Define quem absorve a taxa extra ao motoboy.</small>
+        </div>
+      </div>
+
+      <!-- TAXA NOTURNA -->
+      <div class="taxa-card" id="taxa-noturna-card">
+        <div class="taxa-card-header">
+          <span class="taxa-card-title">&#127769; Taxa Noturna</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="cfg-noturna-ativa" onchange="toggleTaxaCard('noturna')">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="input-group" style="margin-bottom:10px">
+          <label>Valor da Taxa (R$)</label>
+          <input id="cfg-noturna-valor" class="input" type="number" step="0.50" min="0" placeholder="Ex: 5.00">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="input-group" style="margin-bottom:0">
+            <label>Hor&#225;rio In&#237;cio</label>
+            <input id="cfg-noturna-inicio" class="input" type="time" value="22:00">
+          </div>
+          <div class="input-group" style="margin-bottom:0">
+            <label>Hor&#225;rio Fim</label>
+            <input id="cfg-noturna-fim" class="input" type="time" value="06:00">
+          </div>
+        </div>
+        <small style="color:#888;font-size:11px">Taxa aplicada automaticamente nos pedidos dentro do hor&#225;rio noturno.</small>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:16px">Salvar Todos os Ajustes</button>
       </div>
       <div class="card" style="margin-top:15px">
         <h3 style="margin-bottom:15px;color:#ffcc00;">🗑️ Limpeza do Histórico</h3>
@@ -419,6 +484,16 @@
         document.getElementById('cfg-arr').value = data.arrancada;
         document.getElementById('cfg-com').value = data.commission;
         document.getElementById('cfg-max').value = data.max_per_motoboy; document.getElementById('cfg-delay').value = data.launch_delay_minutes || 60;
+        // ── Taxas ──
+        document.getElementById('cfg-chuva-valor').value = data.taxa_chuva || 0;
+        document.getElementById('cfg-chuva-ativa').checked = !!data.taxa_chuva_ativa;
+        toggleTaxaCard('chuva');
+        selecionarDesconto('chuva', data.taxa_chuva_desconto_de || 'admin');
+        document.getElementById('cfg-noturna-valor').value = data.taxa_noturna || 0;
+        document.getElementById('cfg-noturna-ativa').checked = !!data.taxa_noturna_ativa;
+        toggleTaxaCard('noturna');
+        document.getElementById('cfg-noturna-inicio').value = data.taxa_noturna_hora_inicio || '22:00';
+        document.getElementById('cfg-noturna-fim').value = data.taxa_noturna_hora_fim || '06:00';
         var savedDays = localStorage.getItem('flashdrop_cleanup_days');
         if (savedDays) document.getElementById('cfg-days').value = savedDays;
       } else if (tab === 'cadastros') {
@@ -1348,7 +1423,18 @@ loadSaques();
         loadPromocoes();
       } catch(e) { tg.showAlert('Erro.'); }
     }
-  </script>
+  
+    function toggleTaxaCard(tipo) {
+      var ativa = document.getElementById('cfg-' + tipo + '-ativa').checked;
+      var card = document.getElementById('taxa-' + tipo + '-card');
+      if (ativa) { card.classList.add('ativa'); } else { card.classList.remove('ativa'); }
+    }
+    function selecionarDesconto(tipo, valor) {
+      document.getElementById('cfg-' + tipo + '-desconto').value = valor;
+      document.getElementById('btn-' + tipo + '-admin').classList.toggle('selected', valor === 'admin');
+      document.getElementById('btn-' + tipo + '-loja').classList.toggle('selected', valor === 'loja');
+    }
+</script>
 
 </body>
 </html>
