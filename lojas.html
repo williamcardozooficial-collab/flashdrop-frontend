@@ -6,344 +6,54 @@
   <title>FlashDrop Delivery - Lojas</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #0f0f0f;
-      color: #fff;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      min-height: 100vh;
-    }
-
-    /* ── HEADER ── */
-    header {
-      background: #1a1a1a;
-      border-bottom: 3px solid #f5a623;
-      padding: 0 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 70px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 20px rgba(245,166,35,0.15);
-    }
-
-    .header-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .header-logo .icon {
-      width: 42px;
-      height: 42px;
-      background: #f5a623;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-    }
-
-    .header-logo h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.5px;
-    }
-
-    .header-logo h1 span {
-      color: #f5a623;
-    }
-
-    .header-subtitle {
-      font-size: 0.75rem;
-      color: #aaa;
-      margin-top: 2px;
-    }
-
-    .header-badge {
-      background: #f5a623;
-      color: #000;
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      letter-spacing: 0.5px;
-    }
-
-    /* ── HERO ── */
-    .hero {
-      background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #1a1100 100%);
-      padding: 50px 20px 40px;
-      text-align: center;
-      border-bottom: 1px solid #2a2a2a;
-    }
-
-    .hero h2 {
-      font-size: 2rem;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-
-    .hero h2 span {
-      color: #f5a623;
-    }
-
-    .hero p {
-      color: #aaa;
-      font-size: 1rem;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .hero-stats {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      margin-top: 28px;
-      flex-wrap: wrap;
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-num {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #f5a623;
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: #888;
-      margin-top: 2px;
-    }
-
-    /* ── SEARCH ── */
-    .search-bar {
-      max-width: 500px;
-      margin: 30px auto 0;
-      position: relative;
-    }
-
-    .search-bar input {
-      width: 100%;
-      background: #222;
-      border: 2px solid #333;
-      color: #fff;
-      padding: 12px 20px 12px 45px;
-      border-radius: 30px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .search-bar input:focus {
-      border-color: #f5a623;
-    }
-
+    body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
+    header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
+    .header-logo { display: flex; align-items: center; gap: 12px; }
+    .header-logo .icon { width: 42px; height: 42px; background: #f5a623; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .header-logo h1 { font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+    .header-logo h1 span { color: #f5a623; }
+    .header-subtitle { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
+    .header-badge { background: #f5a623; color: #000; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; }
+    .hero { background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #1a1100 100%); padding: 50px 20px 40px; text-align: center; border-bottom: 1px solid #2a2a2a; }
+    .hero h2 { font-size: 2rem; font-weight: 800; margin-bottom: 10px; }
+    .hero h2 span { color: #f5a623; }
+    .hero p { color: #aaa; font-size: 1rem; max-width: 500px; margin: 0 auto; }
+    .hero-stats { display: flex; justify-content: center; gap: 30px; margin-top: 28px; flex-wrap: wrap; }
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: #f5a623; }
+    .stat-label { font-size: 0.75rem; color: #888; margin-top: 2px; }
+    .search-bar { max-width: 500px; margin: 30px auto 0; position: relative; }
+    .search-bar input { width: 100%; background: #222; border: 2px solid #333; color: #fff; padding: 12px 20px 12px 45px; border-radius: 30px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    .search-bar input:focus { border-color: #f5a623; }
     .search-bar input::placeholder { color: #666; }
-
-    .search-bar .search-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #666;
-      font-size: 1.1rem;
-    }
-
-    /* ── MAIN ── */
-    main {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 40px 20px 60px;
-    }
-
-    .section-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #f5a623;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: #2a2a2a;
-    }
-
-    /* ── GRID ── */
-    .lojas-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 22px;
-    }
-
-    /* ── CARD ── */
-    .loja-card {
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 16px;
-      overflow: hidden;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-      cursor: pointer;
-    }
-
-    .loja-card:hover {
-      transform: translateY(-4px);
-      border-color: #f5a623;
-      box-shadow: 0 8px 30px rgba(245,166,35,0.15);
-    }
-
-    .loja-foto {
-      width: 100%;
-      height: 160px;
-      background: linear-gradient(135deg, #222 0%, #1a1100 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .loja-foto img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .loja-foto .placeholder-icon {
-      font-size: 56px;
-      opacity: 0.4;
-    }
-
-    .loja-foto .overlay {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.7));
-    }
-
-    .loja-info {
-      padding: 16px;
-    }
-
-    .loja-nome {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .loja-id {
-      font-size: 0.72rem;
-      color: #f5a623;
-      font-weight: 600;
-      background: rgba(245,166,35,0.1);
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-
-    .loja-endereco {
-      font-size: 0.82rem;
-      color: #888;
-      display: flex;
-      align-items: flex-start;
-      gap: 5px;
-      min-height: 20px;
-    }
-
+    .search-bar .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #666; font-size: 1.1rem; }
+    main { max-width: 1100px; margin: 0 auto; padding: 40px 20px 60px; }
+    .section-title { font-size: 1.1rem; font-weight: 700; color: #f5a623; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #2a2a2a; }
+    .lojas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+    .loja-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .loja-card:hover { transform: translateY(-4px); border-color: #f5a623; box-shadow: 0 8px 30px rgba(245,166,35,0.15); }
+    .loja-foto { width: 100%; height: 160px; background: linear-gradient(135deg, #222 0%, #1a1100 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .loja-foto img { width: 100%; height: 100%; object-fit: cover; }
+    .loja-foto .placeholder-icon { font-size: 56px; opacity: 0.4; }
+    .loja-foto .overlay { position: absolute; bottom: 0; left: 0; right: 0; height: 50px; background: linear-gradient(transparent, rgba(0,0,0,0.7)); }
+    .loja-info { padding: 16px; }
+    .loja-nome { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .loja-id { font-size: 0.72rem; color: #f5a623; font-weight: 600; background: rgba(245,166,35,0.1); display: inline-block; padding: 2px 8px; border-radius: 10px; margin-bottom: 10px; }
+    .loja-endereco { font-size: 0.82rem; color: #888; display: flex; align-items: flex-start; gap: 5px; min-height: 20px; }
     .loja-endereco span { flex: 1; }
-
-    .loja-footer {
-      padding: 10px 16px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid #222;
-    }
-
-    .loja-username {
-      font-size: 0.78rem;
-      color: #666;
-    }
-
-    .btn-ver {
-      background: #f5a623;
-      color: #000;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-    }
-
-    .btn-ver:hover {
-      background: #ffc107;
-      transform: scale(1.05);
-    }
-
-    /* ── LOADING ── */
-    .loading {
-      text-align: center;
-      padding: 60px 20px;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #333;
-      border-top-color: #f5a623;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 16px;
-    }
-
+    .loja-footer { padding: 10px 16px 14px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #222; }
+    .loja-username { font-size: 0.78rem; color: #666; }
+    .btn-ver { background: #f5a623; color: #000; border: none; padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+    .btn-ver:hover { background: #ffc107; transform: scale(1.05); }
+    .loading { text-align: center; padding: 60px 20px; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #f5a623; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .loading p { color: #666; }
-
-    /* ── EMPTY ── */
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: #555;
-    }
-
+    .empty-state { text-align: center; padding: 60px 20px; color: #555; }
     .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-    .empty-state p { font-size: 0.95rem; }
-
-    /* ── FOOTER ── */
-    footer {
-      background: #1a1a1a;
-      border-top: 1px solid #2a2a2a;
-      text-align: center;
-      padding: 20px;
-      color: #555;
-      font-size: 0.82rem;
-    }
-
+    footer { background: #1a1a1a; border-top: 1px solid #2a2a2a; text-align: center; padding: 20px; color: #555; font-size: 0.82rem; }
     footer span { color: #f5a623; }
-
-    /* ── RESPONSIVE ── */
     @media (max-width: 480px) {
       .hero h2 { font-size: 1.5rem; }
       .lojas-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -354,133 +64,79 @@
   </style>
 </head>
 <body>
-
-  <!-- HEADER -->
   <header>
     <div class="header-logo">
-      <div class="icon">⚡</div>
+      <div class="icon">&#9889;</div>
       <div>
         <h1>Flash<span>Drop</span> Delivery</h1>
-        <div class="header-subtitle">Entrega rápida na sua cidade</div>
+        <div class="header-subtitle">Entrega rapida na sua cidade</div>
       </div>
     </div>
     <div class="header-badge">DELIVERY</div>
   </header>
-
-  <!-- HERO -->
   <section class="hero">
     <h2>Nossas <span>Lojas</span> Parceiras</h2>
-    <p>Encontre os melhores estabelecimentos e peça com entrega rápida</p>
-
+    <p>Encontre os melhores estabelecimentos e peca com entrega rapida</p>
     <div class="hero-stats">
-      <div class="stat-item">
-        <div class="stat-num" id="total-lojas">–</div>
-        <div class="stat-label">Lojas ativas</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">⚡</div>
-        <div class="stat-label">Entrega rápida</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">📍</div>
-        <div class="stat-label">Sua cidade</div>
-      </div>
+      <div class="stat-item"><div class="stat-num" id="total-lojas">-</div><div class="stat-label">Lojas ativas</div></div>
+      <div class="stat-item"><div class="stat-num">&#9889;</div><div class="stat-label">Entrega rapida</div></div>
+      <div class="stat-item"><div class="stat-num">&#128205;</div><div class="stat-label">Sua cidade</div></div>
     </div>
-
     <div class="search-bar">
-      <span class="search-icon">🔍</span>
+      <span class="search-icon">&#128269;</span>
       <input type="text" id="search-input" placeholder="Buscar loja pelo nome..." oninput="filtrarLojas()" />
     </div>
   </section>
-
-  <!-- MAIN -->
   <main>
-    <div class="section-title">🏪 Estabelecimentos</div>
-    <div id="lojas-container">
-      <div class="loading">
-        <div class="spinner"></div>
-        <p>Carregando lojas...</p>
-      </div>
-    </div>
+    <div class="section-title">&#127978; Estabelecimentos</div>
+    <div id="lojas-container"><div class="loading"><div class="spinner"></div><p>Carregando lojas...</p></div></div>
   </main>
-
-  <!-- FOOTER -->
-  <footer>
-    <span>FlashDrop Delivery</span> &copy; 2025 &nbsp;•&nbsp; Entrega rápida, onde você estiver
-  </footer>
-
+  <footer><span>FlashDrop Delivery</span> &copy; 2025 &nbsp;&bull;&nbsp; Entrega rapida, onde voce estiver</footer>
   <script>
-    const API = 'https://flashdrop-backend-production.up.railway.app';
-    let todasLojas = [];
-
+    var API = 'https://flashdrop-backend-production.up.railway.app';
+    var todasLojas = [];
     async function carregarLojas() {
       try {
-        const resp = await fetch(API + '/users');
-        const users = await resp.json();
-        todasLojas = users.filter(u => u.role === 'loja' && !u.blocked);
+        var resp = await fetch(API + '/users');
+        var users = await resp.json();
+        todasLojas = users.filter(function(u){ return u.role === 'loja' && !u.blocked; });
         document.getElementById('total-lojas').textContent = todasLojas.length;
         renderLojas(todasLojas);
-      } catch (e) {
-        document.getElementById('lojas-container').innerHTML =
-          '<div class="empty-state"><div class="icon">⚠️</div><p>Erro ao carregar lojas. Tente novamente.</p></div>';
+      } catch(e) {
+        document.getElementById('lojas-container').innerHTML = '<div class="empty-state"><div class="icon">&#9888;</div><p>Erro ao carregar lojas.</p></div>';
       }
     }
-
     function renderLojas(lojas) {
-      const container = document.getElementById('lojas-container');
-      if (lojas.length === 0) {
-        container.innerHTML =
-          '<div class="empty-state"><div class="icon">🔍</div><p>Nenhuma loja encontrada.</p></div>';
-        return;
-      }
-
-      const grid = document.createElement('div');
+      var container = document.getElementById('lojas-container');
+      if (lojas.length === 0) { container.innerHTML = '<div class="empty-state"><div class="icon">&#128269;</div><p>Nenhuma loja encontrada.</p></div>'; return; }
+      var grid = document.createElement('div');
       grid.className = 'lojas-grid';
-
-      lojas.forEach(loja => {
-        const card = document.createElement('div');
+      lojas.forEach(function(loja) {
+        var card = document.createElement('div');
         card.className = 'loja-card';
-        card.innerHTML = `
-          <div class="loja-foto">
-            ${loja.foto_url
-              ? `<img src="${loja.foto_url}" alt="${loja.name}" onerror="this.parentElement.innerHTML='<span class=\\"placeholder-icon\\">🏪</span><div class=\\"overlay\\"></div>'" />`
-              : '<span class="placeholder-icon">🏪</span>'
-            }
-            <div class="overlay"></div>
-          </div>
-          <div class="loja-info">
-            <div class="loja-nome">${loja.name || 'Loja'}</div>
-            <div class="loja-id">${loja.custom_id || ''}</div>
-            <div class="loja-endereco">
-              ${loja.address ? '📍 <span>' + loja.address + '</span>' : '<span style="color:#555">Endereço não informado</span>'}
-            </div>
-          </div>
-          <div class="loja-footer">
-            <span class="loja-username">@${loja.username || ''}</span>
-            <button class="btn-ver">Ver cardápio</button>
-          </div>
-        `;
+        var fotoContent = loja.foto_url ? '<img src="' + loja.foto_url + '" alt="' + (loja.name||'') + '" />' : '<span class="placeholder-icon">&#127978;</span>';
+        var enderecoContent = loja.address ? '&#128205; <span>' + loja.address + '</span>' : '<span style="color:#555">Endereco nao informado</span>';
+        card.innerHTML =
+          '<div class="loja-foto">' + fotoContent + '<div class="overlay"></div></div>' +
+          '<div class="loja-info">' +
+            '<div class="loja-nome">' + (loja.name||'Loja') + '</div>' +
+            '<div class="loja-id">' + (loja.custom_id||'') + '</div>' +
+            '<div class="loja-endereco">' + enderecoContent + '</div>' +
+          '</div>' +
+          '<div class="loja-footer">' +
+            '<span class="loja-username">@' + (loja.username||'') + '</span>' +
+            '<button class="btn-ver" onclick="window.location.href='cardapio.html?id=' + loja.custom_id + ''">Ver cardapio</button>' +
+          '</div>';
         grid.appendChild(card);
       });
-
       container.innerHTML = '';
       container.appendChild(grid);
     }
-
     function filtrarLojas() {
-      const termo = document.getElementById('search-input').value.toLowerCase().trim();
-      if (!termo) {
-        renderLojas(todasLojas);
-        return;
-      }
-      const filtradas = todasLojas.filter(l =>
-        (l.name || '').toLowerCase().includes(termo) ||
-        (l.address || '').toLowerCase().includes(termo) ||
-        (l.custom_id || '').toLowerCase().includes(termo)
-      );
-      renderLojas(filtradas);
+      var termo = document.getElementById('search-input').value.toLowerCase().trim();
+      if (!termo) { renderLojas(todasLojas); return; }
+      renderLojas(todasLojas.filter(function(l){ return (l.name||'').toLowerCase().includes(termo)||(l.address||'').toLowerCase().includes(termo)||(l.custom_id||'').toLowerCase().includes(termo); }));
     }
-
     carregarLojas();
   </script>
 </body>
