@@ -10,10 +10,10 @@
     header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
     .header-logo { display: flex; align-items: center; gap: 12px; }
     .header-logo .icon { width: 42px; height: 42px; background: #f5a623; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-    .header-logo h1 { font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+    .header-logo h1 { font-size: 1.5rem; font-weight: 700; color: #fff; }
     .header-logo h1 span { color: #f5a623; }
     .header-subtitle { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
-    .header-badge { background: #f5a623; color: #000; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; }
+    .header-badge { background: #f5a623; color: #000; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
     .hero { background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #1a1100 100%); padding: 50px 20px 40px; text-align: center; border-bottom: 1px solid #2a2a2a; }
     .hero h2 { font-size: 2rem; font-weight: 800; margin-bottom: 10px; }
     .hero h2 span { color: #f5a623; }
@@ -26,12 +26,12 @@
     .search-bar input { width: 100%; background: #222; border: 2px solid #333; color: #fff; padding: 12px 20px 12px 45px; border-radius: 30px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
     .search-bar input:focus { border-color: #f5a623; }
     .search-bar input::placeholder { color: #666; }
-    .search-bar .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #666; font-size: 1.1rem; }
+    .search-bar .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #666; }
     main { max-width: 1100px; margin: 0 auto; padding: 40px 20px 60px; }
     .section-title { font-size: 1.1rem; font-weight: 700; color: #f5a623; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
     .section-title::after { content: ''; flex: 1; height: 1px; background: #2a2a2a; }
     .lojas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
-    .loja-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .loja-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
     .loja-card:hover { transform: translateY(-4px); border-color: #f5a623; box-shadow: 0 8px 30px rgba(245,166,35,0.15); }
     .loja-foto { width: 100%; height: 160px; background: linear-gradient(135deg, #222 0%, #1a1100 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
     .loja-foto img { width: 100%; height: 100%; object-fit: cover; }
@@ -58,8 +58,6 @@
       .hero h2 { font-size: 1.5rem; }
       .lojas-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
       .loja-foto { height: 120px; }
-      .header-logo h1 { font-size: 1.2rem; }
-      .hero-stats { gap: 20px; }
     }
   </style>
 </head>
@@ -108,7 +106,10 @@
     }
     function renderLojas(lojas) {
       var container = document.getElementById('lojas-container');
-      if (lojas.length === 0) { container.innerHTML = '<div class="empty-state"><div class="icon">&#128269;</div><p>Nenhuma loja encontrada.</p></div>'; return; }
+      if (lojas.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">&#128269;</div><p>Nenhuma loja encontrada.</p></div>';
+        return;
+      }
       var grid = document.createElement('div');
       grid.className = 'lojas-grid';
       lojas.forEach(function(loja) {
@@ -125,8 +126,11 @@
           '</div>' +
           '<div class="loja-footer">' +
             '<span class="loja-username">@' + (loja.username||'') + '</span>' +
-            '<button class="btn-ver" onclick="window.location.href='cardapio.html?id=' + loja.custom_id + ''">Ver cardapio</button>' +
+            '<button class="btn-ver" data-id="' + (loja.custom_id||'') + '">Ver cardapio</button>' +
           '</div>';
+        card.querySelector('.btn-ver').addEventListener('click', function(){
+          window.location.href = 'cardapio.html?id=' + this.getAttribute('data-id');
+        });
         grid.appendChild(card);
       });
       container.innerHTML = '';
@@ -135,7 +139,9 @@
     function filtrarLojas() {
       var termo = document.getElementById('search-input').value.toLowerCase().trim();
       if (!termo) { renderLojas(todasLojas); return; }
-      renderLojas(todasLojas.filter(function(l){ return (l.name||'').toLowerCase().includes(termo)||(l.address||'').toLowerCase().includes(termo)||(l.custom_id||'').toLowerCase().includes(termo); }));
+      renderLojas(todasLojas.filter(function(l){
+        return (l.name||'').toLowerCase().includes(termo)||(l.address||'').toLowerCase().includes(termo)||(l.custom_id||'').toLowerCase().includes(termo);
+      }));
     }
     carregarLojas();
   </script>
