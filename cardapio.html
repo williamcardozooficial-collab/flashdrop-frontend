@@ -101,12 +101,7 @@
             '<div class="info-card"><div class="card-icon">&#128205;</div><div class="card-text"><div class="card-label">ENDERECO</div><div class="card-value">' + (loja.address||'Nao informado') + '</div></div></div>' +
             '<div class="info-card"><div class="card-icon">&#128241;</div><div class="card-text"><div class="card-label">TELEFONE</div><div class="card-value">' + (loja.phone||'Nao informado') + '</div></div></div>' +
           '</div>' +
-          '<div class="coming-soon">' +
-            '<span class="coming-soon-icon">&#127869;</span>' +
-            '<h3>Cardapio <span>em breve</span></h3>' +
-            '<p>Estamos preparando os produtos desta loja. Em breve voce podera fazer seus pedidos aqui!</p>' +
-            '<div class="coming-soon-badge">&#9889; Em desenvolvimento</div>' +
-          '</div>' +
+          '<div id="categorias-section" style="margin-top:20px"><p style="color:#888;text-align:center">Carregando categorias...</p></div>' +
         '</main>';
       document.title = (loja.name||'Loja') + ' - FlashDrop Delivery';
     }
@@ -128,7 +123,23 @@
         var loja = users.find(function(u){ return u.role === 'loja' && u.custom_id === id; });
         if (!loja) { renderErro('Loja nao encontrada.'); return; }
         renderLoja(loja);
+        loadCategorias(id);
       } catch(e) { renderErro('Erro ao carregar dados. Tente novamente.'); }
+    }
+    async function loadCategorias(lojaId) {
+      try {
+        var r = await fetch(API + '/categorias?loja_id=' + lojaId);
+        var cats = await r.json();
+        var sec = document.getElementById('categorias-section');
+        if (!sec) return;
+        if (!Array.isArray(cats) || !cats.length) {
+          sec.innerHTML = '';
+          return;
+        }
+        sec.innerHTML = cats.map(function(c) {
+          return '<div style="display:inline-block;background:#f5a623;color:#000;font-weight:700;font-size:13px;padding:6px 16px;border-radius:20px;margin:4px 4px 4px 0">' + c.nome + '</div>';
+        }).join('');
+      } catch(e) { console.error('loadCategorias err', e); }
     }
     init();
   </script>
