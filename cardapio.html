@@ -258,7 +258,7 @@
         var html='';
         function renderProd(p){
           var foto=p.foto_url
-            ?'<img src="'+esc(p.foto_url)+'" class="prod-foto" onerror="this.style.display='none'">'
+            ?'<img src="'+esc(p.foto_url)+'" class="prod-foto">'
             :'<div class="prod-foto-placeholder">&#127869;</div>';
           return '<div class="prod-card">'+foto+
             '<div class="prod-info">'+
