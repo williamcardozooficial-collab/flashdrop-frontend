@@ -92,9 +92,14 @@ footer span { color: #f5a623; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .btn-finalizar { width: 100%; background: #f5a623; color: #000; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
 .btn-finalizar:disabled { opacity: 0.6; cursor: not-allowed; }
-.taxa-info { background: rgba(245,166,35,0.07); border: 1px solid rgba(245,166,35,0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; color: #aaa; }
-.taxa-info strong { color: #f5a623; }
-</style>
+.btn-calcular-taxa { width:100%; background:#1e1e1e; color:#f5a623; border:2px solid #f5a623; border-radius:10px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; transition:background 0.2s; }
+.btn-calcular-taxa:hover { background:rgba(245,166,35,0.12); }
+.btn-calcular-taxa:disabled { opacity:0.6; cursor:not-allowed; }
+.taxa-detalhe-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#111; border-radius:8px; margin-bottom:6px; font-size:13px; color:#aaa; }
+.taxa-detalhe-val { font-weight:700; color:#fff; }
+.taxa-total-final { background:rgba(245,166,35,0.08); border:1px solid rgba(245,166,35,0.25); margin-top:4px; font-size:14px; font-weight:700; color:#fff; }
+
+</style></style>
 </head>
 <body>
 <header>
@@ -199,9 +204,75 @@ function abrirCarrinho(){
 function fecharCarrinho(){document.getElementById('modal-carrinho').classList.remove('ativo');}
 
 /* ---- TAXA ENTREGA ---- */
-function calcularTaxa(end){
-  // Taxa fixa por enquanto - futuramente integrar com API de distancia
-  return 0;
+var taxaSettings = null;
+var taxaCalculada = 0;
+var distanciaCalculada = 0;
+
+async function carregarSettings(){
+  if(taxaSettings)return taxaSettings;
+  try{
+    var r=await fetch(API+'/settings');taxaSettings=await r.json();
+  }catch(e){taxaSettings={min_fee:10,price_per_km:1.8,arrancada:3};}
+  return taxaSettings;
+}
+
+async function geocodificar(endereco){
+  var q=encodeURIComponent(endereco);
+  var r=await fetch('https://nominatim.openstreetmap.org/search?q='+q+'&format=json&limit=1',{headers:{'User-Agent':'FlashDropDelivery/1.0'}});
+  var d=await r.json();
+  if(!d.length)return null;
+  return {lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)};
+}
+
+async function calcularDistanciaKm(latA,lonA,latB,lonB){
+  var url='https://router.project-osrm.org/route/v1/driving/'+lonA+','+latA+';'+lonB+','+latB+'?overview=false';
+  var r=await fetch(url);
+  var d=await r.json();
+  if(d.code!=='Ok'||!d.routes.length)return null;
+  return d.routes[0].distance/1000;
+}
+
+async function calcularTaxaEntrega(){
+  var btn=document.getElementById('btn-calcular-taxa');
+  var statusEl=document.getElementById('taxa-status');
+  var rua=document.getElementById('ch-rua').value.trim();
+  var numero=document.getElementById('ch-numero').value.trim();
+  var bairro=document.getElementById('ch-bairro').value.trim();
+  var cidade=document.getElementById('ch-cidade').value.trim();
+  if(!rua||!numero||!bairro||!cidade){alert('Preencha o endereco completo antes de calcular.');return;}
+  if(!lojaGlobal||!lojaGlobal.address){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; A loja ainda nao cadastrou o endereco. Fale com a loja para saber a taxa.</span>';return;}
+  btn.disabled=true;btn.textContent='Calculando...';
+  statusEl.innerHTML='<span style="color:#aaa">&#8987; Calculando distancia...</span>';
+  try{
+    var endCliente=rua+', '+numero+', '+bairro+', '+cidade+', Brasil';
+    var endLoja=lojaGlobal.address+', Brasil';
+    var [coordLoja,coordCliente]=await Promise.all([geocodificar(endLoja),geocodificar(endCliente)]);
+    if(!coordLoja){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Nao foi possivel localizar o endereco da loja. Fale com a loja.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
+    if(!coordCliente){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Endereco de entrega nao encontrado. Verifique e tente novamente.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
+    var km=await calcularDistanciaKm(coordLoja.lat,coordLoja.lon,coordCliente.lat,coordCliente.lon);
+    if(km===null){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Erro ao calcular rota. Tente novamente.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
+    var s=await carregarSettings();
+    var arrancada=parseFloat(s.arrancada)||3;
+    var pKm=parseFloat(s.price_per_km)||1.8;
+    var minFee=parseFloat(s.min_fee)||10;
+    var taxa=Math.max(minFee,arrancada+km*pKm);
+    taxa=Math.round(taxa*100)/100;
+    taxaCalculada=taxa;
+    distanciaCalculada=km;
+    var lid=lojaGlobal.id;
+    var totalItens=totalCarrinho(lid);
+    var totalFinal=totalItens+taxa;
+    document.getElementById('taxa-distancia').textContent=km.toFixed(1)+' km';
+    document.getElementById('taxa-valor').textContent='R$ '+taxa.toFixed(2);
+    document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
+    document.getElementById('bloco-taxa-resultado').style.display='block';
+    statusEl.innerHTML='';
+    btn.textContent='Recalcular';
+  }catch(e){
+    statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Erro ao calcular. Verifique sua conexao.</span>';
+    btn.textContent='Calcular taxa de entrega';
+  }
+  btn.disabled=false;
 }
 
 /* ---- FINALIZAR ---- */
@@ -225,28 +296,28 @@ async function finalizarPedido(){
   if(!numero){alert('Informe o numero.');return;}
   if(!bairro){alert('Informe o bairro.');return;}
   if(!cidade){alert('Informe a cidade.');return;}
+  if(taxaCalculada===0){alert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
   var endCompleto=rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
-  var itens=c.map(function(i){
-    var obs=i.obs?(' ['+i.obs+']'):'';
-    return i.qty+'x '+i.nome+obs+' (R$'+i.preco.toFixed(2)+')';
-  }).join(' | ');
-  var total=totalCarrinho(lid);
+  var itens=c.map(function(i){var obs=i.obs?('['+i.obs+']'):'';return i.qty+'x '+i.nome+obs+' (R$'+i.preco.toFixed(2)+')';}).join(' | ');
+  var totalItens=totalCarrinho(lid);
+  var totalFinal=totalItens+taxaCalculada;
   var btn=document.getElementById('btn-finalizar');
   btn.disabled=true;btn.textContent='Enviando pedido...';
   try{
     var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
-        endereco_coleta:lojaGlobal.address||'Endereco da loja',
+        endereco_coleta:lojaGlobal.address||'',
         endereco_entrega:endCompleto,
-        nome_cliente:nome,
-        telefone_cliente:cel,
-        cpf_cliente:cpf,
+        nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
         cod_pedido:'FD-'+Date.now().toString().slice(-6),
         cobrar_cliente:'sim',
-        valor_pedido:total,
+        valor_pedido:totalFinal,
+        valor_produtos:totalItens,
+        valor_taxa_entrega:taxaCalculada,
+        distancia_km:Math.round(distanciaCalculada*10)/10,
         tipo_pagamento:pag,
-        valor_total:0,valor_motoboy:0,comissao:0,distancia_km:0,
+        valor_total:0,valor_motoboy:0,comissao:0,
         obs_coleta:'Itens: '+itens,
         obs_entrega_loja:obs_entrega||null,
         complemento_coleta:null,
@@ -254,13 +325,15 @@ async function finalizarPedido(){
       })
     });
     if(r.ok){
-      carrinho[lid]=[];atualizarBarra(lid);fecharCarrinho();
-      alert('Pedido enviado com sucesso! Em breve a loja confirmara.');
+      carrinho[lid]=[];taxaCalculada=0;distanciaCalculada=0;
+      atualizarBarra(lid);fecharCarrinho();
+      document.getElementById('bloco-taxa-resultado').style.display='none';
+      alert('Pedido enviado! Em breve a loja confirmara.');
     }else{
       var err=await r.json().catch(function(){return{};});
-      alert('Erro ao enviar pedido: '+(err.error||r.status));
+      alert('Erro: '+(err.error||r.status));
     }
-  }catch(e){alert('Erro de conexao. Verifique sua internet e tente novamente.');}
+  }catch(e){alert('Erro de conexao. Tente novamente.');}
   btn.disabled=false;btn.textContent='Finalizar Pedido';
 }
 
@@ -431,8 +504,16 @@ document.addEventListener('input',function(e){
 <option value="cartao_debito">Cartao de Debito</option>
 </select>
 </div>
-<div class="taxa-info">
-&#9432; A taxa de entrega sera calculada pela loja com base no seu endereco e informada antes da confirmacao.
+</div>
+
+<div class="secao-checkout">
+<h4>&#128666; Taxa de entrega</h4>
+<button id="btn-calcular-taxa" class="btn-calcular-taxa" onclick="calcularTaxaEntrega()">&#128205; Calcular taxa de entrega</button>
+<div id="taxa-status" style="margin-top:8px;font-size:13px;min-height:20px;"></div>
+<div id="bloco-taxa-resultado" style="display:none;margin-top:10px;">
+  <div class="taxa-detalhe-row"><span>Distancia</span><span id="taxa-distancia" class="taxa-detalhe-val">-</span></div>
+  <div class="taxa-detalhe-row"><span>Taxa de entrega</span><span id="taxa-valor" class="taxa-detalhe-val" style="color:#f5a623;">R$ -</span></div>
+  <div class="taxa-detalhe-row taxa-total-final"><span>Total com entrega</span><span id="total-final-val" style="color:#f5a623;font-size:16px;font-weight:800;">R$ -</span></div>
 </div>
 </div>
 
