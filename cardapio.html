@@ -157,7 +157,7 @@
             html += '<div class="produtos-grid">';
             prodsCat.forEach(function(p) {
               var fotoHtml = p.foto_url
-                ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display='none'">'
+                ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display=\'none\'">'
                 : '<div class="prod-foto-placeholder">&#127869;</div>';
               html += '<div class="prod-card">' +
                 fotoHtml +
@@ -178,7 +178,7 @@
           html += '<div class="produtos-grid">';
           semCat.forEach(function(p) {
             var fotoHtml = p.foto_url
-              ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display='none'">'
+              ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display=\'none\'">'
               : '<div class="prod-foto-placeholder">&#127869;</div>';
             html += '<div class="prod-card">' +
               fotoHtml +
