@@ -115,233 +115,177 @@
   <script>
     var API = 'https://flashdrop-backend-production.up.railway.app';
     var lojaGlobal = null;
-    var carrinho = {}; // { lojaId: [ {id, nome, preco, qty} ] }
+    var carrinho = {};
 
-    function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
+    function getParam(n){return new URLSearchParams(window.location.search).get(n);}
     function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-    // ---- CARRINHO ----
-    function getCarrinho(lojaId) {
-      if(!carrinho[lojaId]) carrinho[lojaId] = [];
-      return carrinho[lojaId];
+    /* ---- CARRINHO ---- */
+    function getCarrinho(lid){if(!carrinho[lid])carrinho[lid]=[];return carrinho[lid];}
+    function addFromBtn(btn){
+      var lid=parseInt(btn.dataset.lid),id=parseInt(btn.dataset.id),nome=btn.dataset.nome,preco=parseFloat(btn.dataset.preco);
+      adicionarItem(lid,{id:id,nome:nome,preco:preco});
+      btn.textContent='✓ Adicionado';
+      setTimeout(function(){btn.textContent='+ Adicionar';},900);
     }
-    function adicionarItem(lojaId, prod) {
-      var c = getCarrinho(lojaId);
-      var item = c.find(function(i){ return i.id === prod.id; });
-      if(item) { item.qty++; } else { c.push({id:prod.id, nome:prod.nome, preco:parseFloat(prod.preco||0), qty:1}); }
-      atualizarBarraCarrinho(lojaId);
+    function adicionarItem(lid,prod){
+      var c=getCarrinho(lid),item=c.find(function(i){return i.id===prod.id;});
+      if(item){item.qty++;}else{c.push({id:prod.id,nome:prod.nome,preco:prod.preco,qty:1});}
+      atualizarBarra(lid);
     }
-    function removerItem(lojaId, prodId) {
-      var c = getCarrinho(lojaId);
-      var item = c.find(function(i){ return i.id === prodId; });
-      if(!item) return;
+    function removerItem(lid,pid){
+      var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
+      if(!item)return;
       item.qty--;
-      if(item.qty <= 0) carrinho[lojaId] = c.filter(function(i){ return i.id !== prodId; });
-      atualizarBarraCarrinho(lojaId);
+      if(item.qty<=0)carrinho[lid]=c.filter(function(i){return i.id!==pid;});
+      atualizarBarra(lid);
+      abrirCarrinho();
     }
-    function totalCarrinho(lojaId) {
-      return getCarrinho(lojaId).reduce(function(s,i){ return s + i.preco * i.qty; }, 0);
-    }
-    function qtdCarrinho(lojaId) {
-      return getCarrinho(lojaId).reduce(function(s,i){ return s + i.qty; }, 0);
-    }
-    function atualizarBarraCarrinho(lojaId) {
-      var bar = document.getElementById('carrinho-bar');
-      var qtd = qtdCarrinho(lojaId);
-      if(!bar) return;
-      if(qtd > 0) {
+    function totalCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.preco*i.qty;},0);}
+    function qtdCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.qty;},0);}
+    function atualizarBarra(lid){
+      var bar=document.getElementById('carrinho-bar'),qtd=qtdCarrinho(lid);
+      if(!bar)return;
+      if(qtd>0){
         bar.classList.add('ativo');
-        document.getElementById('bar-qtd').textContent = qtd + (qtd===1?' item':' itens');
-        document.getElementById('bar-total').textContent = 'R$ ' + totalCarrinho(lojaId).toFixed(2);
-      } else {
-        bar.classList.remove('ativo');
-      }
+        document.getElementById('bar-qtd').textContent=qtd+(qtd===1?' item':' itens');
+        document.getElementById('bar-total').textContent='R$ '+totalCarrinho(lid).toFixed(2);
+      }else{bar.classList.remove('ativo');}
     }
 
-    // ---- MODAL CARRINHO ----
-    function abrirCarrinho() {
-      var lojaId = lojaGlobal ? lojaGlobal.id : null;
-      if(!lojaId) return;
-      var c = getCarrinho(lojaId);
-      var modal = document.getElementById('modal-carrinho');
-      var lista = document.getElementById('cart-lista');
-      if(!c.length) { lista.innerHTML = '<p style="color:#888;text-align:center;padding:20px">Carrinho vazio</p>'; }
-      else {
-        lista.innerHTML = c.map(function(item) {
-          return '<div class="cart-item">' +
-            '<div class="cart-item-nome">' + esc(item.nome) + '</div>' +
-            '<div class="cart-qty">' +
-              '<button onclick="removerItem(' + lojaId + ',' + item.id + ');abrirCarrinho()">-</button>' +
-              '<span>' + item.qty + '</span>' +
-              '<button onclick="adicionarItem(' + lojaId + ',{id:' + item.id + ',nome:'' + item.nome.replace(/'/g,"\'") + '',preco:' + item.preco + '});abrirCarrinho()">+</button>' +
-            '</div>' +
-            '<div class="cart-item-preco">R$ ' + (item.preco * item.qty).toFixed(2) + '</div>' +
+    /* ---- MODAL ---- */
+    function abrirCarrinho(){
+      var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
+      var c=getCarrinho(lid),lista=document.getElementById('cart-lista');
+      if(!c.length){lista.innerHTML='<p style="color:#888;text-align:center;padding:20px">Carrinho vazio</p>';}
+      else{
+        lista.innerHTML=c.map(function(it){
+          return '<div class="cart-item">'+
+            '<div class="cart-item-nome">'+esc(it.nome)+'</div>'+
+            '<div class="cart-qty">'+
+              '<button onclick="removerItem('+lid+','+it.id+')">-</button>'+
+              '<span>'+it.qty+'</span>'+
+              '<button onclick="adicionarItem('+lid+',{id:'+it.id+',nome:getCarrinho('+lid+').find(function(x){return x.id==='+it.id+'}).nome,preco:'+it.preco+'});abrirCarrinho()">+</button>'+
+            '</div>'+
+            '<div class="cart-item-preco">R$ '+(it.preco*it.qty).toFixed(2)+'</div>'+
           '</div>';
         }).join('');
       }
-      document.getElementById('cart-total').textContent = 'Total: R$ ' + totalCarrinho(lojaId).toFixed(2);
-      modal.classList.add('ativo');
+      document.getElementById('cart-total').textContent='Total: R$ '+totalCarrinho(lid).toFixed(2);
+      document.getElementById('modal-carrinho').classList.add('ativo');
     }
-    function fecharCarrinho() {
-      document.getElementById('modal-carrinho').classList.remove('ativo');
-    }
+    function fecharCarrinho(){document.getElementById('modal-carrinho').classList.remove('ativo');}
 
-    // ---- FINALIZAR PEDIDO ----
-    async function finalizarPedido() {
-      var lojaId = lojaGlobal ? lojaGlobal.id : null;
-      if(!lojaId) return;
-      var c = getCarrinho(lojaId);
-      if(!c.length) { alert('Carrinho vazio!'); return; }
-      var nome = document.getElementById('ch-nome').value.trim();
-      var tel = document.getElementById('ch-tel').value.trim();
-      var end = document.getElementById('ch-end').value.trim();
-      var pag = document.getElementById('ch-pag').value;
-      if(!nome){ alert('Informe seu nome.'); return; }
-      if(!tel){ alert('Informe seu telefone.'); return; }
-      if(!end){ alert('Informe o endereço de entrega.'); return; }
-      var itensTexto = c.map(function(i){ return i.qty + 'x ' + i.nome + ' (R$' + i.preco.toFixed(2) + ')'; }).join(', ');
-      var total = totalCarrinho(lojaId);
-      var btn = document.getElementById('btn-finalizar');
-      btn.disabled = true; btn.textContent = 'Enviando...';
-      try {
-        var r = await fetch(API + '/orders', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            loja_user: lojaGlobal.username,
-            loja_name: lojaGlobal.name,
-            endereco_coleta: lojaGlobal.address || 'Endereço da loja',
-            endereco_entrega: end,
-            nome_cliente: nome,
-            telefone_cliente: tel,
-            cod_pedido: 'APP-' + Date.now().toString().slice(-6),
-            cobrar_cliente: 'sim',
-            valor_pedido: total,
-            tipo_pagamento: pag,
-            valor_total: 0,
-            valor_motoboy: 0,
-            comissao: 0,
-            distancia_km: 0,
-            obs_coleta: 'Itens: ' + itensTexto,
-            obs_entrega_loja: null,
-            complemento_coleta: null,
-            complemento_entrega: null
+    /* ---- FINALIZAR ---- */
+    async function finalizarPedido(){
+      var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
+      var c=getCarrinho(lid);if(!c.length){alert('Carrinho vazio!');return;}
+      var nome=document.getElementById('ch-nome').value.trim();
+      var tel=document.getElementById('ch-tel').value.trim();
+      var end=document.getElementById('ch-end').value.trim();
+      var pag=document.getElementById('ch-pag').value;
+      if(!nome){alert('Informe seu nome.');return;}
+      if(!tel){alert('Informe seu telefone.');return;}
+      if(!end){alert('Informe o endereco de entrega.');return;}
+      var itens=c.map(function(i){return i.qty+'x '+i.nome+' (R$'+i.preco.toFixed(2)+')';}).join(', ');
+      var total=totalCarrinho(lid);
+      var btn=document.getElementById('btn-finalizar');
+      btn.disabled=true;btn.textContent='Enviando...';
+      try{
+        var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
+            endereco_coleta:lojaGlobal.address||'Endereco da loja',
+            endereco_entrega:end,nome_cliente:nome,telefone_cliente:tel,
+            cod_pedido:'APP-'+Date.now().toString().slice(-6),
+            cobrar_cliente:'sim',valor_pedido:total,tipo_pagamento:pag,
+            valor_total:0,valor_motoboy:0,comissao:0,distancia_km:0,
+            obs_coleta:'Itens: '+itens,obs_entrega_loja:null,
+            complemento_coleta:null,complemento_entrega:null
           })
         });
-        if(r.ok) {
-          carrinho[lojaId] = [];
-          atualizarBarraCarrinho(lojaId);
-          fecharCarrinho();
-          alert('✅ Pedido enviado com sucesso! Em breve a loja confirmará.');
-        } else {
-          var err = await r.json().catch(function(){ return {}; });
-          alert('Erro ao enviar pedido: ' + (err.error || r.status));
+        if(r.ok){
+          carrinho[lid]=[];atualizarBarra(lid);fecharCarrinho();
+          alert('Pedido enviado! Em breve a loja confirmara.');
+        }else{
+          var err=await r.json().catch(function(){return{};});
+          alert('Erro: '+(err.error||r.status));
         }
-      } catch(e) {
-        alert('Erro de conexão. Tente novamente.');
-      }
-      btn.disabled = false; btn.textContent = '🛒 Finalizar Pedido';
+      }catch(e){alert('Erro de conexao. Tente novamente.');}
+      btn.disabled=false;btn.textContent='Finalizar Pedido';
     }
 
-    // ---- RENDER ----
-    function renderLoja(loja) {
-      lojaGlobal = loja;
-      var fotoHtml = loja.foto_url
-        ? '<img src="' + loja.foto_url + '" alt="' + esc(loja.name||'') + '" />'
-        : '&#127978;';
-      var enderecoHtml = loja.address
-        ? '<div class="meta-item">&#128205; <strong>' + esc(loja.address) + '</strong></div>'
-        : '';
-      var telefoneHtml = loja.phone
-        ? '<div class="meta-item">&#128241; ' + esc(loja.phone) + '</div>'
-        : '';
-      document.getElementById('page-content').innerHTML =
-        '<section class="loja-hero">' +
-          '<div class="loja-hero-inner">' +
-            '<div class="loja-foto-grande">' + fotoHtml + '</div>' +
-            '<div class="loja-hero-info">' +
-              '<h2>' + esc(loja.name||'Loja') + '</h2>' +
-              '<div class="loja-hero-meta">' + enderecoHtml + telefoneHtml + '</div>' +
-            '</div>' +
-          '</div>' +
-        '</section>' +
+    /* ---- RENDER LOJA ---- */
+    function renderLoja(loja){
+      lojaGlobal=loja;
+      var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
+      var end=loja.address?'<div class="meta-item">&#128205; <strong>'+esc(loja.address)+'</strong></div>':'';
+      var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div>':'';
+      document.getElementById('page-content').innerHTML=
+        '<section class="loja-hero"><div class="loja-hero-inner">'+
+        '<div class="loja-foto-grande">'+foto+'</div>'+
+        '<div class="loja-hero-info"><h2>'+esc(loja.name||'Loja')+'</h2>'+
+        '<div class="loja-hero-meta">'+end+tel+'</div></div></div></section>'+
         '<main><div id="cardapio-section"></div></main>';
-      document.title = esc(loja.name||'Loja') + ' - FlashDrop Delivery';
+      document.title=esc(loja.name||'Loja')+' - FlashDrop Delivery';
+    }
+    function renderErro(msg){
+      document.getElementById('page-content').innerHTML=
+        '<div class="error-state"><div class="icon">&#9888;</div><h3>Loja nao encontrada</h3><p>'+esc(msg)+'</p>'+
+        '<a href="lojas.html" class="btn-voltar" style="margin-top:10px">&#8592; Ver lojas</a></div>';
     }
 
-    function renderErro(msg) {
-      document.getElementById('page-content').innerHTML =
-        '<div class="error-state"><div class="icon">&#9888;</div><h3>Loja nao encontrada</h3><p>' + esc(msg) + '</p>' +
-        '<br/><a href="lojas.html" class="btn-voltar" style="margin-top:10px;">&#8592; Ver todas as lojas</a></div>';
+    /* ---- INIT ---- */
+    async function init(){
+      var id=getParam('id');if(!id){renderErro('Nenhuma loja especificada.');return;}
+      try{
+        var resp=await fetch(API+'/users');var users=await resp.json();
+        var loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});
+        if(!loja){renderErro('Loja nao encontrada.');return;}
+        renderLoja(loja);loadCardapio(loja.id);
+      }catch(e){renderErro('Erro ao carregar. Tente novamente.');}
     }
 
-    async function init() {
-      var id = getParam('id');
-      if (!id) { renderErro('Nenhuma loja especificada na URL.'); return; }
-      try {
-        var resp = await fetch(API + '/users');
-        var users = await resp.json();
-        var loja = users.find(function(u){ return u.role === 'loja' && u.custom_id === id; });
-        if (!loja) { renderErro('Loja nao encontrada.'); return; }
-        renderLoja(loja);
-        loadCardapio(loja.id);
-      } catch(e) { renderErro('Erro ao carregar dados. Tente novamente.'); }
-    }
-
-    async function loadCardapio(lojaId) {
-      try {
-        var rCats = await fetch(API + '/categorias?loja_id=' + lojaId);
-        var cats = await rCats.json();
-        var rProds = await fetch(API + '/produtos?loja_id=' + lojaId);
-        var prods = await rProds.json();
-        var sec = document.getElementById('cardapio-section');
-        if(!sec) return;
-        if(!Array.isArray(prods) || !prods.length) {
-          sec.innerHTML = '<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel no momento.</p>';
-          return;
+    /* ---- CARDAPIO ---- */
+    async function loadCardapio(lid){
+      try{
+        var rC=await fetch(API+'/categorias?loja_id='+lid);var cats=await rC.json();
+        var rP=await fetch(API+'/produtos?loja_id='+lid);var prods=await rP.json();
+        var sec=document.getElementById('cardapio-section');if(!sec)return;
+        if(!Array.isArray(prods)||!prods.length){
+          sec.innerHTML='<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel.</p>';return;
         }
-        var html = '';
-        if(Array.isArray(cats) && cats.length) {
-          cats.forEach(function(cat) {
-            var prodsCat = prods.filter(function(p){ return p.categoria === cat.nome && p.ativo; });
-            if(!prodsCat.length) return;
-            html += '<div class="cat-section"><h3 class="cat-title">&#127829; ' + esc(cat.nome) + '</h3><div class="produtos-grid">';
-            prodsCat.forEach(function(p) {
-              var fotoHtml = p.foto_url
-                ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display=\'none\'">'
-                : '<div class="prod-foto-placeholder">&#127869;</div>';
-              html += '<div class="prod-card">' + fotoHtml +
-                '<div class="prod-info">' +
-                  '<div class="prod-nome">' + esc(p.nome) + '</div>' +
-                  (p.descricao ? '<div class="prod-desc">' + esc(p.descricao) + '</div>' : '') +
-                  '<div class="prod-preco">R$ ' + parseFloat(p.preco||0).toFixed(2) + '</div>' +
-                  '<button class="btn-add" onclick="adicionarItem(' + lojaId + ',{id:' + p.id + ',nome:'' + p.nome.replace(/'/g,"\'").replace(/"/g,'\"') + '',preco:' + parseFloat(p.preco||0) + '})">+ Adicionar</button>' +
-                '</div></div>';
-            });
-            html += '</div></div>';
+        var html='';
+        function renderProd(p){
+          var foto=p.foto_url
+            ?'<img src="'+esc(p.foto_url)+'" class="prod-foto" onerror="this.style.display='none'">'
+            :'<div class="prod-foto-placeholder">&#127869;</div>';
+          return '<div class="prod-card">'+foto+
+            '<div class="prod-info">'+
+              '<div class="prod-nome">'+esc(p.nome)+'</div>'+
+              (p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
+              '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
+              '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
+            '</div></div>';
+        }
+        if(Array.isArray(cats)&&cats.length){
+          cats.forEach(function(cat){
+            var pc=prods.filter(function(p){return p.categoria===cat.nome&&p.ativo;});
+            if(!pc.length)return;
+            html+='<div class="cat-section"><h3 class="cat-title">&#127829; '+esc(cat.nome)+'</h3><div class="produtos-grid">';
+            pc.forEach(function(p){html+=renderProd(p);});
+            html+='</div></div>';
           });
         }
-        var semCat = prods.filter(function(p){ return !p.categoria && p.ativo; });
-        if(semCat.length) {
-          html += '<div class="cat-section"><h3 class="cat-title">&#127869; Outros</h3><div class="produtos-grid">';
-          semCat.forEach(function(p) {
-            var fotoHtml = p.foto_url
-              ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display=\'none\'">'
-              : '<div class="prod-foto-placeholder">&#127869;</div>';
-            html += '<div class="prod-card">' + fotoHtml +
-              '<div class="prod-info">' +
-                '<div class="prod-nome">' + esc(p.nome) + '</div>' +
-                (p.descricao ? '<div class="prod-desc">' + esc(p.descricao) + '</div>' : '') +
-                '<div class="prod-preco">R$ ' + parseFloat(p.preco||0).toFixed(2) + '</div>' +
-                '<button class="btn-add" onclick="adicionarItem(' + lojaId + ',{id:' + p.id + ',nome:'' + p.nome.replace(/'/g,"\'").replace(/"/g,'\"') + '',preco:' + parseFloat(p.preco||0) + '})">+ Adicionar</button>' +
-              '</div></div>';
-          });
-          html += '</div></div>';
+        var sem=prods.filter(function(p){return !p.categoria&&p.ativo;});
+        if(sem.length){
+          html+='<div class="cat-section"><h3 class="cat-title">&#127869; Outros</h3><div class="produtos-grid">';
+          sem.forEach(function(p){html+=renderProd(p);});
+          html+='</div></div>';
         }
-        sec.innerHTML = html || '<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel.</p>';
-      } catch(e) { console.error('loadCardapio err', e); }
+        sec.innerHTML=html||'<p style="color:#888;text-align:center;padding:30px">Nenhum produto.</p>';
+      }catch(e){console.error('loadCardapio err',e);}
     }
-
     init();
   </script>
 
