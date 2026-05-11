@@ -1,339 +1,445 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlashDrop - Cardapio</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
-    header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
-    .header-logo { display: flex; align-items: center; gap: 12px; }
-    .header-logo .icon { width: 42px; height: 42px; background: #f5a623; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-    .header-logo h1 { font-size: 1.5rem; font-weight: 700; color: #fff; }
-    .header-logo h1 span { color: #f5a623; }
-    .header-subtitle { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
-    .btn-voltar { background: transparent; border: 1px solid #f5a623; color: #f5a623; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s, color 0.2s; }
-    .btn-voltar:hover { background: #f5a623; color: #000; }
-    .loja-hero { background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #1a1100 100%); border-bottom: 1px solid #2a2a2a; padding: 40px 20px; }
-    .loja-hero-inner { max-width: 800px; margin: 0 auto; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
-    .loja-foto-grande { width: 120px; height: 120px; border-radius: 16px; background: #222; border: 3px solid #f5a623; display: flex; align-items: center; justify-content: center; font-size: 56px; flex-shrink: 0; overflow: hidden; }
-    .loja-foto-grande img { width: 100%; height: 100%; object-fit: cover; }
-    .loja-hero-info { flex: 1; min-width: 200px; }
-    .loja-hero-info h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
-    .loja-id-badge { display: inline-block; background: rgba(245,166,35,0.15); border: 1px solid #f5a623; color: #f5a623; font-size: 0.75rem; font-weight: 700; padding: 3px 12px; border-radius: 20px; margin-bottom: 12px; }
-    .loja-hero-meta { display: flex; flex-direction: column; gap: 6px; }
-    .meta-item { font-size: 0.9rem; color: #aaa; display: flex; align-items: center; gap: 8px; }
-    .meta-item strong { color: #fff; }
-    main { max-width: 800px; margin: 0 auto; padding: 40px 20px 60px; }
-    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
-    .info-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 20px; display: flex; align-items: center; gap: 14px; }
-    .info-card .card-icon { width: 44px; height: 44px; background: rgba(245,166,35,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-    .info-card .card-label { font-size: 0.72rem; color: #666; margin-bottom: 3px; }
-    .info-card .card-value { font-size: 0.9rem; color: #fff; font-weight: 600; }
-    .coming-soon { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 20px; padding: 60px 30px; text-align: center; }
-    .coming-soon-icon { font-size: 64px; margin-bottom: 20px; display: block; animation: pulse 2s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.08);opacity:0.8} }
-    .coming-soon h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    .coming-soon h3 span { color: #f5a623; }
-    .coming-soon p { color: #888; font-size: 0.95rem; max-width: 380px; margin: 0 auto 28px; line-height: 1.6; }
-    .coming-soon-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); color: #f5a623; padding: 8px 20px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; }
-    .loading { text-align: center; padding: 80px 20px; }
-    .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #f5a623; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading p { color: #666; }
-    .error-state { text-align: center; padding: 80px 20px; color: #666; }
-    .error-state .icon { font-size: 48px; margin-bottom: 16px; }
-    .error-state h3 { color: #fff; margin-bottom: 8px; }
-    footer { background: #1a1a1a; border-top: 1px solid #2a2a2a; text-align: center; padding: 20px; color: #555; font-size: 0.82rem; }
-    footer span { color: #f5a623; }
-    @media (max-width: 480px) {
-      .loja-hero-inner { flex-direction: column; align-items: flex-start; }
-      .loja-foto-grande { width: 90px; height: 90px; font-size: 40px; }
-      .loja-hero-info h2 { font-size: 1.4rem; }
-      .header-logo h1 { font-size: 1.2rem; }
-    }
-
-    /* Cardapio de produtos */
-    .cat-section { margin: 28px 0; }
-    .cat-title { font-size: 1.15rem; font-weight: 700; color: #f5a623; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #2a2a2a; }
-    .produtos-grid { display: flex; flex-direction: column; gap: 12px; }
-    .prod-card { display: flex; align-items: center; gap: 14px; background: #1a1a1a; border-radius: 12px; padding: 12px; border: 1px solid #2a2a2a; }
-    .prod-foto { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
-    .prod-foto-placeholder { width: 80px; height: 80px; border-radius: 10px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
-    .prod-info { flex: 1; min-width: 0; }
-    .prod-nome { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .prod-desc { font-size: 12px; color: #888; margin-bottom: 6px; line-height: 1.4; }
-    .prod-preco { font-size: 15px; font-weight: 700; color: #f5a623; }
-
-    /* Carrinho */
-    .btn-add { margin-top:10px; background:#f5a623; color:#000; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; width:100%; }
-    .btn-add:hover { background:#e09400; }
-    .carrinho-bar { display:none; position:fixed; bottom:0; left:0; right:0; background:#f5a623; color:#000; padding:14px 20px; z-index:999; align-items:center; justify-content:space-between; box-shadow:0 -4px 20px rgba(0,0,0,0.4); }
-    .carrinho-bar.ativo { display:flex; }
-    .carrinho-bar-info { font-weight:700; font-size:15px; }
-    .carrinho-bar-info small { display:block; font-size:12px; font-weight:400; }
-    .btn-ver-carrinho { background:#000; color:#f5a623; border:none; border-radius:10px; padding:10px 20px; font-weight:700; font-size:14px; cursor:pointer; }
-    /* Modal carrinho */
-    .modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.75); z-index:1000; overflow-y:auto; padding:20px 0; }
-    .modal-overlay.ativo { display:block; }
-    .modal-box { background:#1a1a1a; border-radius:16px; max-width:500px; margin:0 auto; padding:24px; }
-    .modal-title { font-size:18px; font-weight:700; color:#f5a623; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; }
-    .modal-close { background:none; border:none; color:#888; font-size:22px; cursor:pointer; padding:0 4px; }
-    .cart-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #2a2a2a; gap:10px; }
-    .cart-item-nome { font-size:14px; font-weight:600; flex:1; }
-    .cart-item-preco { color:#f5a623; font-weight:700; font-size:14px; white-space:nowrap; }
-    .cart-qty { display:flex; align-items:center; gap:8px; }
-    .cart-qty button { background:#2a2a2a; border:none; color:#fff; width:28px; height:28px; border-radius:6px; font-size:16px; cursor:pointer; font-weight:700; }
-    .cart-qty span { min-width:20px; text-align:center; font-weight:700; }
-    .cart-total { font-size:16px; font-weight:700; text-align:right; margin:14px 0; color:#f5a623; }
-    .form-group { margin-bottom:12px; }
-    .form-group label { display:block; font-size:12px; color:#aaa; margin-bottom:4px; }
-    .form-group input, .form-group select { width:100%; padding:10px; background:#111; border:1px solid #333; border-radius:8px; color:#fff; font-size:14px; }
-    .form-group select option { background:#111; }
-    .btn-finalizar { width:100%; background:#f5a623; color:#000; border:none; border-radius:10px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; }
-    .btn-finalizar:disabled { opacity:0.6; cursor:not-allowed; }
-    .secao-checkout { margin-top:18px; padding-top:18px; border-top:2px solid #2a2a2a; }
-    .secao-checkout h4 { color:#f5a623; margin-bottom:12px; font-size:14px; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlashDrop - Cardapio</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
+header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
+.header-logo { display: flex; align-items: center; gap: 12px; }
+.header-logo .icon { width: 42px; height: 42px; background: #f5a623; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.header-logo h1 { font-size: 1.5rem; font-weight: 700; color: #fff; }
+.header-logo h1 span { color: #f5a623; }
+.header-subtitle { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
+.btn-voltar { background: transparent; border: 1px solid #f5a623; color: #f5a623; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s, color 0.2s; }
+.btn-voltar:hover { background: #f5a623; color: #000; }
+.loja-hero { background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #1a1100 100%); border-bottom: 1px solid #2a2a2a; padding: 40px 20px; }
+.loja-hero-inner { max-width: 800px; margin: 0 auto; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
+.loja-foto-grande { width: 120px; height: 120px; border-radius: 16px; background: #222; border: 3px solid #f5a623; display: flex; align-items: center; justify-content: center; font-size: 56px; flex-shrink: 0; overflow: hidden; }
+.loja-foto-grande img { width: 100%; height: 100%; object-fit: cover; }
+.loja-hero-info { flex: 1; min-width: 200px; }
+.loja-hero-info h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+.loja-hero-meta { display: flex; flex-direction: column; gap: 6px; }
+.meta-item { font-size: 0.9rem; color: #aaa; display: flex; align-items: center; gap: 8px; }
+.meta-item strong { color: #fff; }
+main { max-width: 800px; margin: 0 auto; padding: 40px 20px 120px; }
+.loading { text-align: center; padding: 80px 20px; }
+.spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #f5a623; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { color: #666; }
+.error-state { text-align: center; padding: 80px 20px; color: #666; }
+.error-state .icon { font-size: 48px; margin-bottom: 16px; }
+.error-state h3 { color: #fff; margin-bottom: 8px; }
+footer { background: #1a1a1a; border-top: 1px solid #2a2a2a; text-align: center; padding: 20px; color: #555; font-size: 0.82rem; }
+footer span { color: #f5a623; }
+@media (max-width: 480px) {
+.loja-hero-inner { flex-direction: column; align-items: flex-start; }
+.loja-foto-grande { width: 90px; height: 90px; font-size: 40px; }
+.loja-hero-info h2 { font-size: 1.4rem; }
+.header-logo h1 { font-size: 1.2rem; }
+}
+/* Cardapio */
+.cat-section { margin: 28px 0; }
+.cat-title { font-size: 1.15rem; font-weight: 700; color: #f5a623; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #2a2a2a; }
+.produtos-grid { display: flex; flex-direction: column; gap: 12px; }
+.prod-card { display: flex; flex-direction: column; background: #1a1a1a; border-radius: 12px; padding: 12px; border: 1px solid #2a2a2a; }
+.prod-card-top { display: flex; align-items: center; gap: 14px; }
+.prod-foto { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+.prod-foto-placeholder { width: 80px; height: 80px; border-radius: 10px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+.prod-info { flex: 1; min-width: 0; }
+.prod-nome { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.prod-desc { font-size: 12px; color: #888; margin-bottom: 6px; line-height: 1.4; }
+.prod-preco { font-size: 15px; font-weight: 700; color: #f5a623; }
+.btn-add { margin-top: 10px; background: #f5a623; color: #000; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; }
+.btn-add:hover { background: #e09400; }
+/* Carrinho bar */
+.carrinho-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #f5a623; color: #000; padding: 14px 20px; z-index: 999; align-items: center; justify-content: space-between; box-shadow: 0 -4px 20px rgba(0,0,0,0.4); }
+.carrinho-bar.ativo { display: flex; }
+.carrinho-bar-info { font-weight: 700; font-size: 15px; }
+.carrinho-bar-info small { display: block; font-size: 12px; font-weight: 400; }
+.btn-ver-carrinho { background: #000; color: #f5a623; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 14px; cursor: pointer; }
+/* Modal */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; padding: 10px 0 80px; }
+.modal-overlay.ativo { display: block; }
+.modal-box { background: #1a1a1a; border-radius: 16px; max-width: 520px; margin: 0 auto; padding: 24px; }
+.modal-title { font-size: 18px; font-weight: 700; color: #f5a623; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
+.modal-close { background: none; border: none; color: #888; font-size: 22px; cursor: pointer; padding: 0 4px; }
+.cart-item { background: #111; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.cart-item-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
+.cart-item-nome { font-size: 14px; font-weight: 600; flex: 1; }
+.cart-item-preco { color: #f5a623; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.cart-qty { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.cart-qty button { background: #2a2a2a; border: none; color: #fff; width: 28px; height: 28px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: 700; }
+.cart-qty span { min-width: 20px; text-align: center; font-weight: 700; }
+.cart-obs-input { width: 100%; padding: 7px 10px; background: #1e1e1e; border: 1px solid #333; border-radius: 6px; color: #ccc; font-size: 12px; resize: none; height: 36px; }
+.cart-obs-input::placeholder { color: #555; }
+.cart-total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 2px solid #2a2a2a; margin-top: 4px; }
+.cart-total-label { font-size: 14px; color: #aaa; }
+.cart-total-val { font-size: 18px; font-weight: 700; color: #f5a623; }
+.taxa-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; color: #aaa; }
+.taxa-val { color: #f5a623; font-weight: 600; }
+/* Checkout form */
+.secao-checkout { margin-top: 18px; padding-top: 18px; border-top: 2px solid #2a2a2a; }
+.secao-checkout h4 { color: #f5a623; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 12px; color: #aaa; margin-bottom: 4px; font-weight: 600; }
+.form-group label .req { color: #f5a623; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; background: #111; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 14px; }
+.form-group textarea { resize: none; height: 60px; }
+.form-group select option { background: #111; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-finalizar { width: 100%; background: #f5a623; color: #000; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+.btn-finalizar:disabled { opacity: 0.6; cursor: not-allowed; }
+.taxa-info { background: rgba(245,166,35,0.07); border: 1px solid rgba(245,166,35,0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; color: #aaa; }
+.taxa-info strong { color: #f5a623; }
+</style>
 </head>
 <body>
-  <header>
-    <div class="header-logo">
-      <div class="icon">&#9889;</div>
-      <div>
-        <h1>Flash<span>Drop</span> Delivery</h1>
-        <div class="header-subtitle">Cardapio da loja</div>
-      </div>
-    </div>
-    <a href="lojas.html" class="btn-voltar">&#8592; Voltar</a>
-  </header>
-  <div id="page-content">
-    <div class="loading"><div class="spinner"></div><p>Carregando informacoes da loja...</p></div>
-  </div>
-  <footer><span>FlashDrop Delivery</span> &copy; 2025 &nbsp;&bull;&nbsp; Entrega rapida, onde voce estiver</footer>
-  <script>
-    var API = 'https://flashdrop-backend-production.up.railway.app';
-    var lojaGlobal = null;
-    var carrinho = {};
+<header>
+<div class="header-logo">
+<div class="icon">&#9889;</div>
+<div>
+<h1>Flash<span>Drop</span> Delivery</h1>
+<div class="header-subtitle">Cardapio da loja</div>
+</div>
+</div>
+<a href="lojas.html" class="btn-voltar">&#8592; Voltar</a>
+</header>
+<div id="page-content">
+<div class="loading"><div class="spinner"></div><p>Carregando informacoes da loja...</p></div>
+</div>
+<footer><span>FlashDrop Delivery</span> &copy; 2025 &nbsp;&bull;&nbsp; Entrega rapida, onde voce estiver</footer>
 
-    function getParam(n){return new URLSearchParams(window.location.search).get(n);}
-    function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+<script>
+var API = 'https://flashdrop-backend-production.up.railway.app';
+var lojaGlobal = null;
+var carrinho = {};
 
-    /* ---- CARRINHO ---- */
-    function getCarrinho(lid){if(!carrinho[lid])carrinho[lid]=[];return carrinho[lid];}
-    function addFromBtn(btn){
-      var lid=parseInt(btn.dataset.lid),id=parseInt(btn.dataset.id),nome=btn.dataset.nome,preco=parseFloat(btn.dataset.preco);
-      adicionarItem(lid,{id:id,nome:nome,preco:preco});
-      btn.textContent='✓ Adicionado';
-      setTimeout(function(){btn.textContent='+ Adicionar';},900);
-    }
-    function adicionarItem(lid,prod){
-      var c=getCarrinho(lid),item=c.find(function(i){return i.id===prod.id;});
-      if(item){item.qty++;}else{c.push({id:prod.id,nome:prod.nome,preco:prod.preco,qty:1});}
-      atualizarBarra(lid);
-    }
-    function removerItem(lid,pid){
-      var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
-      if(!item)return;
-      item.qty--;
-      if(item.qty<=0)carrinho[lid]=c.filter(function(i){return i.id!==pid;});
-      atualizarBarra(lid);
-      abrirCarrinho();
-    }
-    function totalCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.preco*i.qty;},0);}
-    function qtdCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.qty;},0);}
-    function atualizarBarra(lid){
-      var bar=document.getElementById('carrinho-bar'),qtd=qtdCarrinho(lid);
-      if(!bar)return;
-      if(qtd>0){
-        bar.classList.add('ativo');
-        document.getElementById('bar-qtd').textContent=qtd+(qtd===1?' item':' itens');
-        document.getElementById('bar-total').textContent='R$ '+totalCarrinho(lid).toFixed(2);
-      }else{bar.classList.remove('ativo');}
-    }
+function getParam(n){return new URLSearchParams(window.location.search).get(n);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtCPF(v){v=v.replace(/\D/g,'');if(v.length>3)v=v.slice(0,3)+'.'+v.slice(3);if(v.length>7)v=v.slice(0,7)+'.'+v.slice(7);if(v.length>11)v=v.slice(0,11)+'-'+v.slice(11);return v.slice(0,14);}
+function fmtTel(v){v=v.replace(/\D/g,'');if(v.length>2)v='('+v.slice(0,2)+') '+v.slice(2);if(v.length>10)v=v.slice(0,10)+'-'+v.slice(10);return v.slice(0,15);}
 
-    /* ---- MODAL ---- */
-    function abrirCarrinho(){
-      var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
-      var c=getCarrinho(lid),lista=document.getElementById('cart-lista');
-      if(!c.length){lista.innerHTML='<p style="color:#888;text-align:center;padding:20px">Carrinho vazio</p>';}
-      else{
-        lista.innerHTML=c.map(function(it){
-          return '<div class="cart-item">'+
-            '<div class="cart-item-nome">'+esc(it.nome)+'</div>'+
-            '<div class="cart-qty">'+
-              '<button onclick="removerItem('+lid+','+it.id+')">-</button>'+
-              '<span>'+it.qty+'</span>'+
-              '<button onclick="adicionarItem('+lid+',{id:'+it.id+',nome:getCarrinho('+lid+').find(function(x){return x.id==='+it.id+'}).nome,preco:'+it.preco+'});abrirCarrinho()">+</button>'+
-            '</div>'+
-            '<div class="cart-item-preco">R$ '+(it.preco*it.qty).toFixed(2)+'</div>'+
-          '</div>';
-        }).join('');
-      }
-      document.getElementById('cart-total').textContent='Total: R$ '+totalCarrinho(lid).toFixed(2);
-      document.getElementById('modal-carrinho').classList.add('ativo');
+/* ---- CARRINHO ---- */
+function getCarrinho(lid){if(!carrinho[lid])carrinho[lid]=[];return carrinho[lid];}
+
+function addFromBtn(btn){
+  var lid=parseInt(btn.dataset.lid),id=parseInt(btn.dataset.id),nome=btn.dataset.nome,preco=parseFloat(btn.dataset.preco);
+  adicionarItem(lid,{id:id,nome:nome,preco:preco});
+  btn.textContent='Adicionado!';
+  setTimeout(function(){btn.textContent='+ Adicionar';},900);
+}
+function adicionarItem(lid,prod){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===prod.id;});
+  if(item){item.qty++;}else{c.push({id:prod.id,nome:prod.nome,preco:prod.preco,qty:1,obs:''});}
+  atualizarBarra(lid);
+}
+function removerItem(lid,pid){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
+  if(!item)return;
+  item.qty--;
+  if(item.qty<=0)carrinho[lid]=c.filter(function(i){return i.id!==pid;});
+  atualizarBarra(lid);
+  renderCartLista(lid);
+}
+function aumentarItem(lid,pid){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
+  if(!item)return;
+  item.qty++;
+  atualizarBarra(lid);
+  renderCartLista(lid);
+}
+function salvarObs(lid,pid,val){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
+  if(item)item.obs=val;
+}
+function totalCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.preco*i.qty;},0);}
+function qtdCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.qty;},0);}
+function atualizarBarra(lid){
+  var bar=document.getElementById('carrinho-bar'),qtd=qtdCarrinho(lid);
+  if(!bar)return;
+  if(qtd>0){
+    bar.classList.add('ativo');
+    document.getElementById('bar-qtd').textContent=qtd+(qtd===1?' item':' itens');
+    document.getElementById('bar-total').textContent='R$ '+totalCarrinho(lid).toFixed(2);
+  }else{bar.classList.remove('ativo');}
+}
+
+/* ---- MODAL ---- */
+function renderCartLista(lid){
+  var c=getCarrinho(lid),lista=document.getElementById('cart-lista');
+  if(!c.length){
+    lista.innerHTML='<p style="color:#888;text-align:center;padding:20px">Carrinho vazio</p>';
+    document.getElementById('cart-total-val').textContent='R$ 0,00';
+    return;
+  }
+  lista.innerHTML=c.map(function(it){
+    return '<div class="cart-item">'+
+      '<div class="cart-item-top">'+
+        '<div class="cart-item-nome">'+esc(it.nome)+'</div>'+
+        '<div class="cart-item-preco">R$ '+(it.preco*it.qty).toFixed(2)+'</div>'+
+      '</div>'+
+      '<div class="cart-qty">'+
+        '<button onclick="removerItem('+lid+','+it.id+')">-</button>'+
+        '<span>'+it.qty+'</span>'+
+        '<button onclick="aumentarItem('+lid+','+it.id+')">+</button>'+
+      '</div>'+
+      '<textarea class="cart-obs-input" placeholder="Observacao: ex. sem ervilha, sem cebola..." onchange="salvarObs('+lid+','+it.id+',this.value)">'+esc(it.obs||'')+'</textarea>'+
+    '</div>';
+  }).join('');
+  document.getElementById('cart-total-val').textContent='R$ '+totalCarrinho(lid).toFixed(2);
+}
+function abrirCarrinho(){
+  var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
+  renderCartLista(lid);
+  document.getElementById('modal-carrinho').classList.add('ativo');
+}
+function fecharCarrinho(){document.getElementById('modal-carrinho').classList.remove('ativo');}
+
+/* ---- TAXA ENTREGA ---- */
+function calcularTaxa(end){
+  // Taxa fixa por enquanto - futuramente integrar com API de distancia
+  return 0;
+}
+
+/* ---- FINALIZAR ---- */
+async function finalizarPedido(){
+  var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
+  var c=getCarrinho(lid);if(!c.length){alert('Carrinho vazio!');return;}
+  var nome=document.getElementById('ch-nome').value.trim();
+  var cel=document.getElementById('ch-cel').value.trim();
+  var cpf=document.getElementById('ch-cpf').value.trim();
+  var rua=document.getElementById('ch-rua').value.trim();
+  var numero=document.getElementById('ch-numero').value.trim();
+  var bairro=document.getElementById('ch-bairro').value.trim();
+  var cidade=document.getElementById('ch-cidade').value.trim();
+  var complemento=document.getElementById('ch-complemento').value.trim();
+  var obs_entrega=document.getElementById('ch-obs-entrega').value.trim();
+  var pag=document.getElementById('ch-pag').value;
+  if(!nome){alert('Informe seu nome completo.');return;}
+  if(!cel||cel.replace(/\D/g,'').length<10){alert('Informe um celular valido.');return;}
+  if(!cpf||cpf.replace(/\D/g,'').length<11){alert('Informe um CPF valido.');return;}
+  if(!rua){alert('Informe a rua de entrega.');return;}
+  if(!numero){alert('Informe o numero.');return;}
+  if(!bairro){alert('Informe o bairro.');return;}
+  if(!cidade){alert('Informe a cidade.');return;}
+  var endCompleto=rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
+  var itens=c.map(function(i){
+    var obs=i.obs?(' ['+i.obs+']'):'';
+    return i.qty+'x '+i.nome+obs+' (R$'+i.preco.toFixed(2)+')';
+  }).join(' | ');
+  var total=totalCarrinho(lid);
+  var btn=document.getElementById('btn-finalizar');
+  btn.disabled=true;btn.textContent='Enviando pedido...';
+  try{
+    var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
+        endereco_coleta:lojaGlobal.address||'Endereco da loja',
+        endereco_entrega:endCompleto,
+        nome_cliente:nome,
+        telefone_cliente:cel,
+        cpf_cliente:cpf,
+        cod_pedido:'FD-'+Date.now().toString().slice(-6),
+        cobrar_cliente:'sim',
+        valor_pedido:total,
+        tipo_pagamento:pag,
+        valor_total:0,valor_motoboy:0,comissao:0,distancia_km:0,
+        obs_coleta:'Itens: '+itens,
+        obs_entrega_loja:obs_entrega||null,
+        complemento_coleta:null,
+        complemento_entrega:complemento||null
+      })
+    });
+    if(r.ok){
+      carrinho[lid]=[];atualizarBarra(lid);fecharCarrinho();
+      alert('Pedido enviado com sucesso! Em breve a loja confirmara.');
+    }else{
+      var err=await r.json().catch(function(){return{};});
+      alert('Erro ao enviar pedido: '+(err.error||r.status));
     }
-    function fecharCarrinho(){document.getElementById('modal-carrinho').classList.remove('ativo');}
+  }catch(e){alert('Erro de conexao. Verifique sua internet e tente novamente.');}
+  btn.disabled=false;btn.textContent='Finalizar Pedido';
+}
 
-    /* ---- FINALIZAR ---- */
-    async function finalizarPedido(){
-      var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
-      var c=getCarrinho(lid);if(!c.length){alert('Carrinho vazio!');return;}
-      var nome=document.getElementById('ch-nome').value.trim();
-      var tel=document.getElementById('ch-tel').value.trim();
-      var end=document.getElementById('ch-end').value.trim();
-      var pag=document.getElementById('ch-pag').value;
-      if(!nome){alert('Informe seu nome.');return;}
-      if(!tel){alert('Informe seu telefone.');return;}
-      if(!end){alert('Informe o endereco de entrega.');return;}
-      var itens=c.map(function(i){return i.qty+'x '+i.nome+' (R$'+i.preco.toFixed(2)+')';}).join(', ');
-      var total=totalCarrinho(lid);
-      var btn=document.getElementById('btn-finalizar');
-      btn.disabled=true;btn.textContent='Enviando...';
-      try{
-        var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
-            endereco_coleta:lojaGlobal.address||'Endereco da loja',
-            endereco_entrega:end,nome_cliente:nome,telefone_cliente:tel,
-            cod_pedido:'APP-'+Date.now().toString().slice(-6),
-            cobrar_cliente:'sim',valor_pedido:total,tipo_pagamento:pag,
-            valor_total:0,valor_motoboy:0,comissao:0,distancia_km:0,
-            obs_coleta:'Itens: '+itens,obs_entrega_loja:null,
-            complemento_coleta:null,complemento_entrega:null
-          })
-        });
-        if(r.ok){
-          carrinho[lid]=[];atualizarBarra(lid);fecharCarrinho();
-          alert('Pedido enviado! Em breve a loja confirmara.');
-        }else{
-          var err=await r.json().catch(function(){return{};});
-          alert('Erro: '+(err.error||r.status));
-        }
-      }catch(e){alert('Erro de conexao. Tente novamente.');}
-      btn.disabled=false;btn.textContent='Finalizar Pedido';
+/* ---- RENDER LOJA ---- */
+function renderLoja(loja){
+  lojaGlobal=loja;
+  var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
+  var end=loja.address?'<div class="meta-item">&#128205; <strong>'+esc(loja.address)+'</strong></div>':'';
+  var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div>':'';
+  document.getElementById('page-content').innerHTML=
+    '<section class="loja-hero"><div class="loja-hero-inner">'+
+    '<div class="loja-foto-grande">'+foto+'</div>'+
+    '<div class="loja-hero-info"><h2>'+esc(loja.name||'Loja')+'</h2>'+
+    '<div class="loja-hero-meta">'+end+tel+'</div></div></div></section>'+
+    '<main><div id="cardapio-section"></div></main>';
+  document.title=esc(loja.name||'Loja')+' - FlashDrop Delivery';
+}
+function renderErro(msg){
+  document.getElementById('page-content').innerHTML=
+    '<div class="error-state"><div class="icon">&#9888;</div><h3>Loja nao encontrada</h3><p>'+esc(msg)+'</p>'+
+    '<a href="lojas.html" class="btn-voltar" style="margin-top:10px">&#8592; Ver lojas</a></div>';
+}
+
+/* ---- INIT ---- */
+async function init(){
+  var id=getParam('id');if(!id){renderErro('Nenhuma loja especificada.');return;}
+  try{
+    var resp=await fetch(API+'/users');var users=await resp.json();
+    var loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});
+    if(!loja){renderErro('Loja nao encontrada.');return;}
+    renderLoja(loja);loadCardapio(loja.id);
+  }catch(e){renderErro('Erro ao carregar. Tente novamente.');}
+}
+
+/* ---- CARDAPIO ---- */
+async function loadCardapio(lid){
+  try{
+    var rC=await fetch(API+'/categorias?loja_id='+lid);var cats=await rC.json();
+    var rP=await fetch(API+'/produtos?loja_id='+lid);var prods=await rP.json();
+    var sec=document.getElementById('cardapio-section');if(!sec)return;
+    if(!Array.isArray(prods)||!prods.length){
+      sec.innerHTML='<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel.</p>';return;
     }
-
-    /* ---- RENDER LOJA ---- */
-    function renderLoja(loja){
-      lojaGlobal=loja;
-      var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
-      var end=loja.address?'<div class="meta-item">&#128205; <strong>'+esc(loja.address)+'</strong></div>':'';
-      var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div>':'';
-      document.getElementById('page-content').innerHTML=
-        '<section class="loja-hero"><div class="loja-hero-inner">'+
-        '<div class="loja-foto-grande">'+foto+'</div>'+
-        '<div class="loja-hero-info"><h2>'+esc(loja.name||'Loja')+'</h2>'+
-        '<div class="loja-hero-meta">'+end+tel+'</div></div></div></section>'+
-        '<main><div id="cardapio-section"></div></main>';
-      document.title=esc(loja.name||'Loja')+' - FlashDrop Delivery';
+    var html='';
+    function renderProd(p){
+      var foto=p.foto_url
+        ?'<img src="'+esc(p.foto_url)+'" class="prod-foto">'
+        :'<div class="prod-foto-placeholder">&#127869;</div>';
+      return '<div class="prod-card">'+
+        '<div class="prod-card-top">'+foto+
+        '<div class="prod-info">'+
+        '<div class="prod-nome">'+esc(p.nome)+'</div>'+
+        (p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
+        '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
+        '</div></div>'+
+        '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
+        '</div>';
     }
-    function renderErro(msg){
-      document.getElementById('page-content').innerHTML=
-        '<div class="error-state"><div class="icon">&#9888;</div><h3>Loja nao encontrada</h3><p>'+esc(msg)+'</p>'+
-        '<a href="lojas.html" class="btn-voltar" style="margin-top:10px">&#8592; Ver lojas</a></div>';
+    if(Array.isArray(cats)&&cats.length){
+      cats.forEach(function(cat){
+        var pc=prods.filter(function(p){return p.categoria===cat.nome&&p.ativo;});
+        if(!pc.length)return;
+        html+='<div class="cat-section"><h3 class="cat-title">&#127829; '+esc(cat.nome)+'</h3><div class="produtos-grid">';
+        pc.forEach(function(p){html+=renderProd(p);});
+        html+='</div></div>';
+      });
     }
-
-    /* ---- INIT ---- */
-    async function init(){
-      var id=getParam('id');if(!id){renderErro('Nenhuma loja especificada.');return;}
-      try{
-        var resp=await fetch(API+'/users');var users=await resp.json();
-        var loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});
-        if(!loja){renderErro('Loja nao encontrada.');return;}
-        renderLoja(loja);loadCardapio(loja.id);
-      }catch(e){renderErro('Erro ao carregar. Tente novamente.');}
+    var sem=prods.filter(function(p){return !p.categoria&&p.ativo;});
+    if(sem.length){
+      html+='<div class="cat-section"><h3 class="cat-title">&#127869; Outros</h3><div class="produtos-grid">';
+      sem.forEach(function(p){html+=renderProd(p);});
+      html+='</div></div>';
     }
+    sec.innerHTML=html||'<p style="color:#888;text-align:center;padding:30px">Nenhum produto.</p>';
+  }catch(e){console.error('loadCardapio err',e);}
+}
+init();
 
-    /* ---- CARDAPIO ---- */
-    async function loadCardapio(lid){
-      try{
-        var rC=await fetch(API+'/categorias?loja_id='+lid);var cats=await rC.json();
-        var rP=await fetch(API+'/produtos?loja_id='+lid);var prods=await rP.json();
-        var sec=document.getElementById('cardapio-section');if(!sec)return;
-        if(!Array.isArray(prods)||!prods.length){
-          sec.innerHTML='<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel.</p>';return;
-        }
-        var html='';
-        function renderProd(p){
-          var foto=p.foto_url
-            ?'<img src="'+esc(p.foto_url)+'" class="prod-foto">'
-            :'<div class="prod-foto-placeholder">&#127869;</div>';
-          return '<div class="prod-card">'+foto+
-            '<div class="prod-info">'+
-              '<div class="prod-nome">'+esc(p.nome)+'</div>'+
-              (p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
-              '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
-              '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
-            '</div></div>';
-        }
-        if(Array.isArray(cats)&&cats.length){
-          cats.forEach(function(cat){
-            var pc=prods.filter(function(p){return p.categoria===cat.nome&&p.ativo;});
-            if(!pc.length)return;
-            html+='<div class="cat-section"><h3 class="cat-title">&#127829; '+esc(cat.nome)+'</h3><div class="produtos-grid">';
-            pc.forEach(function(p){html+=renderProd(p);});
-            html+='</div></div>';
-          });
-        }
-        var sem=prods.filter(function(p){return !p.categoria&&p.ativo;});
-        if(sem.length){
-          html+='<div class="cat-section"><h3 class="cat-title">&#127869; Outros</h3><div class="produtos-grid">';
-          sem.forEach(function(p){html+=renderProd(p);});
-          html+='</div></div>';
-        }
-        sec.innerHTML=html||'<p style="color:#888;text-align:center;padding:30px">Nenhum produto.</p>';
-      }catch(e){console.error('loadCardapio err',e);}
-    }
-    init();
-  </script>
+// Mascaras
+document.addEventListener('input',function(e){
+  if(e.target.id==='ch-cpf'){e.target.value=fmtCPF(e.target.value);}
+  if(e.target.id==='ch-cel'){e.target.value=fmtTel(e.target.value);}
+});
+</script>
 
-  <!-- Barra flutuante do carrinho -->
-  <div id="carrinho-bar" class="carrinho-bar">
-    <div class="carrinho-bar-info">
-      <span id="bar-qtd">0 itens</span>
-      <small id="bar-total">R$ 0.00</small>
-    </div>
-    <button class="btn-ver-carrinho" onclick="abrirCarrinho()">🛒 Ver carrinho</button>
-  </div>
+<!-- Barra flutuante do carrinho -->
+<div id="carrinho-bar" class="carrinho-bar">
+<div class="carrinho-bar-info">
+<span id="bar-qtd">0 itens</span>
+<small id="bar-total">R$ 0.00</small>
+</div>
+<button class="btn-ver-carrinho" onclick="abrirCarrinho()">&#128722; Ver carrinho</button>
+</div>
 
-  <!-- Modal carrinho + checkout -->
-  <div id="modal-carrinho" class="modal-overlay" onclick="if(event.target===this)fecharCarrinho()">
-    <div class="modal-box">
-      <div class="modal-title">
-        🛒 Meu Carrinho
-        <button class="modal-close" onclick="fecharCarrinho()">✕</button>
-      </div>
-      <div id="cart-lista"></div>
-      <div id="cart-total" class="cart-total">Total: R$ 0.00</div>
+<!-- Modal carrinho + checkout -->
+<div id="modal-carrinho" class="modal-overlay" onclick="if(event.target===this)fecharCarrinho()">
+<div class="modal-box">
+<div class="modal-title">
+&#128722; Meu Carrinho
+<button class="modal-close" onclick="fecharCarrinho()">&#x2715;</button>
+</div>
 
-      <div class="secao-checkout">
-        <h4>📋 Seus dados para entrega</h4>
-        <div class="form-group">
-          <label>Seu nome *</label>
-          <input id="ch-nome" type="text" placeholder="Ex: João Silva">
-        </div>
-        <div class="form-group">
-          <label>Telefone *</label>
-          <input id="ch-tel" type="tel" placeholder="Ex: (54) 9 9999-9999">
-        </div>
-        <div class="form-group">
-          <label>Endereço de entrega *</label>
-          <input id="ch-end" type="text" placeholder="Rua, número, bairro">
-        </div>
-        <div class="form-group">
-          <label>Forma de pagamento</label>
-          <select id="ch-pag">
-            <option value="dinheiro">Dinheiro</option>
-            <option value="cartao">Cartão</option>
-            <option value="pix">PIX</option>
-          </select>
-        </div>
-        <button id="btn-finalizar" class="btn-finalizar" onclick="finalizarPedido()">🛒 Finalizar Pedido</button>
-      </div>
-    </div>
-  </div>
+<div id="cart-lista"></div>
+
+<div class="taxa-row">
+<span>Subtotal dos itens</span>
+<span class="taxa-val" id="cart-total-val">R$ 0,00</span>
+</div>
+
+<div class="secao-checkout">
+<h4>&#128101; Seus dados</h4>
+<div class="form-group">
+<label>Nome completo <span class="req">*</span></label>
+<input id="ch-nome" type="text" placeholder="Ex: Joao da Silva">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Celular <span class="req">*</span></label>
+<input id="ch-cel" type="tel" placeholder="(54) 9 9999-9999">
+</div>
+<div class="form-group">
+<label>CPF <span class="req">*</span></label>
+<input id="ch-cpf" type="text" placeholder="000.000.000-00" maxlength="14">
+</div>
+</div>
+</div>
+
+<div class="secao-checkout">
+<h4>&#128205; Endereco de entrega</h4>
+<div class="form-row">
+<div class="form-group">
+<label>Rua / Avenida <span class="req">*</span></label>
+<input id="ch-rua" type="text" placeholder="Ex: Rua das Flores">
+</div>
+<div class="form-group">
+<label>Numero <span class="req">*</span></label>
+<input id="ch-numero" type="text" placeholder="Ex: 123">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Bairro <span class="req">*</span></label>
+<input id="ch-bairro" type="text" placeholder="Ex: Centro">
+</div>
+<div class="form-group">
+<label>Cidade <span class="req">*</span></label>
+<input id="ch-cidade" type="text" placeholder="Ex: Caxias do Sul">
+</div>
+</div>
+<div class="form-group">
+<label>Complemento <span style="color:#555;font-weight:400">(opcional)</span></label>
+<input id="ch-complemento" type="text" placeholder="Ex: Apto 12, Bloco B">
+</div>
+<div class="form-group">
+<label>Observacao da entrega <span style="color:#555;font-weight:400">(opcional)</span></label>
+<textarea id="ch-obs-entrega" placeholder="Ex: Deixar na portaria, tocar interfone..."></textarea>
+</div>
+</div>
+
+<div class="secao-checkout">
+<h4>&#128181; Pagamento</h4>
+<div class="form-group">
+<label>Forma de pagamento <span class="req">*</span></label>
+<select id="ch-pag">
+<option value="pix">PIX</option>
+<option value="dinheiro">Dinheiro</option>
+<option value="cartao_credito">Cartao de Credito</option>
+<option value="cartao_debito">Cartao de Debito</option>
+</select>
+</div>
+<div class="taxa-info">
+&#9432; A taxa de entrega sera calculada pela loja com base no seu endereco e informada antes da confirmacao.
+</div>
+</div>
+
+<button id="btn-finalizar" class="btn-finalizar" onclick="finalizarPedido()">&#128722; Finalizar Pedido</button>
+
+</div>
+</div>
 
 </body>
 </html>
