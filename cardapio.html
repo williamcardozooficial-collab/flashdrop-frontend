@@ -217,11 +217,15 @@ async function carregarSettings(){
 }
 
 async function geocodificar(endereco){
-  var q=encodeURIComponent(endereco);
-  var r=await fetch('https://nominatim.openstreetmap.org/search?q='+q+'&format=json&limit=1',{headers:{'User-Agent':'FlashDropDelivery/1.0'}});
-  var d=await r.json();
-  if(!d.length)return null;
-  return {lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)};
+  var tentativas=[endereco, endereco.split(',').filter(function(p,i){return i!==2;}).join(',')];
+  for(var i=0;i<tentativas.length;i++){
+    var q=encodeURIComponent(tentativas[i]);
+    var r=await fetch('https://nominatim.openstreetmap.org/search?q='+q+'&format=json&limit=1',{headers:{'User-Agent':'FlashDropDelivery/1.0'}});
+    var d=await r.json();
+    if(d.length)return {lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)};
+    await new Promise(function(res){setTimeout(res,300);});
+  }
+  return null;
 }
 
 async function calcularDistanciaKm(latA,lonA,latB,lonB){
@@ -244,7 +248,7 @@ async function calcularTaxaEntrega(){
   btn.disabled=true;btn.textContent='Calculando...';
   statusEl.innerHTML='<span style="color:#aaa">&#8987; Calculando distancia...</span>';
   try{
-    var endCliente=rua+', '+numero+', '+bairro+', '+cidade+', Brasil';
+    var endCliente=rua+', '+numero+', '+cidade+', RS, Brasil';
     var endLoja=lojaGlobal.address+', Brasil';
     var [coordLoja,coordCliente]=await Promise.all([geocodificar(endLoja),geocodificar(endCliente)]);
     if(!coordLoja){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Nao foi possivel localizar o endereco da loja. Fale com a loja.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
