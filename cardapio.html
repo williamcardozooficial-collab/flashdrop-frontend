@@ -53,6 +53,18 @@
       .loja-hero-info h2 { font-size: 1.4rem; }
       .header-logo h1 { font-size: 1.2rem; }
     }
+
+    /* Cardapio de produtos */
+    .cat-section { margin: 28px 0; }
+    .cat-title { font-size: 1.15rem; font-weight: 700; color: #f5a623; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #2a2a2a; }
+    .produtos-grid { display: flex; flex-direction: column; gap: 12px; }
+    .prod-card { display: flex; align-items: center; gap: 14px; background: #1a1a1a; border-radius: 12px; padding: 12px; border: 1px solid #2a2a2a; }
+    .prod-foto { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+    .prod-foto-placeholder { width: 80px; height: 80px; border-radius: 10px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-nome { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .prod-desc { font-size: 12px; color: #888; margin-bottom: 6px; line-height: 1.4; }
+    .prod-preco { font-size: 15px; font-weight: 700; color: #f5a623; }
   </style>
 </head>
 <body>
@@ -73,44 +85,41 @@
   <script>
     var API = 'https://flashdrop-backend-production.up.railway.app';
     function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
+    function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
     function renderLoja(loja) {
       var fotoHtml = loja.foto_url
-        ? '<img src="' + loja.foto_url + '" alt="' + (loja.name||'') + '" />'
+        ? '<img src="' + loja.foto_url + '" alt="' + esc(loja.name||'') + '" />'
         : '&#127978;';
       var enderecoHtml = loja.address
-        ? '<div class="meta-item">&#128205; <strong>' + loja.address + '</strong></div>'
-        : '<div class="meta-item" style="color:#555">&#128205; Endereco nao informado</div>';
+        ? '<div class="meta-item">&#128205; <strong>' + esc(loja.address) + '</strong></div>'
+        : '';
+      var telefoneHtml = loja.phone
+        ? '<div class="meta-item">&#128241; ' + esc(loja.phone) + '</div>'
+        : '';
       document.getElementById('page-content').innerHTML =
         '<section class="loja-hero">' +
           '<div class="loja-hero-inner">' +
             '<div class="loja-foto-grande">' + fotoHtml + '</div>' +
             '<div class="loja-hero-info">' +
-              '<h2>' + (loja.name||'Loja') + '</h2>' +
-              '<div class="loja-id-badge">' + (loja.custom_id||'') + '</div>' +
+              '<h2>' + esc(loja.name||'Loja') + '</h2>' +
               '<div class="loja-hero-meta">' +
                 enderecoHtml +
-                '<div class="meta-item">&#128100; @' + (loja.username||'') + '</div>' +
-                '<div class="meta-item">&#128241; ' + (loja.phone||'Telefone nao informado') + '</div>' +
+                telefoneHtml +
               '</div>' +
             '</div>' +
           '</div>' +
         '</section>' +
         '<main>' +
-          '<div class="info-grid">' +
-            '<div class="info-card"><div class="card-icon">&#127978;</div><div class="card-text"><div class="card-label">CODIGO DA LOJA</div><div class="card-value">' + (loja.custom_id||'-') + '</div></div></div>' +
-            '<div class="info-card"><div class="card-icon">&#128205;</div><div class="card-text"><div class="card-label">ENDERECO</div><div class="card-value">' + (loja.address||'Nao informado') + '</div></div></div>' +
-            '<div class="info-card"><div class="card-icon">&#128241;</div><div class="card-text"><div class="card-label">TELEFONE</div><div class="card-value">' + (loja.phone||'Nao informado') + '</div></div></div>' +
-          '</div>' +
-          '<div id="categorias-section" style="margin-top:20px"><p style="color:#888;text-align:center">Carregando categorias...</p></div>' +
+          '<div id="cardapio-section"></div>' +
         '</main>';
-      document.title = (loja.name||'Loja') + ' - FlashDrop Delivery';
+      document.title = esc(loja.name||'Loja') + ' - FlashDrop Delivery';
     }
     function renderErro(msg) {
       document.getElementById('page-content').innerHTML =
         '<div class="error-state">' +
           '<div class="icon">&#9888;</div>' +
           '<h3>Loja nao encontrada</h3>' +
-          '<p>' + msg + '</p>' +
+          '<p>' + esc(msg) + '</p>' +
           '<br/><a href="lojas.html" class="btn-voltar" style="margin-top:10px;">&#8592; Ver todas as lojas</a>' +
         '</div>';
     }
@@ -123,23 +132,67 @@
         var loja = users.find(function(u){ return u.role === 'loja' && u.custom_id === id; });
         if (!loja) { renderErro('Loja nao encontrada.'); return; }
         renderLoja(loja);
-        loadCategorias(loja.id);
+        loadCardapio(loja.id);
       } catch(e) { renderErro('Erro ao carregar dados. Tente novamente.'); }
     }
-    async function loadCategorias(lojaId) {
+    async function loadCardapio(lojaId) {
       try {
-        var r = await fetch(API + '/categorias?loja_id=' + lojaId);
-        var cats = await r.json();
-        var sec = document.getElementById('categorias-section');
+        var rCats = await fetch(API + '/categorias?loja_id=' + lojaId);
+        var cats = await rCats.json();
+        var rProds = await fetch(API + '/produtos?loja_id=' + lojaId);
+        var prods = await rProds.json();
+        var sec = document.getElementById('cardapio-section');
         if (!sec) return;
-        if (!Array.isArray(cats) || !cats.length) {
-          sec.innerHTML = '';
+        if (!Array.isArray(prods) || !prods.length) {
+          sec.innerHTML = '<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel no momento.</p>';
           return;
         }
-        sec.innerHTML = cats.map(function(c) {
-          return '<div style="display:inline-block;background:#f5a623;color:#000;font-weight:700;font-size:13px;padding:6px 16px;border-radius:20px;margin:4px 4px 4px 0">' + c.nome + '</div>';
-        }).join('');
-      } catch(e) { console.error('loadCategorias err', e); }
+        var html = '';
+        if (Array.isArray(cats) && cats.length) {
+          cats.forEach(function(cat) {
+            var prodsCat = prods.filter(function(p){ return p.categoria === cat.nome && p.ativo; });
+            if (!prodsCat.length) return;
+            html += '<div class="cat-section">';
+            html += '<h3 class="cat-title">&#127829; ' + esc(cat.nome) + '</h3>';
+            html += '<div class="produtos-grid">';
+            prodsCat.forEach(function(p) {
+              var fotoHtml = p.foto_url
+                ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display='none'">'
+                : '<div class="prod-foto-placeholder">&#127869;</div>';
+              html += '<div class="prod-card">' +
+                fotoHtml +
+                '<div class="prod-info">' +
+                  '<div class="prod-nome">' + esc(p.nome) + '</div>' +
+                  (p.descricao ? '<div class="prod-desc">' + esc(p.descricao) + '</div>' : '') +
+                  '<div class="prod-preco">R$ ' + parseFloat(p.preco||0).toFixed(2) + '</div>' +
+                '</div>' +
+              '</div>';
+            });
+            html += '</div></div>';
+          });
+        }
+        var semCat = prods.filter(function(p){ return !p.categoria && p.ativo; });
+        if (semCat.length) {
+          html += '<div class="cat-section">';
+          html += '<h3 class="cat-title">&#127869; Outros</h3>';
+          html += '<div class="produtos-grid">';
+          semCat.forEach(function(p) {
+            var fotoHtml = p.foto_url
+              ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display='none'">'
+              : '<div class="prod-foto-placeholder">&#127869;</div>';
+            html += '<div class="prod-card">' +
+              fotoHtml +
+              '<div class="prod-info">' +
+                '<div class="prod-nome">' + esc(p.nome) + '</div>' +
+                (p.descricao ? '<div class="prod-desc">' + esc(p.descricao) + '</div>' : '') +
+                '<div class="prod-preco">R$ ' + parseFloat(p.preco||0).toFixed(2) + '</div>' +
+              '</div>' +
+            '</div>';
+          });
+          html += '</div></div>';
+        }
+        sec.innerHTML = html || '<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel.</p>';
+      } catch(e) { console.error('loadCardapio err', e); }
     }
     init();
   </script>
