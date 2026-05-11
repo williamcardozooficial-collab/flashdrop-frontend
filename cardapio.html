@@ -65,6 +65,36 @@
     .prod-nome { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .prod-desc { font-size: 12px; color: #888; margin-bottom: 6px; line-height: 1.4; }
     .prod-preco { font-size: 15px; font-weight: 700; color: #f5a623; }
+
+    /* Carrinho */
+    .btn-add { margin-top:10px; background:#f5a623; color:#000; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; width:100%; }
+    .btn-add:hover { background:#e09400; }
+    .carrinho-bar { display:none; position:fixed; bottom:0; left:0; right:0; background:#f5a623; color:#000; padding:14px 20px; z-index:999; align-items:center; justify-content:space-between; box-shadow:0 -4px 20px rgba(0,0,0,0.4); }
+    .carrinho-bar.ativo { display:flex; }
+    .carrinho-bar-info { font-weight:700; font-size:15px; }
+    .carrinho-bar-info small { display:block; font-size:12px; font-weight:400; }
+    .btn-ver-carrinho { background:#000; color:#f5a623; border:none; border-radius:10px; padding:10px 20px; font-weight:700; font-size:14px; cursor:pointer; }
+    /* Modal carrinho */
+    .modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.75); z-index:1000; overflow-y:auto; padding:20px 0; }
+    .modal-overlay.ativo { display:block; }
+    .modal-box { background:#1a1a1a; border-radius:16px; max-width:500px; margin:0 auto; padding:24px; }
+    .modal-title { font-size:18px; font-weight:700; color:#f5a623; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; }
+    .modal-close { background:none; border:none; color:#888; font-size:22px; cursor:pointer; padding:0 4px; }
+    .cart-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #2a2a2a; gap:10px; }
+    .cart-item-nome { font-size:14px; font-weight:600; flex:1; }
+    .cart-item-preco { color:#f5a623; font-weight:700; font-size:14px; white-space:nowrap; }
+    .cart-qty { display:flex; align-items:center; gap:8px; }
+    .cart-qty button { background:#2a2a2a; border:none; color:#fff; width:28px; height:28px; border-radius:6px; font-size:16px; cursor:pointer; font-weight:700; }
+    .cart-qty span { min-width:20px; text-align:center; font-weight:700; }
+    .cart-total { font-size:16px; font-weight:700; text-align:right; margin:14px 0; color:#f5a623; }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; font-size:12px; color:#aaa; margin-bottom:4px; }
+    .form-group input, .form-group select { width:100%; padding:10px; background:#111; border:1px solid #333; border-radius:8px; color:#fff; font-size:14px; }
+    .form-group select option { background:#111; }
+    .btn-finalizar { width:100%; background:#f5a623; color:#000; border:none; border-radius:10px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; }
+    .btn-finalizar:disabled { opacity:0.6; cursor:not-allowed; }
+    .secao-checkout { margin-top:18px; padding-top:18px; border-top:2px solid #2a2a2a; }
+    .secao-checkout h4 { color:#f5a623; margin-bottom:12px; font-size:14px; }
   </style>
 </head>
 <body>
@@ -84,9 +114,138 @@
   <footer><span>FlashDrop Delivery</span> &copy; 2025 &nbsp;&bull;&nbsp; Entrega rapida, onde voce estiver</footer>
   <script>
     var API = 'https://flashdrop-backend-production.up.railway.app';
+    var lojaGlobal = null;
+    var carrinho = {}; // { lojaId: [ {id, nome, preco, qty} ] }
+
     function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
     function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+    // ---- CARRINHO ----
+    function getCarrinho(lojaId) {
+      if(!carrinho[lojaId]) carrinho[lojaId] = [];
+      return carrinho[lojaId];
+    }
+    function adicionarItem(lojaId, prod) {
+      var c = getCarrinho(lojaId);
+      var item = c.find(function(i){ return i.id === prod.id; });
+      if(item) { item.qty++; } else { c.push({id:prod.id, nome:prod.nome, preco:parseFloat(prod.preco||0), qty:1}); }
+      atualizarBarraCarrinho(lojaId);
+    }
+    function removerItem(lojaId, prodId) {
+      var c = getCarrinho(lojaId);
+      var item = c.find(function(i){ return i.id === prodId; });
+      if(!item) return;
+      item.qty--;
+      if(item.qty <= 0) carrinho[lojaId] = c.filter(function(i){ return i.id !== prodId; });
+      atualizarBarraCarrinho(lojaId);
+    }
+    function totalCarrinho(lojaId) {
+      return getCarrinho(lojaId).reduce(function(s,i){ return s + i.preco * i.qty; }, 0);
+    }
+    function qtdCarrinho(lojaId) {
+      return getCarrinho(lojaId).reduce(function(s,i){ return s + i.qty; }, 0);
+    }
+    function atualizarBarraCarrinho(lojaId) {
+      var bar = document.getElementById('carrinho-bar');
+      var qtd = qtdCarrinho(lojaId);
+      if(!bar) return;
+      if(qtd > 0) {
+        bar.classList.add('ativo');
+        document.getElementById('bar-qtd').textContent = qtd + (qtd===1?' item':' itens');
+        document.getElementById('bar-total').textContent = 'R$ ' + totalCarrinho(lojaId).toFixed(2);
+      } else {
+        bar.classList.remove('ativo');
+      }
+    }
+
+    // ---- MODAL CARRINHO ----
+    function abrirCarrinho() {
+      var lojaId = lojaGlobal ? lojaGlobal.id : null;
+      if(!lojaId) return;
+      var c = getCarrinho(lojaId);
+      var modal = document.getElementById('modal-carrinho');
+      var lista = document.getElementById('cart-lista');
+      if(!c.length) { lista.innerHTML = '<p style="color:#888;text-align:center;padding:20px">Carrinho vazio</p>'; }
+      else {
+        lista.innerHTML = c.map(function(item) {
+          return '<div class="cart-item">' +
+            '<div class="cart-item-nome">' + esc(item.nome) + '</div>' +
+            '<div class="cart-qty">' +
+              '<button onclick="removerItem(' + lojaId + ',' + item.id + ');abrirCarrinho()">-</button>' +
+              '<span>' + item.qty + '</span>' +
+              '<button onclick="adicionarItem(' + lojaId + ',{id:' + item.id + ',nome:'' + item.nome.replace(/'/g,"\'") + '',preco:' + item.preco + '});abrirCarrinho()">+</button>' +
+            '</div>' +
+            '<div class="cart-item-preco">R$ ' + (item.preco * item.qty).toFixed(2) + '</div>' +
+          '</div>';
+        }).join('');
+      }
+      document.getElementById('cart-total').textContent = 'Total: R$ ' + totalCarrinho(lojaId).toFixed(2);
+      modal.classList.add('ativo');
+    }
+    function fecharCarrinho() {
+      document.getElementById('modal-carrinho').classList.remove('ativo');
+    }
+
+    // ---- FINALIZAR PEDIDO ----
+    async function finalizarPedido() {
+      var lojaId = lojaGlobal ? lojaGlobal.id : null;
+      if(!lojaId) return;
+      var c = getCarrinho(lojaId);
+      if(!c.length) { alert('Carrinho vazio!'); return; }
+      var nome = document.getElementById('ch-nome').value.trim();
+      var tel = document.getElementById('ch-tel').value.trim();
+      var end = document.getElementById('ch-end').value.trim();
+      var pag = document.getElementById('ch-pag').value;
+      if(!nome){ alert('Informe seu nome.'); return; }
+      if(!tel){ alert('Informe seu telefone.'); return; }
+      if(!end){ alert('Informe o endereço de entrega.'); return; }
+      var itensTexto = c.map(function(i){ return i.qty + 'x ' + i.nome + ' (R$' + i.preco.toFixed(2) + ')'; }).join(', ');
+      var total = totalCarrinho(lojaId);
+      var btn = document.getElementById('btn-finalizar');
+      btn.disabled = true; btn.textContent = 'Enviando...';
+      try {
+        var r = await fetch(API + '/orders', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            loja_user: lojaGlobal.username,
+            loja_name: lojaGlobal.name,
+            endereco_coleta: lojaGlobal.address || 'Endereço da loja',
+            endereco_entrega: end,
+            nome_cliente: nome,
+            telefone_cliente: tel,
+            cod_pedido: 'APP-' + Date.now().toString().slice(-6),
+            cobrar_cliente: 'sim',
+            valor_pedido: total,
+            tipo_pagamento: pag,
+            valor_total: 0,
+            valor_motoboy: 0,
+            comissao: 0,
+            distancia_km: 0,
+            obs_coleta: 'Itens: ' + itensTexto,
+            obs_entrega_loja: null,
+            complemento_coleta: null,
+            complemento_entrega: null
+          })
+        });
+        if(r.ok) {
+          carrinho[lojaId] = [];
+          atualizarBarraCarrinho(lojaId);
+          fecharCarrinho();
+          alert('✅ Pedido enviado com sucesso! Em breve a loja confirmará.');
+        } else {
+          var err = await r.json().catch(function(){ return {}; });
+          alert('Erro ao enviar pedido: ' + (err.error || r.status));
+        }
+      } catch(e) {
+        alert('Erro de conexão. Tente novamente.');
+      }
+      btn.disabled = false; btn.textContent = '🛒 Finalizar Pedido';
+    }
+
+    // ---- RENDER ----
     function renderLoja(loja) {
+      lojaGlobal = loja;
       var fotoHtml = loja.foto_url
         ? '<img src="' + loja.foto_url + '" alt="' + esc(loja.name||'') + '" />'
         : '&#127978;';
@@ -102,27 +261,20 @@
             '<div class="loja-foto-grande">' + fotoHtml + '</div>' +
             '<div class="loja-hero-info">' +
               '<h2>' + esc(loja.name||'Loja') + '</h2>' +
-              '<div class="loja-hero-meta">' +
-                enderecoHtml +
-                telefoneHtml +
-              '</div>' +
+              '<div class="loja-hero-meta">' + enderecoHtml + telefoneHtml + '</div>' +
             '</div>' +
           '</div>' +
         '</section>' +
-        '<main>' +
-          '<div id="cardapio-section"></div>' +
-        '</main>';
+        '<main><div id="cardapio-section"></div></main>';
       document.title = esc(loja.name||'Loja') + ' - FlashDrop Delivery';
     }
+
     function renderErro(msg) {
       document.getElementById('page-content').innerHTML =
-        '<div class="error-state">' +
-          '<div class="icon">&#9888;</div>' +
-          '<h3>Loja nao encontrada</h3>' +
-          '<p>' + esc(msg) + '</p>' +
-          '<br/><a href="lojas.html" class="btn-voltar" style="margin-top:10px;">&#8592; Ver todas as lojas</a>' +
-        '</div>';
+        '<div class="error-state"><div class="icon">&#9888;</div><h3>Loja nao encontrada</h3><p>' + esc(msg) + '</p>' +
+        '<br/><a href="lojas.html" class="btn-voltar" style="margin-top:10px;">&#8592; Ver todas as lojas</a></div>';
     }
+
     async function init() {
       var id = getParam('id');
       if (!id) { renderErro('Nenhuma loja especificada na URL.'); return; }
@@ -135,6 +287,7 @@
         loadCardapio(loja.id);
       } catch(e) { renderErro('Erro ao carregar dados. Tente novamente.'); }
     }
+
     async function loadCardapio(lojaId) {
       try {
         var rCats = await fetch(API + '/categorias?loja_id=' + lojaId);
@@ -142,59 +295,101 @@
         var rProds = await fetch(API + '/produtos?loja_id=' + lojaId);
         var prods = await rProds.json();
         var sec = document.getElementById('cardapio-section');
-        if (!sec) return;
-        if (!Array.isArray(prods) || !prods.length) {
+        if(!sec) return;
+        if(!Array.isArray(prods) || !prods.length) {
           sec.innerHTML = '<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel no momento.</p>';
           return;
         }
         var html = '';
-        if (Array.isArray(cats) && cats.length) {
+        if(Array.isArray(cats) && cats.length) {
           cats.forEach(function(cat) {
             var prodsCat = prods.filter(function(p){ return p.categoria === cat.nome && p.ativo; });
-            if (!prodsCat.length) return;
-            html += '<div class="cat-section">';
-            html += '<h3 class="cat-title">&#127829; ' + esc(cat.nome) + '</h3>';
-            html += '<div class="produtos-grid">';
+            if(!prodsCat.length) return;
+            html += '<div class="cat-section"><h3 class="cat-title">&#127829; ' + esc(cat.nome) + '</h3><div class="produtos-grid">';
             prodsCat.forEach(function(p) {
               var fotoHtml = p.foto_url
                 ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display=\'none\'">'
                 : '<div class="prod-foto-placeholder">&#127869;</div>';
-              html += '<div class="prod-card">' +
-                fotoHtml +
+              html += '<div class="prod-card">' + fotoHtml +
                 '<div class="prod-info">' +
                   '<div class="prod-nome">' + esc(p.nome) + '</div>' +
                   (p.descricao ? '<div class="prod-desc">' + esc(p.descricao) + '</div>' : '') +
                   '<div class="prod-preco">R$ ' + parseFloat(p.preco||0).toFixed(2) + '</div>' +
-                '</div>' +
-              '</div>';
+                  '<button class="btn-add" onclick="adicionarItem(' + lojaId + ',{id:' + p.id + ',nome:'' + p.nome.replace(/'/g,"\'").replace(/"/g,'\"') + '',preco:' + parseFloat(p.preco||0) + '})">+ Adicionar</button>' +
+                '</div></div>';
             });
             html += '</div></div>';
           });
         }
         var semCat = prods.filter(function(p){ return !p.categoria && p.ativo; });
-        if (semCat.length) {
-          html += '<div class="cat-section">';
-          html += '<h3 class="cat-title">&#127869; Outros</h3>';
-          html += '<div class="produtos-grid">';
+        if(semCat.length) {
+          html += '<div class="cat-section"><h3 class="cat-title">&#127869; Outros</h3><div class="produtos-grid">';
           semCat.forEach(function(p) {
             var fotoHtml = p.foto_url
               ? '<img src="' + esc(p.foto_url) + '" class="prod-foto" onerror="this.style.display=\'none\'">'
               : '<div class="prod-foto-placeholder">&#127869;</div>';
-            html += '<div class="prod-card">' +
-              fotoHtml +
+            html += '<div class="prod-card">' + fotoHtml +
               '<div class="prod-info">' +
                 '<div class="prod-nome">' + esc(p.nome) + '</div>' +
                 (p.descricao ? '<div class="prod-desc">' + esc(p.descricao) + '</div>' : '') +
                 '<div class="prod-preco">R$ ' + parseFloat(p.preco||0).toFixed(2) + '</div>' +
-              '</div>' +
-            '</div>';
+                '<button class="btn-add" onclick="adicionarItem(' + lojaId + ',{id:' + p.id + ',nome:'' + p.nome.replace(/'/g,"\'").replace(/"/g,'\"') + '',preco:' + parseFloat(p.preco||0) + '})">+ Adicionar</button>' +
+              '</div></div>';
           });
           html += '</div></div>';
         }
         sec.innerHTML = html || '<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel.</p>';
       } catch(e) { console.error('loadCardapio err', e); }
     }
+
     init();
   </script>
+
+  <!-- Barra flutuante do carrinho -->
+  <div id="carrinho-bar" class="carrinho-bar">
+    <div class="carrinho-bar-info">
+      <span id="bar-qtd">0 itens</span>
+      <small id="bar-total">R$ 0.00</small>
+    </div>
+    <button class="btn-ver-carrinho" onclick="abrirCarrinho()">🛒 Ver carrinho</button>
+  </div>
+
+  <!-- Modal carrinho + checkout -->
+  <div id="modal-carrinho" class="modal-overlay" onclick="if(event.target===this)fecharCarrinho()">
+    <div class="modal-box">
+      <div class="modal-title">
+        🛒 Meu Carrinho
+        <button class="modal-close" onclick="fecharCarrinho()">✕</button>
+      </div>
+      <div id="cart-lista"></div>
+      <div id="cart-total" class="cart-total">Total: R$ 0.00</div>
+
+      <div class="secao-checkout">
+        <h4>📋 Seus dados para entrega</h4>
+        <div class="form-group">
+          <label>Seu nome *</label>
+          <input id="ch-nome" type="text" placeholder="Ex: João Silva">
+        </div>
+        <div class="form-group">
+          <label>Telefone *</label>
+          <input id="ch-tel" type="tel" placeholder="Ex: (54) 9 9999-9999">
+        </div>
+        <div class="form-group">
+          <label>Endereço de entrega *</label>
+          <input id="ch-end" type="text" placeholder="Rua, número, bairro">
+        </div>
+        <div class="form-group">
+          <label>Forma de pagamento</label>
+          <select id="ch-pag">
+            <option value="dinheiro">Dinheiro</option>
+            <option value="cartao">Cartão</option>
+            <option value="pix">PIX</option>
+          </select>
+        </div>
+        <button id="btn-finalizar" class="btn-finalizar" onclick="finalizarPedido()">🛒 Finalizar Pedido</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
