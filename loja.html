@@ -121,28 +121,57 @@ async function editPreparoTime(orderId, currentLaunchAt) {
 } async function loadAvisosLoja(){try{var r=await fetch(API+'/notices?target=loja');var list=await r.json();var banner=document.getElementById('avisos-banner');if(!list||list.length===0){banner.style.display='none';return;}banner.style.display='block';banner.innerHTML='<div style="font-size:12px;color:#ffcc00;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📢 Avisos</div>'+list.map(function(n){return'<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333;last-child:{border:none}">'+'<div style="font-weight:600;color:#fff;font-size:13px;margin-bottom:3px">'+n.title+'</div>'+'<div style="color:#ccc;font-size:12px;line-height:1.4">'+n.body+'</div>'+'</div>';}).join('');}catch(e){}}
 
 function renderLojaOrders(orders){
-  // Atualizar badge de solicitacoes (pedidos pendentes do cardapio)
-  var solic=orders.filter(function(o){return o.status==='pendente';});
-  var badge=document.getElementById('badge-solic');
-  if(badge){if(solic.length>0){badge.textContent=solic.length;badge.style.display='inline';}else{badge.style.display='none';}}
-  // Aba Pedidos mostra tudo EXCETO pendente (pendente vai para Solicitacoes)
-  var ordersParaPedidos=orders.filter(function(o){return o.status!=='pendente';});
-  var statusLabels={em_preparo:'🔄 Em Preparo',pendente:'⏳ Pendente',aceito:'✅ Aceito',na_loja:'🏪 Na Loja',coletado:'📦 Coletado',no_cliente:'🏠 No Cliente',entregue:'🎉 Entregue',cancelado:'❌ Cancelado',retornado:'🔄 Retornado'};
-  var statuses=['todos','em_preparo','aceito','na_loja','coletado','no_cliente','entregue','cancelado'];
-  var filterBar=document.getElementById('order-filter-bar');
+  var solic=orders.filter(function(o){return o.status==="pendente";});
+  var badge=document.getElementById("badge-solic");
+  if(badge){if(solic.length>0){badge.textContent=solic.length;badge.style.display="inline";}else{badge.style.display="none";}}
+  var ordersParaPedidos=orders.filter(function(o){return o.status!=="pendente";});
+  var statusLabels={em_preparo:"🔄 Em Preparo",pendente:"⏳ Pendente",aceito:"✅ Aceito",na_loja:"🏪 Na Loja",coletado:"📦 Coletado",no_cliente:"🏠 No Cliente",entregue:"🎉 Entregue",cancelado:"❌ Cancelado",retornado:"🔄 Retornado"};
+  var statuses=["todos","em_preparo","aceito","na_loja","coletado","no_cliente","entregue","cancelado"];
+  var filterBar=document.getElementById("order-filter-bar");
   if(filterBar){
     filterBar.innerHTML=statuses.map(function(s){
-      var count=s==='todos'?ordersParaPedidos.length:ordersParaPedidos.filter(function(o){return o.status===s;}).length;
-      var lbl=s==='todos'?'Todos':(statusLabels[s]||s);
-      var active=_lojaFilter===s?' active':'';
-      var badgeHtml=count>0?' <span class="filter-badge">'+count+'</span>':'' ;
-      return '<button class="filter-btn-loja'+active+'" data-s="'+s+'" onclick="filterLojaOrders(this.dataset.s)">'+lbl+badgeHtml+'</button>';
-    }).join('');
+      var count=s==="todos"?ordersParaPedidos.length:ordersParaPedidos.filter(function(o){return o.status===s;}).length;
+      var lbl=s==="todos"?"Todos":(statusLabels[s]||s);
+      var active=_lojaFilter===s?" active":"";
+      var b=count>0?"<span class=\"filter-badge\">"+count+"</span>":"";
+      return "<button class=\"filter-btn-loja"+active+"\" data-s=\""+s+"\" onclick=\"filterLojaOrders(this.dataset.s)\">"+lbl+b+"</button>";
+    }).join("");
   }
-  var filtered=_lojaFilter==='todos'?ordersParaPedidos:ordersParaPedidos.filter(function(o){return o.status===_lojaFilter;});
-  var sL={em_preparo:'🔄 Em Preparo',pendente:'⏳ Pendente',aceito:'✅ Aceito',na_loja:'🏪 Na Loja',coletado:'📦 Coletado',no_cliente:'🏠 No Cliente',entregue:'🎉 Entregue',cancelado:'❌ Cancelado',retornado:'🔄 Retornado'};
-  document.getElementById('orders-list').innerHTML=filtered.map(o=>`<div class="order-card"> <div class="order-header"><strong>Pedido #${o.id}</strong><span class="status-badge status-${o.status}">${sL[o.status]||o.status}</span></div>${o.delivery_code ? '<div style="background:#1a2a1a;border:1px solid #4caf50;border-radius:6px;padding:6px 10px;margin:6px 0;text-align:center"><span style="color:#4caf50;font-size:11px;font-weight:700">&#128273; Código de Entrega</span><br><span style="color:#fff;font-size:22px;font-weight:900;letter-spacing:6px">' + o.delivery_code + '</span></div>' : ''} <div style="font-size:13px;margin:4px 0;"><strong>👤 Cliente:</strong> ${o.nome_cliente||'—'}</div> <div style="font-size:13px;margin:4px 0;"><strong>📱 Tel Cliente:</strong> ${o.telefone_cliente||'—'}</div> <div style="font-size:13px;margin:4px 0;"><strong>📍 Entrega:</strong> ${o.endereco_entrega||'—'}${o.complemento_entrega?' — '+o.complemento_entrega:''}</div>${o.obs_entrega_loja?'<div style="font-size:12px;margin:2px 0;color:#888;"><strong>📝 Obs:</strong> '+o.obs_entrega_loja+'</div>':''} <div style="font-size:13px;margin:4px 0;"><strong>💳 Pagamento:</strong> ${({dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX"})[o.tipo_pagamento]||o.tipo_pagamento||"—"}</div> ${o.tipo_pagamento==="dinheiro"&&o.valor_pedido>0?"<div style='font-size:13px;margin:4px 0;color:#27ae60;'><strong>💰 Valor Cobrado:</strong> R$ "+parseFloat(o.valor_pedido).toFixed(2)+"</div>":""}<div style="text-align:right;color:#667eea;font-weight:bold">R$ ${parseFloat(o.valor_total).toFixed(2)}</div> ${o.observacao_entrega ? '<div style="background:#0a2d1a;border:1px solid #27ae60;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#2ecc71;"><strong>📝 Obs Motoboy:</strong> '+o.observacao_entrega+'</div>' : ''} ${buildMotoboyInfo(o)}${buildTimeline(o)} <div style="margin-top:8px">${o.status==='em_preparo'&&o.launch_at>0?'<div class=\"timer-preparo\"><div class=\"timer-text\"><span>⏳</span><span id=\"lt-'+o.id+'\"' style=\"font-weight:700;font-size:14px\">Calculando...</span></div><div class=\"timer-actions\"><button class=\"btn-launch\" onclick=\"launchNow('+o.id+')\" style=\"margin-top:0\">🚀 Chamar Agora</button><button class=\"btn-edit-timer\" onclick=\"editPreparoTime('+o.id+','+o.launch_at+')\" style=\"margin-top:0\">✏️ Editar Tempo</button></div></div>':''} ${(o.status !== 'entregue' && o.status !== 'retornado' && o.status !== 'cancelado') ? '<button class=\"btn-edit\" onclick=\"openEditModal('+o.id+')\" >✏️ Editar</button>' : ''}${(o.status !== 'entregue' && o.status !== 'retornado' && o.status !== 'coletado' && o.status !== 'no_cliente' && o.status !== 'cancelado') ? '<button class=\"btn-delete\" onclick=\"cancelOrderLoja('+o.id+')\" style=\"background:#e67e22;color:#fff\">❌ Cancelar Pedido</button>' : ''}</div> </div>`).join('');
-  startPreparoTimers(filtered.filter(function(o){return o.status==='em_preparo'&&o.launch_at>0;}));
+  var filtered=_lojaFilter==="todos"?ordersParaPedidos:ordersParaPedidos.filter(function(o){return o.status===_lojaFilter;});
+  var sL={em_preparo:"🔄 Em Preparo",pendente:"⏳ Pendente",aceito:"✅ Aceito",na_loja:"🏪 Na Loja",coletado:"📦 Coletado",no_cliente:"🏠 No Cliente",entregue:"🎉 Entregue",cancelado:"❌ Cancelado",retornado:"🔄 Retornado"};
+  function cardOrder(o){
+    var h="";
+    h+='<div class="order-card">';
+    h+='<div class="order-header"><strong>Pedido #'+o.id+'</strong><span class="status-badge status-'+o.status+'">'+( sL[o.status]||o.status)+'</span></div>';
+    if(o.delivery_code){h+='<div style="background:#1a2a1a;border:1px solid #4caf50;border-radius:6px;padding:6px 10px;margin:6px 0;text-align:center"><span style="color:#4caf50;font-size:11px;font-weight:700">&#128273; Código de Entrega</span><br><span style="color:#fff;font-size:22px;font-weight:900;letter-spacing:6px">'+o.delivery_code+'</span></div>';}
+    h+='<div style="font-size:13px;margin:4px 0"><strong>&#128100; Cliente:</strong> '+(o.nome_cliente||"—")+'</div>';
+    h+='<div style="font-size:13px;margin:4px 0"><strong>&#128241; Tel:</strong> '+(o.telefone_cliente||"—")+'</div>';
+    h+='<div style="font-size:13px;margin:4px 0"><strong>&#128205; Entrega:</strong> '+(o.endereco_entrega||"—")+(o.complemento_entrega?" — "+o.complemento_entrega:"")+'</div>';
+    if(o.obs_entrega_loja){h+='<div style="font-size:12px;margin:2px 0;color:#888"><strong>&#128203; Obs:</strong> '+o.obs_entrega_loja+'</div>';}
+    var pagLabel={dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX"};
+    h+='<div style="font-size:13px;margin:4px 0"><strong>&#128179; Pagamento:</strong> '+(pagLabel[o.tipo_pagamento]||o.tipo_pagamento||"—")+'</div>';
+    if(o.tipo_pagamento==="dinheiro"&&o.valor_pedido>0){h+='<div style="font-size:13px;margin:4px 0;color:#27ae60"><strong>&#128176; Valor Cobrado:</strong> R$ '+parseFloat(o.valor_pedido).toFixed(2)+'</div>';}
+    h+='<div style="text-align:right;color:#667eea;font-weight:bold">R$ '+parseFloat(o.valor_total).toFixed(2)+'</div>';
+    if(o.observacao_entrega){h+='<div style="background:#0a2d1a;border:1px solid #27ae60;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#2ecc71"><strong>&#128203; Obs Motoboy:</strong> '+o.observacao_entrega+'</div>';}
+    h+=buildMotoboyInfo(o);
+    h+=buildTimeline(o);
+    h+='<div style="margin-top:8px">';
+    if(o.status==="em_preparo"&&o.launch_at>0){
+      h+='<div class="timer-preparo"><div class="timer-text"><span>⏳</span><span id="lt-'+o.id+'" style="font-weight:700;font-size:14px">Calculando...</span></div>';
+      h+='<div class="timer-actions"><button class="btn-launch" onclick="launchNow('+o.id+')" style="margin-top:0">🚀 Chamar Agora</button>';
+      h+='<button class="btn-edit-timer" onclick="editPreparoTime('+o.id+','+o.launch_at+')" style="margin-top:0">✏️ Editar Tempo</button></div></div>';
+    }
+    if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="cancelado"){
+      h+='<button class="btn-edit" onclick="openEditModal('+o.id+')">✏️ Editar</button>';
+    }
+    if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="coletado"&&o.status!=="no_cliente"&&o.status!=="cancelado"){
+      h+='<button class="btn-delete" onclick="cancelOrderLoja('+o.id+')" style="background:#e67e22;color:#fff">❌ Cancelar Pedido</button>';
+    }
+    h+='</div></div>';
+    return h;
+  }
+  document.getElementById("orders-list").innerHTML=filtered.map(cardOrder).join("");
+  startPreparoTimers(filtered.filter(function(o){return o.status==="em_preparo"&&o.launch_at>0;}));
 }
 function filterLojaOrders(status){
   _lojaFilter=status;
