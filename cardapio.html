@@ -145,7 +145,7 @@ function addFromBtn(btn){
 }
 function adicionarItem(lid,prod){
   var c=getCarrinho(lid),item=c.find(function(i){return i.id===prod.id;});
-  if(item){item.qty++;}else{c.push({id:prod.id,nome:prod.nome,preco:prod.preco,qty:1,obs:''});}
+  if(item){item.qty++;}else{c.push({id:prod.id,nome:prod.nome,preco:prod.preco,qty:1,obs:prod.obs||''});}
   atualizarBarra(lid);
 }
 function removerItem(lid,pid){
