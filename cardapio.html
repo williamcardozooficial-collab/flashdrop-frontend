@@ -407,9 +407,18 @@ function abrirModalVariacoes(lid, prod){
   document.getElementById('modal-var-body').innerHTML = html;
   document.getElementById('modal-var-total').textContent = 'R$ '+parseFloat(prod.preco).toFixed(2);
   document.getElementById('modal-variacoes').classList.add('ativo');
-  // attach listeners to recalc price
+  // attach listeners to recalc price and enforce max selection
   document.getElementById('modal-var-body').querySelectorAll('input').forEach(function(inp){
-    inp.addEventListener('change', recalcVarTotal);
+    inp.addEventListener('change', function(){
+      if(inp.type==='checkbox'&&_varProd){
+        var gi=parseInt(inp.dataset.gi);
+        var grupo=_varProd.prod.variacoes[gi];
+        var maxQtd=grupo&&grupo.qtd>0?grupo.qtd:999;
+        var checked=document.getElementById('modal-var-body').querySelectorAll('input[type=checkbox][data-gi="'+gi+'"]:checked');
+        if(checked.length>maxQtd){inp.checked=false;alert('Escolha apenas '+maxQtd+' opcao(oes) para: '+grupo.nome);return;}
+      }
+      recalcVarTotal();
+    });
   });
 }
 
