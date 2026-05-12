@@ -249,7 +249,7 @@ async function confirmarAceitarSolic(){
   var min=parseInt(document.getElementById('solic-tempo-preparo').value)||30;
   if(isNaN(min)||min<0){tg.showAlert('Informe um tempo valido.');return;}
   var ord=(_myOrders||[]).find(function(x){return x.id===id;})||{};
-  var taxa=parseFloat(ord.valor_taxa_entrega||0)||parseFloat(ord.valor_pedido||0)||0;
+  var taxa=parseFloat(ord.valor_produtos||0)>0?Math.round(parseFloat(ord.valor_pedido||0)-parseFloat(ord.valor_produtos||0)):parseFloat(ord.valor_total||0)||0;
   var comm=parseFloat((settings&&settings.commission)||0);
   var motoboy=taxa>0?Math.max(0,taxa-comm):0;
   var btn=document.getElementById('btn-confirmar-aceitar-solic');
@@ -257,7 +257,7 @@ async function confirmarAceitarSolic(){
   try{
     var r=await fetch(API+'/orders/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({status:'em_preparo',launch_at:Date.now()+(min*60000),plataforma:'cardapio_aceito',
-    valor_total:taxa,valor_motoboy:motoboy,comissao:comm,distancia_km:ord.distancia_km||null})});
+    valor_total:taxa,valor_motoboy:motoboy,comissao:comm,distancia:ord.distancia||null})});
     if(r.ok){
       fecharModalAceitarSolic();
       tg.showAlert('✅ Pedido aceito! Sera lancado ao sistema em '+min+' min.');
