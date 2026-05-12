@@ -260,6 +260,7 @@ async function confirmarAceitarSolic(){
     valor_total:taxa,valor_motoboy:motoboy,comissao:comm,distancia:ord.distancia||null})});
     if(r.ok){
       fecharModalAceitarSolic();
+      if(taxa>0&&ord.tipo_pagamento!=='dinheiro'){user.credit=parseFloat(user.credit||0)-taxa;await fetch(API+'/users/'+user.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({credit:user.credit})});localStorage.setItem('flashdrop_user',JSON.stringify(user));}
       tg.showAlert('✅ Pedido aceito! Sera lancado ao sistema em '+min+' min.');
       loadData();
       showLojaTab('pedidos');
