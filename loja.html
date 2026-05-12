@@ -209,62 +209,57 @@ var _solicitacoes=[];
 function renderSolicitacoes(){
   var lista=document.getElementById('solic-lista');
   if(!lista)return;
-  // Pedidos desta loja com status "pendente" e origem "cardapio"
-  var solic=(_myOrders||[]).filter(function(o){
-    return o.status==='pendente'||(o.plataforma==='cardapio'&&o.status!=='cancelado'&&o.status!=='entregue'&&o.status!=='retornado'&&o.status!=='aceito'&&o.status!=='na_loja'&&o.status!=='coletado'&&o.status!=='no_cliente'&&o.status!=='em_preparo');
-  });
-  // Atualizar badge
+  var solic=(_myOrders||[]).filter(function(o){return o.status==='pendente';});
   var badge=document.getElementById('badge-solic');
-  if(badge){
-    if(solic.length>0){badge.textContent=solic.length;badge.style.display='inline';}
-    else{badge.style.display='none';}
-  }
-  if(!solic.length){
-    lista.innerHTML='<div style="text-align:center;padding:40px 20px;color:#555"><div style="font-size:40px;margin-bottom:12px">&#128276;</div><div style="font-size:15px;color:#777">Nenhuma solicitacao pendente</div><div style="font-size:12px;color:#555;margin-top:6px">Pedidos do cardapio aparecem aqui para voce aceitar</div></div>';
-    return;
-  }
+  if(badge){if(solic.length>0){badge.textContent=solic.length;badge.style.display='inline';}else{badge.style.display='none';}}
+  if(!solic.length){lista.innerHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">&#128276;</div><div style="color:#777;font-size:15px">Nenhuma solicitacao pendente</div><div style="color:#555;font-size:12px;margin-top:6px">Pedidos do cardapio aparecem aqui</div></div>';return;}
   lista.innerHTML=solic.map(function(o){
     var dt=o.created_at?new Date(o.created_at).toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';
     var taxaEntrega=parseFloat(o.valor_taxa_entrega||0);
     var valorItens=parseFloat(o.valor_produtos||o.valor_pedido||0);
     var totalFinal=taxaEntrega>0?(valorItens+taxaEntrega):parseFloat(o.valor_pedido||0);
     var itensTxt=o.obs_coleta?o.obs_coleta.replace('Itens: ',''):'-';
-    return '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-left:4px solid #f5a623;">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
-      '<div><span style="font-weight:700;font-size:15px">&#128722; Pedido #'+o.id+'</span>'+
-      '<span style="background:#fff3e0;color:#f57c00;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px">NOVO</span></div>'+
-      '<span style="font-size:11px;color:#999">'+dt+'</span></div>'+
-      '<div style="background:#f9f9f9;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px">'+
-      '<div style="margin-bottom:4px"><b>&#128100; Cliente:</b> '+(o.nome_cliente||'—')+'</div>'+
-      '<div style="margin-bottom:4px"><b>&#128241; Telefone:</b> '+(o.telefone_cliente||'—')+'</div>'+
-      '<div style="margin-bottom:4px"><b>&#128205; Entrega:</b> '+(o.endereco_entrega||'—')+'</div>'+
-      (o.complemento_entrega?'<div style="margin-bottom:4px"><b>&#128421; Complemento:</b> '+o.complemento_entrega+'</div>':'')+
-      (o.obs_entrega_loja?'<div style="margin-bottom:4px;color:#888"><b>&#128203; Obs entrega:</b> '+o.obs_entrega_loja+'</div>':'')+
-      '</div>'+
-      '<div style="background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px">'+
-      '<div style="font-weight:700;color:#f57c00;margin-bottom:6px">&#128214; Itens do pedido</div>'+
-      '<div style="color:#555;line-height:1.6;font-size:12px">'+ itensTxt +'</div>'+
-      '</div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>Itens</span><span>R$ '+(valorItens>0?valorItens.toFixed(2):'—')+'</span></div>'+
-      (taxaEntrega>0?'<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:#666"><span>Taxa de entrega</span><span>R$ '+taxaEntrega.toFixed(2)+'</span></div>':'')+
-      '<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:#1a1a1a;border-top:1px solid #eee;padding-top:8px;margin-top:4px"><span>Total</span><span style="color:#27ae60">R$ '+totalFinal.toFixed(2)+'</span></div>'+
-      '<div style="margin-top:6px;font-size:12px;color:#888"><b>&#128179; Pagamento:</b> '+(o.tipo_pagamento||'—')+'</div>'+
-      '<div style="display:flex;gap:10px;margin-top:14px">'+
-      '<button onclick="aceitarSolicitacao('+o.id+')" style="flex:1;padding:12px;background:#1a472a;border:2px solid #27ae60;border-radius:10px;color:#27ae60;font-size:14px;font-weight:700;cursor:pointer">&#x2705; Aceitar</button>'+
-      '<button onclick="recusarSolicitacao('+o.id+')" style="flex:1;padding:12px;background:#fff;border:2px solid #e53935;border-radius:10px;color:#e53935;font-size:14px;font-weight:700;cursor:pointer">&#x274C; Recusar</button>'+
-      '</div></div>';
+    var pagLabel=({pix:'PIX',dinheiro:'Dinheiro',cartao_credito:'Cartao Credito',cartao_debito:'Cartao Debito'})[o.tipo_pagamento]||(o.tipo_pagamento||'—');
+    var card='<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #f5a623;">';
+    card+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><span style="font-weight:700;font-size:15px">&#128722; Pedido #'+o.id+'</span><span style="background:#fff3e0;color:#f57c00;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px">NOVO</span></div><span style="font-size:11px;color:#999">'+dt+'</span></div>';
+    card+='<div style="background:#f9f9f9;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px"><div style="margin-bottom:4px"><b>&#128100; Cliente:</b> '+(o.nome_cliente||'—')+'</div><div style="margin-bottom:4px"><b>&#128241; Telefone:</b> '+(o.telefone_cliente||'—')+'</div><div><b>&#128179; Pagamento:</b> '+pagLabel+'</div></div>';
+    card+='<div style="background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-weight:700;color:#f57c00;margin-bottom:6px;font-size:13px">&#128214; Itens</div><div style="color:#555;line-height:1.7;font-size:12px">'+ itensTxt +'</div></div>';
+    card+='<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:10px">';
+    if(valorItens>0)card+='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:#666">Itens</span><span>R$ '+valorItens.toFixed(2)+'</span></div>';
+    if(taxaEntrega>0)card+='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:#666">Taxa entrega</span><span>R$ '+taxaEntrega.toFixed(2)+'</span></div>';
+    card+='<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid #eee;padding-top:8px;margin-top:4px"><span>Total</span><span style="color:#27ae60">R$ '+totalFinal.toFixed(2)+'</span></div></div>';
+    card+='<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#795548;line-height:1.5">&#128274; <b>Endereco oculto.</b> Ao aceitar, o endereco sera revelado e o pedido entra no sistema FlashDrop.</div>';
+    card+='<div style="display:flex;gap:10px"><button onclick="aceitarSolicitacao('+o.id+')" style="flex:1;padding:13px;background:#1a472a;border:2px solid #27ae60;border-radius:10px;color:#27ae60;font-size:14px;font-weight:700;cursor:pointer">&#x2705; Aceitar</button><button onclick="recusarSolicitacao('+o.id+')" style="flex:1;padding:13px;background:#fff;border:2px solid #e53935;border-radius:10px;color:#e53935;font-size:14px;font-weight:700;cursor:pointer">&#x274C; Recusar</button></div></div>';
+    return card;
   }).join('');
 }
 
-async function aceitarSolicitacao(id){
-  if(!confirm('Aceitar o pedido #'+id+'? Ele sera lancado no sistema.'))return;
+function aceitarSolicitacao(id){
+  document.getElementById('modal-aceitar-solic-id').value=id;
+  var delayMin=settings.launch_delay_minutes||30;
+  document.getElementById('solic-tempo-preparo').value=delayMin;
+  document.getElementById('modal-aceitar-solic').style.display='flex';
+}
+function fecharModalAceitarSolic(){
+  document.getElementById('modal-aceitar-solic').style.display='none';
+}
+async function confirmarAceitarSolic(){
+  var id=parseInt(document.getElementById('modal-aceitar-solic-id').value);
+  var min=parseInt(document.getElementById('solic-tempo-preparo').value)||30;
+  if(isNaN(min)||min<0){tg.showAlert('Informe um tempo valido.');return;}
+  var btn=document.getElementById('btn-confirmar-aceitar-solic');
+  btn.disabled=true;btn.textContent='Aceitando...';
   try{
-    var delay=settings.launch_delay_minutes||0;
     var r=await fetch(API+'/orders/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({status:'em_preparo',launch_at:Date.now()+(delay*60000),plataforma:'cardapio_aceito'})});
-    if(r.ok){tg.showAlert('✅ Pedido aceito! Lancado no sistema.');loadData();showLojaTab('pedidos');}
-    else{tg.showAlert('Erro ao aceitar pedido.');}
+      body:JSON.stringify({status:'em_preparo',launch_at:Date.now()+(min*60000),plataforma:'cardapio_aceito'})});
+    if(r.ok){
+      fecharModalAceitarSolic();
+      tg.showAlert('✅ Pedido aceito! Sera lancado ao sistema em '+min+' min.');
+      loadData();
+      showLojaTab('pedidos');
+    }else{tg.showAlert('Erro ao aceitar pedido.');}
   }catch(e){tg.showAlert('Erro: '+e.message);}
+  btn.disabled=false;btn.textContent='✅ Confirmar Aceite';
 }
 
 async function recusarSolicitacao(id){
@@ -387,6 +382,24 @@ if (!window._pagRestLojaStarted) {
   checkPagamentoPendenteLoja();
 }
 </script>
+<div id="modal-aceitar-solic" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:3000;align-items:center;justify-content:center;padding:20px">
+<div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:400px">
+  <h3 style="color:#1a472a;margin-bottom:6px;font-size:16px">&#x2705; Aceitar Pedido</h3>
+  <p style="color:#555;font-size:13px;margin-bottom:16px">Defina o tempo de preparo. O motoboy sera chamado automaticamente apos esse tempo.</p>
+  <div style="margin-bottom:16px">
+    <label style="font-size:12px;font-weight:700;color:#666;display:block;margin-bottom:6px">&#9200; Tempo de preparo (minutos)</label>
+    <input id="solic-tempo-preparo" type="number" min="1" value="30" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:18px;font-weight:700;text-align:center">
+  </div>
+  <div style="background:#f1f8f1;border:1px solid #c8e6c9;border-radius:8px;padding:10px;margin-bottom:16px;font-size:12px;color:#2e7d32">
+    &#128274; Ao confirmar, o endereco completo do cliente sera visivel no pedido e ele entrara na fila de entrega FlashDrop.
+  </div>
+  <input type="hidden" id="modal-aceitar-solic-id">
+  <div style="display:flex;gap:10px">
+    <button onclick="fecharModalAceitarSolic()" style="flex:1;padding:12px;background:#f5f5f5;border:1px solid #ddd;border-radius:10px;font-size:14px;cursor:pointer;color:#666">Cancelar</button>
+    <button id="btn-confirmar-aceitar-solic" onclick="confirmarAceitarSolic()" style="flex:1;padding:12px;background:#1a472a;border:none;border-radius:10px;color:#4caf50;font-size:14px;font-weight:700;cursor:pointer">&#x2705; Confirmar Aceite</button>
+  </div>
+</div>
+</div>
 <div id="pag-rest-loja-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:99999;align-items:center;justify-content:center;flex-direction:column;">
   <div style="background:#1a0a00;border:3px solid #ff6600;border-radius:14px;padding:28px;width:92%;max-width:400px;text-align:center;">
     <div style="font-size:13px;font-weight:700;color:#ff6600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">&#x26A0;&#xFE0F; SOLICITAÇÃO URGENTE</div>
