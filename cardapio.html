@@ -132,9 +132,16 @@ function getCarrinho(lid){if(!carrinho[lid])carrinho[lid]=[];return carrinho[lid
 
 function addFromBtn(btn){
   var lid=parseInt(btn.dataset.lid),id=parseInt(btn.dataset.id),nome=btn.dataset.nome,preco=parseFloat(btn.dataset.preco);
-  adicionarItem(lid,{id:id,nome:nome,preco:preco});
-  btn.textContent='Adicionado!';
-  setTimeout(function(){btn.textContent='+ Adicionar';},900);
+  var varStr=btn.dataset.variacoes||'';
+  var variacoes=[];
+  try{if(varStr)variacoes=JSON.parse(varStr);}catch(e){}
+  if(variacoes&&variacoes.length>0){
+    abrirModalVariacoes(lid,{id:id,nome:nome,preco:preco,variacoes:variacoes});
+  }else{
+    adicionarItem(lid,{id:id,nome:nome,preco:preco,variacoes:[],opcoesEscolhidas:[]});
+    btn.textContent='Adicionado!';
+    setTimeout(function(){btn.textContent='+ Adicionar';},900);
+  }
 }
 function adicionarItem(lid,prod){
   var c=getCarrinho(lid),item=c.find(function(i){return i.id===prod.id;});
@@ -364,6 +371,90 @@ function renderErro(msg){
 }
 
 /* ---- INIT ---- */
+/* ---- MODAL DE VARIACOES ---- */
+var _varProd = null;
+var _varEscolhas = {}; // grupoIdx -> [opcaoIdx, ...]
+
+function abrirModalVariacoes(lid, prod){
+  _varProd = {lid:lid, prod:prod};
+  _varEscolhas = {};
+  var variacoes = prod.variacoes || [];
+  var html = '<div style="font-size:16px;font-weight:700;color:#f5a623;margin-bottom:4px">'+esc(prod.nome)+'</div>';
+  html += '<div style="font-size:13px;color:#888;margin-bottom:14px">Preco base: R$ '+parseFloat(prod.preco).toFixed(2)+'</div>';
+  variacoes.forEach(function(grupo, gi){
+    var obrig = grupo.obrigatorio ? ' <span style="color:#f5a623;font-size:11px">(obrigatorio)</span>':'';
+    var qtdLabel = grupo.qtd > 0 ? 'Escolha '+grupo.qtd : 'Escolha quantas quiser';
+    html += '<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">'+esc(grupo.nome)+obrig+'</div>';
+    html += '<div style="font-size:11px;color:#aaa;margin-bottom:8px">'+qtdLabel+'</div>';
+    (grupo.opcoes||[]).forEach(function(op, oi){
+      var addPreco = parseFloat(op.preco||0);
+      var precoLabel = addPreco > 0 ? ' <span style="color:#f5a623">+R$ '+addPreco.toFixed(2)+'</span>' : '';
+      html += '<label style="display:flex;align-items:center;gap:10px;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer;">';
+      if(grupo.qtd===1){
+        html += '<input type="radio" name="var-grupo-'+gi+'" data-gi="'+gi+'" data-oi="'+oi+'" data-preco="'+addPreco+'" style="accent-color:#f5a623;width:16px;height:16px;">';
+      } else {
+        html += '<input type="checkbox" name="var-grupo-'+gi+'" data-gi="'+gi+'" data-oi="'+oi+'" data-preco="'+addPreco+'" style="accent-color:#f5a623;width:16px;height:16px;">';
+      }
+      html += '<span>'+esc(op.nome)+'</span>'+precoLabel+'</label>';
+    });
+    html += '</div>';
+  });
+  document.getElementById('modal-var-body').innerHTML = html;
+  document.getElementById('modal-var-total').textContent = 'R$ '+parseFloat(prod.preco).toFixed(2);
+  document.getElementById('modal-variacoes').classList.add('ativo');
+  // attach listeners to recalc price
+  document.getElementById('modal-var-body').querySelectorAll('input').forEach(function(inp){
+    inp.addEventListener('change', recalcVarTotal);
+  });
+}
+
+function recalcVarTotal(){
+  if(!_varProd)return;
+  var base = parseFloat(_varProd.prod.preco)||0;
+  var extra = 0;
+  document.getElementById('modal-var-body').querySelectorAll('input:checked').forEach(function(inp){
+    extra += parseFloat(inp.dataset.preco||0);
+  });
+  document.getElementById('modal-var-total').textContent = 'R$ '+(base+extra).toFixed(2);
+}
+
+function fecharModalVariacoes(){
+  document.getElementById('modal-variacoes').classList.remove('ativo');
+  _varProd = null;
+  _varEscolhas = {};
+}
+
+function confirmarVariacoes(){
+  if(!_varProd)return;
+  var lid = _varProd.lid;
+  var prod = _varProd.prod;
+  var variacoes = prod.variacoes || [];
+  // Validate obrigatorio
+  for(var gi=0;gi<variacoes.length;gi++){
+    var grupo = variacoes[gi];
+    if(!grupo.obrigatorio)continue;
+    var checked = document.getElementById('modal-var-body').querySelectorAll('input[data-gi="'+gi+'"]:checked');
+    if(checked.length===0){alert('Selecione uma opcao para: '+grupo.nome);return;}
+  }
+  // Build opcoes escolhidas text and extra price
+  var extra = 0;
+  var escolhas = [];
+  document.getElementById('modal-var-body').querySelectorAll('input:checked').forEach(function(inp){
+    var gi = parseInt(inp.dataset.gi);
+    var oi = parseInt(inp.dataset.oi);
+    var grp = variacoes[gi];
+    var op = grp && grp.opcoes && grp.opcoes[oi];
+    if(op){
+      extra += parseFloat(inp.dataset.preco||0);
+      escolhas.push(grp.nome+': '+op.nome+(parseFloat(op.preco||0)>0?' (+R$'+parseFloat(op.preco).toFixed(2)+')':''));
+    }
+  });
+  var precoFinal = parseFloat(prod.preco) + extra;
+  var obsVar = escolhas.length > 0 ? '['+escolhas.join(' | ')+']' : '';
+  adicionarItem(lid,{id:prod.id,nome:prod.nome,preco:precoFinal,obs:obsVar,variacoes:variacoes,opcoesEscolhidas:escolhas});
+  fecharModalVariacoes();
+}
+
 async function init(){
   var id=getParam('id');if(!id){renderErro('Nenhuma loja especificada.');return;}
   try{
@@ -395,7 +486,7 @@ async function loadCardapio(lid){
         (p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
         '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
         '</div></div>'+
-        '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
+        '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" data-variacoes="'+esc(JSON.stringify(p.variacoes||[]))+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
         '</div>';
     }
     if(Array.isArray(cats)&&cats.length){
@@ -528,5 +619,18 @@ document.addEventListener('input',function(e){
 </div>
 </div>
 
+
+<!-- Modal Variacoes -->
+<div id="modal-variacoes" class="modal-overlay" onclick="if(event.target===this)fecharModalVariacoes()">
+<div class="modal-box">
+<div class="modal-title">Personalizar pedido <button class="modal-close" onclick="fecharModalVariacoes()">&#x2715;</button></div>
+<div id="modal-var-body"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:2px solid #2a2a2a;margin-top:8px">
+<span style="color:#aaa;font-size:14px">Total:</span>
+<span id="modal-var-total" style="font-size:18px;font-weight:700;color:#f5a623">R$ 0,00</span>
+</div>
+<button class="btn-finalizar" onclick="confirmarVariacoes()" style="margin-top:0">&#10003; Adicionar ao carrinho</button>
+</div>
+</div>
 </body>
 </html>
