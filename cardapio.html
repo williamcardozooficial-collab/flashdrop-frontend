@@ -270,11 +270,14 @@ async function calcularTaxaEntrega(){
     taxa=Math.ceil(taxa);
     taxaCalculada=taxa;
     distanciaCalculada=km;
+    var pag=document.getElementById('ch-pag').value;
+    var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+    var taxaFinal=isCartao?taxa*2:taxa;
     var lid=lojaGlobal.id;
     var totalItens=totalCarrinho(lid);
-    var totalFinal=totalItens+taxa;
+    var totalFinal=totalItens+taxaFinal;
     document.getElementById('taxa-distancia').textContent=km.toFixed(1)+' km';
-    document.getElementById('taxa-valor').textContent='R$ '+taxa.toFixed(2);
+    document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
     document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
     document.getElementById('bloco-taxa-resultado').style.display='block';
     statusEl.innerHTML='';
@@ -311,7 +314,9 @@ async function finalizarPedido(){
   var endCompleto=rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
   var itens=c.map(function(i){var obs=i.obs?('['+i.obs+']'):'';return i.qty+'x '+i.nome+obs+' (R$'+i.preco.toFixed(2)+')';}).join(' | ');
   var totalItens=totalCarrinho(lid);
-  var totalFinal=totalItens+taxaCalculada;
+  var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+  var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
+  var totalFinal=totalItens+taxaFinal;
   var btn=document.getElementById('btn-finalizar');
   btn.disabled=true;btn.textContent='Enviando pedido...';
   try{
@@ -325,10 +330,10 @@ async function finalizarPedido(){
         cobrar_cliente:'sim',
         valor_pedido:totalItens,
         valor_produtos:totalItens,
-        valor_taxa_entrega:taxaCalculada,
+        valor_taxa_entrega:taxaFinal,
         distancia:Math.round(distanciaCalculada*10)/10,
         tipo_pagamento:pag,
-        valor_total:taxaCalculada,valor_motoboy:0,comissao:0,valor_produtos:totalItens,
+        valor_total:taxaFinal,valor_motoboy:0,comissao:0,valor_produtos:totalItens,
         obs_coleta:'Itens: '+itens,
         obs_entrega_loja:obs_entrega||null,
         plataforma:'cardapio',
@@ -453,6 +458,18 @@ function confirmarVariacoes(){
   var obsVar = escolhas.length > 0 ? '['+escolhas.join(' | ')+']' : '';
   adicionarItem(lid,{id:prod.id,nome:prod.nome,preco:precoFinal,obs:obsVar,variacoes:variacoes,opcoesEscolhidas:escolhas});
   fecharModalVariacoes();
+}
+
+function atualizarTaxaCartao(){
+if(taxaCalculada===0)return;
+var pag=document.getElementById('ch-pag').value;
+var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
+var lid=lojaGlobal?lojaGlobal.id:null;
+var totalItens=lid?totalCarrinho(lid):0;
+var totalFinal=totalItens+taxaFinal;
+document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
+document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
 }
 
 async function init(){
@@ -594,11 +611,10 @@ document.addEventListener('input',function(e){
 <h4>&#128181; Pagamento</h4>
 <div class="form-group">
 <label>Forma de pagamento <span class="req">*</span></label>
-<select id="ch-pag">
+<select id="ch-pag" onchange="atualizarTaxaCartao()">
 <option value="pix">PIX</option>
 <option value="dinheiro">Dinheiro</option>
-<option value="cartao_credito">Cartao de Credito</option>
-<option value="cartao_debito">Cartao de Debito</option>
+<option value="cartao_credito">Maquina de Cartao (cobra ida+volta)</option>
 </select>
 </div>
 </div>
