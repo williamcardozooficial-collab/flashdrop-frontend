@@ -216,9 +216,9 @@ function renderSolicitacoes(){
   if(!solic.length){lista.innerHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">&#128276;</div><div style="color:#777;font-size:15px">Nenhuma solicitacao pendente</div><div style="color:#555;font-size:12px;margin-top:6px">Pedidos do cardapio aparecem aqui</div></div>';return;}
   lista.innerHTML=solic.map(function(o){
     var dt=o.created_at?new Date(o.created_at).toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';
-    var taxaEntrega=parseFloat(o.valor_taxa_entrega||0);
+    var taxaEntrega=parseFloat(o.valor_total||0);
     var valorItens=parseFloat(o.valor_produtos||o.valor_pedido||0);
-    var totalFinal=taxaEntrega>0?(valorItens+taxaEntrega):parseFloat(o.valor_pedido||0);
+    var totalFinal=valorItens+taxaEntrega;
 
     var pagLabel=({pix:'PIX',dinheiro:'Dinheiro',cartao_credito:'Cartao Credito',cartao_debito:'Cartao Debito'})[o.tipo_pagamento]||(o.tipo_pagamento||'—');
     var card='<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #f5a623;">';
@@ -226,10 +226,10 @@ function renderSolicitacoes(){
     card+='<div style="background:#f9f9f9;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px"><div style="margin-bottom:4px"><b>&#128100; Cliente:</b> '+(o.nome_cliente||'—')+'</div><div style="margin-bottom:4px"><b>&#128241; Telefone:</b> '+(o.telefone_cliente||'—')+'</div><div><b>&#128179; Pagamento:</b> '+pagLabel+'</div></div>';
 
     card+='<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:10px">';
-    if(valorItens>0)card+='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:#666">Itens</span><span>R$ '+valorItens.toFixed(2)+'</span></div>';
-    if(taxaEntrega>0)card+='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:#666">Taxa entrega</span><span>R$ '+taxaEntrega.toFixed(2)+'</span></div>';
+    if(valorItens>0)card+='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:#666">Valor dos itens</span><span>R$ '+valorItens.toFixed(2)+'</span></div>';
+    if(taxaEntrega>0)card+='<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:#666">Taxa de entrega</span><span>R$ '+taxaEntrega.toFixed(2)+'</span></div>';
     card+='<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid #eee;padding-top:8px;margin-top:4px"><span>Total</span><span style="color:#27ae60">R$ '+totalFinal.toFixed(2)+'</span></div></div>';
-    card+='<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#795548;line-height:1.5">&#128274; <b>Endereco oculto.</b> Ao aceitar, o endereco sera revelado e o pedido entra no sistema FlashDrop.</div>';
+    '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#795548;line-height:1.5">&#128274; <b>Endereco oculto.</b> Ao aceitar, o endereco sera revelado e o pedido entra no sistema FlashDrop.</div>';
     card+='<div style="display:flex;gap:10px"><button onclick="aceitarSolicitacao('+o.id+')" style="flex:1;padding:13px;background:#1a472a;border:2px solid #27ae60;border-radius:10px;color:#27ae60;font-size:14px;font-weight:700;cursor:pointer">&#x2705; Aceitar</button><button onclick="recusarSolicitacao('+o.id+')" style="flex:1;padding:13px;background:#fff;border:2px solid #e53935;border-radius:10px;color:#e53935;font-size:14px;font-weight:700;cursor:pointer">&#x274C; Recusar</button></div></div>';
     return card;
   }).join('');
