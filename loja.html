@@ -148,6 +148,7 @@ function renderLojaOrders(orders){
     h+='<div style="font-size:13px;margin:4px 0"><strong>&#128241; Tel:</strong> '+(o.telefone_cliente||"—")+'</div>';
     h+='<div style="font-size:13px;margin:4px 0"><strong>&#128205; Entrega:</strong> '+(o.endereco_entrega||"—")+(o.complemento_entrega?" — "+o.complemento_entrega:"")+'</div>';
     if(o.obs_entrega_loja){h+='<div style="font-size:12px;margin:2px 0;color:#888"><strong>&#128203; Obs:</strong> '+o.obs_entrega_loja+'</div>';}
+    if(o.obs_coleta&&(o.plataforma==='cardapio_aceito'||o.plataforma==='cardapio')){h+='<div style="background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:8px 10px;margin:4px 0;font-size:12px;color:#7c5a00"><strong>&#128214; Itens do pedido:</strong> '+esc(o.obs_coleta.replace('Itens: ',''))+'</div>';}
     var pagLabel={dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX"};
     h+='<div style="font-size:13px;margin:4px 0"><strong>&#128179; Pagamento:</strong> '+(pagLabel[o.tipo_pagamento]||o.tipo_pagamento||"—")+'</div>';
     if(o.tipo_pagamento==="dinheiro"&&o.valor_pedido>0){h+='<div style="font-size:13px;margin:4px 0;color:#27ae60"><strong>&#128176; Valor Cobrado:</strong> R$ '+parseFloat(o.valor_pedido).toFixed(2)+'</div>';}
@@ -247,11 +248,16 @@ async function confirmarAceitarSolic(){
   var id=parseInt(document.getElementById('modal-aceitar-solic-id').value);
   var min=parseInt(document.getElementById('solic-tempo-preparo').value)||30;
   if(isNaN(min)||min<0){tg.showAlert('Informe um tempo valido.');return;}
+  var ord=(_myOrders||[]).find(function(x){return x.id===id;})||{};
+  var taxa=parseFloat(ord.valor_taxa_entrega||0)||parseFloat(ord.valor_pedido||0)||0;
+  var comm=parseFloat((settings&&settings.commission)||0);
+  var motoboy=taxa>0?Math.max(0,taxa-comm):0;
   var btn=document.getElementById('btn-confirmar-aceitar-solic');
   btn.disabled=true;btn.textContent='Aceitando...';
   try{
     var r=await fetch(API+'/orders/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({status:'em_preparo',launch_at:Date.now()+(min*60000),plataforma:'cardapio_aceito'})});
+    body:JSON.stringify({status:'em_preparo',launch_at:Date.now()+(min*60000),plataforma:'cardapio_aceito',
+    valor_total:taxa,valor_motoboy:motoboy,comissao:comm,distancia_km:ord.distancia_km||null})});
     if(r.ok){
       fecharModalAceitarSolic();
       tg.showAlert('✅ Pedido aceito! Sera lancado ao sistema em '+min+' min.');
