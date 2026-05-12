@@ -121,10 +121,10 @@ async function editPreparoTime(orderId, currentLaunchAt) {
 } async function loadAvisosLoja(){try{var r=await fetch(API+'/notices?target=loja');var list=await r.json();var banner=document.getElementById('avisos-banner');if(!list||list.length===0){banner.style.display='none';return;}banner.style.display='block';banner.innerHTML='<div style="font-size:12px;color:#ffcc00;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📢 Avisos</div>'+list.map(function(n){return'<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333;last-child:{border:none}">'+'<div style="font-weight:600;color:#fff;font-size:13px;margin-bottom:3px">'+n.title+'</div>'+'<div style="color:#ccc;font-size:12px;line-height:1.4">'+n.body+'</div>'+'</div>';}).join('');}catch(e){}}
 
 function renderLojaOrders(orders){
-  var solic=orders.filter(function(o){return o.status==="pendente";});
+  var solic=orders.filter(function(o){return o.plataforma==='cardapio'&&o.status!=='cancelado';});
   var badge=document.getElementById("badge-solic");
   if(badge){if(solic.length>0){badge.textContent=solic.length;badge.style.display="inline";}else{badge.style.display="none";}}
-  var ordersParaPedidos=orders.filter(function(o){return o.status!=="pendente";});
+  var ordersParaPedidos=orders.filter(function(o){return !(o.plataforma==='cardapio'&&o.status!=='cancelado');});
   var statusLabels={em_preparo:"🔄 Em Preparo",pendente:"⏳ Pendente",aceito:"✅ Aceito",na_loja:"🏪 Na Loja",coletado:"📦 Coletado",no_cliente:"🏠 No Cliente",entregue:"🎉 Entregue",cancelado:"❌ Cancelado",retornado:"🔄 Retornado"};
   var statuses=["todos","em_preparo","aceito","na_loja","coletado","no_cliente","entregue","cancelado"];
   var filterBar=document.getElementById("order-filter-bar");
@@ -209,7 +209,7 @@ var _solicitacoes=[];
 function renderSolicitacoes(){
   var lista=document.getElementById('solic-lista');
   if(!lista)return;
-  var solic=(_myOrders||[]).filter(function(o){return o.status==='pendente';});
+  var solic=(_myOrders||[]).filter(function(o){return o.plataforma==='cardapio'&&o.status!=='cancelado';});
   var badge=document.getElementById('badge-solic');
   if(badge){if(solic.length>0){badge.textContent=solic.length;badge.style.display='inline';}else{badge.style.display='none';}}
   if(!solic.length){lista.innerHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">&#128276;</div><div style="color:#777;font-size:15px">Nenhuma solicitacao pendente</div><div style="color:#555;font-size:12px;margin-top:6px">Pedidos do cardapio aparecem aqui</div></div>';return;}
