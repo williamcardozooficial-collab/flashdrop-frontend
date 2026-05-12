@@ -316,7 +316,7 @@ async function finalizarPedido(){
         nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
         cod_pedido:'FD-'+Date.now().toString().slice(-6),
         cobrar_cliente:'sim',
-        valor_pedido:totalFinal,
+        valor_pedido:totalItens,
         valor_produtos:totalItens,
         valor_taxa_entrega:taxaCalculada,
         distancia:Math.round(distanciaCalculada*10)/10,
