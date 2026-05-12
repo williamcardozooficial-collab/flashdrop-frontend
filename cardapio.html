@@ -260,7 +260,7 @@ async function calcularTaxaEntrega(){
     var pKm=parseFloat(s.price_per_km)||1.8;
     var minFee=parseFloat(s.min_fee)||10;
     var taxa=Math.max(minFee,arrancada+km*pKm);
-    taxa=Math.round(taxa*100)/100;
+    taxa=Math.ceil(taxa);
     taxaCalculada=taxa;
     distanciaCalculada=km;
     var lid=lojaGlobal.id;
