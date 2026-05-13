@@ -172,7 +172,7 @@ h+='<div style="font-size:13px;margin:4px 0"><strong>&#128100; Cliente:</strong>
     var pagLabel={dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX"};
     h+='<div style="font-size:13px;margin:4px 0"><strong>&#128179; Pagamento:</strong> '+(pagLabel[o.tipo_pagamento]||o.tipo_pagamento||"—")+'</div>';
     if(o.tipo_pagamento==="dinheiro"&&o.valor_pedido>0){h+='<div style="font-size:13px;margin:4px 0;color:#27ae60"><strong>&#128176; Valor Cobrado:</strong> R$ '+parseFloat(o.valor_pedido).toFixed(2)+'</div>';}
-    h+='<div style="text-align:right;color:#667eea;font-weight:bold">R$ '+parseFloat(o.valor_total).toFixed(2)+'</div>';
+    h+='<div style="text-align:right;font-size:12px"><span style="color:#888">&#128757; Taxa de entrega:</span> <strong style="color:#667eea">R$ '+parseFloat(o.valor_total).toFixed(2)+'</strong></div>';
     if(o.observacao_entrega){h+='<div style="background:#0a2d1a;border:1px solid #27ae60;border-radius:8px;padding:8px;margin:6px 0;font-size:12px;color:#2ecc71"><strong>&#128203; Obs Motoboy:</strong> '+o.observacao_entrega+'</div>';}
     h+=buildMotoboyInfo(o);
     h+=buildTimeline(o);
