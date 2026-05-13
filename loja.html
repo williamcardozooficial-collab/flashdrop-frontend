@@ -162,12 +162,13 @@ function renderLojaOrders(orders){
     var h="";
     h+='<div class="order-card">';
     h+='<div class="order-header"><strong>Pedido #'+o.id+'</strong><span class="status-badge status-'+o.status+'">'+( sL[o.status]||o.status)+'</span></div>';
-    if(o.delivery_code){h+='<div style="background:#1a2a1a;border:1px solid #4caf50;border-radius:6px;padding:6px 10px;margin:6px 0;text-align:center"><span style="color:#4caf50;font-size:11px;font-weight:700">&#128273; Código de Entrega</span><br><span style="color:#fff;font-size:22px;font-weight:900;letter-spacing:6px">'+o.delivery_code+'</span></div>';}
-    h+='<div style="font-size:13px;margin:4px 0"><strong>&#128100; Cliente:</strong> '+(o.nome_cliente||"—")+'</div>';
-    h+='<div style="font-size:13px;margin:4px 0"><strong>&#128241; Tel:</strong> '+(o.telefone_cliente||"—")+'</div>';
-    h+='<div style="font-size:13px;margin:4px 0"><strong>&#128205; Entrega:</strong> '+(o.endereco_entrega||"—")+(o.complemento_entrega?" — "+o.complemento_entrega:"")+'</div>';
-    if(o.obs_entrega_loja){h+='<div style="font-size:12px;margin:2px 0;color:#888"><strong>&#128203; Obs:</strong> '+o.obs_entrega_loja+'</div>';}
-    if(o.obs_coleta&&(o.plataforma==='cardapio_aceito'||o.plataforma==='cardapio')){h+='<div style="background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:8px 10px;margin:4px 0;font-size:12px;color:#7c5a00"><strong>&#128214; Itens do pedido:</strong> '+esc(o.obs_coleta.replace('Itens: ',''))+'</div>';}
+    if(o.delivery_code&&o.status!=='cancelado'){h+='<div style="background:#1a2a1a;border:1px solid #4caf50;border-radius:6px;padding:6px 10px;margin:6px 0;text-align:center"><span style="color:#4caf50;font-size:11px;font-weight:700">&#128273; Código de Entrega</span><br><span style="color:#fff;font-size:22px;font-weight:900;letter-spacing:6px">'+o.delivery_code+'</span></div>';}
+    if(o.status==='cancelado'){h+='<div style="background:#2a0000;border:1px solid #cc0000;border-radius:8px;padding:8px 12px;margin:6px 0;text-align:center;font-size:12px;color:#ff6b6b">🔒 Dados do cliente ocultos — pedido cancelado</div>';}
+h+='<div style="font-size:13px;margin:4px 0"><strong>&#128100; Cliente:</strong> '+(o.status==='cancelado'?'<span style="color:#888;font-style:italic">Oculto</span>':(o.nome_cliente||"—"))+'</div>';
+    h+=(o.status!=='cancelado'?'<div style="font-size:13px;margin:4px 0"><strong>&#128241; Tel:</strong> '+(o.telefone_cliente||"—")+'</div>':'');
+    h+=(o.status!=='cancelado'?'<div style="font-size:13px;margin:4px 0"><strong>&#128205; Entrega:</strong> '+(o.endereco_entrega||"—")+(o.complemento_entrega?" — "+o.complemento_entrega:"")+'</div>':'');
+    if(o.obs_entrega_loja&&o.status!=='cancelado'){h+='<div style="font-size:12px;margin:2px 0;color:#888"><strong>&#128203; Obs:</strong> '+o.obs_entrega_loja+'</div>';}
+    if(o.obs_coleta&&o.status!=='cancelado'&&(o.plataforma==='cardapio_aceito'||o.plataforma==='cardapio')){h+='<div style="background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:8px 10px;margin:4px 0;font-size:12px;color:#7c5a00"><strong>&#128214; Itens do pedido:</strong> '+esc(o.obs_coleta.replace('Itens: ',''))+'</div>';}
     var pagLabel={dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX"};
     h+='<div style="font-size:13px;margin:4px 0"><strong>&#128179; Pagamento:</strong> '+(pagLabel[o.tipo_pagamento]||o.tipo_pagamento||"—")+'</div>';
     if(o.tipo_pagamento==="dinheiro"&&o.valor_pedido>0){h+='<div style="font-size:13px;margin:4px 0;color:#27ae60"><strong>&#128176; Valor Cobrado:</strong> R$ '+parseFloat(o.valor_pedido).toFixed(2)+'</div>';}
