@@ -369,6 +369,16 @@ function renderLoja(loja){
     '<main><div id="cardapio-section"></div></main>';
   document.title=esc(loja.name||'Loja')+' - FlashDrop Delivery';
 }
+function renderLojaFechada(loja){
+  var nome=loja.name||loja.nome||'';
+  document.getElementById('page-content').innerHTML=
+    '<div style="text-align:center;padding:60px 20px;max-width:400px;margin:0 auto">'+
+    '<div style="font-size:72px;margin-bottom:16px">&#128274;</div>'+
+    '<h2 style="color:#fff;font-size:22px;margin-bottom:10px">'+nome+' esta fechada</h2>'+
+    '<p style="color:#aaa;font-size:15px;line-height:1.5;margin-bottom:24px">No momento nao estamos aceitando pedidos. Volte mais tarde!</p>'+
+    '<div style="background:#1a1a00;border:1px solid #ffcc00;border-radius:12px;padding:16px;font-size:14px;color:#ffcc00;">&#9200; A loja esta offline no momento</div>'+
+    '</div>';
+}
 function renderErro(msg){
   document.getElementById('page-content').innerHTML=
     '<div class="error-state"><div class="icon">&#9888;</div><h3>Loja nao encontrada</h3><p>'+esc(msg)+'</p>'+
@@ -487,6 +497,7 @@ async function init(){
     var resp=await fetch(API+'/users');var users=await resp.json();
     var loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});
     if(!loja){renderErro('Loja nao encontrada.');return;}
+    if(!loja.loja_online){renderLojaFechada(loja);return;}
     renderLoja(loja);loadCardapio(loja.id);
   }catch(e){renderErro('Erro ao carregar. Tente novamente.');}
 }
