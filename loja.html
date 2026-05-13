@@ -232,7 +232,7 @@ function renderSolicitacoes(){
     '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#795548;line-height:1.5">&#128274; <b>Endereco oculto.</b> Ao aceitar, o endereco sera revelado e o pedido entra no sistema FlashDrop.</div>';
     var saldoAtual=parseFloat(user.credit||0);
 var taxaNecessaria=taxaEntrega>0?taxaEntrega:totalFinal;
-var semSaldo=saldoAtual<taxaNecessaria;
+var semSaldo=o.tipo_pagamento!=='dinheiro'&&saldoAtual<taxaNecessaria;
 if(semSaldo){
 card+='<div style="background:#4a0000;border:1px solid #cc0000;border-radius:10px;padding:12px;margin-bottom:10px;text-align:center"><div style="color:#ff6b6b;font-size:13px;font-weight:700;margin-bottom:4px">&#128683; Saldo insuficiente</div><div style="color:#ffaaaa;font-size:12px">Seu saldo atual e R$ '+saldoAtual.toFixed(2)+'. Voce precisa de R$ '+taxaNecessaria.toFixed(2)+' para aceitar este pedido.</div></div>';
 card+='<div style="display:flex;gap:10px"><button onclick="recusarSolicitacao('+o.id+')" style="width:100%;padding:13px;background:#fff;border:2px solid #e53935;border-radius:10px;color:#e53935;font-size:14px;font-weight:700;cursor:pointer">&#x274C; Recusar</button></div></div>';
