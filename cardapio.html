@@ -368,6 +368,21 @@ function renderLoja(loja){
     '<div class="loja-hero-meta">'+end+tel+'</div></div></div></section>'+
     '<main><div id="cardapio-section"></div></main>';
   document.title=esc(loja.name||'Loja')+' - FlashDrop Delivery';
+
+  // Preencher select de pagamento com formas aceitas pela loja
+  preencherFormasPagamento(loja);
+}
+function preencherFormasPagamento(loja){
+  var sel=document.getElementById('ch-pag');
+  if(!sel)return;
+  var formasStr=loja.loja_formas_pagamento||'';
+  var formas=formasStr?formasStr.split(','):[];
+  // Se nao configurou nenhuma, mostrar todas (fallback)
+  if(!formas.length)formas=['pix','dinheiro','cartao_credito'];
+  sel.innerHTML='<option value="">-- Selecione --</option>';
+  if(formas.includes('pix'))sel.innerHTML+='<option value="pix">📱 PIX</option>';
+  if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">💵 Dinheiro</option>';
+  if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">💳 Maquina de Cartao (cobra ida+volta)</option>';
 }
 function renderLojaFechada(loja){
   var nome=loja.name||loja.nome||'';
@@ -632,9 +647,7 @@ document.addEventListener('input',function(e){
 <div class="form-group">
 <label>Forma de pagamento <span class="req">*</span></label>
 <select id="ch-pag" onchange="atualizarTaxaCartao()">
-<option value="pix">PIX</option>
-<option value="dinheiro">Dinheiro</option>
-<option value="cartao_credito">Maquina de Cartao (cobra ida+volta)</option>
+<option value="">-- Selecione --</option>
 </select>
 </div>
 </div>
