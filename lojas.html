@@ -97,7 +97,7 @@
       try {
         var resp = await fetch(API + '/users');
         var users = await resp.json();
-        todasLojas = users.filter(function(u){ return u.role === 'loja' && !u.blocked; });
+        todasLojas = users.filter(function(u){ return u.role === 'loja' && !u.blocked && u.loja_online === true; });
         document.getElementById('total-lojas').textContent = todasLojas.length;
         renderLojas(todasLojas);
       } catch(e) {
