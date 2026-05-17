@@ -317,7 +317,12 @@ async function finalizarPedido(){
   var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
   var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
   var totalFinal=totalItens+taxaFinal;
-  var btn=document.getElementById('btn-finalizar');
+  if(pag==='pix'&&!_finalizarPosConfirmacaoPix){
+document.getElementById('modal-pix-confirm').classList.add('ativo');
+return;
+}
+_finalizarPosConfirmacaoPix=false;
+var btn=document.getElementById('btn-finalizar');
   btn.disabled=true;btn.textContent='Enviando pedido...';
   try{
     var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -494,8 +499,60 @@ function confirmarVariacoes(){
   fecharModalVariacoes();
 }
 
+
+function detectarTipoPix(chave){
+  if(!chave)return '';
+  var s=chave.trim();
+  if(/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/i.test(s))return 'E-mail';
+  var digits=s.replace(/\D/g,'');
+  if(digits.length===11&&/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s))return 'CPF';
+  if(digits.length===14&&/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s))return 'CNPJ';
+  if(digits.length===11&&/^\(?\d{2}\)?[\s-]?\d{5}-?\d{4}$/.test(s))return 'Telefone';
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return 'Chave Aleatoria';
+  return 'Chave PIX';
+}
+function mostrarBlocoPix(){
+  var bloco=document.getElementById('bloco-pix-loja');
+  if(!bloco)return;
+  var loja=lojaGlobal;
+  if(!loja||!loja.pix_key){bloco.style.display='none';return;}
+  document.getElementById('pix-chave-val').textContent=loja.pix_key;
+  document.getElementById('pix-nome-val').textContent=loja.pix_nome||'';
+  bloco.style.display='block';
+}
+function esconderBlocoPix(){
+  var bloco=document.getElementById('bloco-pix-loja');
+  if(bloco)bloco.style.display='none';
+}
+function copiarChavePix(){
+  var loja=lojaGlobal;
+  if(!loja||!loja.pix_key)return;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(loja.pix_key).then(function(){
+      var btn=document.querySelector('#bloco-pix-loja button');
+      if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';setTimeout(function(){btn.innerHTML=orig;},2000);}
+    }).catch(function(){alert('Chave PIX: '+loja.pix_key);});
+  }else{
+    var ta=document.createElement('textarea');ta.value=loja.pix_key;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    var btn=document.querySelector('#bloco-pix-loja button');
+    if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';setTimeout(function(){btn.innerHTML=orig;},2000);}
+  }
+}
+function fecharModalPixConfirm(){
+  document.getElementById('modal-pix-confirm').classList.remove('ativo');
+}
+var _finalizarPosConfirmacaoPix=false;
+function confirmarPixPago(){
+  fecharModalPixConfirm();
+  _finalizarPosConfirmacaoPix=true;
+  finalizarPedido();
+}
 function atualizarTaxaCartao(){
-if(taxaCalculada===0)return;
+if(taxaCalculada===0){
+var pag0=document.getElementById('ch-pag').value;
+if(pag0==='pix')mostrarBlocoPix();else esconderBlocoPix();
+return;
+}
 var pag=document.getElementById('ch-pag').value;
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
@@ -504,6 +561,7 @@ var totalItens=lid?totalCarrinho(lid):0;
 var totalFinal=totalItens+taxaFinal;
 document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
 document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
+if(pag==='pix')mostrarBlocoPix();else esconderBlocoPix();
 }
 
 async function init(){
@@ -661,6 +719,27 @@ document.addEventListener('input',function(e){
   <div class="taxa-detalhe-row"><span>Taxa de entrega</span><span id="taxa-valor" class="taxa-detalhe-val" style="color:#f5a623;">R$ -</span></div>
   <div class="taxa-detalhe-row taxa-total-final"><span>Total com entrega</span><span id="total-final-val" style="color:#f5a623;font-size:16px;font-weight:800;">R$ -</span></div>
 </div>
+<div id="bloco-pix-loja" style="display:none;margin-top:12px;background:#0a1f14;border:2px solid #27ae60;border-radius:12px;padding:14px 16px;">
+  <div style="font-size:11px;font-weight:700;color:#27ae60;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">&#128273; PIX DA LOJA</div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#0d1f14;border-radius:8px;padding:8px 12px;">
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:2px;">Chave</div>
+        <div id="pix-chave-val" style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.5px;word-break:break-all;"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#0d1f14;border-radius:8px;padding:8px 12px;">
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:2px;">Nome do recebedor</div>
+        <div id="pix-nome-val" style="font-size:14px;font-weight:600;color:#fff;"></div>
+      </div>
+    </div>
+  </div>
+  <button onclick="copiarChavePix()" style="width:100%;padding:11px;background:#27ae60;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;letter-spacing:0.3px;">&#128203; COPIAR CHAVE PIX</button>
+  <div style="background:#1a2a00;border:1px solid #f5a623;border-radius:8px;padding:10px 12px;font-size:12px;color:#f5a623;text-align:center;font-weight:600;">
+    &#9888;&#65039; Realize o pagamento antes de finalizar o pedido.
+  </div>
+</div>
 </div>
 
 <button id="btn-finalizar" class="btn-finalizar" onclick="finalizarPedido()">&#128722; Finalizar Pedido</button>
@@ -680,6 +759,17 @@ document.addEventListener('input',function(e){
 </div>
 <button class="btn-finalizar" onclick="confirmarVariacoes()" style="margin-top:0">&#10003; Adicionar ao carrinho</button>
 </div>
+</div>
+
+<!-- Modal confirmação PIX -->
+<div id="modal-pix-confirm" class="modal-overlay" onclick="if(event.target===this)fecharModalPixConfirm()">
+  <div class="modal-box" style="max-width:380px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:12px;">&#128241;</div>
+    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;">Voce ja realizou o pagamento PIX?</div>
+    <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5;">Confirme que o pagamento foi efetuado na chave PIX da loja antes de finalizar.</div>
+    <button onclick="confirmarPixPago()" style="width:100%;padding:14px;background:#27ae60;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">&#x2705; Sim, ja paguei</button>
+    <button onclick="fecharModalPixConfirm()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer;">&#x274C; Ainda nao</button>
+  </div>
 </div>
 </body>
 </html>
