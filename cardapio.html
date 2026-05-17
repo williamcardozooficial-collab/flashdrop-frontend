@@ -551,10 +551,10 @@ function atualizarTaxaCartao(){
 if(taxaCalculada===0){
 var pag0=document.getElementById('ch-pag').value;
 if(pag0==='pix')mostrarBlocoPix();else esconderBlocoPix();
+var aviso=document.getElementById('aviso-dinheiro');if(aviso)aviso.style.display=(pag0==='dinheiro')?'block':'none';
 return;
 }
 var pag=document.getElementById('ch-pag').value;
-var aviso=document.getElementById('aviso-dinheiro');if(aviso)aviso.style.display=(pag==='dinheiro')?'block':'none';
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var lid=lojaGlobal?lojaGlobal.id:null;
