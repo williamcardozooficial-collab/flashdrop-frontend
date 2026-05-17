@@ -302,11 +302,7 @@ var id=parseInt(document.getElementById('modal-pix-aceitar-id').value);
 fecharModalPixAceitar();
 aceitarSolicitacao(id);
 }
-function naoRecebeuPix(){
-fecharModalPixAceitar();
-tg.showAlert('Entre em contato com o cliente antes de continuar.
-Nao libere pedidos sem confirmacao do pagamento PIX.');
-}
+function naoRecebeuPix(){fecharModalPixAceitar();tg.showAlert('Entre em contato com o cliente antes de continuar.\nNao libere pedidos sem confirmacao do pagamento PIX.');}
 function aceitarSolicitacao(id){
   document.getElementById('modal-aceitar-solic-id').value=id;
   var delayMin=settings.launch_delay_minutes||30;
