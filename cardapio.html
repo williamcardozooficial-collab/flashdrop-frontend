@@ -554,6 +554,7 @@ if(pag0==='pix')mostrarBlocoPix();else esconderBlocoPix();
 return;
 }
 var pag=document.getElementById('ch-pag').value;
+var aviso=document.getElementById('aviso-dinheiro');if(aviso)aviso.style.display=(pag==='dinheiro')?'block':'none';
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var lid=lojaGlobal?lojaGlobal.id:null;
@@ -708,6 +709,7 @@ document.addEventListener('input',function(e){
 <option value="">-- Selecione --</option>
 </select>
 </div>
+<div id="aviso-dinheiro" style="display:none;margin-top:10px;background:#1a1000;border:1.5px solid #f5a623;border-radius:10px;padding:12px 14px;"><div style="font-size:12px;font-weight:700;color:#f5a623;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">&#128176; Atenção — Pagamento em Dinheiro</div><div style="font-size:13px;color:#ddd;line-height:1.6;">Caso precise de <strong style="color:#f5a623">troco</strong>, informe o valor que vai pagar na observação do pedido.<br><span style="color:#aaa;font-size:12px;">&#9888;&#65039; Se o motoboy não tiver troco, poderá solicitar o pagamento via <strong style="color:#f5a623">PIX</strong>. Tenha o app do banco em mãos por precaução.</span></div></div>
 </div>
 
 <div class="secao-checkout">
