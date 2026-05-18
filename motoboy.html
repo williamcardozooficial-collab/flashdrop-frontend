@@ -746,38 +746,39 @@ async function toggleOnline() {
       }
 
       // === VERIFICAÇÃO DE GEOLOCALIZAÇÃO PARA CHEGADA NA LOJA ===
-      if (action.next === "na_loja") {
-        btn.disabled = true;
-        btn.textContent = "📍 Verificando localização...";
-        try {
-          const pos = await new Promise(function(resolve, reject) {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, enableHighAccuracy: true });
-          });
-          const verResp = await fetch(API + "/orders/" + orderId + "/verificar-na-loja", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-          });
-          const verData = await verResp.json();
-          if (!verResp.ok && !verData.ok) {
-            alert("❌ " + (verData.error || "Você está longe da loja."));
-            btn.disabled = false;
-            btn.textContent = action.icon + " " + action.label;
-            return;
-          }
-          if (verData.aviso) console.log("[GEO]", verData.aviso);
-        } catch(geoErr) {
-          // Se o motoboy negou permissão, avisa mas não bloqueia
-          if (geoErr.code === 1) {
-            const continuar = confirm("⚠️ Permissão de localização negada.\nDeseja registrar a chegada mesmo assim?");
-            if (!continuar) { btn.disabled = false; btn.textContent = action.icon + " " + action.label; return; }
-          }
-          console.warn("[GEO] Erro de localização:", geoErr.message);
-        }
-        btn.disabled = false;
-        btn.textContent = action.icon + " " + action.label;
-      }
-      // =====================================================
+if (action.next === "na_loja") {
+// Buscar o botão pelo DOM para feedback visual
+var geoBtn = null;
+var allBtns = document.querySelectorAll('.btn-na_loja');
+allBtns.forEach(function(b){ if(b.closest && b.closest('[class*="order-card"]')) geoBtn = b; });
+if(geoBtn){ geoBtn.disabled = true; geoBtn.textContent = "📍 Verificando localização..."; }
+try {
+const pos = await new Promise(function(resolve, reject) {
+navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, enableHighAccuracy: true });
+});
+const verResp = await fetch(API + "/orders/" + orderId + "/verificar-na-loja", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+});
+const verData = await verResp.json();
+if (!verData.ok) {
+tg.showAlert("❌ " + (verData.error || "Você está longe da loja."));
+if(geoBtn){ geoBtn.disabled = false; geoBtn.textContent = action.icon + " " + action.label; }
+return;
+}
+if (verData.aviso) console.log("[GEO]", verData.aviso);
+} catch(geoErr) {
+if (geoErr.code === 1) {
+const continuar = confirm("⚠️ Permissão de localização negada.\nDeseja registrar a chegada mesmo assim?");
+if (!continuar) { if(geoBtn){ geoBtn.disabled = false; geoBtn.textContent = action.icon + " " + action.label; } return; }
+} else {
+console.warn("[GEO] Erro de localização:", geoErr.message);
+}
+}
+if(geoBtn){ geoBtn.disabled = false; geoBtn.textContent = action.icon + " " + action.label; }
+}
+// =====================================================
 
       try {
         var update = { status: action.next };
