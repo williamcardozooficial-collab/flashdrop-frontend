@@ -749,12 +749,58 @@ async function registrarEventoCredito(tipo, valor, descricao, order_id){
     </div>
     <div id="mp-erro" style="display:none;background:#3a0000;border:1px solid #ff4444;border-radius:8px;padding:12px;margin-bottom:16px;color:#ff6666;font-size:13px;text-align:center;"></div>
     <button id="mp-gerar-btn" onclick="gerarPixSaldo()" style="width:100%;padding:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);border:none;color:#fff;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">📲 Gerar PIX para Pagamento</button>
+    <!-- HISTORICO DE RECARGAS -->
+    <div style="margin-top:20px;border-top:1px solid #2a2a4a;padding-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="color:#aaa;font-size:12px;font-weight:600;">📋 Histórico (últimos 7 dias)</span>
+        <button onclick="carregarHistoricoRecargas()" style="background:none;border:1px solid #333;color:#888;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer;">🔄 Atualizar</button>
+      </div>
+      <div id="mp-historico-lista" style="max-height:200px;overflow-y:auto;">
+        <div style="text-align:center;color:#555;font-size:12px;padding:10px;">Carregando...</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 function abrirModalSaldo() {
   document.getElementById('modal-solicitar-saldo').style.display = 'flex';
+  carregarHistoricoRecargas();
+}
+async function carregarHistoricoRecargas() {
+  const lista = document.getElementById('mp-historico-lista');
+  if (!lista) return;
+  lista.innerHTML = '<div style="text-align:center;color:#555;font-size:12px;padding:10px;">⏳ Carregando...</div>';
+  try {
+    const userData = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+    if (!userData.id) { lista.innerHTML = '<div style="text-align:center;color:#555;font-size:12px;padding:10px;">—</div>'; return; }
+    const resp = await fetch('https://flashdrop-backend-production.up.railway.app/mercadopago/historico/' + userData.id);
+    const recargas = await resp.json();
+    if (!recargas || !recargas.length) {
+      lista.innerHTML = '<div style="text-align:center;color:#555;font-size:12px;padding:10px;">Nenhuma recarga nos últimos 7 dias.</div>';
+      return;
+    }
+    const statusInfo = {
+      pendente:  { icon: '🟡', label: 'Em andamento', color: '#f39c12' },
+      aprovado:  { icon: '✅', label: 'Aprovado',     color: '#27ae60' },
+      expirado:  { icon: '❌', label: 'Expirado',     color: '#e53935' },
+      cancelled: { icon: '❌', label: 'Cancelado',    color: '#e53935' },
+      rejected:  { icon: '❌', label: 'Rejeitado',    color: '#e53935' }
+    };
+    lista.innerHTML = recargas.map(function(r) {
+      const s = statusInfo[r.status] || { icon: '⚪', label: r.status, color: '#888' };
+      const dt = r.created_at ? new Date(r.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e1e3a;">'
+        + '<div>'
+        + '<div style="font-size:12px;color:#ddd;">' + s.icon + ' <span style="color:' + s.color + ';font-weight:600;">' + s.label + '</span></div>'
+        + '<div style="font-size:10px;color:#555;margin-top:2px;">' + dt + '</div>'
+        + '</div>'
+        + '<div style="font-size:13px;font-weight:700;color:#27ae60;">+R$ ' + parseFloat(r.valor).toFixed(2) + '</div>'
+        + '</div>';
+    }).join('');
+  } catch(e) {
+    lista.innerHTML = '<div style="text-align:center;color:#e53935;font-size:12px;padding:10px;">Erro ao carregar histórico.</div>';
+  }
 }
 function fecharModalSaldo() {
   document.getElementById('modal-solicitar-saldo').style.display = 'none';
