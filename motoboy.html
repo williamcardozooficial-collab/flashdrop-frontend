@@ -747,14 +747,13 @@ async function toggleOnline() {
 
       // === VERIFICAÇÃO DE GEOLOCALIZAÇÃO PARA CHEGADA NA LOJA ===
 if (action.next === "na_loja") {
-// Buscar o botão pelo DOM para feedback visual
 var geoBtn = null;
-var allBtns = document.querySelectorAll('.btn-na_loja');
-allBtns.forEach(function(b){ if(b.closest && b.closest('[class*="order-card"]')) geoBtn = b; });
+document.querySelectorAll('.btn-na_loja').forEach(function(b){ geoBtn = b; });
 if(geoBtn){ geoBtn.disabled = true; geoBtn.textContent = "📍 Verificando localização..."; }
+var geoPassed = false;
 try {
 const pos = await new Promise(function(resolve, reject) {
-navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, enableHighAccuracy: true });
+navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, enableHighAccuracy: true });
 });
 const verResp = await fetch(API + "/orders/" + orderId + "/verificar-na-loja", {
 method: "POST",
@@ -767,16 +766,24 @@ tg.showAlert("❌ " + (verData.error || "Você está longe da loja."));
 if(geoBtn){ geoBtn.disabled = false; geoBtn.textContent = action.icon + " " + action.label; }
 return;
 }
+geoPassed = true;
 if (verData.aviso) console.log("[GEO]", verData.aviso);
 } catch(geoErr) {
 if (geoErr.code === 1) {
+// Usuário negou permissão — pergunta se quer continuar mesmo assim
 const continuar = confirm("⚠️ Permissão de localização negada.\nDeseja registrar a chegada mesmo assim?");
-if (!continuar) { if(geoBtn){ geoBtn.disabled = false; geoBtn.textContent = action.icon + " " + action.label; } return; }
-} else {
-console.warn("[GEO] Erro de localização:", geoErr.message);
+if (!continuar) {
+if(geoBtn){ geoBtn.disabled = false; geoBtn.textContent = action.icon + " " + action.label; }
+return;
 }
+} else {
+// Timeout ou erro técnico — libera automaticamente para não prejudicar o motoboy
+console.warn("[GEO] Erro técnico, liberando chegada:", geoErr.message);
+}
+geoPassed = true;
 }
 if(geoBtn){ geoBtn.disabled = false; geoBtn.textContent = action.icon + " " + action.label; }
+if (!geoPassed) return;
 }
 // =====================================================
 
