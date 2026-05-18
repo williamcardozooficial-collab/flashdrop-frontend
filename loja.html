@@ -43,7 +43,8 @@
 </div>
 </div>
 </div>
-<div id="avisos-banner" style="display:none;margin:10px 20px 0;background:#1a1a00;border:1px solid #ffcc00;border-radius:10px;padding:12px;"></div><div class="content"><button class="btn-new" onclick="openModal()">+ Novo Pedido</button><div id="loja-indicacao-panel" style="display:none;background:#1a0a2e;border:1px solid #bb86fc;border-radius:12px;padding:14px;margin:10px 0"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div><b style="color:#bb86fc;font-size:13px">Seu codigo de indicacao</b><br><small style="color:#ccc">Compartilhe com motoboys parceiros</small></div><div style="text-align:right"><div id="loja-ref-code" style="font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;font-family:monospace">---</div><button onclick="copyLojaRefCode()" style="padding:4px 10px;background:#bb86fc;color:#1a0a2e;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px">Copiar</button></div></div><div style="display:flex;gap:10px;margin-top:10px"><div style="background:rgba(255,255,255,.1);border-radius:8px;padding:8px;flex:1;text-align:center"><div id="loja-ref-motoboys" style="font-size:20px;font-weight:900;color:#bb86fc">0</div><small style="color:#aaa">Motoboys indicados</small></div><div style="background:rgba(255,255,255,.1);border-radius:8px;padding:8px;flex:1;text-align:center"><div id="loja-ref-ganhos" style="font-size:20px;font-weight:900;color:#4caf50">R$ 0,00</div><small style="color:#aaa">Total ganho</small></div></div></div><div style="display:flex;gap:0;border-bottom:2px solid #2a2a4a;background:#111"><button id="tab-pedidos" onclick="showLojaTab('pedidos')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid #bb86fc;margin-bottom:-2px;color:#bb86fc;font-size:13px;font-weight:700;cursor:pointer">&#128230; Pedidos</button><button id="tab-solicitacoes" onclick="showLojaTab('solicitacoes')" style="flex:1;padding:10px;background:none;border:none;color:#666;font-size:13px;font-weight:600;cursor:pointer">&#128276; Solicitacoes <span id="badge-solic" style="display:none;background:#e53935;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;font-weight:700;vertical-align:middle"></span></button><button id="tab-cardapio" onclick="showLojaTab('cardapio')" style="flex:1;padding:10px;background:none;border:none;color:#666;font-size:13px;font-weight:600;cursor:pointer">&#127869; Cardapio</button></div><div id="sec-cardapio" style="display:none;padding:12px 16px"><div style="background:#1a1a2e;border-radius:10px;padding:12px;margin-bottom:14px;border:1px solid #2a2a4a"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:14px;color:#bb86fc">🏷️ Categorias</b><button onclick="abrirAdicionarCategoria()" style="background:#bb86fc;border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+ Adicionar</button></div><div id="form-nova-categoria" style="display:none;margin-bottom:10px"><input id="input-nova-categoria" class="input" placeholder="Nome da categoria (ex: Lanches)" style="margin-bottom:6px"><div style="display:flex;gap:6px"><button onclick="adicionarCategoria()" style="flex:1;padding:8px;background:#bb86fc;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Salvar</button><button onclick="fecharFormCategoria()" style="flex:1;padding:8px;background:#333;border:none;color:#ccc;border-radius:8px;font-size:13px;cursor:pointer">Cancelar</button></div></div><div id="categorias-lista" style="display:flex;flex-wrap:wrap;gap:6px"><span style="color:#555;font-size:12px">Nenhuma categoria ainda.</span></div></div><button onclick="abrirNovoProduto()" style="width:100%;margin-top:14px;padding:13px;background:#bb86fc;border:none;color:#fff;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px">+ Novo Produto</button><div id="form-novo-produto" style="display:none;margin-top:14px;background:#1e1e2e;border:1px solid #333;border-radius:12px;padding:14px;">
+<div id="avisos-banner" style="display:none;margin:10px 20px 0;background:#1a1a00;border:1px solid #ffcc00;border-radius:10px;padding:12px;"></div><div class="content"><button class="btn-new" onclick="openModal()">+ Novo Pedido</button><div id="loja-indicacao-panel" style="display:none;background:#1a0a2e;border:1px solid #bb86fc;border-radius:12px;padding:14px;margin:10px 0"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div><b style="color:#bb86fc;font-size:13px">Seu codigo de indicacao</b><br><small style="color:#ccc">Compartilhe com motoboys parceiros</small></div><div style="text-align:right"><div id="loja-ref-code" style="font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;font-family:monospace">---</div><button onclick="copyLojaRefCode()" style="padding:4px 10px;background:#bb86fc;color:#1a0a2e;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px">Copiar</button></div></div><div style="display:flex;gap:10px;margin-top:10px"><div style="background:rgba(255,255,255,.1);border-radius:8px;padding:8px;flex:1;text-align:center"><div id="loja-ref-motoboys" style="font-size:20px;font-weight:900;color:#bb86fc">0</div><small style="color:#aaa">Motoboys indicados</small></div><div style="background:rgba(255,255,255,.1);border-radius:8px;padding:8px;flex:1;text-align:center"><div id="loja-ref-ganhos" style="font-size:20px;font-weight:900;color:#4caf50">R$ 0,00</div><small style="color:#aaa">Total ganho</small></div></div></div><div style="display:flex;gap:0;border-bottom:2px solid #2a2a4a;background:#111"><button id="tab-pedidos" onclick="showLojaTab('pedidos')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid #bb86fc;margin-bottom:-2px;color:#bb86fc;font-size:13px;font-weight:700;cursor:pointer">&#128230; Pedidos</button><button id="tab-solicitacoes" onclick="showLojaTab('solicitacoes')" style="flex:1;padding:10px;background:none;border:none;color:#666;font-size:13px;font-weight:600;cursor:pointer">&#128276; Solicitacoes <span id="badge-solic" style="display:none;background:#e53935;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;font-weight:700;vertical-align:middle"></span></button><button id="tab-cardapio" onclick="showLojaTab('cardapio')" style="flex:1;padding:10px;background:none;border:none;color:#666;font-size:13px;font-weight:600;cursor:pointer">&#127869; Cardapio</button>
+  <button id="tab-solicitar-saldo" onclick="abrirModalSaldo()" style="flex:1;padding:10px;background:none;border:none;color:#27ae60;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;" onmouseenter="this.style.borderBottom='2px solid #27ae60';this.style.color='#2ecc71'" onmouseleave="this.style.borderBottom='2px solid transparent';this.style.color='#27ae60'">💰 Solicitar Saldo</button></div><div id="sec-cardapio" style="display:none;padding:12px 16px"><div style="background:#1a1a2e;border-radius:10px;padding:12px;margin-bottom:14px;border:1px solid #2a2a4a"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:14px;color:#bb86fc">🏷️ Categorias</b><button onclick="abrirAdicionarCategoria()" style="background:#bb86fc;border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+ Adicionar</button></div><div id="form-nova-categoria" style="display:none;margin-bottom:10px"><input id="input-nova-categoria" class="input" placeholder="Nome da categoria (ex: Lanches)" style="margin-bottom:6px"><div style="display:flex;gap:6px"><button onclick="adicionarCategoria()" style="flex:1;padding:8px;background:#bb86fc;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Salvar</button><button onclick="fecharFormCategoria()" style="flex:1;padding:8px;background:#333;border:none;color:#ccc;border-radius:8px;font-size:13px;cursor:pointer">Cancelar</button></div></div><div id="categorias-lista" style="display:flex;flex-wrap:wrap;gap:6px"><span style="color:#555;font-size:12px">Nenhuma categoria ainda.</span></div></div><button onclick="abrirNovoProduto()" style="width:100%;margin-top:14px;padding:13px;background:#bb86fc;border:none;color:#fff;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px">+ Novo Produto</button><div id="form-novo-produto" style="display:none;margin-top:14px;background:#1e1e2e;border:1px solid #333;border-radius:12px;padding:14px;">
 <div style="font-size:13px;color:#aaa;margin-bottom:12px;font-weight:600;">NOVO PRODUTO</div>
 <div style="margin-bottom:10px;"><label styleh="font-size:12px;color:#aaa;display:block;margin-bottom:4px;">Categoria</label><select id="select-cat-produto" style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#111;color:#fff;font-size:14px;"><option value="">Escolha uma categoria</option></select></div>
 <div style="margin-bottom:10px;"><label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px;">Nome do produto</label><input id="input-nome-produto" type="text" placeholder="Ex: Pizza Calabresa" style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#111;color:#fff;font-size:14px;box-sizing:border-box;"/></div>
@@ -717,4 +718,121 @@ async function registrarEventoCredito(tipo, valor, descricao, order_id){
 <button onclick="naoRecebeuPix()" style="width:100%;padding:13px;background:#2a0000;border:2px solid #e53935;border-radius:10px;color:#e53935;font-size:14px;font-weight:700;cursor:pointer;">&#x274C; AINDA NAO</button>
 </div>
 </div>
+
+<!-- MODAL SOLICITAR SALDO -->
+<div id="modal-solicitar-saldo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;padding:20px;overflow-y:auto;align-items:center;justify-content:center;">
+  <div style="background:#1a1a2e;border-radius:16px;padding:24px;max-width:420px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.5);margin:auto;margin-top:60px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="color:#fff;font-size:18px;">💰 Solicitar Saldo</h2>
+      <button onclick="fecharModalSaldo()" style="background:none;border:none;color:#aaa;font-size:24px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <p style="color:#aaa;font-size:13px;margin-bottom:20px;">Escolha o valor para recarregar via PIX (Mercado Pago). O saldo é creditado automaticamente após confirmação.</p>
+    <div style="margin-bottom:16px;">
+      <label style="color:#ccc;font-size:13px;font-weight:600;display:block;margin-bottom:8px;">Valor (R$)</label>
+      <input id="mp-valor-input" type="number" min="10" step="1" placeholder="Ex: 50.00" style="width:100%;padding:12px;background:#0f0f23;border:1px solid #333;border-radius:10px;color:#fff;font-size:15px;outline:none;box-sizing:border-box;" />
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;">
+      <button onclick="selecionarValorSaldo(30,this)" style="padding:10px;background:#0f0f23;border:1px solid #333;border-radius:8px;color:#ccc;font-size:13px;cursor:pointer;">R$ 30</button>
+      <button onclick="selecionarValorSaldo(50,this)" style="padding:10px;background:#0f0f23;border:1px solid #333;border-radius:8px;color:#ccc;font-size:13px;cursor:pointer;">R$ 50</button>
+      <button onclick="selecionarValorSaldo(100,this)" style="padding:10px;background:#0f0f23;border:1px solid #333;border-radius:8px;color:#ccc;font-size:13px;cursor:pointer;">R$ 100</button>
+      <button onclick="selecionarValorSaldo(200,this)" style="padding:10px;background:#0f0f23;border:1px solid #333;border-radius:8px;color:#ccc;font-size:13px;cursor:pointer;">R$ 200</button>
+    </div>
+    <div id="mp-loading" style="display:none;text-align:center;padding:20px;color:#aaa;"><div style="font-size:30px;margin-bottom:10px;">⏳</div><p>Gerando PIX...</p></div>
+    <div id="mp-pix-container" style="display:none;background:#0f0f23;border-radius:12px;padding:16px;margin-bottom:16px;text-align:center;">
+      <p style="color:#27ae60;font-weight:700;font-size:14px;margin-bottom:12px;">✅ PIX Gerado!</p>
+      <p style="color:#aaa;font-size:12px;margin-bottom:8px;">Copie o código PIX abaixo:</p>
+      <div id="mp-pix-code" style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:10px;font-size:11px;color:#7ec8e3;word-break:break-all;margin-bottom:10px;font-family:monospace;"></div>
+      <button onclick="copiarPixSaldo()" style="background:#27ae60;border:none;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">📋 Copiar código PIX</button>
+      <p id="mp-pix-expiry" style="color:#aaa;font-size:11px;margin-top:10px;"></p>
+      <hr style="border-color:#333;margin:12px 0;">
+      <p style="color:#aaa;font-size:12px;">Saldo creditado automaticamente em até <strong style="color:#fff;">5 minutos</strong> após pagamento.</p>
+    </div>
+    <div id="mp-erro" style="display:none;background:#3a0000;border:1px solid #ff4444;border-radius:8px;padding:12px;margin-bottom:16px;color:#ff6666;font-size:13px;text-align:center;"></div>
+    <button id="mp-gerar-btn" onclick="gerarPixSaldo()" style="width:100%;padding:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);border:none;color:#fff;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">📲 Gerar PIX para Pagamento</button>
+  </div>
+</div>
+
+<script>
+function abrirModalSaldo() {
+  document.getElementById('modal-solicitar-saldo').style.display = 'flex';
+}
+function fecharModalSaldo() {
+  document.getElementById('modal-solicitar-saldo').style.display = 'none';
+  document.getElementById('mp-pix-container').style.display = 'none';
+  document.getElementById('mp-erro').style.display = 'none';
+  document.getElementById('mp-loading').style.display = 'none';
+  document.getElementById('mp-gerar-btn').style.display = 'block';
+  document.getElementById('mp-valor-input').value = '';
+}
+function selecionarValorSaldo(valor, btn) {
+  document.getElementById('mp-valor-input').value = valor;
+  document.querySelectorAll('#modal-solicitar-saldo button[onclick^="selecionarValor"]').forEach(b => {
+    b.style.background = '#0f0f23'; b.style.borderColor = '#333'; b.style.color = '#ccc';
+  });
+  if (btn) { btn.style.background = '#1a5c2e'; btn.style.borderColor = '#27ae60'; btn.style.color = '#2ecc71'; }
+}
+async function gerarPixSaldo() {
+  const valor = parseFloat(document.getElementById('mp-valor-input').value);
+  if (!valor || valor < 10) {
+    const e = document.getElementById('mp-erro');
+    e.style.display = 'block'; e.textContent = '⚠️ Valor mínimo é R$ 10,00'; return;
+  }
+  document.getElementById('mp-erro').style.display = 'none';
+  document.getElementById('mp-loading').style.display = 'block';
+  document.getElementById('mp-gerar-btn').style.display = 'none';
+  document.getElementById('mp-pix-container').style.display = 'none';
+  try {
+    const userData = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+    const resp = await fetch('https://flashdrop-backend-production.up.railway.app/mercadopago/gerar-pix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + userData.token },
+      body: JSON.stringify({ valor, userId: userData.id, userName: userData.name || userData.username, userEmail: (userData.username || userData.id) + '@flashdrop.app' })
+    });
+    const data = await resp.json();
+    document.getElementById('mp-loading').style.display = 'none';
+    if (resp.ok && data.pix_code) {
+      document.getElementById('mp-pix-code').textContent = data.pix_code;
+      document.getElementById('mp-pix-container').style.display = 'block';
+      if (data.expiry) {
+        const exp = new Date(data.expiry);
+        document.getElementById('mp-pix-expiry').textContent = 'Expira às: ' + exp.toLocaleTimeString('pt-BR');
+      }
+      if (data.payment_id) pollPagamentoSaldo(data.payment_id, valor, userData.token);
+    } else {
+      const e = document.getElementById('mp-erro');
+      e.style.display = 'block'; e.textContent = '❌ ' + (data.error || 'Erro ao gerar PIX');
+      document.getElementById('mp-gerar-btn').style.display = 'block';
+    }
+  } catch(err) {
+    document.getElementById('mp-loading').style.display = 'none';
+    const e = document.getElementById('mp-erro');
+    e.style.display = 'block'; e.textContent = '❌ Erro: ' + err.message;
+    document.getElementById('mp-gerar-btn').style.display = 'block';
+  }
+}
+function copiarPixSaldo() {
+  const code = document.getElementById('mp-pix-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = event.target; btn.textContent = '✅ Copiado!'; btn.style.background = '#1a5c2e';
+    setTimeout(() => { btn.textContent = '📋 Copiar código PIX'; btn.style.background = '#27ae60'; }, 2000);
+  });
+}
+let _mpPollInterval = null;
+function pollPagamentoSaldo(paymentId, valor, token) {
+  if (_mpPollInterval) clearInterval(_mpPollInterval);
+  let t = 0;
+  _mpPollInterval = setInterval(async () => {
+    if (++t > 60) { clearInterval(_mpPollInterval); return; }
+    try {
+      const r = await fetch('https://flashdrop-backend-production.up.railway.app/mercadopago/status/' + paymentId, { headers: { 'Authorization': 'Bearer ' + token } });
+      const s = await r.json();
+      if (s.status === 'approved') {
+        clearInterval(_mpPollInterval);
+        document.getElementById('mp-pix-container').innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:50px;margin-bottom:15px;">🎉</div><p style="color:#27ae60;font-weight:700;font-size:16px;margin-bottom:8px;">Pagamento confirmado!</p><p style="color:#aaa;font-size:13px;">R$ ' + valor.toFixed(2) + ' adicionado ao seu saldo!</p></div>';
+        setTimeout(() => { fecharModalSaldo(); location.reload(); }, 3000);
+      }
+    } catch(e) {}
+  }, 5000);
+}
+</script>
 </body></html>
