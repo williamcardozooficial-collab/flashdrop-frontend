@@ -745,6 +745,40 @@ async function toggleOnline() {
         }
       }
 
+      // === VERIFICAÇÃO DE GEOLOCALIZAÇÃO PARA CHEGADA NA LOJA ===
+      if (action.next === "na_loja") {
+        btn.disabled = true;
+        btn.textContent = "📍 Verificando localização...";
+        try {
+          const pos = await new Promise(function(resolve, reject) {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, enableHighAccuracy: true });
+          });
+          const verResp = await fetch(API + "/orders/" + orderId + "/verificar-na-loja", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+          });
+          const verData = await verResp.json();
+          if (!verResp.ok && !verData.ok) {
+            alert("❌ " + (verData.error || "Você está longe da loja."));
+            btn.disabled = false;
+            btn.textContent = action.icon + " " + action.label;
+            return;
+          }
+          if (verData.aviso) console.log("[GEO]", verData.aviso);
+        } catch(geoErr) {
+          // Se o motoboy negou permissão, avisa mas não bloqueia
+          if (geoErr.code === 1) {
+            const continuar = confirm("⚠️ Permissão de localização negada.\nDeseja registrar a chegada mesmo assim?");
+            if (!continuar) { btn.disabled = false; btn.textContent = action.icon + " " + action.label; return; }
+          }
+          console.warn("[GEO] Erro de localização:", geoErr.message);
+        }
+        btn.disabled = false;
+        btn.textContent = action.icon + " " + action.label;
+      }
+      // =====================================================
+
       try {
         var update = { status: action.next };
         var tsMap = { aceito:"t_aceito", na_loja:"t_na_loja", coletado:"t_coletado", no_cliente:"t_no_cliente", entregue:"t_entregue" };
