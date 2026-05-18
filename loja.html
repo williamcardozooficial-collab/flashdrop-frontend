@@ -742,7 +742,10 @@ async function registrarEventoCredito(tipo, valor, descricao, order_id){
       <p style="color:#27ae60;font-weight:700;font-size:14px;margin-bottom:12px;">✅ PIX Gerado!</p>
       <p style="color:#aaa;font-size:12px;margin-bottom:8px;">Copie o código PIX abaixo:</p>
       <div id="mp-pix-code" style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:10px;font-size:11px;color:#7ec8e3;word-break:break-all;margin-bottom:10px;font-family:monospace;"></div>
-      <button onclick="copiarPixSaldo()" style="background:#27ae60;border:none;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">📋 Copiar código PIX</button>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+        <button onclick="copiarPixSaldo()" id="mp-copiar-btn" style="background:#27ae60;border:none;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">📋 Copiar código PIX</button>
+        <span id="mp-copiado-msg" style="display:none;background:#1a5c2e;color:#2ecc71;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;border:1px solid #27ae60;">✅ Copiado!</span>
+      </div>
       <p id="mp-pix-expiry" style="color:#aaa;font-size:11px;margin-top:10px;"></p>
       <hr style="border-color:#333;margin:12px 0;">
       <p style="color:#aaa;font-size:12px;">Saldo creditado automaticamente em até <strong style="color:#fff;">5 minutos</strong> após pagamento.</p>
@@ -863,8 +866,14 @@ async function gerarPixSaldo() {
 function copiarPixSaldo() {
   const code = document.getElementById('mp-pix-code').textContent;
   navigator.clipboard.writeText(code).then(() => {
-    const btn = event.target; btn.textContent = '✅ Copiado!'; btn.style.background = '#1a5c2e';
-    setTimeout(() => { btn.textContent = '📋 Copiar código PIX'; btn.style.background = '#27ae60'; }, 2000);
+    const msg = document.getElementById('mp-copiado-msg');
+    const btn = document.getElementById('mp-copiar-btn');
+    if (msg) { msg.style.display = 'inline-block'; }
+    if (btn) { btn.style.background = '#1a5c2e'; }
+    setTimeout(() => {
+      if (msg) { msg.style.display = 'none'; }
+      if (btn) { btn.style.background = '#27ae60'; }
+    }, 3000);
   });
 }
 let _mpPollInterval = null;
