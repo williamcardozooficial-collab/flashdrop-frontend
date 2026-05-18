@@ -782,8 +782,12 @@ async function carregarHistoricoRecargas() {
     }
     const statusInfo = {
       pendente:  { icon: '🟡', label: 'Em andamento', color: '#f39c12' },
+      pending:   { icon: '🟡', label: 'Em andamento', color: '#f39c12' },
+      in_process:{ icon: '🟡', label: 'Em andamento', color: '#f39c12' },
       aprovado:  { icon: '✅', label: 'Aprovado',     color: '#27ae60' },
-      expirado:  { icon: '❌', label: 'Expirado',     color: '#e53935' },
+      approved:  { icon: '✅', label: 'Aprovado',     color: '#27ae60' },
+      expirado:  { icon: '⏰', label: 'Expirado',     color: '#888' },
+      expired:   { icon: '⏰', label: 'Expirado',     color: '#888' },
       cancelled: { icon: '❌', label: 'Cancelado',    color: '#e53935' },
       rejected:  { icon: '❌', label: 'Rejeitado',    color: '#e53935' }
     };
