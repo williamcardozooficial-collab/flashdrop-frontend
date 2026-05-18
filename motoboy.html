@@ -305,6 +305,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       if (resp2.ok) {
         user.online = false;
         _onlineAt = null;
+        localStorage.removeItem('_fd_onlineAt');
         _autoOfflineTimer = null;
         syncUser();
         tg.showAlert("\u23F0 Voc\u00EA foi colocado Offline automaticamente ap\u00F3s 60 minutos.");
@@ -327,10 +328,12 @@ async function toggleOnline() {
         user.online = newOnline;
         if (newOnline) {
           _onlineAt = Date.now();
+          localStorage.setItem('_fd_onlineAt', _onlineAt);
           if (_autoOfflineTimer) clearTimeout(_autoOfflineTimer);
           _autoOfflineTimer = setTimeout(autoOfflineCheck, AUTO_OFFLINE_MS);
         } else {
           _onlineAt = null;
+          localStorage.removeItem('_fd_onlineAt');
           if (_autoOfflineTimer) { clearTimeout(_autoOfflineTimer); _autoOfflineTimer = null; }
         }
         syncUser();
@@ -967,10 +970,19 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
       await syncUser();
       await loadOrders();
       setInterval(loadOrders, 10000);
-      /* auto-offline: se ja estiver online ao carregar, iniciar timer */
+      /* auto-offline: restaura timestamp real do localStorage ao recarregar */
       if (user.online) {
-        _onlineAt = Date.now();
-        _autoOfflineTimer = setTimeout(autoOfflineCheck, AUTO_OFFLINE_MS);
+        var _savedOnlineAt = parseInt(localStorage.getItem('_fd_onlineAt') || '0');
+        _onlineAt = (_savedOnlineAt > 0) ? _savedOnlineAt : Date.now();
+        if (!_savedOnlineAt) localStorage.setItem('_fd_onlineAt', _onlineAt);
+        var _elapsedMs = Date.now() - _onlineAt;
+        var _remainingMs = AUTO_OFFLINE_MS - _elapsedMs;
+        if (_autoOfflineTimer) clearTimeout(_autoOfflineTimer);
+        if (_remainingMs > 0) {
+          _autoOfflineTimer = setTimeout(autoOfflineCheck, _remainingMs);
+        } else {
+          autoOfflineCheck();
+        }
       }
       setInterval(syncUser, 30000);
       loadAvisosMotboy();
