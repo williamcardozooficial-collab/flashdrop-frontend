@@ -3,7 +3,30 @@
 .timer-preparo{background:#1a0a2e;border:1px solid #bb86fc;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:14px;color:#bb86fc;display:flex;flex-direction:column;gap:6px}
 .btn-launch{display:inline-block;padding:8px 16px;background:#28a745;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;margin-right:6px}
  .btn-edit-timer{display:inline-block;padding:6px 12px;background:rgba(187,134,252,0.15);color:#bb86fc;border:1px solid #bb86fc;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px}
-.filter-btn-loja{display:inline-block;padding:6px 14px;background:#eef0ff;border:1.5px solid #c5caf7;border-radius:20px;color:#667eea;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;white-space:nowrap;transition:all .15s}.filter-btn-loja.active{background:#667eea;color:#fff;border-color:#667eea}.filter-badge{background:#e53935;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;font-weight:700}</style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio.html?id='+(user&&user.custom_id?user.custom_id:'L000001');if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div id="store-address" style="font-size:12px;margin-top:3px;opacity:0.85">...</div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div></div></div>
+.filter-btn-loja{display:inline-block;padding:6px 14px;background:#eef0ff;border:1.5px solid #c5caf7;border-radius:20px;color:#667eea;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;white-space:nowrap;transition:all .15s}.filter-btn-loja.active{background:#667eea;color:#fff;border-color:#667eea}.filter-badge{background:#e53935;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;font-weight:700}
+@keyframes alertPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,80,0,0.7),0 0 30px rgba(255,80,0,0.4)}50%{box-shadow:0 0 0 20px rgba(255,80,0,0),0 0 60px rgba(255,80,0,0.2)}}
+@keyframes alertBorder{0%,100%{border-color:#ff5000}50%{border-color:#ffcc00}}
+@keyframes alertShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes alertFadeIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+@keyframes alertBlink{0%,100%{opacity:1}50%{opacity:0.25}}
+#novo-pedido-alert{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:16px}
+#novo-pedido-alert-box{background:#1a0a00;border:3px solid #ff5000;border-radius:20px;padding:28px 22px;width:100%;max-width:400px;text-align:center;animation:alertFadeIn 0.3s ease,alertPulse 1.5s ease infinite,alertBorder 1.5s ease infinite}
+#novo-pedido-alert-box.shake{animation:alertShake 0.4s ease}
+.alert-icon-ring{font-size:52px;margin-bottom:8px;display:block;animation:alertBlink 0.8s ease infinite}
+.alert-title{font-size:20px;font-weight:900;color:#ff5000;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.alert-subtitle{font-size:12px;color:#ff9966;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.alert-card{background:#2a1200;border:1px solid #ff5000;border-radius:12px;padding:14px;margin-bottom:16px;text-align:left}
+.alert-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #3a2000;font-size:14px}
+.alert-row:last-child{border:none}
+.alert-lbl{color:#ff9966;font-weight:600}
+.alert-val{color:#fff;font-weight:700;text-align:right;max-width:65%}
+.alert-total{font-size:18px;font-weight:900;color:#ffcc00;margin-top:6px;text-align:center}
+.alert-pag{display:inline-block;background:#ff5000;color:#fff;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;margin-top:4px}
+.alert-waiting{font-size:12px;color:#ff9966;margin-bottom:14px;animation:alertBlink 1s ease infinite}
+#btn-alert-abrir{width:100%;padding:16px;background:linear-gradient(135deg,#ff5000,#ff8c00);border:none;border-radius:12px;color:#fff;font-size:17px;font-weight:900;cursor:pointer;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(255,80,0,0.5)}
+#btn-alert-abrir:active{transform:scale(0.97)}
+.alert-counter{display:inline-block;background:#ff5000;color:#fff;border-radius:20px;font-size:13px;font-weight:900;padding:3px 12px;margin-bottom:10px}
+.novo-pedido-card-destaque{border:2px solid #ff5000!important;animation:alertBorder 1.5s ease infinite}</style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio.html?id='+(user&&user.custom_id?user.custom_id:'L000001');if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div id="store-address" style="font-size:12px;margin-top:3px;opacity:0.85">...</div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div></div></div>
 <div id="loja-status-bar" style="margin:0 20px 0;background:#1a1a1a;border:2px solid #555;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
 <div>
 <div id="status-label" style="font-size:13px;font-weight:700;color:#555">🔴 OFFLINE</div>
@@ -224,7 +247,7 @@ function filterLojaOrders(status){
   renderLojaOrders(_myOrders);
 }
 async function init(){document.getElementById('store-name').textContent=user.name;document.getElementById('store-address').textContent=user.address;
-  if(user.foto_url){var fi=document.getElementById('foto-url-input');if(fi)fi.value=user.foto_url;atualizarHeaderFoto(user.foto_url);}if(user.custom_id){document.getElementById('store-custom-id').textContent='🪪 '+user.custom_id;}const sr=await fetch(`${API}/settings`);settings=await sr.json();loadData();loadAvisosLoja();carregarChavePix();setInterval(loadData,10000);setInterval(loadAvisosLoja,60000);carregarStatusOnline();setInterval(carregarStatusOnline,30000);}loadLojaIndicacao();async function loadData(){try{const ur=await fetch(`${API}/users/${user.id}`);const lu=await ur.json();user.credit=lu.credit;if(lu.pix_key!==undefined)user.pix_key=lu.pix_key;if(lu.pix_nome!==undefined)user.pix_nome=lu.pix_nome;localStorage.setItem('flashdrop_user',JSON.stringify(user));document.getElementById('stat-balance').textContent='R$ '+parseFloat(user.credit||0).toFixed(2);const or=await fetch(`${API}/orders`);const orders=await or.json();allOrders=orders;const ur2=await fetch(`${API}/users`);allUsers=await ur2.json();const my=orders.filter(o=>o.loja_user===user.username);document.getElementById('stat-orders').textContent=my.filter(o=>new Date(o.created_at).toDateString()===new Date().toDateString()).length;_myOrders=my;renderLojaOrders(my);startPreparoTimers(my);var secSolic=document.getElementById('sec-solicitacoes');if(secSolic&&secSolic.style.display!=='none')renderSolicitacoes();}catch(e){}}async function calculateFee(){buildDest();let origin=document.getElementById('origin').value;const dest=document.getElementById('dest').value;if(!origin||!dest)return;const ruaVal=document.getElementById('dest-rua').value.trim();if(!ruaVal||!/\d/.test(ruaVal)){tg.showAlert('⚠️ Informe a rua e o número do endereço de entrega (ex: Rua das Flores, 123). Apenas bairro não é aceito.');return;}if(!origin.toLowerCase().includes('caxias')&&!origin.toLowerCase().includes(','))origin=origin+', Caxias do Sul, RS';const b=document.getElementById('btnCalc');b.disabled=true;b.textContent='Calculando...';try{const r=await fetch(`${API}/distance`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin:origin,destination:dest})});const data=await r.json();if(data.distance_km){calculatedDist=parseFloat(data.distance_km);calculatedPrevisao=data.duration_min+'min';calculatedFee=Math.ceil(Math.max(parseFloat(settings.min_fee),parseFloat(settings.arrancada)+(calculatedDist*parseFloat(settings.price_per_km))));recalcWithRetorno();document.getElementById('calc-result').style.display='block';const s=document.getElementById('submitBtn');s.disabled=false;s.textContent='Confirmar Pedido'}else{tg.showAlert('Endereço não encontrado. Verifique os endereços.')}}catch(e){tg.showAlert('Erro ao calcular taxa')}b.disabled=false;b.textContent='Calcular Taxa'}document.getElementById('orderForm').onsubmit=async(e)=>{e.preventDefault();if(!document.getElementById('tipoPagamento').value){tg.showAlert('Selecione a forma de pagamento');return}if(calculatedFee<=0){tg.showAlert('Calcule a taxa antes de confirmar');return}if(calculatedFee>user.credit&&document.getElementById('tipoPagamento').value!=='dinheiro'){tg.showAlert('Saldo insuficiente para esta entrega');return}const tipoPag=document.getElementById('tipoPagamento').value||'dinheiro';const valorPed=tipoPag==='dinheiro'?parseFloat(document.getElementById('valorPedido').value)||0:0;const feeDisplay='R$ '+calculatedFee.toFixed(2);let msgLines=[];if(tipoPag==='dinheiro'){msgLines.push('💳 Pagamento: Dinheiro');msgLines.push('📦 Valor do produto: R$ '+valorPed.toFixed(2));msgLines.push('🛵 Motoboy cobrará do cliente: R$ '+(valorPed+calculatedFee).toFixed(2)+' (produto + entrega)');}else if(tipoPag==='maquina'){msgLines.push('💳 Pagamento: Máquina de Cartão');msgLines.push('🛵 Motoboy cobrará pelo valor informado na nota da loja');msgLines.push('🔄 O motoboy retornará à loja após a entrega (ida+volta incluída na taxa)');msgLines.push('💰 Taxa de entrega: '+feeDisplay+' (já com retorno incluído)');}else if(tipoPag==='pix'){msgLines.push('📱 Pagamento: PIX (já pago)');msgLines.push('🛵 Motoboy fará apenas a entrega, sem retorno à loja');msgLines.push('💰 Taxa de entrega: '+feeDisplay);}const delayMin=settings.launch_delay_minutes||60;msgLines.push('');msgLines.push('⏳ O pedido ficará em preparo e será enviado ao sistema automaticamente em '+delayMin+' minuto(s).');msgLines.push('🚀 Você pode chamar o motoboy antes — botão disponível após criar o pedido.');const msg=msgLines.join('\n');if(!confirm('📋 RESUMO DO PEDIDO\n\n'+msg+'\n\nDeseja criar o pedido?')){return;}const b=document.getElementById('submitBtn');b.disabled=true;b.textContent='Criando...';const cobrar=tipoPag==='dinheiro'?'sim':'nao';const distFinal=(tipoPag==='maquina')?calculatedDist*2:calculatedDist;try{const r=await fetch(`${API}/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_user:user.username,loja_name:user.name,endereco_coleta:document.getElementById('origin').value,complemento_coleta:document.getElementById('complemento-coleta').value||null,obs_coleta:document.getElementById('obs-coleta').value||null,endereco_entrega:document.getElementById('dest').value,complemento_entrega:document.getElementById('dest-complemento').value||null,obs_entrega_loja:document.getElementById('dest-obs').value||null,nome_cliente:document.getElementById('client').value,telefone_cliente:document.getElementById('phone').value,cod_pedido:document.getElementById('code').value,cobrar_cliente:cobrar,valor_pedido:valorPed,tipo_pagamento:tipoPag,valor_total:calculatedFee,valor_motoboy:calculatedFee-parseFloat(settings.commission),comissao:settings.commission,distancia:distFinal,previsao:calculatedPrevisao,plataforma:'telegram',launch_at:Date.now()+(settings.launch_delay_minutes||60)*60000})});if(r.ok){if(tipoPag!=='dinheiro'){user.credit-=calculatedFee;await fetch(`${API}/users/${user.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({credit:user.credit})});await registrarEventoCredito('debito_pedido',calculatedFee,'Débito pedido '+tipoPag,null);}tg.showAlert('✅ Pedido criado com sucesso!');closeModal();loadData()}}catch(e){tg.showAlert('Erro ao criar pedido')}b.disabled=false;b.textContent='Confirmar Pedido'};function openModal(){document.getElementById('origin').value=user.address||'';document.getElementById('modal-order').style.display='block'}function closeModal(){document.getElementById('modal-order').style.display='none';document.getElementById('orderForm').reset();document.getElementById('calc-result').style.display='none';document.getElementById('submitBtn').disabled=true;document.getElementById('submitBtn').textContent='Calcular para Confirmar';document.getElementById('valorPedidoGroup').style.display='none';document.getElementById('retornoGroup').style.display='none';document.getElementById('tipoPagamento').value='';document.getElementById('complemento-coleta').value='';document.getElementById('obs-coleta').value='';document.getElementById('dest-complemento').value='';document.getElementById('dest-obs').value='';calculatedFee=0;calculatedDist=0;calculatedPrevisao=''}let currentEditId=null;let _lojaFilter='todos';let _myOrders=[];let allOrders=[];let allUsers=[];
+  if(user.foto_url){var fi=document.getElementById('foto-url-input');if(fi)fi.value=user.foto_url;atualizarHeaderFoto(user.foto_url);}if(user.custom_id){document.getElementById('store-custom-id').textContent='🪪 '+user.custom_id;}const sr=await fetch(`${API}/settings`);settings=await sr.json();loadData();loadAvisosLoja();carregarChavePix();setInterval(loadData,10000);setInterval(loadAvisosLoja,60000);carregarStatusOnline();setInterval(carregarStatusOnline,30000);}loadLojaIndicacao();async function loadData(){try{const ur=await fetch(`${API}/users/${user.id}`);const lu=await ur.json();user.credit=lu.credit;if(lu.pix_key!==undefined)user.pix_key=lu.pix_key;if(lu.pix_nome!==undefined)user.pix_nome=lu.pix_nome;localStorage.setItem('flashdrop_user',JSON.stringify(user));document.getElementById('stat-balance').textContent='R$ '+parseFloat(user.credit||0).toFixed(2);const or=await fetch(`${API}/orders`);const orders=await or.json();allOrders=orders;const ur2=await fetch(`${API}/users`);allUsers=await ur2.json();const my=orders.filter(o=>o.loja_user===user.username);document.getElementById('stat-orders').textContent=my.filter(o=>new Date(o.created_at).toDateString()===new Date().toDateString()).length;_myOrders=my;renderLojaOrders(my);startPreparoTimers(my);verificarNovosPedidos(my);var secSolic=document.getElementById('sec-solicitacoes');if(secSolic&&secSolic.style.display!=='none')renderSolicitacoes();}catch(e){}}async function calculateFee(){buildDest();let origin=document.getElementById('origin').value;const dest=document.getElementById('dest').value;if(!origin||!dest)return;const ruaVal=document.getElementById('dest-rua').value.trim();if(!ruaVal||!/\d/.test(ruaVal)){tg.showAlert('⚠️ Informe a rua e o número do endereço de entrega (ex: Rua das Flores, 123). Apenas bairro não é aceito.');return;}if(!origin.toLowerCase().includes('caxias')&&!origin.toLowerCase().includes(','))origin=origin+', Caxias do Sul, RS';const b=document.getElementById('btnCalc');b.disabled=true;b.textContent='Calculando...';try{const r=await fetch(`${API}/distance`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin:origin,destination:dest})});const data=await r.json();if(data.distance_km){calculatedDist=parseFloat(data.distance_km);calculatedPrevisao=data.duration_min+'min';calculatedFee=Math.ceil(Math.max(parseFloat(settings.min_fee),parseFloat(settings.arrancada)+(calculatedDist*parseFloat(settings.price_per_km))));recalcWithRetorno();document.getElementById('calc-result').style.display='block';const s=document.getElementById('submitBtn');s.disabled=false;s.textContent='Confirmar Pedido'}else{tg.showAlert('Endereço não encontrado. Verifique os endereços.')}}catch(e){tg.showAlert('Erro ao calcular taxa')}b.disabled=false;b.textContent='Calcular Taxa'}document.getElementById('orderForm').onsubmit=async(e)=>{e.preventDefault();if(!document.getElementById('tipoPagamento').value){tg.showAlert('Selecione a forma de pagamento');return}if(calculatedFee<=0){tg.showAlert('Calcule a taxa antes de confirmar');return}if(calculatedFee>user.credit&&document.getElementById('tipoPagamento').value!=='dinheiro'){tg.showAlert('Saldo insuficiente para esta entrega');return}const tipoPag=document.getElementById('tipoPagamento').value||'dinheiro';const valorPed=tipoPag==='dinheiro'?parseFloat(document.getElementById('valorPedido').value)||0:0;const feeDisplay='R$ '+calculatedFee.toFixed(2);let msgLines=[];if(tipoPag==='dinheiro'){msgLines.push('💳 Pagamento: Dinheiro');msgLines.push('📦 Valor do produto: R$ '+valorPed.toFixed(2));msgLines.push('🛵 Motoboy cobrará do cliente: R$ '+(valorPed+calculatedFee).toFixed(2)+' (produto + entrega)');}else if(tipoPag==='maquina'){msgLines.push('💳 Pagamento: Máquina de Cartão');msgLines.push('🛵 Motoboy cobrará pelo valor informado na nota da loja');msgLines.push('🔄 O motoboy retornará à loja após a entrega (ida+volta incluída na taxa)');msgLines.push('💰 Taxa de entrega: '+feeDisplay+' (já com retorno incluído)');}else if(tipoPag==='pix'){msgLines.push('📱 Pagamento: PIX (já pago)');msgLines.push('🛵 Motoboy fará apenas a entrega, sem retorno à loja');msgLines.push('💰 Taxa de entrega: '+feeDisplay);}const delayMin=settings.launch_delay_minutes||60;msgLines.push('');msgLines.push('⏳ O pedido ficará em preparo e será enviado ao sistema automaticamente em '+delayMin+' minuto(s).');msgLines.push('🚀 Você pode chamar o motoboy antes — botão disponível após criar o pedido.');const msg=msgLines.join('\n');if(!confirm('📋 RESUMO DO PEDIDO\n\n'+msg+'\n\nDeseja criar o pedido?')){return;}const b=document.getElementById('submitBtn');b.disabled=true;b.textContent='Criando...';const cobrar=tipoPag==='dinheiro'?'sim':'nao';const distFinal=(tipoPag==='maquina')?calculatedDist*2:calculatedDist;try{const r=await fetch(`${API}/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_user:user.username,loja_name:user.name,endereco_coleta:document.getElementById('origin').value,complemento_coleta:document.getElementById('complemento-coleta').value||null,obs_coleta:document.getElementById('obs-coleta').value||null,endereco_entrega:document.getElementById('dest').value,complemento_entrega:document.getElementById('dest-complemento').value||null,obs_entrega_loja:document.getElementById('dest-obs').value||null,nome_cliente:document.getElementById('client').value,telefone_cliente:document.getElementById('phone').value,cod_pedido:document.getElementById('code').value,cobrar_cliente:cobrar,valor_pedido:valorPed,tipo_pagamento:tipoPag,valor_total:calculatedFee,valor_motoboy:calculatedFee-parseFloat(settings.commission),comissao:settings.commission,distancia:distFinal,previsao:calculatedPrevisao,plataforma:'telegram',launch_at:Date.now()+(settings.launch_delay_minutes||60)*60000})});if(r.ok){if(tipoPag!=='dinheiro'){user.credit-=calculatedFee;await fetch(`${API}/users/${user.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({credit:user.credit})});await registrarEventoCredito('debito_pedido',calculatedFee,'Débito pedido '+tipoPag,null);}tg.showAlert('✅ Pedido criado com sucesso!');closeModal();loadData()}}catch(e){tg.showAlert('Erro ao criar pedido')}b.disabled=false;b.textContent='Confirmar Pedido'};function openModal(){document.getElementById('origin').value=user.address||'';document.getElementById('modal-order').style.display='block'}function closeModal(){document.getElementById('modal-order').style.display='none';document.getElementById('orderForm').reset();document.getElementById('calc-result').style.display='none';document.getElementById('submitBtn').disabled=true;document.getElementById('submitBtn').textContent='Calcular para Confirmar';document.getElementById('valorPedidoGroup').style.display='none';document.getElementById('retornoGroup').style.display='none';document.getElementById('tipoPagamento').value='';document.getElementById('complemento-coleta').value='';document.getElementById('obs-coleta').value='';document.getElementById('dest-complemento').value='';document.getElementById('dest-obs').value='';calculatedFee=0;calculatedDist=0;calculatedPrevisao=''}let currentEditId=null;let _lojaFilter='todos';let _myOrders=[];let allOrders=[];let allUsers=[];
 function openEditModal(id){currentEditId=id;const o=allOrders.find(x=>x.id===id);if(!o)return;document.getElementById('edit-client').value=o.nome_cliente||'';document.getElementById('edit-phone').value=o.telefone_cliente||'';document.getElementById('edit-dest').value=o.endereco_entrega||'';document.getElementById('edit-code').value=o.cod_pedido||'';document.getElementById('edit-obs').value=o.obs||'';document.getElementById('modal-edit').style.display='block';}
 function closeEditModal(){document.getElementById('modal-edit').style.display='none';currentEditId=null;}
 async function saveEdit(){if(!currentEditId)return;const update={nome_cliente:document.getElementById('edit-client').value,telefone_cliente:document.getElementById('edit-phone').value,endereco_entrega:document.getElementById('edit-dest').value,cod_pedido:document.getElementById('edit-code').value,obs:document.getElementById('edit-obs').value};await fetch(API+'/orders/'+currentEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(update)});tg.showAlert('✅ Pedido atualizado!');closeEditModal();loadData();}
@@ -241,6 +264,134 @@ if(r.ok){tg.showAlert('✅ Pedido movido para Em Preparo! Motoboy chamado em '+m
 else{tg.showAlert('Erro ao atualizar pedido.');}
 }catch(e){tg.showAlert('Erro: '+e.message);}
 }
+
+
+/* ========== SISTEMA DE ALERTA DE NOVO PEDIDO ========== */
+var _alertIdsVistos = new Set(JSON.parse(localStorage.getItem('_fdAlertSeen')||'[]'));
+var _alertSoundCtx = null;
+var _alertInterval = null;
+var _alertPedidosNovos = [];
+var _alertAtivo = false;
+
+function _salvarVistos() {
+  var arr = Array.from(_alertIdsVistos);
+  if (arr.length > 200) arr = arr.slice(arr.length - 200);
+  localStorage.setItem('_fdAlertSeen', JSON.stringify(arr));
+}
+
+function _criarSom() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Sequência de beeps urgentes
+    [0, 0.18, 0.36, 0.54].forEach(function(t) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = t < 0.3 ? 880 : 1100;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0, ctx.currentTime + t);
+      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + t + 0.02);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + t + 0.15);
+      osc.start(ctx.currentTime + t);
+      osc.stop(ctx.currentTime + t + 0.16);
+    });
+  } catch(e) {}
+}
+
+function _tocarAlerta() {
+  // Primeiro toque precisa de interação do usuário (política do browser)
+  // Usamos AudioContext que funciona melhor
+  _criarSom();
+  // Vibração no mobile
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+}
+
+function mostrarAlertaNovoPedido(pedidos) {
+  if (!pedidos || !pedidos.length) return;
+  _alertPedidosNovos = pedidos;
+  _alertAtivo = true;
+  var o = pedidos[0];
+  var pagLabel = {dinheiro:'💵 Dinheiro', maquina:'💳 Máquina', pix:'📱 PIX', cartao_credito:'💳 Crédito', cartao_debito:'💳 Débito'};
+  var valorItens = parseFloat(o.valor_produtos || o.valor_pedido || 0);
+  var valorEntrega = parseFloat(o.valor_total || 0);
+  var totalFinal = (o.plataforma === 'cardapio') ? (valorItens + valorEntrega) : valorEntrega;
+  document.getElementById('alert-cliente').textContent = o.nome_cliente || '—';
+  document.getElementById('alert-endereco').textContent = (o.endereco_entrega || '—').substring(0, 40) + ((o.endereco_entrega||'').length > 40 ? '...' : '');
+  document.getElementById('alert-pagamento').textContent = pagLabel[o.tipo_pagamento] || o.tipo_pagamento || '—';
+  document.getElementById('alert-total').textContent = 'R$ ' + totalFinal.toFixed(2);
+  var counter = document.getElementById('alert-counter');
+  if (pedidos.length > 1) {
+    counter.textContent = pedidos.length + ' pedidos aguardando!';
+    counter.style.display = 'inline-block';
+  } else {
+    counter.style.display = 'none';
+  }
+  var modal = document.getElementById('novo-pedido-alert');
+  modal.style.display = 'flex';
+  _tocarAlerta();
+  // Repetir som a cada 8s enquanto ativo
+  if (_alertInterval) clearInterval(_alertInterval);
+  _alertInterval = setInterval(function() {
+    if (_alertAtivo) {
+      _tocarAlerta();
+      // Shake animation
+      var box = document.getElementById('novo-pedido-alert-box');
+      if (box) { box.classList.add('shake'); setTimeout(function(){ box.classList.remove('shake'); }, 450); }
+    } else {
+      clearInterval(_alertInterval);
+    }
+  }, 8000);
+  // Atualizar título da aba
+  document.title = '🔔 NOVO PEDIDO! - FlashDrop';
+  var _titleFlash = setInterval(function() {
+    if (!_alertAtivo) { clearInterval(_titleFlash); document.title = 'FlashDrop - Loja'; return; }
+    document.title = document.title.startsWith('🔔') ? 'FlashDrop - Loja' : '🔔 NOVO PEDIDO! - FlashDrop';
+  }, 1200);
+}
+
+function fecharAlertaNovoPedido(irParaPedidos) {
+  _alertAtivo = false;
+  if (_alertInterval) { clearInterval(_alertInterval); _alertInterval = null; }
+  // Marcar todos como vistos
+  _alertPedidosNovos.forEach(function(o) { _alertIdsVistos.add(o.id); });
+  _salvarVistos();
+  document.getElementById('novo-pedido-alert').style.display = 'none';
+  document.title = 'FlashDrop - Loja';
+  if (irParaPedidos) {
+    showLojaTab('solicitacoes');
+    window.scrollTo(0, 0);
+  }
+}
+
+function verificarNovosPedidos(orders) {
+  if (!orders || !orders.length) return;
+  // Pedidos do cardápio pendentes (solicitações)
+  var solicNovos = orders.filter(function(o) {
+    return o.plataforma === 'cardapio' && o.status !== 'cancelado' && !_alertIdsVistos.has(o.id);
+  });
+  // Pedidos internos com status 'novo' (criados pela loja mas não processados)
+  var pedidosNovos = orders.filter(function(o) {
+    return o.status === 'novo' && o.plataforma !== 'cardapio' && !_alertIdsVistos.has(o.id);
+  });
+  var todos = solicNovos.concat(pedidosNovos);
+  // Ordenar por id desc (mais recente primeiro)
+  todos.sort(function(a, b) { return b.id - a.id; });
+  if (todos.length > 0 && !_alertAtivo) {
+    mostrarAlertaNovoPedido(todos);
+  } else if (todos.length > 0 && _alertAtivo) {
+    // Atualizar contador se chegou mais pedido
+    _alertPedidosNovos = todos;
+    var counter = document.getElementById('alert-counter');
+    if (counter && todos.length > 1) {
+      counter.textContent = todos.length + ' pedidos aguardando!';
+      counter.style.display = 'inline-block';
+    }
+  } else if (todos.length === 0 && _alertAtivo) {
+    // Todos foram tratados (aceitos/recusados por outra aba)
+    fecharAlertaNovoPedido(false);
+  }
+}
+/* ========== FIM DO SISTEMA DE ALERTA ========== */
 
 init();async function loadLojaIndicacao(){try{var u=JSON.parse(localStorage.getItem("flashdrop_user")||"{}");if(!u.id)return;var r=await fetch(API+"/referral-code/"+u.id);if(!r.ok)return;var d=await r.json();document.getElementById("loja-ref-code").textContent=d.code||"---";var r2=await fetch(API+"/referrals/user/"+u.id);if(r2.ok){var list=await r2.json();var mb=list.filter(function(x){return x.referred_role==="motoboy";}).length;var tot=list.reduce(function(acc,x){return acc+(parseFloat(x.total_ganho)||0);},0);document.getElementById("loja-ref-motoboys").textContent=mb;document.getElementById("loja-ref-ganhos").textContent="R$ "+tot.toFixed(2).replace(".",",");}document.getElementById("loja-indicacao-panel").style.display="block";}catch(e){console.log("ind loja",e);}}
 function copyLojaRefCode(){var code=document.getElementById("loja-ref-code").textContent;if(!code||code==="---")return;if(navigator.clipboard){navigator.clipboard.writeText(code).then(function(){tg.showAlert("Codigo copiado: "+code);});}else{var el=document.createElement("textarea");el.value=code;document.body.appendChild(el);el.select();document.execCommand("copy");document.body.removeChild(el);tg.showAlert("Codigo copiado: "+code);}}
@@ -259,7 +410,7 @@ function showLojaTab(tab){
     btn.style.fontWeight=active?'700':'600';
   });
   if(tab==='cardapio'){loadVitrineConfig();loadProdutosLoja();loadCategorias();}
-  if(tab==='solicitacoes'){renderSolicitacoes();}
+  if(tab==='solicitacoes'){renderSolicitacoes();(_myOrders||[]).filter(function(o){return o.plataforma==='cardapio'&&o.status!=='cancelado';}).forEach(function(o){_alertIdsVistos.add(o.id);});_salvarVistos();if(_alertAtivo)fecharAlertaNovoPedido(false);}
 }
 
 /* ---- SOLICITACOES (pedidos vindos do cardapio) ---- */
@@ -910,4 +1061,22 @@ function pollPagamentoSaldo(paymentId, valor, token) {
   }, 5000);
 }
 </script>
-</body></html>
+
+<!-- ===== MODAL ALERTA NOVO PEDIDO ===== -->
+<div id="novo-pedido-alert" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:16px;">
+<div id="novo-pedido-alert-box">
+<span class="alert-icon-ring">🔔</span>
+<div class="alert-title">Novo Pedido!</div>
+<div class="alert-subtitle">⚠️ Aguardando confirmação da loja</div>
+<div class="alert-counter" id="alert-counter" style="display:none"></div>
+<div class="alert-card" id="alert-card-info">
+<div class="alert-row"><span class="alert-lbl">👤 Cliente</span><span class="alert-val" id="alert-cliente">—</span></div>
+<div class="alert-row"><span class="alert-lbl">📍 Entrega</span><span class="alert-val" id="alert-endereco">—</span></div>
+<div class="alert-row"><span class="alert-lbl">💳 Pagamento</span><span class="alert-val"><span class="alert-pag" id="alert-pagamento">—</span></span></div>
+<div class="alert-total" id="alert-total">R$ 0,00</div>
+</div>
+<div class="alert-waiting">⏳ Responda antes que o cliente desista</div>
+<button id="btn-alert-abrir" onclick="fecharAlertaNovoPedido(true)">🛒 ABRIR PEDIDO</button>
+<button onclick="fecharAlertaNovoPedido(false)" style="width:100%;margin-top:10px;padding:11px;background:transparent;border:1px solid #555;border-radius:10px;color:#888;font-size:13px;cursor:pointer;">✖ Fechar alerta (pedido continua pendente)</button>
+</div>
+</div></body></html>
