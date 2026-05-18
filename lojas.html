@@ -112,7 +112,7 @@
         var card = document.createElement('div');
         card.className = 'loja-card';
         var fotoContent = loja.foto_url
-          ? '<img src="' + loja.foto_url + '" alt="' + (loja.name||'') + '" onerror="this.parentElement.innerHTML=\'<span class=\\'placeholder-icon\\'>&#127978;</span>\'" />'
+          ? '<img src="' + loja.foto_url + '" alt="' + (loja.name||'') + '" style="width:100%;height:100%;object-fit:cover" />'
           : '<span class="placeholder-icon">&#127978;</span>';
         var enderecoContent = loja.address
           ? '&#128205; <span>' + loja.address + '</span>'
