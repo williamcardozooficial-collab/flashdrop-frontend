@@ -92,9 +92,9 @@
 
     <div id="pedidos" class="section active"></div>
 
-    <div id="lojas" class="section"></div>
+    <div id="lojas" class="section"><div style="padding:10px 0 4px"><input id="search-lojas" class="input" placeholder="🔍 Pesquisar loja por nome, login ou ID..." oninput="filterUsers('lojas')" style="width:100%;box-sizing:border-box"></div><div id="lojas-list"></div></div>
 
-    <div id="motoboys" class="section"></div>
+    <div id="motoboys" class="section"><div style="padding:10px 0 4px"><input id="search-motoboys" class="input" placeholder="🔍 Pesquisar motoboy por nome, login ou ID..." oninput="filterUsers('motoboys')" style="width:100%;box-sizing:border-box"></div><div id="motoboys-list"></div></div>
 
     <div id="financeiro" class="section">
       <div class="card">
@@ -471,7 +471,7 @@
       } else if (tab === 'lojas' || tab === 'motoboys') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
-        renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }).sort(function(a,b){ return b.id - a.id; }), tab);
+        renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }).sort(function(a,b){ var na=parseInt((a.custom_id||'').replace(/\D/g,''))||0; var nb=parseInt((b.custom_id||'').replace(/\D/g,''))||0; return nb-na; }), tab);
       } else if (tab === 'financeiro') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
@@ -595,7 +595,8 @@
     }
 
     function renderUsers(users, tab) {
-    document.getElementById(tab).innerHTML = users.map(function(u) {
+    var listEl = document.getElementById(tab + '-list') || document.getElementById(tab);
+    listEl.innerHTML = users.map(function(u) {
       var saldo = u.role === 'loja' ? u.credit : u.balance;
       var isMotoboy = u.role === 'motoboy';
       var isBlocked = !!u.blocked;
@@ -643,7 +644,26 @@
     }).join('') || '<p style="text-align:center;color:#666;padding:30px">Nenhum usuario.</p>';
   }
   
-  function renderFinance(users) {
+  function filterUsers(tab) {
+    var term = (document.getElementById('search-' + tab) || {}).value || '';
+    term = term.toLowerCase().trim();
+    var role = tab === 'lojas' ? 'loja' : 'motoboy';
+    var filtered = allUsers.filter(function(u) {
+        if (u.role !== role) return false;
+        if (!term) return true;
+        return (u.name || '').toLowerCase().includes(term) ||
+               (u.username || '').toLowerCase().includes(term) ||
+               (u.custom_id || '').toLowerCase().includes(term) ||
+               (u.phone || '').toLowerCase().includes(term);
+    }).sort(function(a,b){
+        var na=parseInt((a.custom_id||'').replace(/\D/g,''))||0;
+        var nb=parseInt((b.custom_id||'').replace(/\D/g,''))||0;
+        return nb-na;
+    });
+    renderUsers(filtered, tab);
+}
+
+function renderFinance(users) {
       var term = (document.getElementById('search-finance') && document.getElementById('search-finance').value || '').toLowerCase();
       var filtered = users.filter(function(u){
         return u.role !== 'admin' && (esc(u.name).toLowerCase().includes(term) || esc(u.username).toLowerCase().includes(term) || (u.custom_id||'').toLowerCase().includes(term));
