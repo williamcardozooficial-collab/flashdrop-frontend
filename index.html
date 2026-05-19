@@ -471,7 +471,7 @@
       } else if (tab === 'lojas' || tab === 'motoboys') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
-        renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }), tab);
+        renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }).sort(function(a,b){ return b.id - a.id; }), tab);
       } else if (tab === 'financeiro') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
