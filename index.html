@@ -81,6 +81,8 @@
     <div style="display:flex;align-items:center;margin-top:8px;">
       <input id="admin-link" type="text" placeholder="Cole o link aqui" style="flex:1;min-width:0;padding:5px 10px;border-radius:6px;border:1px solid #ffcc00;background:#222;color:#fff;font-size:12px;">
       <button onclick="salvarLink()" style="margin-left:6px;padding:5px 12px;background:#ffcc00;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">Salvar</button>
+            <input id="admin-app-data" type="text" placeholder="Ex: 25/05/2026" style="margin-left:8px;width:100px;padding:4px 8px;border-radius:6px;border:1px solid #888;background:#222;color:#aaa;font-size:11px;" title="Data da atualização">
+      <button onclick="salvarDataApp()" style="margin-left:4px;padding:4px 8px;background:#555;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;">Salvar data</button>
       <button onclick="excluirLink()" style="margin-left:4px;padding:5px 12px;background:#f44336;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">Excluir</button>
     </div>
         <div style="display:flex;align-items:center;margin-top:6px;">
@@ -1509,6 +1511,17 @@ loadSaques();
   (function() {
     var saved = localStorage.getItem('flashdrop_wpp_link');
     if (saved) document.getElementById('admin-link-wpp').value = saved;
+  })();
+
+  function salvarDataApp() {
+    var val = document.getElementById('admin-app-data').value.trim();
+    if (!val) return;
+    localStorage.setItem('flashdrop_app_data', val);
+    alert('Data salva!');
+  }
+  (function() {
+    var saved = localStorage.getItem('flashdrop_app_data');
+    if (saved) document.getElementById('admin-app-data').value = saved;
   })();
 </script>
 
