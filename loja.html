@@ -153,6 +153,26 @@ function startPreparoTimers(orders) {
       el.textContent = m > 0 ? '⏳ Motoboy em ' + m + 'min ' + (s<10?'0':'') + s + 's' : '⏳ Motoboy em ' + s + 's'
     }
     updateTimer();
+
+  // Timer 10s para auto-clicar Em Preparo nos pedidos novos
+  var _novoTimers = {};
+  orders.filter(function(o){ return o.status==='novo'; }).forEach(function(o){
+    if(_novoTimers[o.id]) { clearInterval(_novoTimers[o.id]); }
+    var seg = 10;
+    var spanEl = document.getElementById('timer-preparo-'+o.id);
+    if(!spanEl) return;
+    spanEl.textContent = seg;
+    _novoTimers[o.id] = setInterval(function(){
+      seg--;
+      var sp = document.getElementById('timer-preparo-'+o.id);
+      if(!sp){ clearInterval(_novoTimers[o.id]); return; }
+      sp.textContent = seg;
+      if(seg <= 0){
+        clearInterval(_novoTimers[o.id]);
+        moverParaPreparo(o.id);
+      }
+    }, 1000);
+  });
     _prepTimers[o.id] = setInterval(updateTimer, 1000);
   });
 }
@@ -228,9 +248,9 @@ h+='<div style="font-size:13px;margin:4px 0"><strong>&#128100; Cliente:</strong>
       h+='<div class="timer-actions"><button class="btn-launch" onclick="launchNow('+o.id+')" style="margin-top:0">🚀 Chamar Agora</button>';
       h+='<button class="btn-edit-timer" onclick="editPreparoTime('+o.id+','+o.launch_at+')" style="margin-top:0">✏️ Editar Tempo</button></div></div>';
     }
-    if(o.status==="novo"){
-h+='<button onclick="moverParaPreparo('+o.id+')" style="background:#bb86fc;color:#1a0a2e;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;padding:8px 16px;margin-top:8px;margin-right:6px;">🔄 Em Preparo</button>';
-}
+        if(o.status==="novo"){
+        h+='<button id="btn-preparo-'+o.id+'" onclick="moverParaPreparo(\''+o.id+'\')" style="background:#bb86fc;color:#000;border:none;border-radius:8px;padding:8px 16px;font-weight:bold;cursor:pointer;">🍳 Em Preparo (<span id="timer-preparo-'+o.id+'">10</span>s)</button>';
+    }
 if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="cancelado"){
       h+='<button class="btn-edit" onclick="openEditModal('+o.id+')">✏️ Editar</button>';
     }
