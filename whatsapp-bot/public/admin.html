@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashDrop Bot - Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: #0f0f0f; color: #fff; min-height: 100vh; }
+
+    /* LOGIN */
+    .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .login-box { background: #1a1a1a; border-radius: 16px; padding: 40px 32px; width: 100%; max-width: 380px; border: 1px solid #333; }
+    .login-box h1 { text-align: center; color: #ffcc00; font-size: 22px; margin-bottom: 6px; }
+    .login-box p { text-align: center; color: #888; font-size: 13px; margin-bottom: 28px; }
+    .input-group { margin-bottom: 16px; }
+    .input-group label { display: block; font-size: 13px; color: #ccc; margin-bottom: 6px; }
+    .input { width: 100%; padding: 12px; background: #0f0f0f; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 14px; outline: none; }
+    .input:focus { border-color: #ffcc00; }
+    .btn-login { width: 100%; padding: 13px; background: #ffcc00; color: #000; font-weight: 700; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; }
+    .btn-login:hover { background: #e6b800; }
+    .error-msg { background: #2a1010; border: 1px solid #f44336; border-radius: 8px; padding: 10px 14px; color: #f44336; font-size: 13px; margin-bottom: 16px; }
+
+    /* DASHBOARD */
+    .dashboard-page { display: none; flex-direction: column; min-height: 100vh; }
+    .header { background: #1a1a1a; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; }
+    .header h1 { color: #ffcc00; font-size: 18px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-sm { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-outline { background: transparent; border: 1px solid #555; color: #ccc; }
+    .btn-outline:hover { border-color: #ffcc00; color: #ffcc00; }
+    .btn-danger { background: #f44336; color: #fff; }
+    .content { padding: 20px; flex: 1; max-width: 900px; margin: 0 auto; width: 100%; }
+
+    /* STATUS CARD */
+    .status-card { background: #1a1a1a; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #333; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .status-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+    .dot-open { background: #4caf50; box-shadow: 0 0 8px #4caf5088; }
+    .dot-connecting { background: #ff9800; box-shadow: 0 0 8px #ff980088; }
+    .dot-close, .dot-error { background: #f44336; box-shadow: 0 0 8px #f4433688; }
+    .status-info { flex: 1; }
+    .status-title { font-size: 15px; font-weight: 600; }
+    .status-sub { font-size: 12px; color: #888; margin-top: 2px; }
+    .btn-reconnect { padding: 9px 18px; background: #ffcc00; color: #000; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .btn-reconnect:hover { background: #e6b800; }
+    .btn-reconnect:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* QR CODE */
+    .qr-card { background: #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 16px; border: 1px solid #ff9800; text-align: center; }
+    .qr-card h3 { color: #ff9800; margin-bottom: 6px; font-size: 15px; }
+    .qr-card p { color: #888; font-size: 12px; margin-bottom: 16px; }
+    .qr-card img { max-width: 220px; border-radius: 8px; background: #fff; padding: 8px; }
+    .qr-card.hidden { display: none; }
+
+    /* SETUP CARD */
+    .setup-card { background: #1a0f00; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #ff9800; }
+    .setup-card h3 { color: #ff9800; margin-bottom: 8px; font-size: 14px; }
+    .setup-card p { color: #aaa; font-size: 13px; margin-bottom: 12px; }
+    .btn-setup { padding: 9px 18px; background: #ff9800; color: #000; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+    /* LOGS */
+    .logs-card { background: #1a1a1a; border-radius: 12px; padding: 20px; border: 1px solid #333; }
+    .logs-card h3 { font-size: 15px; margin-bottom: 14px; color: #ccc; }
+    .log-item { border-bottom: 1px solid #222; padding: 12px 0; font-size: 13px; }
+    .log-item:last-child { border-bottom: none; }
+    .log-phone { color: #ffcc00; font-weight: 600; margin-bottom: 4px; }
+    .log-time { color: #555; font-size: 11px; float: right; }
+    .log-msg { color: #ccc; margin-bottom: 4px; }
+    .log-reply { color: #4caf50; font-size: 12px; }
+    .log-reply::before { content: "↩ "; }
+    .empty-logs { text-align: center; color: #555; padding: 30px 0; font-size: 13px; }
+    .badge-new { display: inline-block; background: #ffcc00; color: #000; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN PAGE -->
+  <div class="login-page" id="loginPage">
+    <div class="login-box">
+      <h1>⚡ FlashDrop Bot</h1>
+      <p>Painel de administração do WhatsApp</p>
+      <div id="loginError" class="error-msg" style="display:none">Usuário ou senha incorretos.</div>
+      <form method="POST" action="/admin/login">
+        <div class="input-group">
+          <label>Usuário</label>
+          <input class="input" type="text" name="username" required autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label>Senha</label>
+          <input class="input" type="password" name="password" required autocomplete="current-password">
+        </div>
+        <button class="btn-login" type="submit">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="dashboard-page" id="dashboardPage">
+    <div class="header">
+      <h1>⚡ FlashDrop Bot</h1>
+      <div class="header-actions">
+        <span id="logCount" style="font-size:12px;color:#888">0 mensagens</span>
+        <a href="/admin/logout"><button class="btn-sm btn-outline">Sair</button></a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Status Card -->
+      <div class="status-card" id="statusCard">
+        <div class="status-dot dot-connecting" id="statusDot"></div>
+        <div class="status-info">
+          <div class="status-title" id="statusTitle">Verificando conexão...</div>
+          <div class="status-sub" id="statusSub">Aguarde</div>
+        </div>
+        <button class="btn-reconnect" id="btnReconnect" onclick="reconnect()">Reconectar</button>
+      </div>
+
+      <!-- Setup Card (mostrado quando precisa configurar webhook) -->
+      <div class="setup-card" id="setupCard" style="display:none">
+        <h3>⚙️ Configuração necessária</h3>
+        <p>Clique abaixo para registrar o webhook e criar a instância no Evolution API automaticamente.</p>
+        <button class="btn-setup" onclick="setup()">Configurar agora</button>
+      </div>
+
+      <!-- QR Code Card -->
+      <div class="qr-card hidden" id="qrCard">
+        <h3>📱 Escaneie o QR Code</h3>
+        <p>Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</p>
+        <img id="qrImage" src="" alt="QR Code">
+      </div>
+
+      <!-- Logs Card -->
+      <div class="logs-card">
+        <h3>Mensagens recentes <span id="badgeNew" class="badge-new" style="display:none">novo</span></h3>
+        <div id="logsList"><div class="empty-logs">Nenhuma mensagem recebida ainda.</div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const isLogin = window.location.pathname.includes('login') || window.location.pathname === '/admin';
+    const isDashboard = window.location.pathname.includes('dashboard');
+    const hasError = window.location.search.includes('error=1');
+
+    if (isLogin && !isDashboard) {
+      document.getElementById('loginPage').style.display = 'flex';
+      if (hasError) document.getElementById('loginError').style.display = 'block';
+    } else {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('dashboardPage').style.display = 'flex';
+      startSSE();
+    }
+
+    let lastLogCount = 0;
+
+    function startSSE() {
+      const es = new EventSource('/admin/events');
+      es.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        updateStatus(data.state, data.qrcode);
+        if (data.logs) renderLogs(data.logs);
+      };
+      es.onerror = () => {
+        setTimeout(() => startSSE(), 5000);
+        es.close();
+      };
+    }
+
+    function updateStatus(state, qrcode) {
+      const dot = document.getElementById('statusDot');
+      const title = document.getElementById('statusTitle');
+      const sub = document.getElementById('statusSub');
+      const qrCard = document.getElementById('qrCard');
+      const qrImg = document.getElementById('qrImage');
+
+      dot.className = 'status-dot dot-' + state;
+
+      const labels = {
+        open: ['✅ WhatsApp Conectado', 'Bot ativo e recebendo mensagens'],
+        connecting: ['🔄 Conectando...', 'Aguardando QR Code ser escaneado'],
+        close: ['❌ Desconectado', 'Escaneie o QR Code para conectar'],
+        error: ['⚠️ Erro de conexão', 'Verifique a Evolution API']
+      };
+      const [t, s] = labels[state] || labels.error;
+      title.textContent = t;
+      sub.textContent = s;
+
+      if (qrcode && state !== 'open') {
+        qrCard.classList.remove('hidden');
+        qrImg.src = qrcode;
+      } else {
+        qrCard.classList.add('hidden');
+      }
+    }
+
+    function renderLogs(logs) {
+      const list = document.getElementById('logsList');
+      const count = document.getElementById('logCount');
+      const badge = document.getElementById('badgeNew');
+
+      count.textContent = logs.length + ' mensagem' + (logs.length !== 1 ? 's' : '');
+
+      if (logs.length > lastLogCount && lastLogCount > 0) {
+        badge.style.display = 'inline-block';
+        setTimeout(() => badge.style.display = 'none', 3000);
+      }
+      lastLogCount = logs.length;
+
+      if (logs.length === 0) {
+        list.innerHTML = '<div class="empty-logs">Nenhuma mensagem recebida ainda.</div>';
+        return;
+      }
+
+      list.innerHTML = logs.map(l => `
+        <div class="log-item">
+          <div class="log-phone">${formatPhone(l.phone)} <span class="log-time">${formatTime(l.timestamp)}</span></div>
+          <div class="log-msg">${esc(l.message)}</div>
+          <div class="log-reply">${esc(l.response)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function reconnect() {
+      const btn = document.getElementById('btnReconnect');
+      btn.disabled = true;
+      btn.textContent = 'Reconectando...';
+      try {
+        const res = await fetch('/admin/api/reconnect', { method: 'POST' });
+        const data = await res.json();
+        if (data.qrcode) {
+          document.getElementById('qrCard').classList.remove('hidden');
+          document.getElementById('qrImage').src = data.qrcode;
+        }
+      } catch {}
+      btn.disabled = false;
+      btn.textContent = 'Reconectar';
+    }
+
+    async function setup() {
+      const btn = document.querySelector('.btn-setup');
+      btn.textContent = 'Configurando...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/admin/api/setup', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('setupCard').style.display = 'none';
+        } else {
+          alert('Erro: ' + data.error);
+        }
+      } catch (e) {
+        alert('Erro ao configurar: ' + e.message);
+      }
+      btn.textContent = 'Configurar agora';
+      btn.disabled = false;
+    }
+
+    function formatPhone(jid) {
+      if (!jid) return '—';
+      return '+' + jid.replace('@s.whatsapp.net', '').replace('@c.us', '');
+    }
+
+    function formatTime(ts) {
+      if (!ts) return '';
+      return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function esc(str) {
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+  </script>
+</body>
+</html>
