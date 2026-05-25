@@ -89,6 +89,8 @@
     <h1>FlashDrop Motoboy</h1>
     <div id="motoboy-name" style="color:#aaa;font-size:14px">Carregando...</div><div id="motoboy-custom-id" style="font-size:12px;color:#ffcc00;font-weight:700;letter-spacing:1px;margin-top:2px"></div>
     <span class="status-badge offline" id="status-badge" onclick="toggleOnline()" style="cursor:pointer;user-select:none;" title="Clique para alternar Online/Offline">Offline</span>
+        <br>
+    <a id="btn-baixar-app" href="#" target="_blank" style="display:none;margin-top:8px;padding:10px 24px;background:#ffcc00;color:#000;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block;">⬇️ BAIXAR APLICATIVO</a>
   </div>
 
   <div class="stats">
@@ -284,6 +286,20 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         badge.className = "status-badge offline";
       }
     }
+
+  // Botao Baixar Aplicativo
+  (function() {
+    var link = localStorage.getItem('flashdrop_admin_link');
+    var btn = document.getElementById('btn-baixar-app');
+    if (btn) {
+      if (link) {
+        btn.href = link;
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+  })();
 
       async function autoOfflineCheck() {
     if (!user.online || !_onlineAt) return;
