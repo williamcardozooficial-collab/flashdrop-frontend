@@ -83,6 +83,11 @@
       <button onclick="salvarLink()" style="margin-left:6px;padding:5px 12px;background:#ffcc00;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">Salvar</button>
       <button onclick="excluirLink()" style="margin-left:4px;padding:5px 12px;background:#f44336;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">Excluir</button>
     </div>
+        <div style="display:flex;align-items:center;margin-top:6px;">
+      <input id="admin-link-wpp" type="text" placeholder="Link Grupo do WhatsApp" style="flex:1;min-width:0;padding:5px 10px;border-radius:6px;border:1px solid #25d366;background:#222;color:#fff;font-size:12px;">
+      <button onclick="salvarLinkWpp()" style="margin-left:6px;padding:5px 12px;background:#25d366;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">Salvar</button>
+      <button onclick="excluirLinkWpp()" style="margin-left:4px;padding:5px 12px;background:#f44336;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">Excluir</button>
+    </div>
   </div>
 
   <div class="tabs" id="tabs">
@@ -1488,6 +1493,22 @@ loadSaques();
   (function() {
     var saved = localStorage.getItem('flashdrop_admin_link');
     if (saved) document.getElementById('admin-link').value = saved;
+  })();
+
+  function salvarLinkWpp() {
+    var val = document.getElementById('admin-link-wpp').value.trim();
+    if (!val) return;
+    localStorage.setItem('flashdrop_wpp_link', val);
+    alert('Link WhatsApp salvo!');
+  }
+  function excluirLinkWpp() {
+    localStorage.removeItem('flashdrop_wpp_link');
+    document.getElementById('admin-link-wpp').value = '';
+    alert('Link WhatsApp excluído!');
+  }
+  (function() {
+    var saved = localStorage.getItem('flashdrop_wpp_link');
+    if (saved) document.getElementById('admin-link-wpp').value = saved;
   })();
 </script>
 
