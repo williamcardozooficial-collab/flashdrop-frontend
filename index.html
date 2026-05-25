@@ -1481,48 +1481,40 @@ loadSaques();
       document.getElementById('btn-' + tipo + '-loja').classList.toggle('selected', valor === 'loja');
     }
 
+const API = 'https://flashdrop-backend-production.up.railway.app';
+
   function salvarLink() {
     var val = document.getElementById('admin-link').value.trim();
     if (!val) return;
-    localStorage.setItem('flashdrop_admin_link', val);
-    alert('Link salvo!');
+    fetch(API+'/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chave:'app_link',valor:val})})
+    .then(()=>alert('Link salvo!'));
   }
   function excluirLink() {
-    localStorage.removeItem('flashdrop_admin_link');
-    document.getElementById('admin-link').value = '';
-    alert('Link excluído!');
+    fetch(API+'/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chave:'app_link',valor:''})})
+    .then(()=>{ document.getElementById('admin-link').value=''; alert('Link excluído!'); });
   }
-  (function() {
-    var saved = localStorage.getItem('flashdrop_admin_link');
-    if (saved) document.getElementById('admin-link').value = saved;
-  })();
-
   function salvarLinkWpp() {
     var val = document.getElementById('admin-link-wpp').value.trim();
     if (!val) return;
-    localStorage.setItem('flashdrop_wpp_link', val);
-    alert('Link WhatsApp salvo!');
+    fetch(API+'/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chave:'wpp_link',valor:val})})
+    .then(()=>alert('Link WhatsApp salvo!'));
   }
   function excluirLinkWpp() {
-    localStorage.removeItem('flashdrop_wpp_link');
-    document.getElementById('admin-link-wpp').value = '';
-    alert('Link WhatsApp excluído!');
+    fetch(API+'/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chave:'wpp_link',valor:''})})
+    .then(()=>{ document.getElementById('admin-link-wpp').value=''; alert('Link WhatsApp excluído!'); });
   }
-  (function() {
-    var saved = localStorage.getItem('flashdrop_wpp_link');
-    if (saved) document.getElementById('admin-link-wpp').value = saved;
-  })();
-
   function salvarDataApp() {
     var val = document.getElementById('admin-app-data').value.trim();
     if (!val) return;
-    localStorage.setItem('flashdrop_app_data', val);
-    alert('Data salva!');
+    fetch(API+'/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chave:'app_data',valor:val})})
+    .then(()=>alert('Data salva!'));
   }
-  (function() {
-    var saved = localStorage.getItem('flashdrop_app_data');
-    if (saved) document.getElementById('admin-app-data').value = saved;
-  })();
+  // Carrega valores salvos no admin
+  fetch(API+'/config').then(r=>r.json()).then(cfg=>{
+    if(cfg.app_link) document.getElementById('admin-link').value = cfg.app_link;
+    if(cfg.wpp_link) document.getElementById('admin-link-wpp').value = cfg.wpp_link;
+    if(cfg.app_data) document.getElementById('admin-app-data').value = cfg.app_data;
+  }).catch(()=>{});
 </script>
 
 </body>
