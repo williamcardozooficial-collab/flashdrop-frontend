@@ -91,6 +91,8 @@
     <span class="status-badge offline" id="status-badge" onclick="toggleOnline()" style="cursor:pointer;user-select:none;" title="Clique para alternar Online/Offline">Offline</span>
         <br>
     <a id="btn-baixar-app" href="#" target="_blank" style="display:none;margin-top:8px;padding:10px 24px;background:#ffcc00;color:#000;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block;">⬇️ BAIXAR APLICATIVO</a>
+        <br>
+    <a id="btn-wpp" href="#" target="_blank" style="display:none;margin-top:6px;padding:10px 24px;background:#25d366;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block;">💬 Grupo do WhatsApp</a>
   </div>
 
   <div class="stats">
@@ -291,6 +293,20 @@ var API = "https://flashdrop-backend-production.up.railway.app";
   (function() {
     var link = localStorage.getItem('flashdrop_admin_link');
     var btn = document.getElementById('btn-baixar-app');
+    if (btn) {
+      if (link) {
+        btn.href = link;
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+  })();
+
+  // Botao WhatsApp
+  (function() {
+    var link = localStorage.getItem('flashdrop_wpp_link');
+    var btn = document.getElementById('btn-wpp');
     if (btn) {
       if (link) {
         btn.href = link;
