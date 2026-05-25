@@ -1,10 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAIResponse } = require('../services/ai');
-const { sendText } = require('../services/evolution');
-const { addLog, broadcastStatus } = require('./admin');
-
-const processingLock = new Set();
+const { broadcastStatus } = require('./admin');
 
 router.post('/', async (req, res) => {
   res.sendStatus(200);
@@ -26,30 +22,10 @@ router.post('/', async (req, res) => {
     const fromMe = message.key?.fromMe;
     if (fromMe) return;
 
-    const isGroup = message.key?.remoteJid?.endsWith('@g.us');
-    if (isGroup) return;
-
     const phone = message.key?.remoteJid;
-    const text = message.message?.conversation
-      || message.message?.extendedTextMessage?.text
-      || '';
-
-    if (!phone || !text.trim()) return;
-    if (processingLock.has(phone)) return;
-
-    processingLock.add(phone);
-
-    try {
-      console.log(`[Webhook] Mensagem de ${phone}: ${text}`);
-
-      const reply = await getAIResponse(phone, text);
-      await sendText(phone, reply);
-
-      addLog({ phone, message: text, response: reply });
-      console.log(`[Webhook] Respondido para ${phone}`);
-    } finally {
-      processingLock.delete(phone);
-    }
+    console.log('[Webhook] Mensagem recebida de ' + phone + ' — ignorada (modo somente notificacoes)');
+    // Mensagens recebidas sao ignoradas intencionalmente.
+    // O bot apenas envia notificacoes via POST /notificacoes/enviar
   } catch (err) {
     console.error('[Webhook] Erro:', err.message);
   }
