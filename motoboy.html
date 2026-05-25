@@ -290,26 +290,44 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       }
     }
 
-  // Carrega links do backend
-  const API = 'https://flashdrop-backend-production.up.railway.app';
-  fetch(API+'/config').then(r=>r.json()).then(cfg=>{
-    var btnApp = document.getElementById('btn-baixar-app');
-    var btnWpp = document.getElementById('btn-wpp');
+  // Botao Baixar Aplicativo
+  (function() {
+    var link = localStorage.getItem('flashdrop_admin_link');
+    var btn = document.getElementById('btn-baixar-app');
+    if (btn) {
+      if (link) {
+        btn.href = link;
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+    // Texto de data
     var dataText = document.getElementById('app-data-text');
-    if(btnApp){
-      if(cfg.app_link){ btnApp.href=cfg.app_link; btnApp.style.display='inline-block'; }
-      else { btnApp.style.display='none'; }
+    var dataVal = localStorage.getItem('flashdrop_app_data');
+    if (dataText) {
+      if (dataVal) {
+        dataText.textContent = '📅 Atualizado: ' + dataVal;
+        dataText.style.display = 'inline';
+      } else {
+        dataText.style.display = 'none';
+      }
     }
-    if(btnWpp){
-      if(cfg.wpp_link){ btnWpp.href=cfg.wpp_link; btnWpp.style.display='inline-block'; }
-      else { btnWpp.style.display='none'; }
-    }
-    if(dataText){
-      if(cfg.app_data){ dataText.textContent='📅 Atualizado: '+cfg.app_data; dataText.style.display='inline'; }
-      else { dataText.style.display='none'; }
-    }
-  }).catch(()=>{});
+  })();
 
+  // Botao WhatsApp
+  (function() {
+    var link = localStorage.getItem('flashdrop_wpp_link');
+    var btn = document.getElementById('btn-wpp');
+    if (btn) {
+      if (link) {
+        btn.href = link;
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+  })();
       async function autoOfflineCheck() {
     if (!user.online || !_onlineAt) return;
     var elapsed = Date.now() - _onlineAt;
