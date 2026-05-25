@@ -190,7 +190,7 @@ function renderLojaOrders(orders){
   if(badge){if(solic.length>0){badge.textContent=solic.length;badge.style.display="inline";}else{badge.style.display="none";}}
   var ordersParaPedidos=orders.filter(function(o){return !(o.plataforma==='cardapio'&&o.status!=='cancelado');});
   var statusLabels={novo:"🆕 Novo Pedido",em_preparo:"🔄 Em Preparo",pendente:"⏳ Pendente",aceito:"✅ Aceito",na_loja:"🏪 Na Loja",coletado:"📦 Coletado",no_cliente:"🏠 No Cliente",entregue:"🎉 Entregue",cancelado:"❌ Cancelado",retornado:"🔄 Retornado"};
-  var statuses=["todos","novo","em_preparo","aceito","na_loja","coletado","no_cliente","entregue","cancelado"];
+  var statuses=["todos","novo","em_preparo","pendente","aceito","na_loja","coletado","no_cliente","entregue","cancelado"];
   var filterBar=document.getElementById("order-filter-bar");
   if(filterBar){
     filterBar.innerHTML=statuses.map(function(s){
