@@ -5,6 +5,7 @@ const path = require('path');
 
 const webhookRoutes = require('./routes/webhook');
 const adminRoutes = require('./routes/admin');
+const notificacoesRoutes = require('./routes/notificacoes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,9 +23,10 @@ app.use(session({
 
 app.use('/webhook', webhookRoutes);
 app.use('/admin', adminRoutes);
+app.use('/notificacoes', notificacoesRoutes);
 
 app.get('/', (req, res) => res.redirect('/admin'));
 
 app.listen(PORT, () => {
-  console.log(`[FlashDrop Bot] Rodando na porta ${PORT}`);
+  console.log('[FlashDrop Bot] Rodando na porta ' + PORT);
 });
