@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -72,6 +73,9 @@
 
   <div class="header" style="display:flex;align-items:center;justify-content:space-between;">
     <h1>FlashDrop Admin</h1>
+        <input id="admin-link" type="text" placeholder="Cole o link aqui" style="margin-left:12px;width:220px;padding:5px 10px;border-radius:8px;border:1px solid #ffcc00;background:#222;color:#fff;font-size:13px;">
+    <button onclick="salvarLink()" style="margin-left:6px;padding:5px 12px;background:#ffcc00;color:#000;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Salvar</button>
+    <button onclick="excluirLink()" style="margin-left:4px;padding:5px 12px;background:#f44336;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Excluir</button>
     <button onclick="location.reload()" style="background:#333;color:#ffcc00;border:1px solid #ffcc00;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:bold;cursor:pointer;margin-right:8px;">🔄 Atualizar</button><button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;">Sair</button>
   </div>
 
@@ -1463,6 +1467,23 @@ loadSaques();
       document.getElementById('btn-' + tipo + '-admin').classList.toggle('selected', valor === 'admin');
       document.getElementById('btn-' + tipo + '-loja').classList.toggle('selected', valor === 'loja');
     }
+
+  // Link Admin
+  function salvarLink() {
+    var val = document.getElementById('admin-link').value.trim();
+    if (!val) return;
+    localStorage.setItem('flashdrop_admin_link', val);
+    alert('Link salvo!');
+  }
+  function excluirLink() {
+    localStorage.removeItem('flashdrop_admin_link');
+    document.getElementById('admin-link').value = '';
+    alert('Link excluído!');
+  }
+  (function carregarLink() {
+    var saved = localStorage.getItem('flashdrop_admin_link');
+    if (saved) document.getElementById('admin-link').value = saved;
+  })();
 </script>
 
 </body>
