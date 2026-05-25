@@ -193,14 +193,15 @@ function renderLojaOrders(orders){
   var statuses=["todos","novo","em_preparo","pendente","aceito","na_loja","coletado","no_cliente","entregue","cancelado"];
   var filterBar=document.getElementById("order-filter-bar");
   if(filterBar){
-    filterBar.innerHTML=statuses.map(function(s){
-      var count=s==="todos"?ordersParaPedidos.length:ordersParaPedidos.filter(function(o){return o.status===s;}).length;
-      var lbl=s==="todos"?"Todos":(statusLabels[s]||s);
-      var active=_lojaFilter===s?" active":"";
-      var b=count>0?"<span class=\"filter-badge\">"+count+"</span>":"";
-      return "<button class=\"filter-btn-loja"+active+"\" data-s=\""+s+"\" onclick=\"filterLojaOrders(this.dataset.s)\">"+lbl+b+"</button>";
-    }).join("");
-  }
+        filterBar.innerHTML=statuses.map(function(s){
+        var count=s==="todos"?ordersParaPedidos.length:ordersParaPedidos.filter(function(o){return o.status===s;}).length;
+        var lbl=s==="todos"?"Todos":(statusLabels[s]||s);
+        var active=_lojaFilter===s?" active":"";
+        var b=count>0?"<span class=\"filter-badge\">"+count+"</span>":"";
+        if(s!=="todos"&&count===0) return "";
+        return "<button class=\"filter-btn-loja"+active+"\" data-s=\""+s+"\" onclick=\"filterLojaOrders(this.dataset.s)\">" +lbl+b+"</button>";
+      }).join("");
+    }
   var filtered=_lojaFilter==="todos"?ordersParaPedidos:ordersParaPedidos.filter(function(o){return o.status===_lojaFilter;});
   var sL={novo:"🆕 Novo Pedido",em_preparo:"🔄 Em Preparo",pendente:"⏳ Pendente",aceito:"✅ Aceito",na_loja:"🏪 Na Loja",coletado:"📦 Coletado",no_cliente:"🏠 No Cliente",entregue:"🎉 Entregue",cancelado:"❌ Cancelado",retornado:"🔄 Retornado"};
   function cardOrder(o){
