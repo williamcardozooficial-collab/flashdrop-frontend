@@ -248,6 +248,32 @@ function showSuccess(msg){
     } catch(e){ showError('❌ Erro de conexão: '+e.message); }
     document.getElementById('registerBtn').disabled=false;
   }
+
+// ── AUTO-PREENCHER ?ref= DA URL ─────────────────────────────────
+(function() {
+  var refCode = new URLSearchParams(window.location.search).get('ref');
+  if (!refCode) return;
+  refCode = refCode.toUpperCase();
+  var campoMotoboy = document.getElementById('referral-code');
+  var campoLoja = document.getElementById('referral-loja');
+  if (campoMotoboy) {
+    campoMotoboy.value = refCode;
+    campoMotoboy.style.background = '#e8f5e9';
+    campoMotoboy.style.borderColor = '#4caf50';
+  }
+  if (campoLoja) {
+    campoLoja.value = refCode;
+    campoLoja.style.background = '#e8f5e9';
+    campoLoja.style.borderColor = '#4caf50';
+  }
+  var aviso = document.createElement('div');
+  aviso.id = 'aviso-ref';
+  aviso.style.cssText = 'background:#0a2d1a;border:1px solid #27ae60;border-radius:10px;padding:10px 14px;color:#2ecc71;font-size:13px;font-weight:600;margin-bottom:14px;text-align:center';
+  aviso.textContent = '✅ Código de indicação preenchido automaticamente';
+  var card = document.querySelector('.card');
+  var errorDiv = document.getElementById('errorDiv');
+  if (card && errorDiv) card.insertBefore(aviso, errorDiv);
+})();
 </script>
 </body>
 </html>
