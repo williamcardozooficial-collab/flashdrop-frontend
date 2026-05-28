@@ -168,7 +168,7 @@ function startPreparoTimers(orders) {
           var t = setInterval(function(){
             seg--;
             var el = document.getElementById('timer-preparo-'+orderId);
-            if(!el){ clearInterval(t); return; }
+            if(!el){ delete _novoTimers[orderId]; clearInterval(t); return; }
             el.textContent = seg;
             if(seg <= 0){ clearInterval(t); delete _novoTimers[orderId]; moverParaPreparo(orderId, settings.launch_delay_minutes||60); }
           }, 1000);
