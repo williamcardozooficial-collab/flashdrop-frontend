@@ -142,7 +142,7 @@ function toggleValorPedido(){}
 var _prepTimers = {};
 function startPreparoTimers(orders) {
   // Clear old timers
-  Object.keys(_prepTimers).forEach(k => { clearInterval(_prepTimers[k]); delete _prepTimers[k]; });
+  Object.keys(_prepTimers).forEach(k => { clearInterval(_prepTimers[k]); delete _prepTimers[k]; }); if(!window._novoTimers)window._novoTimers={};var _novoTimers=window._novoTimers;var novosParaTimer=orders.filter(function(o){return o.status==='novo';});if(novosParaTimer.length>0){setTimeout(function(){novosParaTimer.forEach(function(o){(function(orderId){if(_novoTimers[orderId])return;var seg=10;var sp=document.getElementById('timer-preparo-'+orderId);if(!sp)return;var t=setInterval(function(){seg--;var el=document.getElementById('timer-preparo-'+orderId);if(!el){delete _novoTimers[orderId];clearInterval(t);return;}el.textContent=seg;if(seg<=0){clearInterval(t);delete _novoTimers[orderId];moverParaPreparo(orderId,settings.launch_delay_minutes||60);}},1000);_novoTimers[orderId]=t;})(o.id);});},100);}
   orders.filter(function(o){ return o.status==='em_preparo' && o.launch_at > 0; }).forEach(function(o) {
     function updateTimer() {
       var el = document.getElementById('lt-' + o.id);
