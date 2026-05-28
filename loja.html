@@ -391,7 +391,7 @@ function verificarNovosPedidos(orders) {
   if (!orders || !orders.length) return;
   // Pedidos do cardápio pendentes (solicitações)
   var solicNovos = orders.filter(function(o) {
-    return o.plataforma === 'cardapio' && o.status === 'pendente' && !_alertIdsVistos.has(o.id);
+    return o.plataforma === 'cardapio' && o.status !== 'cancelado' && !_alertIdsVistos.has(o.id);
   });
   // Pedidos internos com status 'novo' (criados pela loja mas não processados)
   var pedidosNovos = orders.filter(function(o) {
