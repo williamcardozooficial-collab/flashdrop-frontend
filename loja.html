@@ -155,14 +155,14 @@ function startPreparoTimers(orders) {
     updateTimer();
 
   // Timer 10s para auto-clicar Em Preparo nos pedidos novos
-  var _novoTimers = {};
+  if(!window._novoTimers)window._novoTimers={};var _novoTimers=window._novoTimers;
     // Timer 10s para pedidos novos
   var novosParaTimer = orders.filter(function(o){ return o.status==='novo'; });
   if(novosParaTimer.length > 0){
     setTimeout(function(){
       novosParaTimer.forEach(function(o){
         (function(orderId){
-          var seg = 10;
+          if(_novoTimers[orderId])return; var seg = 10;
           var sp = document.getElementById('timer-preparo-'+orderId);
           if(!sp) return;
           var t = setInterval(function(){
@@ -170,9 +170,9 @@ function startPreparoTimers(orders) {
             var el = document.getElementById('timer-preparo-'+orderId);
             if(!el){ clearInterval(t); return; }
             el.textContent = seg;
-            if(seg <= 0){ clearInterval(t); moverParaPreparo(orderId, settings.launch_delay_minutes||60); }
+            if(seg <= 0){ clearInterval(t); delete _novoTimers[orderId]; moverParaPreparo(orderId, settings.launch_delay_minutes||60); }
           }, 1000);
-        })(o.id);
+        _novoTimers[orderId]=t; })(o.id);
       });
     }, 100);
   }
