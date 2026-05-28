@@ -264,7 +264,7 @@ if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="cancelado"){
     return h;
   }
   document.getElementById("orders-list").innerHTML=filtered.map(cardOrder).join("");
-  startPreparoTimers(filtered.filter(function(o){return o.status==="em_preparo"&&o.launch_at>0;}));
+  startPreparoTimers(filtered);
 }
 function filterLojaOrders(status){
   _lojaFilter=status;
