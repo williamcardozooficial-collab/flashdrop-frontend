@@ -6,9 +6,9 @@
 .filter-btn-loja{display:inline-block;padding:6px 14px;background:#eef0ff;border:1.5px solid #c5caf7;border-radius:20px;color:#667eea;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;white-space:nowrap;transition:all .15s}.filter-btn-loja.active{background:#667eea;color:#fff;border-color:#667eea}.filter-badge{background:#e53935;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;font-weight:700}
 @keyframes alertPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,80,0,0.7),0 0 30px rgba(255,80,0,0.4)}50%{box-shadow:0 0 0 20px rgba(255,80,0,0),0 0 60px rgba(255,80,0,0.2)}}
 @keyframes alertBorder{0%,100%{border-color:#ff5000}50%{border-color:#ffcc00}}
-@keyframes alertShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes alertShake{0%,100%{transform:translateX(0)}20%{transform:translateX(h-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 @keyframes alertFadeIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
-@keyframes alertBlink{0%,100%{opacity:1}50%{opacity:0.25}}
+@keyframes alertBlink{0%,100%{opacity:1}50%{opacity:0.25}}h
 #novo-pedido-alert{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:16px}
 #novo-pedido-alert-box{background:#1a0a00;border:3px solid #ff5000;border-radius:20px;padding:28px 22px;width:100%;max-width:400px;text-align:center;animation:alertFadeIn 0.3s ease,alertPulse 1.5s ease infinite,alertBorder 1.5s ease infinite}
 #novo-pedido-alert-box.shake{animation:alertShake 0.4s ease}
@@ -170,7 +170,7 @@ function startPreparoTimers(orders) {
             var el = document.getElementById('timer-preparo-'+orderId);
             if(!el){ clearInterval(t); return; }
             el.textContent = seg;
-            if(seg <= 0){ clearInterval(t); moverParaPreparo(orderId); }
+            if(seg <= 0){ clearInterval(t); moverParaPreparo(orderId, settings.launch_delay_minutes||60); }
           }, 1000);
         })(o.id);
       });
@@ -276,10 +276,10 @@ function openEditModal(id){currentEditId=id;const o=allOrders.find(x=>x.id===id)
 function closeEditModal(){document.getElementById('modal-edit').style.display='none';currentEditId=null;}
 async function saveEdit(){if(!currentEditId)return;const update={nome_cliente:document.getElementById('edit-client').value,telefone_cliente:document.getElementById('edit-phone').value,endereco_entrega:document.getElementById('edit-dest').value,cod_pedido:document.getElementById('edit-code').value,obs:document.getElementById('edit-obs').value};await fetch(API+'/orders/'+currentEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(update)});tg.showAlert('✅ Pedido atualizado!');closeEditModal();loadData();}
 async function cancelOrderLoja(id){if(!confirm('Cancelar pedido #'+id+'? Esta ação cancela a entrega.'))return;await fetch(API+'/orders/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'cancelado'})});tg.showAlert('✅ Pedido cancelado.');loadData();}
-async function moverParaPreparo(id){
+async function moverParaPreparo(id, autoMin){
 var ord=(_myOrders||[]).find(function(x){return x.id===id;});
 var delayMin=settings.launch_delay_minutes||60;
-var min=parseInt(prompt('Tempo de preparo em minutos (o motoboy será chamado após esse tempo):',delayMin));
+var min=(autoMin!==undefined)?autoMin:parseInt(prompt('Tempo de preparo em minutos (o motoboy será chamado após esse tempo):',delayMin));
 if(isNaN(min)||min<0)return;
 try{
 var r=await fetch(API+'/orders/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
