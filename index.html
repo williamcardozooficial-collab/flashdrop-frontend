@@ -6,7 +6,7 @@
   <title>FlashDrop Admin</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-    body { background: #0f0f0f; color: #fff; min-height: 100vh; padding-bottom: 80px; }
+    body { background: #0f0f0f; color: #fff; min-height: 100vh; padding-botthom: 80px; }
     .header { background: #1a1a1a; padding: 20px; text-align: center; border-bottom: 1px solid #333; }
     .header h1 { font-size: 24px; color: #ffcc00; }
     .tabs { display: flex; overflow-x: auto; background: #1a1a1a; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 100; }
@@ -1481,42 +1481,36 @@ loadSaques();
       document.getElementById('btn-' + tipo + '-loja').classList.toggle('selected', valor === 'loja');
     }
 
-function salvarLink() {
-    var val = document.getElementById('admin-link').value.trim();
-    if (!val) return;
-    localStorage.setItem('flashdrop_admin_link', val);
-    alert('Link salvo!');
-  }
-  function excluirLink() {
-    localStorage.removeItem('flashdrop_admin_link');
-    document.getElementById('admin-link').value = '';
-    alert('Link excluído!');
-  }
-  function salvarLinkWpp() {
-    var val = document.getElementById('admin-link-wpp').value.trim();
-    if (!val) return;
-    localStorage.setItem('flashdrop_wpp_link', val);
-    alert('Link WhatsApp salvo!');
-  }
-  function excluirLinkWpp() {
-    localStorage.removeItem('flashdrop_wpp_link');
-    document.getElementById('admin-link-wpp').value = '';
-    alert('Link WhatsApp excluído!');
-  }
-  function salvarDataApp() {
-    var val = document.getElementById('admin-app-data').value.trim();
-    if (!val) return;
-    localStorage.setItem('flashdrop_app_data', val);
-    alert('Data salva!');
-  }
-  (function() {
-    var s1 = localStorage.getItem('flashdrop_admin_link');
-    if (s1) document.getElementById('admin-link').value = s1;
-    var s2 = localStorage.getItem('flashdrop_wpp_link');
-    if (s2) document.getElementById('admin-link-wpp').value = s2;
-    var s3 = localStorage.getItem('flashdrop_app_data');
-    if (s3) document.getElementById('admin-app-data').value = s3;
-  })();
+async function salvarLink() {
+      var val = document.getElementById('admin-link').value.trim();
+      if (!val) return;
+      try { await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({app_link:val})}); alert('Link salvo!'); } catch(e) { alert('Erro ao salvar.'); }
+    }
+    async function excluirLink() {
+      try { await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({app_link:'',app_data:''})}); document.getElementById('admin-link').value=''; document.getElementById('admin-app-data').value=''; alert('Link excluido!'); } catch(e) { alert('Erro.'); }
+    }
+    async function salvarLinkWpp() {
+      var val = document.getElementById('admin-link-wpp').value.trim();
+      if (!val) return;
+      try { await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({wpp_link:val})}); alert('Link WhatsApp salvo!'); } catch(e) { alert('Erro ao salvar.'); }
+    }
+    async function excluirLinkWpp() {
+      try { await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({wpp_link:''})}); document.getElementById('admin-link-wpp').value=''; alert('Link WhatsApp excluido!'); } catch(e) { alert('Erro.'); }
+    }
+    async function salvarDataApp() {
+      var val = document.getElementById('admin-app-data').value.trim();
+      if (!val) return;
+      try { await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({app_data:val})}); alert('Data salva!'); } catch(e) { alert('Erro ao salvar.'); }
+    }
+    (async function() {
+      try {
+        var r = await fetch(API+'/settings');
+        var s = await r.json();
+        if (s.app_link) document.getElementById('admin-link').value = s.app_link;
+        if (s.wpp_link) document.getElementById('admin-link-wpp').value = s.wpp_link;
+        if (s.app_data) document.getElementById('admin-app-data').value = s.app_data;
+      } catch(e) {}
+    })();
 </script>
 
 </body>
