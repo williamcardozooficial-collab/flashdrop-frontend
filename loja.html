@@ -327,7 +327,6 @@ function printOrder(orderId){
   h2+=line(SEP1);
   h2+=section('PEDIDO #'+o.id);
   h2+=field('Data',dtCriado);
-  h2+=field('Status',sL[o.status]||o.status||'-');
   h2+=line(SEP2);
   h2+=section('CLIENTE');
   h2+=field('Nome',o.nome_cliente);
@@ -348,7 +347,6 @@ function printOrder(orderId){
   h2+=section('PAGAMENTO');
   var pn={dinheiro:'Dinheiro',maquina:'Cart\u00E3o',pix:'PIX'};
   h2+=field('Forma',pn[o.tipo_pagamento]||o.tipo_pagamento||'-');
-  if(o.tipo_pagamento==='dinheiro'&&o.valor_pedido&&parseFloat(o.valor_pedido)>0)h2+=field('Cobrar cliente','R$'+parseFloat(o.valor_pedido).toFixed(2).replace('.',','));
   if(troco)h2+=field('Troco para',troco);
   h2+=line(SEP1);
   h2+=sub('Pedido criado: '+dtCriado);
