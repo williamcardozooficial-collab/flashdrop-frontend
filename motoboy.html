@@ -290,45 +290,29 @@ var API = "https://flashdrop-backend-production.up.railway.app";
       }
     }
 
-  // Botao Baixar Aplicativo
-  (function() {
-    var link = localStorage.getItem('flashdrop_admin_link');
-    var btn = document.getElementById('btn-baixar-app');
-    if (btn) {
-      if (link) {
-        btn.href = link;
-        btn.style.display = 'inline-block';
-      } else {
-        btn.style.display = 'none';
-      }
-    }
-    // Texto de data
-    var dataText = document.getElementById('app-data-text');
-    var dataVal = localStorage.getItem('flashdrop_app_data');
-    if (dataText) {
-      if (dataVal) {
-        dataText.textContent = '📅 Atualizado: ' + dataVal;
-        dataText.style.display = 'inline';
-      } else {
-        dataText.style.display = 'none';
-      }
-    }
-  })();
-
-  // Botao WhatsApp
-  (function() {
-    var link = localStorage.getItem('flashdrop_wpp_link');
-    var btn = document.getElementById('btn-wpp');
-    if (btn) {
-      if (link) {
-        btn.href = link;
-        btn.style.display = 'inline-block';
-      } else {
-        btn.style.display = 'none';
-      }
-    }
-  })();
-      async function autoOfflineCheck() {
+  // Botao Baixar Aplicativo e WhatsApp — carregado do backend
+    (async function() {
+      try {
+        var r = await fetch(API + '/settings');
+        var s = await r.json();
+        var btn1 = document.getElementById('btn-baixar-app');
+        if (btn1) {
+          if (s.app_link) { btn1.href = s.app_link; btn1.style.display = 'inline-block'; }
+          else { btn1.style.display = 'none'; }
+        }
+        var dataText = document.getElementById('app-data-text');
+        if (dataText) {
+          if (s.app_data) { dataText.textContent = '📅 Atualizado: ' + s.app_data; dataText.style.display = 'inline'; }
+          else { dataText.style.display = 'none'; }
+        }
+        var btn2 = document.getElementById('btn-wpp');
+        if (btn2) {
+          if (s.wpp_link) { btn2.href = s.wpp_link; btn2.style.display = 'inline-block'; }
+          else { btn2.style.display = 'none'; }
+        }
+      } catch(e) {}
+    })();
+    async function autoOfflineCheck() {
     if (!user.online || !_onlineAt) return;
     var elapsed = Date.now() - _onlineAt;
     if (elapsed < AUTO_OFFLINE_MS) {
