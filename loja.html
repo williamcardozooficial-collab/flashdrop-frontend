@@ -26,7 +26,13 @@
 #btn-alert-abrir{width:100%;padding:16px;background:linear-gradient(135deg,#ff5000,#ff8c00);border:none;border-radius:12px;color:#fff;font-size:17px;font-weight:900;cursor:pointer;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(255,80,0,0.5)}
 #btn-alert-abrir:active{transform:scale(0.97)}
 .alert-counter{display:inline-block;background:#ff5000;color:#fff;border-radius:20px;font-size:13px;font-weight:900;padding:3px 12px;margin-bottom:10px}
-.novo-pedido-card-destaque{border:2px solid #ff5000!important;animation:alertBorder 1.5s ease infinite}</style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio.html?id='+(user&&user.custom_id?user.custom_id:'L000001');if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div id="store-address" style="font-size:12px;margin-top:3px;opacity:0.85">...</div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div></div></div>
+.novo-pedido-card-destaque{border:2px solid #ff5000!important;animation:alertBorder 1.5s ease infinite}
+@media print {
+  body > *:not(#print-area) { display: none !important; }
+  #print-area { display: block !important; font-family: monospace; font-size: 12px; color: #000; background: #fff; padding: 10px; }
+}
+#print-area { display: none; }
+</style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio.html?id='+(user&&user.custom_id?user.custom_id:'L000001');if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div id="store-address" style="font-size:12px;margin-top:3px;opacity:0.85">...</div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div></div></div>
 <div id="loja-status-bar" style="margin:0 20px 0;background:#1a1a1a;border:2px solid #555;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
 <div>
 <div id="status-label" style="font-size:13px;font-weight:700;color:#555">🔴 OFFLINE</div>
@@ -260,11 +266,41 @@ if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="cancelado"){
     if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="coletado"&&o.status!=="no_cliente"&&o.status!=="cancelado"){
       h+='<button class="btn-delete" onclick="cancelOrderLoja('+o.id+')" style="background:#e67e22;color:#fff">❌ Cancelar Pedido</button>';
     }
-    h+='</div></div>';
+        h+='<button onclick="printOrder(o)" style="background:#607d8b;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;margin-top:4px">🖨️ Imprimir</button>';
+h+='</div></div>';
     return h;
   }
   document.getElementById("orders-list").innerHTML=filtered.map(cardOrder).join("");
   startPreparoTimers(filtered);
+}
+function printOrder(o){
+  var pagLabel={dinheiro:'Dinheiro',maquina:'Cartao',pix:'PIX'};
+  var storeName=(document.getElementById('store-name')||{}).textContent||user.name||'';
+  var storeAddr=(document.getElementById('store-address')||{}).textContent||user.address||'';
+  var storePhone=user.telefone||user.phone||'';
+  var dt=o.created_at?new Date(o.created_at).toLocaleString('pt-BR'):'';
+  var items=o.obs_coleta?o.obs_coleta.replace('Itens: ',''):'';
+  var h2='';
+  h2+='<div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px">';
+  h2+='<strong style="font-size:15px">'+storeName+'</strong><br>';
+  if(storeAddr) h2+='<span>'+storeAddr+'</span><br>';
+  if(storePhone) h2+='<span>Tel: '+storePhone+'</span>';
+  h2+='</div>';
+  h2+='<div style="margin:4px 0"><strong>Pedido #'+o.id+'</strong>'+(dt?' &nbsp; <span style="font-size:11px">'+dt+'</span>':'')+'</div>';
+  h2+='<div style="margin:4px 0"><strong>Cliente:</strong> '+(o.nome_cliente||'-')+'</div>';
+  if(o.telefone_cliente) h2+='<div style="margin:4px 0"><strong>Tel:</strong> '+o.telefone_cliente+'</div>';
+  if(o.endereco_entrega) h2+='<div style="margin:4px 0"><strong>Entrega:</strong> '+o.endereco_entrega+(o.complemento_entrega?' - '+o.complemento_entrega:'')+'</div>';
+  if(items) h2+='<div style="margin:6px 0;border-top:1px dashed #000;padding-top:4px"><strong>Itens:</strong><br><pre style="font-family:monospace;font-size:11px;white-space:pre-wrap;margin:2px 0">'+items+'</pre></div>';
+  h2+='<div style="border-top:1px dashed #000;padding-top:4px;margin-top:4px">';
+  h2+='<div><strong>Pagamento:</strong> '+(pagLabel[o.tipo_pagamento]||o.tipo_pagamento||'-')+'</div>';
+  if(o.tipo_pagamento==='dinheiro'&&o.valor_pedido>0) h2+='<div><strong>Valor Cobrado:</strong> R$ '+parseFloat(o.valor_pedido).toFixed(2)+'</div>';
+  h2+='<div><strong>Taxa Entrega:</strong> R$ '+parseFloat(o.valor_total||0).toFixed(2)+'</div>';
+  h2+='</div>';
+  var area=document.getElementById('print-area');
+  area.innerHTML=h2;
+  area.style.display='block';
+  window.print();
+  area.style.display='none';
 }
 function filterLojaOrders(status){
   _lojaFilter=status;
@@ -1103,4 +1139,5 @@ function pollPagamentoSaldo(paymentId, valor, token) {
 <button id="btn-alert-abrir" onclick="fecharAlertaNovoPedido(true)">🛒 ABRIR PEDIDO</button>
 <button onclick="fecharAlertaNovoPedido(false)" style="width:100%;margin-top:10px;padding:11px;background:transparent;border:1px solid #555;border-radius:10px;color:#888;font-size:13px;cursor:pointer;">✖ Fechar alerta (pedido continua pendente)</button>
 </div>
-</div></body></html>
+</div><div id="print-area" style="display:none;padding:10px;background:#fff;color:#000;font-family:monospace;font-size:12px"></div>
+</body></html>
