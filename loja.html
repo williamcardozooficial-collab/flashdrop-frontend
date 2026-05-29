@@ -266,14 +266,14 @@ if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="cancelado"){
     if(o.status!=="entregue"&&o.status!=="retornado"&&o.status!=="coletado"&&o.status!=="no_cliente"&&o.status!=="cancelado"){
       h+='<button class="btn-delete" onclick="cancelOrderLoja('+o.id+')" style="background:#e67e22;color:#fff">❌ Cancelar Pedido</button>';
     }
-        h+='<button onclick="printOrder(o)" style="background:#607d8b;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;margin-top:4px">🖨️ Imprimir</button>';
+        h+='<button onclick="printOrder('+o.id+')" style="background:#607d8b;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:bold;cursor:pointer;margin-top:4px">🖨️ Imprimir</button>';
 h+='</div></div>';
     return h;
   }
   document.getElementById("orders-list").innerHTML=filtered.map(cardOrder).join("");
   startPreparoTimers(filtered);
 }
-function printOrder(o){
+function printOrder(orderId){ var o=(_myOrders||[]).find(function(x){return String(x.id)===String(orderId);})||{}; if(!o.id){return;}
   var pagLabel={dinheiro:'Dinheiro',maquina:'Cartao',pix:'PIX'};
   var storeName=(document.getElementById('store-name')||{}).textContent||user.name||'';
   var storeAddr=(document.getElementById('store-address')||{}).textContent||user.address||'';
