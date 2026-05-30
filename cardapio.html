@@ -41,9 +41,17 @@ footer span { color: #f5a623; }
 .header-logo h1 { font-size: 1.2rem; }
 }
 /* Cardapio */
-.cat-section { margin: 28px 0; }
-.cat-title { font-size: 1.15rem; font-weight: 700; color: #f5a623; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #2a2a2a; }
-.produtos-grid { display: flex; flex-direction: column; gap: 12px; }
+.cat-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 20px; }
+.cat-nav-btn { padding: 8px 18px; border-radius: 20px; border: 2px solid #2a2a2a; background: #1a1a1a; color: #aaa; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.cat-nav-btn.ativo { background: #f5a623; color: #000; border-color: #f5a623; }
+.cat-nav-btn:hover { border-color: #f5a623; color: #f5a623; }
+.cat-section { margin: 0 0 8px; }
+.cat-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0; padding: 10px 14px; background: #1a1a1a; border-left: 4px solid #f5a623; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.cat-title .cat-arrow { font-size: 12px; color: #888; transition: transform 0.2s; }
+.cat-title.aberto .cat-arrow { transform: rotate(180deg); }
+.cat-produtos { display: none; }
+.cat-produtos.aberto { display: block; padding-top: 12px; }
+.produtos-grid { display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; }
 .prod-card { display: flex; flex-direction: column; background: #1a1a1a; border-radius: 12px; padding: 12px; border: 1px solid #2a2a2a; }
 .prod-card-top { display: flex; align-items: center; gap: 14px; }
 .prod-foto { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
@@ -565,6 +573,27 @@ document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(
 if(pag==='pix')mostrarBlocoPix();else esconderBlocoPix();
 }
 
+function toggleCat(el){
+el.classList.toggle('aberto');
+var prod=el.nextElementSibling;
+if(prod){prod.classList.toggle('aberto');}
+}
+function scrollToCat(btn,nome){
+// Find section by title text
+var titles=document.querySelectorAll('.cat-title');
+for(var i=0;i<titles.length;i++){
+var t=titles[i];
+if(t.textContent.trim().replace(/[▼▲]/g,'').trim()===nome){
+// Open it if closed
+if(!t.classList.contains('aberto')){toggleCat(t);}
+t.scrollIntoView({behavior:'smooth',block:'start'});
+// Highlight active nav btn
+document.querySelectorAll('.cat-nav-btn').forEach(function(b){b.classList.remove('ativo');});
+btn.classList.add('ativo');
+break;
+}
+}
+}
 async function init(){
   var id=getParam('id');if(!id){renderErro('Nenhuma loja especificada.');return;}
   try{
@@ -600,20 +629,30 @@ async function loadCardapio(lid){
         '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" data-variacoes="'+esc(JSON.stringify(p.variacoes||[]))+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
         '</div>';
     }
-    if(Array.isArray(cats)&&cats.length){
+    // Gerar barra de categorias lado a lado
+var allCats = [];
+if(Array.isArray(cats)&&cats.length){cats.forEach(function(cat,gi){var pc=prods.filter(function(p){return p.categoria===cat.nome&&p.ativo;});if(pc.length)allCats.push(cat.nome);});}
+var semCat=prods.filter(function(p){return !p.categoria&&p.ativo;});
+if(semCat.length)allCats.push('Outros');
+if(allCats.length>1){
+html+='<div class="cat-nav">';
+allCats.forEach(function(cn){html+='<button class="cat-nav-btn" onclick="scrollToCat(this,''+cn.replace(/'/g,'\'')+'')"  >'+esc(cn)+'</button>';});
+html+='</div>';
+}
+if(Array.isArray(cats)&&cats.length){
       cats.forEach(function(cat){
         var pc=prods.filter(function(p){return p.categoria===cat.nome&&p.ativo;});
         if(!pc.length)return;
-        html+='<div class="cat-section"><h3 class="cat-title">&#127829; '+esc(cat.nome)+'</h3><div class="produtos-grid">';
+        var catId='cat-sec-'+gi; html+='<div class="cat-section" id="'+catId+'"><h3 class="cat-title" onclick="toggleCat(this)">'+esc(cat.nome)+' <span class="cat-arrow">&#9660;</span></h3><div class="cat-produtos"><div class="produtos-grid">';
         pc.forEach(function(p){html+=renderProd(p);});
-        html+='</div></div>';
+        html+='</div></div></div>';
       });
     }
     var sem=prods.filter(function(p){return !p.categoria&&p.ativo;});
     if(sem.length){
-      html+='<div class="cat-section"><h3 class="cat-title">&#127869; Outros</h3><div class="produtos-grid">';
+      html+='<div class="cat-section"><h3 class="cat-title" onclick="toggleCat(this)">Outros <span class="cat-arrow">&#9660;</span></h3><div class="cat-produtos"><div class="produtos-grid">';
       sem.forEach(function(p){html+=renderProd(p);});
-      html+='</div></div>';
+      html+='</div></div></div>';
     }
     sec.innerHTML=html||'<p style="color:#888;text-align:center;padding:30px">Nenhum produto.</p>';
   }catch(e){console.error('loadCardapio err',e);}
