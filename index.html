@@ -783,7 +783,7 @@ function renderFinance(users) {
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" autocomplete="off"></div>' +
         '<div class="input-group"><label>Login (usuario)</label><input id="u-user" class="input" autocomplete="off"></div>' +
-        '<div class="input-group"><label>Senha</label><input id="u-pass" class="input" type="password" autocomplete="new-password"></div>' +
+        '<div class="input-group"><label>Senha</label><div style="position:relative"><input id="u-pass" class="input" type="password" autocomplete="new-password" style="padding-right:42px"><button type="button" onclick="var i=document.getElementById(\'u-pass\');i.type=i.type===\'password\'?\'text\':\'password\';this.textContent=i.type===\'password\'?\'👁️\':\'🙈\';" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;color:#aaa">👁️</button></div></div>' +
         '<div class="input-group"><label>Tipo</label><select id="u-role" class="input" onchange="updateNewUserFields()"><option value="motoboy">Motoboy</option><option value="loja">Loja</option></select></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" autocomplete="off"></div>' +
         '<div class="input-group"><label>ID Personalizado (opcional)</label><input id="u-cid-new" class="input" placeholder="Ex: L000010 ou M0010" autocomplete="off"></div>' +
@@ -820,7 +820,7 @@ function renderFinance(users) {
         '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
         '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (esc(u.name) || '') + '"></div>' +
-        '<div class="input-group"><label>Senha (deixe em branco para manter)</label><input id="u-pass" class="input" type="password"></div>' +
+        '<div class="input-group"><label>Senha (deixe em branco para manter)</label><div style="position:relative"><input id="u-pass" class="input" type="password" style="padding-right:42px"><button type="button" onclick="var i=document.getElementById(\'u-pass\');i.type=i.type===\'password\'?\'text\':\'password\';this.textContent=i.type===\'password\'?\'👁️\':\'🙈\';" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;color:#aaa">👁️</button></div></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (esc(u.phone) || '') + '"></div>' +
         motoboyCampos;
       openModal('modal-user');
