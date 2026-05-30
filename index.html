@@ -441,7 +441,19 @@
 
   <script>
     // PROTECAO XSS - escapar HTML em todos os dados exibidos
-    function esc(v) {
+    function buildAddrFields(addrStr, isNew) {
+  var a = {};
+  try { a = JSON.parse(addrStr || '{}'); } catch(e) {
+    a = { rua: addrStr || '', num: '', comp: '', bairro: '', cidade: 'Caxias do Sul' };
+  }
+  var sfx = isNew ? '-new' : '';
+  var ev = function(v){ return (v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); };
+  return '<div class="input-group"><label style="font-size:11px;color:#aaa">Rua / Avenida</label><input id="u-addr-rua'+sfx+'" class="input" placeholder="Ex: Natal Idalino Fadanelli" value="'+ev(a.rua||'')+'"></div>' +
+    '<div class="input-group" style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:#aaa">Número</label><input id="u-addr-num'+sfx+'" class="input" placeholder="Ex: 556" value="'+ev(a.num||'')+'"></div><div style="flex:1"><label style="font-size:11px;color:#aaa">Complemento <span style="color:#666">(opcional)</span></label><input id="u-addr-comp'+sfx+'" class="input" placeholder="Ex: Sala 2" value="'+ev(a.comp||'')+'"></div></div>' +
+    '<div class="input-group" style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:#aaa">Bairro</label><input id="u-addr-bairro'+sfx+'" class="input" placeholder="Ex: Centro" value="'+ev(a.bairro||'')+'"></div><div style="flex:1"><label style="font-size:11px;color:#aaa">Cidade</label><input id="u-addr-cidade'+sfx+'" class="input" placeholder="Ex: Caxias do Sul" value="'+(ev(a.cidade||'')||'Caxias do Sul')+'"></div></div>';
+}
+
+function esc(v) {
       if (v === null || v === undefined) return '';
       return String(v)
         .replace(/&/g,'&amp;')
@@ -775,7 +787,7 @@ function renderFinance(users) {
         '<div class="input-group"><label>Tipo</label><select id="u-role" class="input" onchange="updateNewUserFields()"><option value="motoboy">Motoboy</option><option value="loja">Loja</option></select></div>' +
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" autocomplete="off"></div>' +
         '<div class="input-group"><label>ID Personalizado (opcional)</label><input id="u-cid-new" class="input" placeholder="Ex: L000010 ou M0010" autocomplete="off"></div>' +
-        '<div class="input-group"><label>Endereço</label><input id="u-address-new" class="input" autocomplete="off"></div>' +
+        buildAddrFields('', true) +
         '<div class="input-group"><label>CPF/CNPJ</label><input id="u-cpf-new" class="input" autocomplete="off"></div>' +
         '<div class="input-group"><label>Telegram ID (número)</label><input id="u-tg-new" class="input" type="number" placeholder="Opcional" autocomplete="off"></div>' +
         '<div id="u-extra-fields"><div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div></div>';
@@ -803,7 +815,7 @@ function renderFinance(users) {
           '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (esc(u.address) || '') + '"></div>' +
           '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
           '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>'
-        : '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (esc(u.address) || '') + '"></div>';
+        : buildAddrFields(u.address, false);
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
         '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
@@ -828,8 +840,16 @@ function renderFinance(users) {
         data.role = document.getElementById('u-role').value;
         var cidNewEl = document.getElementById('u-cid-new');
         if (cidNewEl && cidNewEl.value.trim()) data.custom_id = cidNewEl.value.trim().toUpperCase();
-        var addrNewEl = document.getElementById('u-address-new');
-        if (addrNewEl) data.address = addrNewEl.value;
+        var addrRuaNew = document.getElementById('u-addr-rua-new');
+        if (addrRuaNew) {
+          data.address = JSON.stringify({
+            rua: (document.getElementById('u-addr-rua-new')||{value:''}).value.trim(),
+            num: (document.getElementById('u-addr-num-new')||{value:''}).value.trim(),
+            comp: (document.getElementById('u-addr-comp-new')||{value:''}).value.trim(),
+            bairro: (document.getElementById('u-addr-bairro-new')||{value:''}).value.trim(),
+            cidade: (document.getElementById('u-addr-cidade-new')||{value:'Caxias do Sul'}).value.trim() || 'Caxias do Sul'
+          });
+        }
         var cpfNewEl = document.getElementById('u-cpf-new');
         if (cpfNewEl && cpfNewEl.value.trim()) data.cpf = cpfNewEl.value.trim();
         var tgNewEl = document.getElementById('u-tg-new');
@@ -841,10 +861,18 @@ function renderFinance(users) {
       } else {
         var u = allUsers.find(function(x){ return x.id === currentUserId; });
         var vehicleEl = document.getElementById('u-vehicle');
-        var addressEl = document.getElementById('u-address');
+        var addressEl = document.getElementById('u-addr-rua');
         var cpfEl = document.getElementById('u-cpf');
         if (vehicleEl) data.vehicle = vehicleEl.value;
-        if (addressEl) data.address = addressEl.value;
+        if (addressEl) {
+          data.address = JSON.stringify({
+            rua: (document.getElementById('u-addr-rua')||{value:''}).value.trim(),
+            num: (document.getElementById('u-addr-num')||{value:''}).value.trim(),
+            comp: (document.getElementById('u-addr-comp')||{value:''}).value.trim(),
+            bairro: (document.getElementById('u-addr-bairro')||{value:''}).value.trim(),
+            cidade: (document.getElementById('u-addr-cidade')||{value:'Caxias do Sul'}).value.trim() || 'Caxias do Sul'
+          });
+        }
         if (cpfEl && cpfEl.value.trim()) data.cpf = cpfEl.value.trim();
         var clEl = document.getElementById('u-credit-limit');
         if (clEl) {
