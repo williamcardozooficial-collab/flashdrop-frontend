@@ -1638,5 +1638,130 @@ async function salvarLink() {
     </div>
   </div>
 </div>
+<script>
+var _admNpSettings=null,_admNpDistKm=0,_admNpTaxaCalc=0,_admNpLojaId=null;
+async function abrirAdminNovoPedido(){
+  ['adm-np-col-rua','adm-np-col-num','adm-np-col-comp','adm-np-col-bairro','adm-np-col-obs','adm-np-cli-nome','adm-np-cli-cel','adm-np-cli-cpf','adm-np-ent-rua','adm-np-ent-num','adm-np-ent-comp','adm-np-ent-bairro','adm-np-ent-obs','adm-np-pagamento','adm-np-valor-produto'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var ec=document.getElementById('adm-np-ent-cidade');if(ec)ec.value='Caxias do Sul';
+  var cc=document.getElementById('adm-np-col-cidade');if(cc)cc.value='';
+  document.getElementById('adm-np-valor-produto-wrap').style.display='none';
+  document.getElementById('adm-np-retorno-wrap').style.display='none';
+  document.getElementById('adm-np-taxa-result').style.display='none';
+  _admNpDistKm=0;_admNpTaxaCalc=0;_admNpLojaId=null;
+  try{var rs=await fetch(API+'/settings');_admNpSettings=await rs.json();}catch(e){_admNpSettings={};}
+  var sel=document.getElementById('adm-np-loja');
+  sel.innerHTML='<option value="">-- Selecione a loja --</option>';
+  try{
+    var ru=await fetch(API+'/users');var users=await ru.json();
+    var lojas=users.filter(function(u){return u.role==='loja';}).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
+    lojas.forEach(function(l){
+      var opt=document.createElement('option');
+      opt.value=l.id;
+      opt.textContent=(l.custom_id?l.custom_id+' - ':'')+l.name+(parseFloat(l.credit||0)<0?' (Saldo: R$ '+Number(l.credit).toFixed(2)+')':'');
+      opt.dataset.address=l.address||'';opt.dataset.name=l.name||'';opt.dataset.credit=l.credit||0;
+      sel.appendChild(opt);
+    });
+  }catch(e){console.error('Erro lojas:',e);}
+  openModal('modal-admin-novo-pedido');
+}
+function admNpOnLojaChange(){
+  var sel=document.getElementById('adm-np-loja');var opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value){_admNpLojaId=null;return;}
+  _admNpLojaId=parseInt(opt.value);
+  var addrStr=opt.dataset.address||'';var addr={};
+  try{addr=JSON.parse(addrStr);}catch(e){addr={rua:addrStr,num:'',comp:'',bairro:'',cidade:'Caxias do Sul'};}
+  var set=function(id,val){var el=document.getElementById(id);if(el)el.value=val||'';};
+  set('adm-np-col-rua',addr.rua||addr.street||'');
+  set('adm-np-col-num',addr.num||addr.number||'');
+  set('adm-np-col-comp',addr.comp||addr.complement||'');
+  set('adm-np-col-bairro',addr.bairro||addr.neighborhood||'');
+  set('adm-np-col-cidade',addr.cidade||addr.city||'Caxias do Sul');
+}
+function admNpBuildOrigin(){
+  var g=function(id){return(document.getElementById(id)||{value:''}).value.trim();};
+  var rua=g('adm-np-col-rua'),num=g('adm-np-col-num'),bairro=g('adm-np-col-bairro'),cidade=g('adm-np-col-cidade')||'Caxias do Sul';
+  if(!rua)return null;
+  return rua+(num?', '+num:'')+(bairro?', '+bairro:'')+', '+cidade+', Brasil';
+}
+function admNpBuildDest(){
+  var g=function(id){return(document.getElementById(id)||{value:''}).value.trim();};
+  var rua=g('adm-np-ent-rua'),num=g('adm-np-ent-num'),bairro=g('adm-np-ent-bairro'),cidade=g('adm-np-ent-cidade')||'Caxias do Sul';
+  if(!rua)return null;
+  return rua+(num?', '+num:'')+(bairro?', '+bairro:'')+', '+cidade+', Brasil';
+}
+function admNpOnTipoPagChange(){
+  var tipo=(document.getElementById('adm-np-pagamento')||{value:''}).value;
+  document.getElementById('adm-np-valor-produto-wrap').style.display=tipo==='dinheiro'?'block':'none';
+  document.getElementById('adm-np-retorno-wrap').style.display=tipo==='maquina'?'block':'none';
+  admNpRecalc();
+}
+function admNpRecalc(){
+  if(!_admNpSettings||_admNpDistKm<=0)return;
+  var s=_admNpSettings;
+  var tipo=(document.getElementById('adm-np-pagamento')||{value:''}).value;
+  var minFee=parseFloat(s.min_fee||5),precoKm=parseFloat(s.price_per_km||2),arrancada=parseFloat(s.arrancada||0),commission=parseFloat(s.commission||0);
+  var km=_admNpDistKm;if(tipo==='maquina')km=km*2;
+  var taxa=Math.max(minFee,arrancada+km*precoKm);
+  var taxaChuva=(s.taxa_chuva_ativa&&parseFloat(s.taxa_chuva)>0)?parseFloat(s.taxa_chuva):0;
+  var taxaNoturna=0;
+  if(s.taxa_noturna_ativa&&parseFloat(s.taxa_noturna)>0){
+    var agora=new Date(),hora=agora.getHours()*60+agora.getMinutes();
+    var ini=(s.taxa_noturna_hora_inicio||'22:00').split(':'),fim2=(s.taxa_noturna_hora_fim||'06:00').split(':');
+    var hi=parseInt(ini[0])*60+parseInt(ini[1]),hf=parseInt(fim2[0])*60+parseInt(fim2[1]);
+    var noturno=hi>hf?(hora>=hi||hora<hf):(hora>=hi&&hora<hf);
+    if(noturno)taxaNoturna=parseFloat(s.taxa_noturna);
+  }
+  var totalLoja=taxa+taxaChuva+taxaNoturna+commission;
+  _admNpTaxaCalc=totalLoja;
+  var el=document.getElementById('adm-np-taxa-result');
+  el.innerHTML='<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Distancia:</span><strong>'+_admNpDistKm.toFixed(2)+' km</strong></div>'+(tipo==='maquina'?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Km (ida+volta):</span><strong>'+km.toFixed(2)+' km</strong></div>':'')+'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Taxa base:</span><strong>R$ '+(Math.max(minFee,arrancada+km*precoKm)).toFixed(2)+'</strong></div>'+(taxaChuva>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Chuva:</span><strong>R$ '+taxaChuva.toFixed(2)+'</strong></div>':'')+(taxaNoturna>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Noturna:</span><strong>R$ '+taxaNoturna.toFixed(2)+'</strong></div>':'')+'<div style="display:flex;justify-content:space-between;border-top:1px solid #333;padding-top:6px;margin-top:4px"><span style="color:#ffcc00;font-weight:700">Total Loja:</span><strong style="color:#ffcc00;font-size:16px">R$ '+totalLoja.toFixed(2)+'</strong></div>';
+  el.style.display='block';
+}
+async function admNpCalcularTaxa(){
+  var origin=admNpBuildOrigin(),dest=admNpBuildDest();
+  if(!origin){tg.showAlert('Preencha o endereco de coleta.');return;}
+  if(!dest){tg.showAlert('Preencha o endereco de entrega.');return;}
+  if(!_admNpLojaId){tg.showAlert('Selecione uma loja.');return;}
+  try{
+    var r=await fetch(API+'/distance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin:origin,destination:dest})});
+    var data=await r.json();
+    if(!r.ok||!data.distance_km){tg.showAlert('Erro ao calcular distancia: '+(data.error||'Endereco invalido'));return;}
+    _admNpDistKm=parseFloat(data.distance_km);admNpRecalc();
+  }catch(e){tg.showAlert('Erro de conexao ao calcular taxa.');}
+}
+async function admNpFinalizarPedido(){
+  if(!_admNpLojaId){tg.showAlert('Selecione uma loja.');return;}
+  if(_admNpTaxaCalc<=0){tg.showAlert('Calcule a taxa de entrega primeiro.');return;}
+  var g=function(id){return(document.getElementById(id)||{value:''}).value.trim();};
+  var nome=g('adm-np-cli-nome'),cel=g('adm-np-cli-cel'),cpf=g('adm-np-cli-cpf');
+  var colRua=g('adm-np-col-rua'),colNum=g('adm-np-col-num'),colBairro=g('adm-np-col-bairro'),colCidade=g('adm-np-col-cidade')||'Caxias do Sul',colObs=g('adm-np-col-obs');
+  var entRua=g('adm-np-ent-rua'),entNum=g('adm-np-ent-num'),entComp=g('adm-np-ent-comp'),entBairro=g('adm-np-ent-bairro'),entCidade=g('adm-np-ent-cidade')||'Caxias do Sul',entObs=g('adm-np-ent-obs');
+  var tipoPag=g('adm-np-pagamento');
+  if(!nome){tg.showAlert('Informe o nome do cliente.');return;}
+  if(!cel){tg.showAlert('Informe o celular do cliente.');return;}
+  if(!cpf){tg.showAlert('Informe o CPF do cliente.');return;}
+  if(!colRua){tg.showAlert('Informe o endereco de coleta.');return;}
+  if(!entRua){tg.showAlert('Informe o endereco de entrega.');return;}
+  if(!tipoPag){tg.showAlert('Selecione a forma de pagamento.');return;}
+  var valorProduto=0;
+  if(tipoPag==='dinheiro'){valorProduto=parseFloat(g('adm-np-valor-produto'))||0;if(valorProduto<=0){tg.showAlert('Informe o valor do produto para dinheiro.');return;}}
+  var sel=document.getElementById('adm-np-loja');var opt=sel.options[sel.selectedIndex];
+  var lojaName=opt?opt.dataset.name:'';var lojaCredit=opt?parseFloat(opt.dataset.credit||0):0;
+  var codPedido='ADM-'+Date.now().toString().slice(-8);
+  var entEndereco=entRua+(entNum?', '+entNum:'')+(entBairro?', '+entBairro:'')+', '+entCidade;
+  var colEndereco=colRua+(colNum?', '+colNum:'')+(colBairro?', '+colBairro:'')+', '+colCidade;
+  var body={cod_pedido:codPedido,loja_id:_admNpLojaId,loja_name:lojaName,nome_cliente:nome,celular_cliente:cel,cpf_cliente:cpf,endereco_coleta:colEndereco,complemento_coleta:(document.getElementById('adm-np-col-comp')||{value:''}).value.trim()||null,obs_coleta:colObs||null,endereco_entrega:entEndereco,complemento_entrega:entComp||null,obs_entrega_loja:entObs||null,tipo_pagamento:tipoPag,valor_pedido:valorProduto,valor_taxa:_admNpTaxaCalc,valor_total:_admNpTaxaCalc,distancia_km:_admNpDistKm,status:'pendente',plataforma:'admin'};
+  try{
+    var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var data=await r.json();
+    if(!r.ok){tg.showAlert('Erro ao criar pedido: '+(data.error||'Falha.'));return;}
+    var newCredit=lojaCredit-_admNpTaxaCalc;
+    await fetch(API+'/users/'+_admNpLojaId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({credit:newCredit})});
+    closeModal('modal-admin-novo-pedido');
+    tg.showAlert('Pedido '+codPedido+' criado!\nTaxa: R$ '+_admNpTaxaCalc.toFixed(2));
+    loadData('pedidos');
+  }catch(e){tg.showAlert('Erro de conexao ao finalizar pedido.');}
+}
+</script>
 </body>
 </html>
