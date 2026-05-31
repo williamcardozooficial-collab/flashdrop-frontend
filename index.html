@@ -1707,7 +1707,7 @@ function admNpRecalc(){
     if(hi>hf?(hora>=hi||hora<hf):(hora>=hi&&hora<hf))taxaNoturna=parseFloat(s.taxa_noturna);
   }
   var totalLoja=Math.round(taxaBase+taxaChuva+taxaNoturna+commission);
-  _admNpTaxaCalc=totalLoja;
+  _admNpTaxaCalc=Math.round(totalLoja);
   var el=document.getElementById('adm-np-taxa-result');
   el.innerHTML='<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Distancia:</span><strong>'+_admNpDistKm.toFixed(2)+' km</strong></div>'+(tipo==='maquina'?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Km (ida+volta):</span><strong>'+km.toFixed(2)+' km</strong></div>':'')+'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Taxa base:</span><strong>R$ '+taxaBase.toFixed(2)+'</strong></div>'+(taxaChuva>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Chuva:</span><strong>R$ '+taxaChuva.toFixed(2)+'</strong></div>':'')+(taxaNoturna>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Noturna:</span><strong>R$ '+taxaNoturna.toFixed(2)+'</strong></div>':'')+'<div style="display:flex;justify-content:space-between;border-top:1px solid #333;padding-top:6px;margin-top:4px"><span style="color:#ffcc00;font-weight:700">Total Loja:</span><strong style="color:#ffcc00;font-size:16px">R$ '+totalLoja.toFixed(2)+'</strong></div>';
   el.style.display='block';
@@ -1744,7 +1744,7 @@ async function admNpFinalizarPedido(){
   var codPedido='ADM-'+Date.now().toString().slice(-8);
   var entEndereco=entRua+(entNum?', '+entNum:'')+(entBairro?', '+entBairro:'')+', '+entCidade;
   var colEndereco=colRua+(colNum?', '+colNum:'')+(colBairro?', '+colBairro:'')+', '+colCidade;
-  var body={cod_pedido:codPedido,loja_id:_admNpLojaId,loja_user:lojaUsername,loja_name:lojaName,nome_cliente:nome,celular_cliente:cel,cpf_cliente:cpf||null,endereco_coleta:colEndereco,complemento_coleta:(document.getElementById('adm-np-col-comp')||{value:''}).value.trim()||null,obs_coleta:colObs||null,endereco_entrega:entEndereco,complemento_entrega:entComp||null,obs_entrega_loja:entObs||null,tipo_pagamento:tipoPag,valor_pedido:valorProduto,valor_taxa:_admNpTaxaCalc,valor_total:_admNpTaxaCalc,distancia_km:_admNpDistKm,status:'em_preparo',plataforma:'admin'};
+  var body={cod_pedido:codPedido,loja_id:_admNpLojaId,loja_user:lojaUsername,loja_name:lojaName,nome_cliente:nome,celular_cliente:cel,cpf_cliente:cpf||null,endereco_coleta:colEndereco,complemento_coleta:(document.getElementById('adm-np-col-comp')||{value:''}).value.trim()||null,obs_coleta:colObs||null,endereco_entrega:entEndereco,complemento_entrega:entComp||null,obs_entrega_loja:entObs||null,tipo_pagamento:tipoPag,valor_pedido:valorProduto,valor_taxa:_admNpTaxaCalc,valor_total:_admNpTaxaCalc,valor_motoboy:Math.round(_admNpTaxaCalc-(parseFloat((_admNpSettings&&_admNpSettings.commission)||0))),distancia_km:_admNpDistKm,status:'em_preparo',plataforma:'admin'};
   try{
     var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     var data=await r.json();
