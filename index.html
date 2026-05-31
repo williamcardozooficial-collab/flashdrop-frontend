@@ -1749,8 +1749,8 @@ async function admNpFinalizarPedido(){
     var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     var data=await r.json();
     if(!r.ok){tg.showAlert('Erro ao criar pedido: '+(data.error||'Falha.'));return;}
-    var newCredit=lojaCredit-_admNpTaxaCalc;
-    await fetch(API+'/users/'+_admNpLojaId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({credit:newCredit})});
+        if(tipoPag!=='dinheiro'){var newCredit=lojaCredit-_admNpTaxaCalc;
+    await fetch(API+'/users/'+_admNpLojaId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({credit:newCredit})});}
     closeModal('modal-admin-novo-pedido');
     tg.showAlert('Pedido '+codPedido+' criado!\nTaxa: R$ '+_admNpTaxaCalc.toFixed(2));
     loadData('pedidos');
