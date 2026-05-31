@@ -115,7 +115,7 @@
           ? '<img src="' + loja.foto_url + '" alt="' + (loja.name||'') + '" style="width:100%;height:100%;object-fit:cover" />'
           : '<span class="placeholder-icon">&#127978;</span>';
         var enderecoContent = loja.address
-          ? '&#128205; <span>' + loja.address + '</span>'
+          ? '&#128205; <span>' + (function(a){var o={};try{o=JSON.parse(a);}catch(e){o=null;}return o&&o.rua?[o.rua+(o.num?' '+o.num:''),o.bairro,o.cidade].filter(Boolean).join(', '):a;})(loja.address) + '</span>'
           : '<span style="color:#444">Endereco nao informado</span>';
         card.innerHTML =
           '<div class="loja-foto">' + fotoContent + '<div class="overlay"></div></div>' +
@@ -140,7 +140,7 @@
       var termo = document.getElementById('search-input').value.toLowerCase().trim();
       if (!termo) { renderLojas(todasLojas); return; }
       renderLojas(todasLojas.filter(function(l){
-        return (l.name||'').toLowerCase().includes(termo) || (l.address||'').toLowerCase().includes(termo);
+        return (l.name||'').toLowerCase().includes(termo) || (function(a){var o={};try{o=JSON.parse(a);}catch(e){o=null;}return o&&o.rua?[o.rua,o.bairro,o.cidade].filter(Boolean).join(' '):a||'';})(l.address).toLowerCase().includes(termo);
       }));
     }
     carregarLojas();
