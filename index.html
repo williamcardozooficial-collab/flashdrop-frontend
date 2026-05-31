@@ -1624,6 +1624,11 @@ async function salvarLink() {
           &#9432; Maquina de Cartao: sera cobrado o valor total (ida + volta).
         </div>
       </div>
+            <div id="adm-np-valor-cartao-aprox-wrap" style="display:none;margin-top:10px">
+              <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Valor do Produto (R$)</label>
+              <input id="adm-np-valor-cartao-aprox" type="number" step="0.01" placeholder="0,00" style="width:100%;padding:12px 14px;background:#2a2a2a;border:1.5px solid #555;border-radius:10px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+              <div style="background:#1a0d00;border:1px solid #ff6500;border-radius:8px;padding:10px 12px;font-size:12px;color:#ff9500">&#x26A0; Não inclua o valor da entrega. Apenas o valor do produto.</div>
+            </div>
     </div>
 
     <!-- TAXA DE ENTREGA -->
@@ -1647,6 +1652,7 @@ async function abrirAdminNovoPedido(){
   var cc=document.getElementById('adm-np-col-cidade');if(cc)cc.value='';
   document.getElementById('adm-np-valor-produto-wrap').style.display='none';
   document.getElementById('adm-np-retorno-wrap').style.display='none';
+  document.getElementById('adm-np-valor-cartao-aprox-wrap').style.display='none';
   document.getElementById('adm-np-taxa-result').style.display='none';
   _admNpDistKm=0;_admNpTaxaCalc=0;_admNpLojaId=null;_admNpLojaUser=null;
   try{var rs=await fetch(API+'/settings');_admNpSettings=await rs.json();}catch(e){_admNpSettings={};}
@@ -1690,7 +1696,8 @@ function admNpOnTipoPagChange(){
   var tipo=(document.getElementById('adm-np-pagamento')||{value:''}).value;
   document.getElementById('adm-np-valor-produto-wrap').style.display=tipo==='dinheiro'?'block':'none';
   document.getElementById('adm-np-retorno-wrap').style.display=tipo==='maquina'?'block':'none';
-  admNpRecalc();
+  document.getElementById('adm-np-valor-cartao-aprox-wrap').style.display=tipo==='cartao_aproximacao'?'block':'none';
+  if(window._admNpCalcDist>0) admNpRecalc();
 }
 function admNpRecalc(){
   if(!_admNpSettings||_admNpDistKm<=0)return;
