@@ -264,7 +264,7 @@ async function calcularTaxaEntrega(){
   statusEl.innerHTML='<span style="color:#aaa">&#8987; Calculando distancia...</span>';
   try{
     var endCliente=rua+', '+numero+', '+cidade+', RS, Brasil';
-    var endLoja=lojaGlobal.address+', Brasil';
+    var _lra=lojaGlobal.address||'';var _lro={};try{_lro=JSON.parse(_lra);}catch(e){_lro=null;}var _lraf=_lro&&_lro.rua?[_lro.rua+(_lro.num?' '+_lro.num:''),_lro.bairro,_lro.cidade].filter(Boolean).join(', '):_lra;var endLoja=_lraf+', Brasil';
     var [coordLoja,coordCliente]=await Promise.all([geocodificar(endLoja),geocodificar(endCliente)]);
     if(!coordLoja){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Nao foi possivel localizar o endereco da loja. Fale com a loja.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
     if(!coordCliente){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Endereco de entrega nao encontrado. Verifique e tente novamente.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
@@ -372,7 +372,7 @@ var btn=document.getElementById('btn-finalizar');
 function renderLoja(loja){
   lojaGlobal=loja;
   var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
-  var end=loja.address?'<div class="meta-item">&#128205; <strong>'+esc(loja.address)+'</strong></div>':'';
+  var _la=loja.address||'';var _lo={};try{_lo=JSON.parse(_la);}catch(e){_lo=null;}var _laf=_lo&&_lo.rua?[_lo.rua+(_lo.num?' '+_lo.num:''),_lo.bairro,_lo.cidade].filter(Boolean).join(', '):_la;var end=_laf?'<div class="meta-item">&#128205; <strong>'+esc(_laf)+'</strong></div>':'';
   var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div>':'';
   document.getElementById('page-content').innerHTML=
     '<section class="loja-hero"><div class="loja-hero-inner">'+
