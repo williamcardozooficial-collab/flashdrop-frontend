@@ -250,8 +250,8 @@ const tg=window.Telegram.WebApp;const _origAlert=tg.showAlert;tg.showAlert=(m)=>
 function buildDest(){var rua=document.getElementById('dest-rua').value.trim();var num=document.getElementById('dest-numero')?document.getElementById('dest-numero').value.trim():'';var bairro=document.getElementById('dest-bairro').value.trim();var cidade=document.getElementById('dest-cidade').value.trim()||'Caxias do Sul';var full=[rua+(num?' '+num:''),bairro,cidade].filter(Boolean).join(', ');document.getElementById('dest').value=full;}
 
 /* Tipo de pagamento muda visibilidade */
-function onTipoPagChange(){ var tipo=document.getElementById('tipoPagamento').value;
-function buildOrigin(){var rua=document.getElementById('origin-rua')?document.getElementById('origin-rua').value.trim():'';var num=document.getElementById('origin-numero')?document.getElementById('origin-numero').value.trim():'';var bairro=document.getElementById('origin-bairro')?document.getElementById('origin-bairro').value.trim():'';var cidade=document.getElementById('origin-cidade')?document.getElementById('origin-cidade').value.trim()||'Caxias do Sul':'Caxias do Sul';var full=[rua+(num?' '+num:''),bairro,cidade].filter(Boolean).join(', ');var originEl=document.getElementById('origin');if(originEl)originEl.value=full;} document.getElementById('valorPedidoGroup').style.display=(tipo==='dinheiro')?'block':'none'; document.getElementById('retornoGroup').style.display=(tipo==='maquina')?'block':'none'; document.getElementById('cobrarCliente').value=(tipo==='dinheiro')?'sim':'nao'; if(calculatedDist>0) recalcWithRetorno(); }
+function buildOrigin(){var rua=document.getElementById('origin-rua')?document.getElementById('origin-rua').value.trim():'';var num=document.getElementById('origin-numero')?document.getElementById('origin-numero').value.trim():'';var bairro=document.getElementById('origin-bairro')?document.getElementById('origin-bairro').value.trim():'';var cidade=document.getElementById('origin-cidade')?document.getElementById('origin-cidade').value.trim()||'Caxias do Sul':'Caxias do Sul';var full=[rua+(num?' '+num:''),bairro,cidade].filter(Boolean).join(', ');var originEl=document.getElementById('origin');if(originEl)originEl.value=full;}
+function onTipoPagChange(){ var tipo=document.getElementById('tipoPagamento').value; document.getElementById('valorPedidoGroup').style.display=(tipo==='dinheiro')?'block':'none'; document.getElementById('retornoGroup').style.display=(tipo==='maquina')?'block':'none'; document.getElementById('cobrarCliente').value=(tipo==='dinheiro')?'sim':'nao'; if(calculatedDist>0) recalcWithRetorno(); }
 function onRetornoChange(){}
 function recalcWithRetorno(){ var tipo=document.getElementById('tipoPagamento').value; var maquina=(tipo==='maquina'); var dist=maquina?calculatedDist*2:calculatedDist; if(dist<=0)return; var minFee=parseFloat(settings.min_fee)||8; var arrancada=parseFloat(settings.arrancada)||5; var priceKm=parseFloat(settings.price_per_km)||2.5; calculatedFee=Math.ceil(Math.max(minFee,arrancada+(dist*priceKm))); if(isNaN(calculatedFee)||calculatedFee<=0)return;
   // TAXAS CHUVA E NOTURNA
@@ -759,32 +759,51 @@ async function loadCategorias(){var u=JSON.parse(localStorage.getItem('flashdrop
 function fecharFormNovoProduto(){document.getElementById('form-novo-produto').style.display='none';document.getElementById('input-nome-produto').value='';document.getElementById('select-cat-produto').value='';document.getElementById('input-valor-fixo').value='';window._gruposVariacao=[];window._grupoAtual=null;renderGruposVariacao();}
 function toggleVariacoes(ativo){window._temVariacoes=ativo;var btnSim=document.getElementById('btn-var-sim');var btnNao=document.getElementById('btn-var-nao');var secGrupos=document.getElementById('sec-grupos-variacao');if(ativo){btnSim.style.background='#bb86fc';btnSim.style.color='#fff';btnNao.style.background='transparent';btnNao.style.color='#aaa';secGrupos.style.display='block';}else{btnNao.style.background='#bb86fc';btnNao.style.color='#fff';btnSim.style.background='transparent';btnSim.style.color='#aaa';secGrupos.style.display='none';}}
 async function copiarVariacoesDeOutroProduto() {
-  try {
-    var u = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
-    var token = localStorage.getItem('token') || '';
-    var r = await fetch(API + 'produtos?loja_id=' + u.id, { headers: { 'Authorization': 'Bearer ' + token } });
-    var prods = await r.json();
-    var comVar = (Array.isArray(prods) ? prods : []).filter(function(p) {
-      return p.variacoes && p.variacoes.length > 0;
-    });
-    if (comVar.length === 0) { alert('Nenhum produto com variações encontrado.'); return; }
-    var opts = comVar.map(function(p) {
-      return '<option value="' + p.id + '">' + p.nome + ' (' + p.variacoes.length + ' grupo(s))</option>';
-    }).join('');
-    var html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;">' +
-      '<div style="background:#1a1a1a;border:1px solid #ff9500;border-radius:12px;padding:24px;width:90%;max-width:380px;">' +
-      '<p style="color:#ff9500;font-weight:700;margin:0 0 12px">📋 Copiar variações de:</p>' +
-      '<select id="copy-var-select" style="width:100%;padding:10px;background:#252525;border:1px solid #444;border-radius:8px;color:#fff;font-size:14px;margin-bottom:16px;">' + opts + '</select>' +
-      '<div style="display:flex;gap:8px">' +
-      '<button onclick="document.getElementById('copy-var-overlay').remove()" style="flex:1;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;cursor:pointer">Cancelar</button>' +
-      '<button onclick="confirmarCopiaVariacoes()" style="flex:1;padding:10px;background:#ff9500;border:none;border-radius:8px;color:#000;font-weight:700;cursor:pointer">Copiar</button>' +
-      '</div></div></div>';
-    var overlay = document.createElement('div');
-    overlay.id = 'copy-var-overlay';
-    overlay.innerHTML = html;
-    document.body.appendChild(overlay);
-    window._prodsComVar = comVar;
-  } catch(e) { alert('Erro ao buscar produtos: ' + e.message); }
+try {
+var u = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+var token = localStorage.getItem('token') || '';
+var r = await fetch(API + '/produtos?loja_id=' + u.id, { headers: { 'Authorization': 'Bearer ' + token } });
+var prods = await r.json();
+var comVar = (Array.isArray(prods) ? prods : []).filter(function(p) {
+return p.variacoes && p.variacoes.length > 0;
+});
+if (comVar.length === 0) { alert('Nenhum produto com variações encontrado.'); return; }
+var overlay = document.createElement('div');
+overlay.id = 'copy-var-overlay';
+overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+var box = document.createElement('div');
+box.style.cssText = 'background:#1a1a1a;border:1px solid #ff9500;border-radius:12px;padding:24px;width:90%;max-width:380px;';
+var title = document.createElement('p');
+title.style.cssText = 'color:#ff9500;font-weight:700;margin:0 0 12px';
+title.textContent = '📋 Copiar variações de:';
+box.appendChild(title);
+var sel = document.createElement('select');
+sel.id = 'copy-var-select';
+sel.style.cssText = 'width:100%;padding:10px;background:#252525;border:1px solid #444;border-radius:8px;color:#fff;font-size:14px;margin-bottom:16px;';
+comVar.forEach(function(p) {
+var opt = document.createElement('option');
+opt.value = p.id;
+opt.textContent = p.nome + ' (' + p.variacoes.length + ' grupo(s))';
+sel.appendChild(opt);
+});
+box.appendChild(sel);
+var btns = document.createElement('div');
+btns.style.cssText = 'display:flex;gap:8px';
+var btnCancel = document.createElement('button');
+btnCancel.style.cssText = 'flex:1;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;cursor:pointer';
+btnCancel.textContent = 'Cancelar';
+btnCancel.onclick = function() { overlay.remove(); };
+var btnCopy = document.createElement('button');
+btnCopy.style.cssText = 'flex:1;padding:10px;background:#ff9500;border:none;border-radius:8px;color:#000;font-weight:700;cursor:pointer';
+btnCopy.textContent = 'Copiar';
+btnCopy.onclick = function() { confirmarCopiaVariacoes(); };
+btns.appendChild(btnCancel);
+btns.appendChild(btnCopy);
+box.appendChild(btns);
+overlay.appendChild(box);
+document.body.appendChild(overlay);
+window._prodsComVar = comVar;
+} catch(e) { alert('Erro ao buscar produtos: ' + e.message); }
 }
 
 function confirmarCopiaVariacoes() {
