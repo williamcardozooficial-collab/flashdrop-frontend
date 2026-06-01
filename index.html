@@ -147,6 +147,18 @@
         </div> <div class="input-group"> <label>⏳ Delay de Preparo (minutos, 1-99)</label> <input id="cfg-delay" class="input" type="number" min="1" max="99"> <small style="color:#888;font-size:11px">Tempo que o pedido fica em preparo antes de ir ao sistema automaticamente.</small> </div>
         <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
 
+      <!-- PORCENTAGEM CARTAO APROXIMACAO -->
+      <div class="taxa-card" id="cartao-aprox-card" style="margin-top:16px;">
+        <div class="taxa-card-header"><span class="taxa-card-title">💳 Cartão por Aproximação</span></div>
+        <div class="taxa-card-body">
+          <div class="input-group">
+            <label>Porcentagem Administrativa (%)</label>
+            <input id="cfg-perc-cartao-aprox" class="input" type="number" step="0.1" min="0" max="100" placeholder="5">
+            <small style="color:#aaa;font-size:11px;">Percentual descontado do total (X+Y) nos pedidos de cartão por aproximação. Ex: 5 = 5%</small>
+          </div>
+        </div>
+      </div>
+
       <!-- TAXA DE CHUVA -->
       <div class="taxa-card" id="taxa-chuva-card">
         <div class="taxa-card-header">
@@ -523,6 +535,7 @@ function esc(v) {
         toggleTaxaCard('noturna');
         document.getElementById('cfg-noturna-inicio').value = data.taxa_noturna_hora_inicio || '22:00';
         document.getElementById('cfg-noturna-fim').value = data.taxa_noturna_hora_fim || '06:00';
+        document.getElementById('cfg-perc-cartao-aprox').value = data.perc_cartao_aprox || 5;
         var savedDays = localStorage.getItem('flashdrop_cleanup_days');
         if (savedDays) document.getElementById('cfg-days').value = savedDays;
       } else if (tab === 'cadastros') {
@@ -966,7 +979,8 @@ function renderFinance(users) {
           taxa_noturna: parseFloat(document.getElementById('cfg-noturna-valor').value) || 0,
           taxa_noturna_ativa: taxaNoturnaAtiva,
           taxa_noturna_hora_inicio: document.getElementById('cfg-noturna-inicio').value || '22:00',
-          taxa_noturna_hora_fim: document.getElementById('cfg-noturna-fim').value || '06:00'
+          taxa_noturna_hora_fim: document.getElementById('cfg-noturna-fim').value || '06:00',
+          perc_cartao_aprox: parseFloat(document.getElementById('cfg-perc-cartao-aprox').value) || 5.00
         })
       });
       tg.showAlert('Ajustes salvos!');
