@@ -559,12 +559,14 @@ async function toggleOnline() {
             card.appendChild(cobrarDiv);
           } else if (o.tipo_pagamento === "cartao_aproximacao") {
             var valorProdAprox = parseFloat(o.valor_pedido || 0);
-            if (valorProdAprox > 0) {
+            var valorEntregaAprox = parseFloat(o.valor_total || 0);
+            var totalCobrarAprox = valorProdAprox + valorEntregaAprox;
+            if (totalCobrarAprox > 0) {
               var aproxDiv = document.createElement("div");
               aproxDiv.style.cssText = "background:#1a1000;border:2px solid #f5a623;border-radius:10px;padding:12px;margin:10px 0;text-align:center;";
               aproxDiv.innerHTML = "<div style='font-size:11px;color:#f5a623;font-weight:700;text-transform:uppercase;margin-bottom:4px;'>\uD83D\uDCB3 Cobrar do Cliente (Cart\u00e3o Aprox.)</div>"
-                + "<div style='font-size:22px;font-weight:900;color:#f5a623;'>R$ " + valorProdAprox.toFixed(2) + "</div>"
-                + "<div style='font-size:11px;color:#aaa;margin-top:4px;'>Valor do produto que o cliente vai pagar</div>";
+                + "<div style='font-size:22px;font-weight:900;color:#f5a623;'>R$ " + totalCobrarAprox.toFixed(2) + "</div>"
+                + "<div style='font-size:11px;color:#aaa;margin-top:4px;'>Produto: R$ " + valorProdAprox.toFixed(2) + " + Entrega: R$ " + valorEntregaAprox.toFixed(2) + "</div>";
               card.appendChild(aproxDiv);
             }
           }
