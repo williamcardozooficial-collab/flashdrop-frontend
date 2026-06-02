@@ -1511,3 +1511,33 @@ function pollPagamentoSaldo(paymentId, valor, token) {
 </div>
 </div><div id="print-area" style="display:none;padding:10px;background:#fff;color:#000;font-family:monospace;font-size:12px"></div>
 </body></html>
+<script>
+function initAutocomplete(){
+  function ac(id,nid,bid,cid,fn){
+    var el=document.getElementById(id);if(!el)return;
+    var a=new google.maps.places.Autocomplete(el,{componentRestrictions:{country:"br"},types:["address"],fields:["address_components","formatted_address"]});
+    el.addEventListener("keydown",function(e){if(e.key==="Enter")e.preventDefault();});
+    a.addListener("place_changed",function(){
+      var p=a.getPlace();if(!p||!p.address_components)return;
+      var r="",n="",b="",c="";
+      p.address_components.forEach(function(x){
+        var t=x.types;
+        if(t.indexOf("route")!==-1)r=x.long_name;
+        if(t.indexOf("street_number")!==-1)n=x.long_name;
+        if((t.indexOf("sublocality_level_1")!==-1||t.indexOf("neighborhood")!==-1)&&!b)b=x.long_name;
+        if(t.indexOf("administrative_area_level_2")!==-1)c=x.long_name;
+      });
+      document.getElementById(id).value=r||p.formatted_address||"";
+      if(n&&document.getElementById(nid))document.getElementById(nid).value=n;
+      if(b&&document.getElementById(bid))document.getElementById(bid).value=b;
+      if(c&&document.getElementById(cid))document.getElementById(cid).value=c;
+      if(typeof window[fn]==="function")window[fn]();
+      if(!n&&document.getElementById(nid))document.getElementById(nid).focus();
+    });
+  }
+  ac("origin-rua","origin-numero","origin-bairro","origin-cidade","buildOrigin");
+  ac("dest-rua","dest-numero","dest-bairro","dest-cidade","buildDest");
+}
+</script>
+<!-- Replace YOUR_GOOGLE_MAPS_API_KEY - enable Places API in Google Cloud -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initAutocomplete" async defer></script>
