@@ -1227,7 +1227,7 @@ async function abrirHistoricoCredito(){
     var saldo=parseFloat(u.credit||0);
     lista.innerHTML='<div style="background:#111;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between"><span style="color:#888;font-size:12px">Saldo atual</span><span style="color:#bb86fc;font-weight:700;font-size:15px">R$ '+saldo.toFixed(2)+'</span></div>'
     + events.map(function(ev){
-      var isCredit = ev.tipo==='recebimento_dinheiro'||ev.tipo==='estorno'||ev.tipo==='recarga_mp';
+      var isCredit = ev.tipo==='recebimento_dinheiro'||ev.tipo==='cartao_aproximacao'||ev.tipo==='estorno'||ev.tipo==='recarga_mp';
       var color = isCredit?'#27ae60':'#e53935';
       var sign = isCredit?'+':'-';
       var label = tipoLabel[ev.tipo]||ev.tipo;
