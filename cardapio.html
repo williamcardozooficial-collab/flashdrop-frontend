@@ -1,4 +1,922 @@
-<!DOCTYPE html>
+undefined<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlashDrop - Cardapio</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
+header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
+.header-logo { display: flex; align-items: center; gap: 12px; }
+.header-logo .icon { width: 42px; height: 42px; background: #f5a623; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.header-logo h1 { font-size: 1.5rem; font-weight: 700; color: #fff; }
+.header-logo h1 span { color: #f5a623; }
+.header-subtitle { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
+.btn-voltar { background: transparent; border: 1px solid #f5a623; color: #f5a623; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s, color 0.2s; }
+.btn-voltar:hover { background: #f5a623; color: #000; }
+.loja-hero { background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #1a1100 100%); border-bottom: 1px solid #2a2a2a; padding: 40px 20px; }
+.loja-hero-inner { max-width: 800px; margin: 0 auto; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
+.loja-foto-grande { width: 120px; height: 120px; border-radius: 16px; background: #222; border: 3px solid #f5a623; display: flex; align-items: center; justify-content: center; font-size: 56px; flex-shrink: 0; overflow: hidden; }
+.loja-foto-grande img { width: 100%; height: 100%; object-fit: cover; }
+.loja-hero-info { flex: 1; min-width: 200px; }
+.loja-hero-info h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+.loja-hero-meta { display: flex; flex-direction: column; gap: 6px; }
+.meta-item { font-size: 0.9rem; color: #aaa; display: flex; align-items: center; gap: 8px; }
+.meta-item strong { color: #fff; }
+main { max-width: 800px; margin: 0 auto; padding: 40px 20px 120px; }
+.loading { text-align: center; padding: 80px 20px; }
+.spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #f5a623; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { color: #666; }
+.error-state { text-align: center; padding: 80px 20px; color: #666; }
+.error-state .icon { font-size: 48px; margin-bottom: 16px; }
+.error-state h3 { color: #fff; margin-bottom: 8px; }
+footer { background: #1a1a1a; border-top: 1px solid #2a2a2a; text-align: center; padding: 20px; color: #555; font-size: 0.82rem; }
+footer span { color: #f5a623; }
+@media (max-width: 480px) {
+.loja-hero-inner { flex-direction: column; align-items: flex-start; }
+.loja-foto-grande { width: 90px; height: 90px; font-size: 40px; }
+.loja-hero-info h2 { font-size: 1.4rem; }
+.header-logo h1 { font-size: 1.2rem; }
+}
+/* Cardapio */
+.cat-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 20px; }
+.cat-nav-btn { padding: 8px 18px; border-radius: 20px; border: 2px solid #2a2a2a; background: #1a1a1a; color: #aaa; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.cat-nav-btn.ativo { background: #f5a623; color: #000; border-color: #f5a623; }
+.cat-nav-btn:hover { border-color: #f5a623; color: #f5a623; }
+.cat-section { margin: 0 0 8px; }
+.cat-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0; padding: 10px 14px; background: #1a1a1a; border-left: 4px solid #f5a623; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.cat-title .cat-arrow { font-size: 12px; color: #888; transition: transform 0.2s; }
+.cat-title.aberto .cat-arrow { transform: rotate(180deg); }
+.cat-produtos { display: none; }
+.cat-produtos.aberto { display: block; padding-top: 12px; }
+.produtos-grid { display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; }
+.prod-card { display: flex; flex-direction: column; background: #1a1a1a; border-radius: 12px; padding: 12px; border: 1px solid #2a2a2a; }
+.prod-card-top { display: flex; align-items: center; gap: 14px; }
+.prod-foto { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+.prod-foto-placeholder { width: 80px; height: 80px; border-radius: 10px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+.prod-info { flex: 1; min-width: 0; }
+.prod-nome { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.prod-desc { font-size: 12px; color: #888; margin-bottom: 6px; line-height: 1.4; }
+.prod-preco { font-size: 15px; font-weight: 700; color: #f5a623; }
+.btn-add { margin-top: 10px; background: #f5a623; color: #000; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; }
+.btn-add:hover { background: #e09400; }
+/* Carrinho bar */
+.carrinho-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #f5a623; color: #000; padding: 14px 20px; z-index: 999; align-items: center; justify-content: space-between; box-shadow: 0 -4px 20px rgba(0,0,0,0.4); }
+.carrinho-bar.ativo { display: flex; }
+.carrinho-bar-info { font-weight: 700; font-size: 15px; }
+.carrinho-bar-info small { display: block; font-size: 12px; font-weight: 400; }
+.btn-ver-carrinho { background: #000; color: #f5a623; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 14px; cursor: pointer; }
+/* Modal */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; padding: 10px 0 80px; }
+.modal-overlay.ativo { display: block; }
+.modal-box { background: #1a1a1a; border-radius: 16px; max-width: 520px; margin: 0 auto; padding: 24px; }
+.modal-title { font-size: 18px; font-weight: 700; color: #f5a623; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
+.modal-close { background: none; border: none; color: #888; font-size: 22px; cursor: pointer; padding: 0 4px; }
+.cart-item { background: #111; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.cart-item-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
+.cart-item-nome { font-size: 14px; font-weight: 600; flex: 1; }
+.cart-item-preco { color: #f5a623; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.cart-qty { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.cart-qty button { background: #2a2a2a; border: none; color: #fff; width: 28px; height: 28px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: 700; }
+.cart-qty span { min-width: 20px; text-align: center; font-weight: 700; }
+.cart-obs-input { width: 100%; padding: 7px 10px; background: #1e1e1e; border: 1px solid #333; border-radius: 6px; color: #ccc; font-size: 12px; resize: none; height: 36px; }
+.cart-obs-input::placeholder { color: #555; }
+.cart-total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 2px solid #2a2a2a; margin-top: 4px; }
+.cart-total-label { font-size: 14px; color: #aaa; }
+.cart-total-val { font-size: 18px; font-weight: 700; color: #f5a623; }
+.taxa-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; color: #aaa; }
+.taxa-val { color: #f5a623; font-weight: 600; }
+/* Checkout form */
+.secao-checkout { margin-top: 18px; padding-top: 18px; border-top: 2px solid #2a2a2a; }
+.secao-checkout h4 { color: #f5a623; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 12px; color: #aaa; margin-bottom: 4px; font-weight: 600; }
+.form-group label .req { color: #f5a623; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; background: #111; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 14px; }
+.form-group textarea { resize: none; height: 60px; }
+.form-group select option { background: #111; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-finalizar { width: 100%; background: #f5a623; color: #000; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+.btn-finalizar:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-calcular-taxa { width:100%; background:#1e1e1e; color:#f5a623; border:2px solid #f5a623; border-radius:10px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; transition:background 0.2s; }
+.btn-calcular-taxa:hover { background:rgba(245,166,35,0.12); }
+.btn-calcular-taxa:disabled { opacity:0.6; cursor:not-allowed; }
+.taxa-detalhe-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#111; border-radius:8px; margin-bottom:6px; font-size:13px; color:#aaa; }
+.taxa-detalhe-val { font-weight:700; color:#fff; }
+.taxa-total-final { background:rgba(245,166,35,0.08); border:1px solid rgba(245,166,35,0.25); margin-top:4px; font-size:14px; font-weight:700; color:#fff; }
+
+/* ---- Google Places Autocomplete - Dark Theme ---- */
+.pac-container {
+  background: #1e1e1e !important;
+  border: 1px solid #444 !important;
+  border-radius: 0 0 8px 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+  font-family: inherit !important;
+  z-index: 9999 !important;
+  width: calc(100vw - 32px) !important;
+  left: 16px !important;
+  right: 16px !important;
+  max-width: 100% !important;
+}
+.pac-item {
+  padding: 10px 14px !important;
+  color: #ccc !important;
+  font-size: 13px !important;
+  border-top: 1px solid #2a2a2a !important;
+  cursor: pointer !important;
+  line-height: 1.5 !important;
+}
+.pac-item:first-child { border-top: none !important; }
+.pac-item:hover, .pac-item-selected {
+  background-color: #2a2a2a !important;
+}
+.pac-item-query {
+  color: #fff !important;
+  font-size: 13px !important;
+}
+.pac-matched {
+  color: #f5a623 !important;
+  font-weight: 700 !important;
+}
+.pac-icon {
+  filter: invert(70%) sepia(60%) saturate(400%) hue-rotate(0deg) !important;
+}
+.pac-logo:after { display: none !important; }
+/* Ensure dropdown appears above modal overlay */
+.pac-container { z-index: 99999 !important; }
+</style>
+</head>
+<body>
+<header>
+<div class="header-logo">
+<div class="icon">&#9889;</div>
+<div>
+<h1>Flash<span>Drop</span> Delivery</h1>
+<div class="header-subtitle">Cardapio da loja</div>
+</div>
+</div>
+<a href="lojas.html" class="btn-voltar">&#8592; Voltar</a>
+</header>
+<div id="page-content">
+<div class="loading"><div class="spinner"></div><p>Carregando informacoes da loja...</p></div>
+</div>
+<footer><span>FlashDrop Delivery</span> &copy; 2025 &nbsp;&bull;&nbsp; Entrega rapida, onde voce estiver</footer>
+
+<script>
+var API = 'https://flashdrop-backend-production.up.railway.app';
+var lojaGlobal = null;
+var carrinho = {};
+
+function getParam(n){return new URLSearchParams(window.location.search).get(n);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtCPF(v){v=v.replace(/\D/g,'');if(v.length>3)v=v.slice(0,3)+'.'+v.slice(3);if(v.length>7)v=v.slice(0,7)+'.'+v.slice(7);if(v.length>11)v=v.slice(0,11)+'-'+v.slice(11);return v.slice(0,14);}
+function fmtTel(v){v=v.replace(/\D/g,'');if(v.length>2)v='('+v.slice(0,2)+') '+v.slice(2);if(v.length>10)v=v.slice(0,10)+'-'+v.slice(10);return v.slice(0,15);}
+
+/* ---- CARRINHO ---- */
+function getCarrinho(lid){if(!carrinho[lid])carrinho[lid]=[];return carrinho[lid];}
+
+function addFromBtn(btn){
+  var lid=parseInt(btn.dataset.lid),id=parseInt(btn.dataset.id),nome=btn.dataset.nome,preco=parseFloat(btn.dataset.preco);
+  var varStr=btn.dataset.variacoes||'';
+  var variacoes=[];
+  try{if(varStr)variacoes=JSON.parse(varStr);}catch(e){}
+  if(variacoes&&variacoes.length>0){
+    abrirModalVariacoes(lid,{id:id,nome:nome,preco:preco,variacoes:variacoes});
+  }else{
+    adicionarItem(lid,{id:id,nome:nome,preco:preco,variacoes:[],opcoesEscolhidas:[]});
+    btn.textContent='Adicionado!';
+    setTimeout(function(){btn.textContent='+ Adicionar';},900);
+  }
+}
+function adicionarItem(lid,prod){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===prod.id;});
+  if(item){item.qty++;}else{c.push({id:prod.id,nome:prod.nome,preco:prod.preco,qty:1,obs:prod.obs||''});}
+  atualizarBarra(lid);
+}
+function removerItem(lid,pid){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
+  if(!item)return;
+  item.qty--;
+  if(item.qty<=0)carrinho[lid]=c.filter(function(i){return i.id!==pid;});
+  atualizarBarra(lid);
+  renderCartLista(lid);
+}
+function aumentarItem(lid,pid){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
+  if(!item)return;
+  item.qty++;
+  atualizarBarra(lid);
+  renderCartLista(lid);
+}
+function salvarObs(lid,pid,val){
+  var c=getCarrinho(lid),item=c.find(function(i){return i.id===pid;});
+  if(item)item.obs=val;
+}
+function totalCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.preco*i.qty;},0);}
+function qtdCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.qty;},0);}
+function atualizarBarra(lid){
+  var bar=document.getElementById('carrinho-bar'),qtd=qtdCarrinho(lid);
+  if(!bar)return;
+  if(qtd>0){
+    bar.classList.add('ativo');
+    document.getElementById('bar-qtd').textContent=qtd+(qtd===1?' item':' itens');
+    document.getElementById('bar-total').textContent='R$ '+totalCarrinho(lid).toFixed(2);
+  }else{bar.classList.remove('ativo');}
+}
+
+/* ---- MODAL ---- */
+function renderCartLista(lid){
+  var c=getCarrinho(lid),lista=document.getElementById('cart-lista');
+  if(!c.length){
+    lista.innerHTML='<p style="color:#888;text-align:center;padding:20px">Carrinho vazio</p>';
+    document.getElementById('cart-total-val').textContent='R$ 0,00';
+    return;
+  }
+  lista.innerHTML=c.map(function(it){
+    return '<div class="cart-item">'+
+      '<div class="cart-item-top">'+
+        '<div class="cart-item-nome">'+esc(it.nome)+'</div>'+
+        '<div class="cart-item-preco">R$ '+(it.preco*it.qty).toFixed(2)+'</div>'+
+      '</div>'+
+      '<div class="cart-qty">'+
+        '<button onclick="removerItem('+lid+','+it.id+')">-</button>'+
+        '<span>'+it.qty+'</span>'+
+        '<button onclick="aumentarItem('+lid+','+it.id+')">+</button>'+
+      '</div>'+
+      '<textarea class="cart-obs-input" placeholder="Observacao: ex. sem ervilha, sem cebola..." onchange="salvarObs('+lid+','+it.id+',this.value)">'+esc(it.obs||'')+'</textarea>'+
+    '</div>';
+  }).join('');
+  document.getElementById('cart-total-val').textContent='R$ '+totalCarrinho(lid).toFixed(2);
+}
+function abrirCarrinho(){
+  var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
+  renderCartLista(lid);
+  document.getElementById('modal-carrinho').classList.add('ativo');
+}
+function fecharCarrinho(){document.getElementById('modal-carrinho').classList.remove('ativo');}
+
+/* ---- TAXA ENTREGA ---- */
+var taxaSettings = null;
+var taxaCalculada = 0;
+var distanciaCalculada = 0;
+
+async function carregarSettings(){
+  if(taxaSettings)return taxaSettings;
+  try{
+    var r=await fetch(API+'/settings');taxaSettings=await r.json();
+  }catch(e){taxaSettings={min_fee:10,price_per_km:1.8,arrancada:3};}
+  return taxaSettings;
+}
+
+async function geocodificar(endereco){
+  var tentativas=[endereco, endereco.split(',').filter(function(p,i){return i!==2;}).join(',')];
+  for(var i=0;i<tentativas.length;i++){
+    var q=encodeURIComponent(tentativas[i]);
+    var r=await fetch('https://nominatim.openstreetmap.org/search?q='+q+'&format=json&limit=1',{headers:{'User-Agent':'FlashDropDelivery/1.0'}});
+    var d=await r.json();
+    if(d.length)return {lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)};
+    await new Promise(function(res){setTimeout(res,300);});
+  }
+  return null;
+}
+
+async function calcularDistanciaKm(latA,lonA,latB,lonB){
+  var url='https://router.project-osrm.org/route/v1/driving/'+lonA+','+latA+';'+lonB+','+latB+'?overview=false';
+  var r=await fetch(url);
+  var d=await r.json();
+  if(d.code!=='Ok'||!d.routes.length)return null;
+  return d.routes[0].distance/1000;
+}
+
+async function calcularTaxaEntrega(){
+  var btn=document.getElementById('btn-calcular-taxa');
+  var statusEl=document.getElementById('taxa-status');
+  var rua=document.getElementById('ch-rua').value.trim();
+  var numero=document.getElementById('ch-numero').value.trim();
+  var bairro=document.getElementById('ch-bairro').value.trim();
+  var cidade=document.getElementById('ch-cidade').value.trim();
+  if(!rua||!numero||!bairro||!cidade){alert('Preencha o endereco completo antes de calcular.');return;}
+  if(!lojaGlobal||!lojaGlobal.address){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; A loja ainda nao cadastrou o endereco. Fale com a loja para saber a taxa.</span>';return;}
+  btn.disabled=true;btn.textContent='Calculando...';
+  statusEl.innerHTML='<span style="color:#aaa">&#8987; Calculando distancia...</span>';
+  try{
+    var endCliente=rua+', '+numero+', '+cidade+', RS, Brasil';
+    var _lra=lojaGlobal.address||'';var _lro={};try{_lro=JSON.parse(_lra);}catch(e){_lro=null;}var _lraf=_lro&&_lro.rua?[_lro.rua+(_lro.num?' '+_lro.num:''),_lro.bairro,_lro.cidade].filter(Boolean).join(', '):_lra;var endLoja=_lraf+', Brasil';
+    var [coordLoja,coordCliente]=await Promise.all([geocodificar(endLoja),geocodificar(endCliente)]);
+    if(!coordLoja){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Nao foi possivel localizar o endereco da loja. Fale com a loja.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
+    if(!coordCliente){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Endereco de entrega nao encontrado. Verifique e tente novamente.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
+    var km=await calcularDistanciaKm(coordLoja.lat,coordLoja.lon,coordCliente.lat,coordCliente.lon);
+    if(km===null){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Erro ao calcular rota. Tente novamente.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
+    var s=await carregarSettings();
+    var arrancada=parseFloat(s.arrancada)||3;
+    var pKm=parseFloat(s.price_per_km)||1.8;
+    var minFee=parseFloat(s.min_fee)||10;
+    var taxa=Math.max(minFee,arrancada+km*pKm);
+    taxa=Math.ceil(taxa);
+    taxaCalculada=taxa;
+    distanciaCalculada=km;
+    var pag=document.getElementById('ch-pag').value;
+    var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+    var taxaFinal=isCartao?taxa*2:taxa;
+    var lid=lojaGlobal.id;
+    var totalItens=totalCarrinho(lid);
+    var totalFinal=totalItens+taxaFinal;
+    document.getElementById('taxa-distancia').textContent=km.toFixed(1)+' km';
+    document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
+    document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
+    document.getElementById('bloco-taxa-resultado').style.display='block';
+    statusEl.innerHTML='';
+    btn.textContent='Recalcular';
+  }catch(e){
+    statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Erro ao calcular. Verifique sua conexao.</span>';
+    btn.textContent='Calcular taxa de entrega';
+  }
+  btn.disabled=false;
+}
+
+/* ---- FINALIZAR ---- */
+async function finalizarPedido(){
+  var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
+  var c=getCarrinho(lid);if(!c.length){alert('Carrinho vazio!');return;}
+  var nome=document.getElementById('ch-nome').value.trim();
+  var cel=document.getElementById('ch-cel').value.trim();
+  var cpf=document.getElementById('ch-cpf').value.trim();
+  var rua=document.getElementById('ch-rua').value.trim();
+  var numero=document.getElementById('ch-numero').value.trim();
+  var bairro=document.getElementById('ch-bairro').value.trim();
+  var cidade=document.getElementById('ch-cidade').value.trim();
+  var complemento=document.getElementById('ch-complemento').value.trim();
+  var obs_entrega=document.getElementById('ch-obs-entrega').value.trim();
+  var pag=document.getElementById('ch-pag').value;
+  if(!nome){alert('Informe seu nome completo.');return;}
+  if(!cel||cel.replace(/\D/g,'').length<10){alert('Informe um celular valido.');return;}
+  if(!cpf||cpf.replace(/\D/g,'').length<11){alert('Informe um CPF valido.');return;}
+  if(!rua){alert('Informe a rua de entrega.');return;}
+  if(!numero){alert('Informe o numero.');return;}
+  if(!bairro){alert('Informe o bairro.');return;}
+  if(!cidade){alert('Informe a cidade.');return;}
+  if(taxaCalculada===0){alert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
+  var endCompleto=rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
+  var itens=c.map(function(i){var obs=i.obs?('['+i.obs+']'):'';return i.qty+'x '+i.nome+obs+' (R$'+i.preco.toFixed(2)+')';}).join(' | ');
+  var totalItens=totalCarrinho(lid);
+  var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+  var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
+  var totalFinal=totalItens+taxaFinal;
+  if(pag==='pix'&&!_finalizarPosConfirmacaoPix){
+document.getElementById('modal-pix-confirm').classList.add('ativo');
+return;
+}
+_finalizarPosConfirmacaoPix=false;
+var btn=document.getElementById('btn-finalizar');
+  btn.disabled=true;btn.textContent='Enviando pedido...';
+  try{
+    var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
+        endereco_coleta:lojaGlobal.address||'',
+        endereco_entrega:endCompleto,
+        nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
+        cod_pedido:'FD-'+Date.now().toString().slice(-6),
+        cobrar_cliente:'sim',
+        valor_pedido:totalItens,
+        valor_produtos:totalItens,
+        valor_taxa_entrega:taxaFinal,
+        distancia:Math.round(distanciaCalculada*10)/10,
+        tipo_pagamento:pag,
+        valor_total:taxaFinal,valor_motoboy:0,comissao:0,valor_produtos:totalItens,
+        obs_coleta:'Itens: '+itens,
+        obs_entrega_loja:obs_entrega||null,
+        plataforma:'cardapio',
+        status:'pendente',
+        complemento_coleta:null,
+        complemento_entrega:complemento||null
+      })
+    });
+    if(r.ok){
+      carrinho[lid]=[];taxaCalculada=0;distanciaCalculada=0;
+      atualizarBarra(lid);fecharCarrinho();
+      document.getElementById('bloco-taxa-resultado').style.display='none';
+      alert('Pedido enviado! Em breve a loja confirmara.');
+    }else{
+      var err=await r.json().catch(function(){return{};});
+      alert('Erro: '+(err.error||r.status));
+    }
+  }catch(e){alert('Erro de conexao. Tente novamente.');}
+  btn.disabled=false;btn.textContent='Finalizar Pedido';
+}
+
+/* ---- RENDER LOJA ---- */
+function renderLoja(loja){
+  lojaGlobal=loja;
+  var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
+  var _la=loja.address||'';var _lo={};try{_lo=JSON.parse(_la);}catch(e){_lo=null;}var _laf=_lo&&_lo.rua?[_lo.rua+(_lo.num?' '+_lo.num:''),_lo.bairro,_lo.cidade].filter(Boolean).join(', '):_la;var end=_laf?'<div class="meta-item">&#128205; <strong>'+esc(_laf)+'</strong></div>':'';
+  var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div>':'';
+  document.getElementById('page-content').innerHTML=
+    '<section class="loja-hero"><div class="loja-hero-inner">'+
+    '<div class="loja-foto-grande">'+foto+'</div>'+
+    '<div class="loja-hero-info"><h2>'+esc(loja.name||'Loja')+'</h2>'+
+    '<div class="loja-hero-meta">'+end+tel+'</div></div></div></section>'+
+    '<main><div id="cardapio-section"></div></main>';
+  document.title=esc(loja.name||'Loja')+' - FlashDrop Delivery';
+
+  // Preencher select de pagamento com formas aceitas pela loja
+  preencherFormasPagamento(loja);
+}
+function preencherFormasPagamento(loja){
+  var sel=document.getElementById('ch-pag');
+  if(!sel)return;
+  var formasStr=loja.loja_formas_pagamento||'';
+  var formas=formasStr?formasStr.split(','):[];
+  // Se nao configurou nenhuma, mostrar todas (fallback)
+  if(!formas.length)formas=['pix','dinheiro','cartao_credito'];
+  sel.innerHTML='<option value="">-- Selecione --</option>';
+  if(formas.includes('pix'))sel.innerHTML+='<option value="pix">ð± PIX</option>';
+  if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">ðµ Dinheiro</option>';
+  if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">ð³ Maquina de Cartao (cobra ida+volta)</option>';
+}
+function renderLojaFechada(loja){
+  var nome=loja.name||loja.nome||'';
+  document.getElementById('page-content').innerHTML=
+    '<div style="text-align:center;padding:60px 20px;max-width:400px;margin:0 auto">'+
+    '<div style="font-size:72px;margin-bottom:16px">&#128274;</div>'+
+    '<h2 style="color:#fff;font-size:22px;margin-bottom:10px">'+nome+' esta fechada</h2>'+
+    '<p style="color:#aaa;font-size:15px;line-height:1.5;margin-bottom:24px">No momento nao estamos aceitando pedidos. Volte mais tarde!</p>'+
+    '<div style="background:#1a1a00;border:1px solid #ffcc00;border-radius:12px;padding:16px;font-size:14px;color:#ffcc00;">&#9200; A loja esta offline no momento</div>'+
+    '</div>';
+}
+function renderErro(msg){
+  document.getElementById('page-content').innerHTML=
+    '<div class="error-state"><div class="icon">&#9888;</div><h3>Loja nao encontrada</h3><p>'+esc(msg)+'</p>'+
+    '<a href="lojas.html" class="btn-voltar" style="margin-top:10px">&#8592; Ver lojas</a></div>';
+}
+
+/* ---- INIT ---- */
+/* ---- MODAL DE VARIACOES ---- */
+var _varProd = null;
+var _varEscolhas = {}; // grupoIdx -> [opcaoIdx, ...]
+
+function abrirModalVariacoes(lid, prod){
+  _varProd = {lid:lid, prod:prod};
+  _varEscolhas = {};
+  var variacoes = prod.variacoes || [];
+  var html = '<div style="font-size:16px;font-weight:700;color:#f5a623;margin-bottom:4px">'+esc(prod.nome)+'</div>';
+  html += '<div style="font-size:13px;color:#888;margin-bottom:14px">Preco base: R$ '+parseFloat(prod.preco).toFixed(2)+'</div>';
+  variacoes.forEach(function(grupo, gi){
+    var obrig = grupo.obrigatorio ? ' <span style="color:#f5a623;font-size:11px">(obrigatorio)</span>':'';
+    var qtdLabel = grupo.qtd > 0 ? 'Escolha '+grupo.qtd : 'Escolha quantas quiser';
+    html += '<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">'+esc(grupo.nome)+obrig+'</div>';
+    html += '<div style="font-size:11px;color:#aaa;margin-bottom:8px">'+qtdLabel+'</div>';
+    (grupo.opcoes||[]).forEach(function(op, oi){
+      var addPreco = parseFloat(op.preco||0);
+      var precoLabel = addPreco > 0 ? ' <span style="color:#f5a623">+R$ '+addPreco.toFixed(2)+'</span>' : '';
+      html += '<label style="display:flex;align-items:center;gap:10px;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer;">';
+      if(grupo.qtd===1){
+        html += '<input type="radio" name="var-grupo-'+gi+'" data-gi="'+gi+'" data-oi="'+oi+'" data-preco="'+addPreco+'" style="accent-color:#f5a623;width:16px;height:16px;">';
+      } else {
+        html += '<input type="checkbox" name="var-grupo-'+gi+'" data-gi="'+gi+'" data-oi="'+oi+'" data-preco="'+addPreco+'" style="accent-color:#f5a623;width:16px;height:16px;">';
+      }
+      html += '<span>'+esc(op.nome)+'</span>'+precoLabel+'</label>';
+    });
+    html += '</div>';
+  });
+  document.getElementById('modal-var-body').innerHTML = html;
+  document.getElementById('modal-var-total').textContent = 'R$ '+parseFloat(prod.preco).toFixed(2);
+  document.getElementById('modal-variacoes').classList.add('ativo');
+  // attach listeners to recalc price and enforce max selection
+  document.getElementById('modal-var-body').querySelectorAll('input').forEach(function(inp){
+    inp.addEventListener('change', function(){
+      if(inp.type==='checkbox'&&_varProd){
+        var gi=parseInt(inp.dataset.gi);
+        var grupo=_varProd.prod.variacoes[gi];
+        var maxQtd=grupo&&grupo.qtd>0?grupo.qtd:999;
+        var checked=document.getElementById('modal-var-body').querySelectorAll('input[type=checkbox][data-gi="'+gi+'"]:checked');
+        if(checked.length>maxQtd){inp.checked=false;alert('Escolha apenas '+maxQtd+' opcao(oes) para: '+grupo.nome);return;}
+      }
+      recalcVarTotal();
+    });
+  });
+}
+
+function recalcVarTotal(){
+  if(!_varProd)return;
+  var base = parseFloat(_varProd.prod.preco)||0;
+  var extra = 0;
+  document.getElementById('modal-var-body').querySelectorAll('input:checked').forEach(function(inp){
+    extra += parseFloat(inp.dataset.preco||0);
+  });
+  document.getElementById('modal-var-total').textContent = 'R$ '+(base+extra).toFixed(2);
+}
+
+function fecharModalVariacoes(){
+  document.getElementById('modal-variacoes').classList.remove('ativo');
+  _varProd = null;
+  _varEscolhas = {};
+}
+
+function confirmarVariacoes(){
+  if(!_varProd)return;
+  var lid = _varProd.lid;
+  var prod = _varProd.prod;
+  var variacoes = prod.variacoes || [];
+  // Validate obrigatorio
+  for(var gi=0;gi<variacoes.length;gi++){
+    var grupo = variacoes[gi];
+    if(!grupo.obrigatorio)continue;
+    var checked = document.getElementById('modal-var-body').querySelectorAll('input[data-gi="'+gi+'"]:checked');
+    if(checked.length===0){alert('Selecione uma opcao para: '+grupo.nome);return;}
+  }
+  // Build opcoes escolhidas text and extra price
+  var extra = 0;
+  var escolhas = [];
+  document.getElementById('modal-var-body').querySelectorAll('input:checked').forEach(function(inp){
+    var gi = parseInt(inp.dataset.gi);
+    var oi = parseInt(inp.dataset.oi);
+    var grp = variacoes[gi];
+    var op = grp && grp.opcoes && grp.opcoes[oi];
+    if(op){
+      extra += parseFloat(inp.dataset.preco||0);
+      escolhas.push(grp.nome+': '+op.nome+(parseFloat(op.preco||0)>0?' (+R$'+parseFloat(op.preco).toFixed(2)+')':''));
+    }
+  });
+  var precoFinal = parseFloat(prod.preco) + extra;
+  var obsVar = escolhas.length > 0 ? '['+escolhas.join(' | ')+']' : '';
+  adicionarItem(lid,{id:prod.id,nome:prod.nome,preco:precoFinal,obs:obsVar,variacoes:variacoes,opcoesEscolhidas:escolhas});
+  fecharModalVariacoes();
+}
+
+
+function detectarTipoPix(chave){
+  if(!chave)return '';
+  var s=chave.trim();
+  if(/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/i.test(s))return 'E-mail';
+  var digits=s.replace(/\D/g,'');
+  if(digits.length===11&&/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s))return 'CPF';
+  if(digits.length===14&&/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s))return 'CNPJ';
+  if(digits.length===11&&/^\(?\d{2}\)?[\s-]?\d{5}-?\d{4}$/.test(s))return 'Telefone';
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return 'Chave Aleatoria';
+  return 'Chave PIX';
+}
+function mostrarBlocoPix(){
+  var bloco=document.getElementById('bloco-pix-loja');
+  if(!bloco)return;
+  var loja=lojaGlobal;
+  if(!loja||!loja.pix_key){bloco.style.display='none';return;}
+  document.getElementById('pix-chave-val').textContent=loja.pix_key;
+  document.getElementById('pix-nome-val').textContent=loja.pix_nome||'';
+  bloco.style.display='block';
+}
+function esconderBlocoPix(){
+  var bloco=document.getElementById('bloco-pix-loja');
+  if(bloco)bloco.style.display='none';
+}
+function copiarChavePix(){
+  var loja=lojaGlobal;
+  if(!loja||!loja.pix_key)return;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(loja.pix_key).then(function(){
+      var btn=document.querySelector('#bloco-pix-loja button');
+      if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';setTimeout(function(){btn.innerHTML=orig;},2000);}
+    }).catch(function(){alert('Chave PIX: '+loja.pix_key);});
+  }else{
+    var ta=document.createElement('textarea');ta.value=loja.pix_key;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    var btn=document.querySelector('#bloco-pix-loja button');
+    if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';setTimeout(function(){btn.innerHTML=orig;},2000);}
+  }
+}
+function fecharModalPixConfirm(){
+  document.getElementById('modal-pix-confirm').classList.remove('ativo');
+}
+var _finalizarPosConfirmacaoPix=false;
+function confirmarPixPago(){
+  fecharModalPixConfirm();
+  _finalizarPosConfirmacaoPix=true;
+  finalizarPedido();
+}
+function atualizarTaxaCartao(){
+if(taxaCalculada===0){
+var pag0=document.getElementById('ch-pag').value;
+if(pag0==='pix')mostrarBlocoPix();else esconderBlocoPix();
+var aviso=document.getElementById('aviso-dinheiro');if(aviso)aviso.style.display=(pag0==='dinheiro')?'block':'none';
+return;
+}
+var pag=document.getElementById('ch-pag').value;
+var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
+var lid=lojaGlobal?lojaGlobal.id:null;
+var totalItens=lid?totalCarrinho(lid):0;
+var totalFinal=totalItens+taxaFinal;
+document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
+document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
+if(pag==='pix')mostrarBlocoPix();else esconderBlocoPix();
+}
+
+function toggleCat(el){
+el.classList.toggle('aberto');
+var prod=el.nextElementSibling;
+if(prod){prod.classList.toggle('aberto');}
+}
+function scrollToCat(btn,nome){
+// Find section by title text
+var titles=document.querySelectorAll('.cat-title');
+for(var i=0;i<titles.length;i++){
+var t=titles[i];
+if(t.textContent.trim().replace(/[â¼â²]/g,'').trim()===nome){
+// Open it if closed
+if(!t.classList.contains('aberto')){toggleCat(t);}
+t.scrollIntoView({behavior:'smooth',block:'start'});
+// Highlight active nav btn
+document.querySelectorAll('.cat-nav-btn').forEach(function(b){b.classList.remove('ativo');});
+btn.classList.add('ativo');
+break;
+}
+}
+}
+async function init(){
+  var id=getParam('id');if(!id){renderErro('Nenhuma loja especificada.');return;}
+  try{
+    var resp=await fetch(API+'/users');var users=await resp.json();
+    var loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});
+    if(!loja){renderErro('Loja nao encontrada.');return;}
+    if(!loja.loja_online){renderLojaFechada(loja);return;}
+    renderLoja(loja);loadCardapio(loja.id);
+  }catch(e){renderErro('Erro ao carregar. Tente novamente.');}
+}
+
+/* ---- CARDAPIO ---- */
+async function loadCardapio(lid){
+  try{
+    var rC=await fetch(API+'/categorias?loja_id='+lid);var cats=await rC.json();
+    var rP=await fetch(API+'/produtos?loja_id='+lid);var prods=await rP.json();
+    var sec=document.getElementById('cardapio-section');if(!sec)return;
+    if(!Array.isArray(prods)||!prods.length){
+      sec.innerHTML='<p style="color:#888;text-align:center;padding:30px">Nenhum produto disponivel.</p>';return;
+    }
+    var html='';
+    function renderProd(p){
+      var foto=p.foto_url
+        ?'<img src="'+esc(p.foto_url)+'" class="prod-foto">'
+        :'<div class="prod-foto-placeholder">&#127869;</div>';
+      return '<div class="prod-card">'+
+        '<div class="prod-card-top">'+foto+
+        '<div class="prod-info">'+
+        '<div class="prod-nome">'+esc(p.nome)+'</div>'+
+        (p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
+        '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
+        '</div></div>'+
+        '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" data-variacoes="'+esc(JSON.stringify(p.variacoes||[]))+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
+        '</div>';
+    }
+    // Gerar barra de navegacao de categorias
+var allCats = [];
+if(Array.isArray(cats)&&cats.length){
+  cats.forEach(function(cat){
+    var pc=prods.filter(function(p){return p.categoria===cat.nome&&p.ativo;});
+    if(pc.length) allCats.push(cat.nome);
+  });
+}
+var semCat=prods.filter(function(p){return !p.categoria&&p.ativo;});
+if(semCat.length) allCats.push('Outros');
+if(allCats.length>1){
+  html+='<div class="cat-nav">';
+  allCats.forEach(function(cn){
+    html+='<button class="cat-nav-btn" onclick="scrollToCat(this,decodeURIComponent(this.dataset.cat))" data-cat="'+encodeURIComponent(cn)+'">'+esc(cn)+'</button>';
+  });
+  html+='</div>';
+}
+if(Array.isArray(cats)&&cats.length){
+  cats.forEach(function(cat,gi){
+    var pc=prods.filter(function(p){return p.categoria===cat.nome&&p.ativo;});
+    if(!pc.length)return;
+    html+='<div class="cat-section"><h3 class="cat-title" onclick="toggleCat(this)">'+esc(cat.nome)+' <span class="cat-arrow">&#9660;</span></h3><div class="cat-produtos"><div class="produtos-grid">';
+    pc.forEach(function(p){html+=renderProd(p);});
+    html+='</div></div></div>';
+  });
+}
+var sem=prods.filter(function(p){return !p.categoria&&p.ativo;});
+if(sem.length){
+  html+='<div class="cat-section"><h3 class="cat-title" onclick="toggleCat(this)">Outros <span class="cat-arrow">&#9660;</span></h3><div class="cat-produtos"><div class="produtos-grid">';
+  sem.forEach(function(p){html+=renderProd(p);});
+  html+='</div></div></div>';
+}
+sec.innerHTML=html||'<p style="color:#888;text-align:center;padding:30px">Nenhum produto.</p>';
+  }catch(e){console.error('loadCardapio err',e);}
+}
+init();
+
+// Mascaras
+document.addEventListener('input',function(e){
+  if(e.target.id==='ch-cpf'){e.target.value=fmtCPF(e.target.value);}
+  if(e.target.id==='ch-cel'){e.target.value=fmtTel(e.target.value);}
+});
+
+/* ---- GOOGLE PLACES AUTOCOMPLETE ---- */
+function initAutocomplete() {
+  var ruaInput = document.getElementById('ch-rua');
+  if (!ruaInput) return;
+
+  var autocomplete = new google.maps.places.Autocomplete(ruaInput, {
+    componentRestrictions: { country: 'br' },
+    types: ['address'],
+    fields: ['address_components', 'formatted_address']
+  });
+
+  // Prevent form submission on Enter key inside autocomplete
+  ruaInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') e.preventDefault();
+  });
+
+  autocomplete.addListener('place_changed', function() {
+    var place = autocomplete.getPlace();
+    if (!place || !place.address_components) return;
+
+    var rua = '', numero = '', bairro = '', cidade = '';
+
+    place.address_components.forEach(function(comp) {
+      var types = comp.types;
+      if (types.indexOf('route') !== -1) rua = comp.long_name;
+      if (types.indexOf('street_number') !== -1) numero = comp.long_name;
+      if (types.indexOf('sublocality_level_1') !== -1 ||
+          types.indexOf('neighborhood') !== -1 ||
+          types.indexOf('sublocality') !== -1) {
+        if (!bairro) bairro = comp.long_name;
+      }
+      if (types.indexOf('administrative_area_level_2') !== -1) cidade = comp.long_name;
+    });
+
+    // Fill address fields
+    document.getElementById('ch-rua').value = rua || place.formatted_address || '';
+    if (numero) document.getElementById('ch-numero').value = numero;
+    if (bairro) document.getElementById('ch-bairro').value = bairro;
+    if (cidade) document.getElementById('ch-cidade').value = cidade;
+
+    // Focus the next empty required field
+    if (!numero) {
+      document.getElementById('ch-numero').focus();
+    } else if (!bairro) {
+      document.getElementById('ch-bairro').focus();
+    } else if (!cidade) {
+      document.getElementById('ch-cidade').focus();
+    }
+  });
+}
+</script>
+
+<!-- Google Places Autocomplete API -->
+<!-- IMPORTANT: Replace AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI with your actual Google Maps API key -->
+<!-- Enable the "Places API" in Google Cloud Console for this key -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places&callback=initAutocomplete" async defer></script>
+
+<!-- Barra flutuante do carrinho -->
+<div id="carrinho-bar" class="carrinho-bar">
+<div class="carrinho-bar-info">
+<span id="bar-qtd">0 itens</span>
+<small id="bar-total">R$ 0.00</small>
+</div>
+<button class="btn-ver-carrinho" onclick="abrirCarrinho()">&#128722; Ver carrinho</button>
+</div>
+
+<!-- Modal carrinho + checkout -->
+<div id="modal-carrinho" class="modal-overlay" onclick="if(event.target===this)fecharCarrinho()">
+<div class="modal-box">
+<div class="modal-title">
+&#128722; Meu Carrinho
+<button class="modal-close" onclick="fecharCarrinho()">&#x2715;</button>
+</div>
+
+<div id="cart-lista"></div>
+
+<div class="taxa-row">
+<span>Subtotal dos itens</span>
+<span class="taxa-val" id="cart-total-val">R$ 0,00</span>
+</div>
+
+<div class="secao-checkout">
+<h4>&#128101; Seus dados</h4>
+<div class="form-group">
+<label>Nome completo <span class="req">*</span></label>
+<input id="ch-nome" type="text" placeholder="Ex: Joao da Silva">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Celular <span class="req">*</span></label>
+<input id="ch-cel" type="tel" placeholder="(54) 9 9999-9999">
+</div>
+<div class="form-group">
+<label>CPF <span class="req">*</span></label>
+<input id="ch-cpf" type="text" placeholder="000.000.000-00" maxlength="14">
+</div>
+</div>
+</div>
+
+<div class="secao-checkout">
+<h4>&#128205; Endereco de entrega</h4>
+<div class="form-row">
+<div class="form-group">
+<label>Rua / Avenida <span class="req">*</span></label>
+<input id="ch-rua" type="text" placeholder="&#128269; Digite sua rua para buscar..." autocomplete="off">
+</div>
+<div class="form-group">
+<label>Numero <span class="req">*</span></label>
+<input id="ch-numero" type="text" placeholder="Ex: 123">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Bairro <span class="req">*</span></label>
+<input id="ch-bairro" type="text" placeholder="Ex: Centro">
+</div>
+<div class="form-group">
+<label>Cidade <span class="req">*</span></label>
+<input id="ch-cidade" type="text" placeholder="Ex: Caxias do Sul">
+</div>
+</div>
+<div class="form-group">
+<label>Complemento <span style="color:#555;font-weight:400">(opcional)</span></label>
+<input id="ch-complemento" type="text" placeholder="Ex: Apto 12, Bloco B">
+</div>
+<div class="form-group">
+<label>Observacao da entrega <span style="color:#555;font-weight:400">(opcional)</span></label>
+<textarea id="ch-obs-entrega" placeholder="Ex: Deixar na portaria, tocar interfone..."></textarea>
+</div>
+</div>
+
+<div class="secao-checkout">
+<h4>&#128181; Pagamento</h4>
+<div class="form-group">
+<label>Forma de pagamento <span class="req">*</span></label>
+<select id="ch-pag" onchange="atualizarTaxaCartao()">
+<option value="">-- Selecione --</option>
+</select>
+</div>
+<div id="aviso-dinheiro" style="display:none;margin-top:10px;background:#1a1000;border:1.5px solid #f5a623;border-radius:10px;padding:12px 14px;"><div style="font-size:12px;font-weight:700;color:#f5a623;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">&#128176; AtenÃ§Ã£o â Pagamento em Dinheiro</div><div style="font-size:13px;color:#ddd;line-height:1.6;">Caso precise de <strong style="color:#f5a623">troco</strong>, informe o valor que vai pagar na observaÃ§Ã£o do pedido.<br><span style="color:#aaa;font-size:12px;">&#9888;&#65039; Se o motoboy nÃ£o tiver troco, poderÃ¡ solicitar o pagamento via <strong style="color:#f5a623">PIX</strong>. Tenha o app do banco em mÃ£os por precauÃ§Ã£o.</span></div></div>
+</div>
+
+<div class="secao-checkout">
+<h4>&#128666; Taxa de entrega</h4>
+<button id="btn-calcular-taxa" class="btn-calcular-taxa" onclick="calcularTaxaEntrega()">&#128205; Calcular taxa de entrega</button>
+<div id="taxa-status" style="margin-top:8px;font-size:13px;min-height:20px;"></div>
+<div id="bloco-taxa-resultado" style="display:none;margin-top:10px;">
+  <div class="taxa-detalhe-row"><span>Distancia</span><span id="taxa-distancia" class="taxa-detalhe-val">-</span></div>
+  <div class="taxa-detalhe-row"><span>Taxa de entrega</span><span id="taxa-valor" class="taxa-detalhe-val" style="color:#f5a623;">R$ -</span></div>
+  <div class="taxa-detalhe-row taxa-total-final"><span>Total com entrega</span><span id="total-final-val" style="color:#f5a623;font-size:16px;font-weight:800;">R$ -</span></div>
+</div>
+<div id="bloco-pix-loja" style="display:none;margin-top:12px;background:#0a1f14;border:2px solid #27ae60;border-radius:12px;padding:14px 16px;">
+  <div style="font-size:11px;font-weight:700;color:#27ae60;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">&#128273; PIX DA LOJA</div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#0d1f14;border-radius:8px;padding:8px 12px;">
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:2px;">Chave</div>
+        <div id="pix-chave-val" style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.5px;word-break:break-all;"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#0d1f14;border-radius:8px;padding:8px 12px;">
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:2px;">Nome do recebedor</div>
+        <div id="pix-nome-val" style="font-size:14px;font-weight:600;color:#fff;"></div>
+      </div>
+    </div>
+  </div>
+  <button onclick="copiarChavePix()" style="width:100%;padding:11px;background:#27ae60;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;letter-spacing:0.3px;">&#128203; COPIAR CHAVE PIX</button>
+  <div style="background:#1a2a00;border:1px solid #f5a623;border-radius:8px;padding:10px 12px;font-size:12px;color:#f5a623;text-align:center;font-weight:600;">
+    &#9888;&#65039; Realize o pagamento antes de finalizar o pedido.
+  </div>
+</div>
+</div>
+
+<button id="btn-finalizar" class="btn-finalizar" onclick="finalizarPedido()">&#128722; Finalizar Pedido</button>
+
+</div>
+</div>
+
+
+<!-- Modal Variacoes -->
+<div id="modal-variacoes" class="modal-overlay" onclick="if(event.target===this)fecharModalVariacoes()">
+<div class="modal-box">
+<div class="modal-title">Personalizar pedido <button class="modal-close" onclick="fecharModalVariacoes()">&#x2715;</button></div>
+<div id="modal-var-body"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:2px solid #2a2a2a;margin-top:8px">
+<span style="color:#aaa;font-size:14px">Total:</span>
+<span id="modal-var-total" style="font-size:18px;font-weight:700;color:#f5a623">R$ 0,00</span>
+</div>
+<button class="btn-finalizar" onclick="confirmarVariacoes()" style="margin-top:0">&#10003; Adicionar ao carrinho</button>
+</div>
+</div>
+
+<!-- Modal confirmaÃ§Ã£o PIX -->
+<div id="modal-pix-confirm" class="modal-overlay" onclick="if(event.target===this)fecharModalPixConfirm()">
+  <div class="modal-box" style="max-width:380px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:12px;">&#128241;</div>
+    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;">Voce ja realizou o pagamento PIX?</div>
+    <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5;">Confirme que o pagamento foi efetuado na chave PIX da loja antes de finalizar.</div>
+    <button onclick="confirmarPixPago()" style="width:100%;padding:14px;background:#27ae60;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">&#x2705; Sim, ja paguei</button>
+    <button onclick="fecharModalPixConfirm()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer;">&#x274C; Ainda nao</button>
+  </div>
+</div>
+</body>
+</html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
