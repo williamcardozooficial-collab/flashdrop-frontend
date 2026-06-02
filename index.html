@@ -1781,3 +1781,42 @@ async function admNpFinalizarPedido(){
 </script>
 </body>
 </html>
+<script>
+function initAutocomplete(){
+  // Inject dark-theme CSS for autocomplete dropdown
+  var s=document.createElement("style");
+  s.textContent=".pac-container{background:#1e1e1e!important;border:1px solid #444!important;border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.7)!important;z-index:99999!important}.pac-item{padding:10px 14px!important;color:#ccc!important;font-size:13px!important;border-top:1px solid #2a2a2a!important;cursor:pointer!important}.pac-item:hover,.pac-item-selected{background:#2a2a2a!important}.pac-item-query{color:#fff!important}.pac-matched{color:#667eea!important;font-weight:700!important}.pac-logo:after{display:none!important}";
+  document.head.appendChild(s);
+  function ac(id,nid,bid,cid,buildFn){
+    var el=document.getElementById(id);if(!el)return;
+    var a=new google.maps.places.Autocomplete(el,{componentRestrictions:{country:"br"},types:["address"],fields:["address_components","formatted_address"]});
+    el.addEventListener("keydown",function(e){if(e.key==="Enter")e.preventDefault();});
+    a.addListener("place_changed",function(){
+      var p=a.getPlace();if(!p||!p.address_components)return;
+      var r="",n="",b="",c="";
+      p.address_components.forEach(function(x){
+        var t=x.types;
+        if(t.indexOf("route")!==-1)r=x.long_name;
+        if(t.indexOf("street_number")!==-1)n=x.long_name;
+        if((t.indexOf("sublocality_level_1")!==-1||t.indexOf("neighborhood")!==-1)&&!b)b=x.long_name;
+        if(t.indexOf("administrative_area_level_2")!==-1)c=x.long_name;
+      });
+      el.value=r||p.formatted_address||"";
+      var trigger=function(el2){if(el2){el2.dispatchEvent(new Event("input",{bubbles:true}));el2.dispatchEvent(new Event("change",{bubbles:true}));}};
+      if(n&&document.getElementById(nid)){document.getElementById(nid).value=n;trigger(document.getElementById(nid));}
+      if(b&&document.getElementById(bid)){document.getElementById(bid).value=b;trigger(document.getElementById(bid));}
+      if(c&&document.getElementById(cid)){document.getElementById(cid).value=c;trigger(document.getElementById(cid));}
+      if(typeof window[buildFn]==="function")window[buildFn]();
+      if(!n&&document.getElementById(nid))document.getElementById(nid).focus();
+    });
+  }
+  // Store address (user profile)
+  ac("u-addr-rua","u-addr-num","u-addr-bairro","u-addr-cidade","buildOrigin");
+  // Admin new order - coleta (pickup)
+  ac("adm-np-col-rua","adm-np-col-num","adm-np-col-bairro","adm-np-col-cidade","buildAdmColeta");
+  // Admin new order - entrega (delivery)
+  ac("adm-np-ent-rua","adm-np-ent-num","adm-np-ent-bairro","adm-np-ent-cidade","buildAdmEntrega");
+}
+</script>
+<!-- IMPORTANT: Replace YOUR_GOOGLE_MAPS_API_KEY with your actual key. Enable Places API in Google Cloud Console. -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initAutocomplete" async defer></script>
