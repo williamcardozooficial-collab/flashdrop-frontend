@@ -107,7 +107,43 @@ footer span { color: #f5a623; }
 .taxa-detalhe-val { font-weight:700; color:#fff; }
 .taxa-total-final { background:rgba(245,166,35,0.08); border:1px solid rgba(245,166,35,0.25); margin-top:4px; font-size:14px; font-weight:700; color:#fff; }
 
-</style></style>
+/* ---- Google Places Autocomplete - Dark Theme ---- */
+.pac-container {
+  background-color: #1e1e1e !important;
+  border: 1px solid #444 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7) !important;
+  font-family: 'Segoe UI', Arial, sans-serif !important;
+  margin-top: 2px !important;
+  z-index: 99999 !important;
+}
+.pac-item {
+  padding: 10px 14px !important;
+  color: #ccc !important;
+  font-size: 13px !important;
+  border-top: 1px solid #2a2a2a !important;
+  cursor: pointer !important;
+  line-height: 1.5 !important;
+}
+.pac-item:first-child { border-top: none !important; }
+.pac-item:hover, .pac-item-selected {
+  background-color: #2a2a2a !important;
+}
+.pac-item-query {
+  color: #fff !important;
+  font-size: 13px !important;
+}
+.pac-matched {
+  color: #f5a623 !important;
+  font-weight: 700 !important;
+}
+.pac-icon {
+  filter: invert(70%) sepia(60%) saturate(400%) hue-rotate(0deg) !important;
+}
+.pac-logo:after { display: none !important; }
+/* Ensure dropdown appears above modal overlay */
+.pac-container { z-index: 99999 !important; }
+</style>
 </head>
 <body>
 <header>
@@ -396,7 +432,6 @@ function preencherFormasPagamento(loja){
   if(formas.includes('pix'))sel.innerHTML+='<option value="pix">📱 PIX</option>';
   if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">💵 Dinheiro</option>';
   if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">💳 Maquina de Cartao (cobra ida+volta)</option>';
-if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">📲 Cartao por aproximacao</option>';
 }
 function renderLojaFechada(loja){
   var nome=loja.name||loja.nome||'';
@@ -672,7 +707,63 @@ document.addEventListener('input',function(e){
   if(e.target.id==='ch-cpf'){e.target.value=fmtCPF(e.target.value);}
   if(e.target.id==='ch-cel'){e.target.value=fmtTel(e.target.value);}
 });
+
+/* ---- GOOGLE PLACES AUTOCOMPLETE ---- */
+function initAutocomplete() {
+  var ruaInput = document.getElementById('ch-rua');
+  if (!ruaInput) return;
+
+  var autocomplete = new google.maps.places.Autocomplete(ruaInput, {
+    componentRestrictions: { country: 'br' },
+    types: ['address'],
+    fields: ['address_components', 'formatted_address']
+  });
+
+  // Prevent form submission on Enter key inside autocomplete
+  ruaInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') e.preventDefault();
+  });
+
+  autocomplete.addListener('place_changed', function() {
+    var place = autocomplete.getPlace();
+    if (!place || !place.address_components) return;
+
+    var rua = '', numero = '', bairro = '', cidade = '';
+
+    place.address_components.forEach(function(comp) {
+      var types = comp.types;
+      if (types.indexOf('route') !== -1) rua = comp.long_name;
+      if (types.indexOf('street_number') !== -1) numero = comp.long_name;
+      if (types.indexOf('sublocality_level_1') !== -1 ||
+          types.indexOf('neighborhood') !== -1 ||
+          types.indexOf('sublocality') !== -1) {
+        if (!bairro) bairro = comp.long_name;
+      }
+      if (types.indexOf('administrative_area_level_2') !== -1) cidade = comp.long_name;
+    });
+
+    // Fill address fields
+    document.getElementById('ch-rua').value = rua || place.formatted_address || '';
+    if (numero) document.getElementById('ch-numero').value = numero;
+    if (bairro) document.getElementById('ch-bairro').value = bairro;
+    if (cidade) document.getElementById('ch-cidade').value = cidade;
+
+    // Focus the next empty required field
+    if (!numero) {
+      document.getElementById('ch-numero').focus();
+    } else if (!bairro) {
+      document.getElementById('ch-bairro').focus();
+    } else if (!cidade) {
+      document.getElementById('ch-cidade').focus();
+    }
+  });
+}
 </script>
+
+<!-- Google Places Autocomplete API -->
+<!-- IMPORTANT: Replace YOUR_GOOGLE_MAPS_API_KEY with your actual Google Maps API key -->
+<!-- Enable the "Places API" in Google Cloud Console for this key -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initAutocomplete" async defer></script>
 
 <!-- Barra flutuante do carrinho -->
 <div id="carrinho-bar" class="carrinho-bar">
@@ -721,7 +812,7 @@ document.addEventListener('input',function(e){
 <div class="form-row">
 <div class="form-group">
 <label>Rua / Avenida <span class="req">*</span></label>
-<input id="ch-rua" type="text" placeholder="Ex: Rua das Flores">
+<input id="ch-rua" type="text" placeholder="&#128269; Digite sua rua para buscar..." autocomplete="off">
 </div>
 <div class="form-group">
 <label>Numero <span class="req">*</span></label>
