@@ -990,15 +990,15 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
           listEl.innerHTML = '<p style="color:#aaa;font-size:12px;text-align:center">Nenhum evento nas últimas 24h</p>';
           return;
         }
-        var tipoLabel = { corrida: '&#128665; Corrida', bonus_promo: '&#127881; Bonus Promo', bonus_indicacao: '&#129309; Bonus Indicacao' };
+        var tipoLabel = { corrida: '&#128665; Corrida', bonus_promo: '&#127881; Bonus Promo', bonus_indicacao: '&#129309; Bonus Indicacao', debito_cartao_aprox: '&#128179; Repasse Cartao Aprox.', debito_pedido: '&#128179; Debito Pedido', debito: '&#128179; Debito', taxa: '&#128179; Taxa', multa: '&#128721; Multa', desconto: '&#128179; Desconto', estorno: '&#9989; Estorno', cobranca_cliente: '&#128181; Cobranca Cliente', cartao_aproximacao: '&#128179; Corrida Cartao Aprox.' }; '&#128665; Corrida', bonus_promo: '&#127881; Bonus Promo', bonus_indicacao: '&#129309; Bonus Indicacao' };
         listEl.innerHTML = events.map(function(ev) {
           var dt = new Date(ev.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
           var label = tipoLabel[ev.tipo] || ev.tipo;
-          var valor = parseFloat(ev.valor || 0).toFixed(2).replace('.', ',');
+          var TIPOS_DEBITO=['debito_cartao_aprox','debito_pedido','debito','taxa','multa','desconto'];var isPos=!TIPOS_DEBITO.includes(ev.tipo);var valor = parseFloat(ev.valor || 0).toFixed(2).replace('.', ',');
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #333">' +
             '<div><div style="font-size:13px">' + label + '</div>' +
             '<div style="font-size:11px;color:#aaa">' + dt + ' &mdash; ' + (ev.descricao || '') + '</div></div>' +
-            '<div style="color:#4caf50;font-weight:bold;font-size:14px">+R$ ' + valor + '</div>' +
+            '<div style="color:'+(isPos?'#4caf50':'#ef4444')+';font-weight:bold;font-size:14px">'+(isPos?'+':'-')+'R$ ' + valor + '</div>' +
             '</div>';
         }).join('');
       } catch(e) { console.error('loadWalletEvents:', e); }
