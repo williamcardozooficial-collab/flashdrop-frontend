@@ -304,7 +304,8 @@ async function calcularTaxaEntrega(){
   try{
     var endCliente=rua+', '+numero+', '+cidade+', RS, Brasil';
     var _lra=lojaGlobal.address||'';var _lro={};try{_lro=JSON.parse(_lra);}catch(e){_lro=null;}var _lraf=_lro&&_lro.rua?[_lro.rua+(_lro.num?' '+_lro.num:''),_lro.bairro,_lro.cidade].filter(Boolean).join(', '):_lra;var endLoja=_lraf+', Brasil';
-    var [coordLoja,coordCliente]=await Promise.all([geocodificar(endLoja),geocodificar(endCliente)]);
+    var coordClientePre=window.coordClienteAutocomplete||null;
+    var [coordLoja,coordCliente]=await Promise.all([geocodificar(endLoja),coordClientePre?Promise.resolve(coordClientePre):geocodificar(endCliente)]);
     if(!coordLoja){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Nao foi possivel localizar o endereco da loja. Fale com a loja.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
     if(!coordCliente){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Endereco de entrega nao encontrado. Verifique e tente novamente.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
     var km=await calcularDistanciaKm(coordLoja.lat,coordLoja.lon,coordCliente.lat,coordCliente.lon);
@@ -719,7 +720,7 @@ function initAutocomplete() {
   var autocomplete = new google.maps.places.Autocomplete(ruaInput, {
     componentRestrictions: { country: 'br' },
     types: ['address'],
-    fields: ['address_components', 'formatted_address']
+    fields: ['address_components', 'formatted_address', 'geometry']
   });
 
   // Prevent form submission on Enter key inside autocomplete
@@ -750,6 +751,16 @@ function initAutocomplete() {
     if (numero) document.getElementById('ch-numero').value = numero;
     if (bairro) document.getElementById('ch-bairro').value = bairro;
     if (cidade) document.getElementById('ch-cidade').value = cidade;
+
+    // Store coords from Places autocomplete for delivery calculator
+    if (place.geometry && place.geometry.location) {
+      window.coordClienteAutocomplete = {
+        lat: place.geometry.location.lat(),
+        lon: place.geometry.location.lng()
+      };
+    } else {
+      window.coordClienteAutocomplete = null;
+    }
 
     // Focus the next empty required field
     if (!numero) {
