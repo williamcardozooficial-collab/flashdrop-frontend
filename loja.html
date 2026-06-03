@@ -756,7 +756,7 @@ async function recusarSolicitacao(id){
 async function loadVitrineConfig(){try{var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');if(!u.id)return;var r=await fetch(API+'/vitrine/config/'+u.id);var vc=await r.json();if(vc){document.getElementById('vc-ativa').checked=vc.ativa||false;document.getElementById('vc-categoria').value=vc.categoria_loja||'';document.getElementById('vc-descricao').value=vc.descricao_loja||'';document.getElementById('vc-banner').value=vc.banner_url||'';document.getElementById('vc-min').value=vc.tempo_entrega_min||'';document.getElementById('vc-max').value=vc.tempo_entrega_max||'';}}catch(e){}}
 async function salvarFotoPerfil(){var raw=document.getElementById('foto-url-input').value.trim();var fotoUrl=normalizarFotoUrl(raw);if(fotoUrl!==raw){var fi=document.getElementById('foto-url-input');if(fi)fi.value=fotoUrl;}var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');if(!u.username){tg.showAlert('Faca login primeiro');return;}try{var r=await fetch(API+'/update-foto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u.username,foto_url:fotoUrl||null})});var data=await r.json();if(data.ok){u.foto_url=fotoUrl||null;localStorage.setItem('flashdrop_user',JSON.stringify(u));atualizarHeaderFoto(fotoUrl);var prev=document.getElementById('foto-modal-preview');var pimg=document.getElementById('foto-preview-img');if(fotoUrl&&prev&&pimg){pimg.src=fotoUrl;prev.style.display='block';}document.getElementById('modal-foto').style.display='none';tg.showAlert('Foto salva!');}else{tg.showAlert('Erro: '+(data.error||'tente novamente'));}}catch(e){tg.showAlert('Erro ao salvar foto');}} function normalizarFotoUrl(url){if(!url)return url;url=url.trim();if(/^https?:\/\/ibb\.co\//.test(url)){var parts=url.replace(/\/$/,'').split('/');var code=parts[parts.length-1];return 'https://i.ibb.co/'+code+'/img.jpg';}return url;} function atualizarHeaderFoto(url){var img=document.getElementById('header-foto');var ph=document.getElementById('header-foto-placeholder');if(url&&img&&ph){img.src=url;img.style.display='block';ph.style.display='none';}else if(img&&ph){img.style.display='none';ph.style.display='flex';}} function abrirModalFoto(){var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');var fi=document.getElementById('foto-url-input');if(fi&&u.foto_url)fi.value=u.foto_url;var prev=document.getElementById('foto-modal-preview');var pimg=document.getElementById('foto-preview-img');if(u.foto_url&&prev&&pimg){pimg.src=u.foto_url;prev.style.display='block';}else if(prev){prev.style.display='none';}document.getElementById('modal-foto').style.display='block';}
 
-async function loadCategorias(){var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');if(!u.id)return;try{var r=await fetch(API+'/categorias?loja_id='+u.id);var cats=await r.json();var el=document.getElementById('categorias-lista');if(!Array.isArray(cats)||!cats.length){el.innerHTML='<span style="color:#555;font-size:12px">Nenhuma categoria ainda.</span>';return;}el.innerHTML=cats.map(function(c){return'<div style="display:flex;align-items:center;gap:4px;background:#2a2a4a;border-radius:20px;padding:4px 10px;font-size:12px;color:#e0e0e0"><span>'+c.nome+'</span><button data-cid="'+c.id+'" onclick="excluirCategoria(this.dataset.cid)" style="background:none;border:none;color:#cf6679;cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">×</button></div>';}).join('');}catch(e){console.error('loadCategorias err',e);}} function abrirAdicionarCategoria(){var f=document.getElementById('form-nova-categoria');f.style.display='block';document.getElementById('input-nova-categoria').value='';document.getElementById('input-nova-categoria').focus();} function fecharFormCategoria(){document.getElementById('form-nova-categoria').style.display='none';} async function adicionarCategoria(){var nome=document.getElementById('input-nova-categoria').value.trim();if(!nome)return;var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');if(!u.id)return;try{var r=await fetch(API+'/categorias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_id:u.id,nome:nome})});var data=await r.json();if(data.ok){fecharFormCategoria();loadCategorias();}else{alert('Erro: '+(data.error||'?'));}}catch(e){alert('Erro ao adicionar');}} function abrirNovoProduto(){
+async function loadCategorias(){var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');if(!u.id)return;try{var r=await fetch(API+'/categorias?loja_id='+u.id);var cats=await r.json();window._categoriasLoja=cats;var el=document.getElementById('categorias-lista');if(!Array.isArray(cats)||!cats.length){el.innerHTML='<span style="color:#555;font-size:12px">Nenhuma categoria ainda.</span>';return;}el.innerHTML=cats.map(function(c){return'<div style="display:flex;align-items:center;gap:4px;background:#2a2a4a;border-radius:20px;padding:4px 10px;font-size:12px;color:#e0e0e0"><span>'+c.nome+'</span>'+'<button data-cid="'+c.id+'" onclick="reordenarCategoria(this.dataset.cid,-1)" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:11px;padding:0 2px;" title="Subir">&#9650;</button>'+'<button data-cid="'+c.id+'" onclick="reordenarCategoria(this.dataset.cid,1)" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:11px;padding:0 2px;" title="Descer">&#9660;</button>'+'<button data-cid="'+c.id+'" onclick="excluirCategoria(this.dataset.cid)" style="background:none;border:none;color:#cf6679;cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">×</button></div>';}).join('');}catch(e){console.error('loadCategorias err',e);}} function abrirAdicionarCategoria(){var f=document.getElementById('form-nova-categoria');f.style.display='block';document.getElementById('input-nova-categoria').value='';document.getElementById('input-nova-categoria').focus();} function fecharFormCategoria(){document.getElementById('form-nova-categoria').style.display='none';} async function adicionarCategoria(){var nome=document.getElementById('input-nova-categoria').value.trim();if(!nome)return;var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');if(!u.id)return;try{var r=await fetch(API+'/categorias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_id:u.id,nome:nome})});var data=await r.json();if(data.ok){fecharFormCategoria();loadCategorias();}else{alert('Erro: '+(data.error||'?'));}}catch(e){alert('Erro ao adicionar');}} function abrirNovoProduto(){
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 window._editProdId=null;
 var titulo=document.getElementById('form-novo-produto-titulo');
@@ -831,14 +831,14 @@ function confirmarCopiaVariacoes() {
   var pid = parseInt(sel.value);
   var prod = (window._prodsComVar || []).find(function(p) { return p.id === pid; });
   if (!prod || !prod.variacoes) return;
-  window._gruposVariacao = prod.variacoes.map(function(g) {
+  window._gruposVariacao = (window._gruposVariacao || []).concat(prod.variacoes.map(function(g) {
     return {
       nome: g.nome,
       qtd: g.qtd || 1,
       obrigatorio: g.obrigatorio !== false,
       opcoes: (g.opcoes || []).map(function(o) { return { nome: o.nome, preco: String(o.preco || '0') }; })
     };
-  });
+  }));
   document.getElementById('copy-var-overlay').remove();
   renderGruposVariacao();
 }
@@ -853,6 +853,8 @@ var opcHtml=(g.opcoes||[]).map(function(op,oi){
 return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:#1a1a2e;border-radius:6px;margin-bottom:4px;">'
 +'<span style="color:#ddd;font-size:13px;">'+op.nome+'</span>'
 +'<span style="color:#bb86fc;font-size:13px;">+'+(parseFloat(op.preco)||0).toFixed(2)+'</span>'
++'<button onclick="moverOpcaoGrupo('+gi+','+oi+',-1)" style="background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:0 3px;" title="Subir">&#9650;</button>'
++'<button onclick="moverOpcaoGrupo('+gi+','+oi+',1)" style="background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:0 3px;" title="Descer">&#9660;</button>'
 +'<button onclick="removerOpcaoGrupo('+gi+','+oi+')" style="background:none;border:none;color:#e57373;font-size:15px;cursor:pointer;margin-left:6px;">&#215;</button>'
 +'</div>';
 }).join('');
@@ -945,7 +947,7 @@ try{
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 if(!u.id)return;
 var r=await fetch(API+'/produtos?loja_id='+u.id);
-var prods=await r.json();
+var prods=await r.json();window._produtosLoja=prods;
 var el=document.getElementById('produtos-loja-list');
 if(!Array.isArray(prods)||!prods.length){el.innerHTML='<div style="text-align:center;color:#555;padding:20px">Nenhum produto ainda.</div>';return;}
 el.innerHTML=prods.map(function(p){
@@ -960,7 +962,10 @@ return '<div style="background:#1a1a2e;border-radius:10px;padding:10px 12px;marg
 +'<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">'+nome+'</div>'
 +'<div style="font-size:12px;color:#ccc">'+(cat?cat+' &middot; ':'')+' R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'
 +'</div>'
-+'<div style="display:flex;gap:6px">'
++'<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'
++'<button onclick="reordenarProduto('+p.id+',-1)" style="background:#2a2a4a;border:none;color:#aaa;padding:4px 7px;border-radius:6px;font-size:11px;cursor:pointer" title="Subir">&#9650;</button>'
++'<button onclick="reordenarProduto('+p.id+',1)" style="background:#2a2a4a;border:none;color:#aaa;padding:4px 7px;border-radius:6px;font-size:11px;cursor:pointer" title="Descer">&#9660;</button>'
++'<button onclick="toggleVisivelProduto('+p.id+','+(p.visivel!==false)+')" style="background:#2a2a4a;border:none;color:'+(p.visivel!==false?'#4caf50':'#888')+';padding:4px 7px;border-radius:6px;font-size:11px;cursor:pointer" title="Visibilidade">'+(p.visivel!==false?'&#128065;':'&#128683;')+'</button>'
 +'<button onclick="editarProduto('+p.id+')" style="background:#2a2a4a;border:none;color:#bb86fc;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer">&#9998;</button>'
 +'<button onclick="excluirProduto('+p.id+')" style="background:#3a1a1a;border:none;color:#cf6679;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer">&#128465;</button>'
 +'</div></div>';
@@ -1540,4 +1545,9 @@ function initAutocomplete(){
 }
 </script>
 <!-- Replace AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI - enable Places API in Google Cloud -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places&callback=initAutocomplete" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places&callback=initAutocomplete" async defer>
+function moverOpcaoGrupo(gi,oi,dir){var g=window._gruposVariacao[gi];if(!g||!g.opcoes)return;var ni=oi+dir;if(ni<0||ni>=g.opcoes.length)return;var tmp=g.opcoes[oi];g.opcoes[oi]=g.opcoes[ni];g.opcoes[ni]=tmp;renderGruposVariacao();}
+async function toggleVisivelProduto(id,visivel){try{await fetch(API+'/produtos/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({visivel:!visivel})});loadProdutosLoja();}catch(e){alert('Erro ao alterar visibilidade.');}}
+async function reordenarProduto(id,dir){var prods=window._produtosLoja||[];var idx=prods.findIndex(function(p){return p.id===id;});if(idx<0)return;var ni=idx+dir;if(ni<0||ni>=prods.length)return;var oA=prods[idx].ordem!=null?prods[idx].ordem:idx;var oB=prods[ni].ordem!=null?prods[ni].ordem:ni;try{await Promise.all([fetch(API+'/produtos/'+prods[idx].id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ordem:oB})}),fetch(API+'/produtos/'+prods[ni].id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ordem:oA})})]);loadProdutosLoja();}catch(e){alert('Erro ao reordenar produto.');}}
+async function excluirCategoria(id){if(!confirm('Excluir esta categoria?'))return;try{await fetch(API+'/categorias/'+id,{method:'DELETE'});loadCategorias();}catch(e){alert('Erro ao excluir categoria.');}}
+async function reordenarCategoria(id,dir){var cats=window._categoriasLoja||[];var idx=cats.findIndex(function(c){return String(c.id)===String(id);});if(idx<0)return;var ni=idx+dir;if(ni<0||ni>=cats.length)return;var oA=cats[idx].ordem!=null?cats[idx].ordem:idx;var oB=cats[ni].ordem!=null?cats[ni].ordem:ni;try{await Promise.all([fetch(API+'/categorias/'+cats[idx].id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ordem:oB})}),fetch(API+'/categorias/'+cats[ni].id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ordem:oA})})]);loadCategorias();}catch(e){alert('Erro ao reordenar categoria.');}}</script>
