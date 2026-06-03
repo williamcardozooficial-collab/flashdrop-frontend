@@ -947,7 +947,7 @@ try{
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 if(!u.id)return;
 var r=await fetch(API+'/produtos?loja_id='+u.id);
-var prods=await r.json();window._produtosLoja=prods;
+var prods=await r.json();prods.sort(function(a,b){return ((a.ordem!=null?a.ordem:9999))-(b.ordem!=null?b.ordem:9999);});window._produtosLoja=prods;
 var el=document.getElementById('produtos-loja-list');
 if(!Array.isArray(prods)||!prods.length){el.innerHTML='<div style="text-align:center;color:#555;padding:20px">Nenhum produto ainda.</div>';return;}
 el.innerHTML=prods.map(function(p){
