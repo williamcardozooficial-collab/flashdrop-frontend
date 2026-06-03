@@ -775,6 +775,22 @@ async function toggleOnline() {
         return;
       }
 
+      /* ── VERIFICAÇÃO DE SALDO PARA DINHEIRO / CARTÃO POR APROXIMAÇÃO ── */
+      if (currentStatus === "pendente") {
+        var orderData = allOrdersCache.find(function(o){ return String(o.id) === String(orderId); });
+        if (orderData && (orderData.tipo_pagamento === "dinheiro" || orderData.tipo_pagamento === "cartao_aproximacao")) {
+          var _vPed = parseFloat(orderData.valor_pedido || 0);
+          var _vEnt = parseFloat(orderData.valor_total || 0);
+          var _totalCob = _vPed + _vEnt;
+          var _saldoDisp = parseFloat(user.balance || 0) + parseFloat(user.credit_limit || 0);
+          if (_totalCob > _saldoDisp) {
+            var _modoPag = orderData.tipo_pagamento === "dinheiro" ? "dinheiro" : "cartão por aproximação";
+            tg.showAlert("❌ Saldo insuficiente!\nEsta entrega é em " + _modoPag + ".\nValor a cobrar: R$ " + _totalCob.toFixed(2) + "\nSeu saldo disponível: R$ " + _saldoDisp.toFixed(2));
+            return;
+          }
+        }
+      }
+
       /* Codigo de entrega ao finalizar */
       var codigoDigitado = null;
       if (action.next === "entregue") {
