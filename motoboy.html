@@ -777,18 +777,25 @@ async function toggleOnline() {
 
       /* ── VERIFICAÇÃO DE SALDO PARA DINHEIRO / CARTÃO POR APROXIMAÇÃO ── */
       if (currentStatus === "pendente") {
-        var orderData = allOrdersCache.find(function(o){ return String(o.id) === String(orderId); });
-        if (orderData && (orderData.tipo_pagamento === "dinheiro" || orderData.tipo_pagamento === "cartao_aproximacao")) {
-          var _vPed = parseFloat(orderData.valor_pedido || 0);
-          var _vEnt = parseFloat(orderData.valor_total || 0);
-          var _totalCob = _vPed + _vEnt;
-          var _saldoDisp = parseFloat(user.balance || 0) + parseFloat(user.credit_limit || 0);
-          if (_totalCob > _saldoDisp) {
-            var _modoPag = orderData.tipo_pagamento === "dinheiro" ? "dinheiro" : "cartão por aproximação";
-            tg.showAlert("❌ Saldo insuficiente!\nEsta entrega é em " + _modoPag + ".\nValor a cobrar: R$ " + _totalCob.toFixed(2) + "\nSeu saldo disponível: R$ " + _saldoDisp.toFixed(2));
-            return;
+        try {
+          var _orderResp = await fetch(API + "/orders/" + orderId);
+          var orderData = await _orderResp.json();
+          if (orderData && (orderData.tipo_pagamento === "dinheiro" || orderData.tipo_pagamento === "cartao_aproximacao")) {
+            var _vPed = parseFloat(orderData.valor_pedido || 0);
+            var _vEnt = parseFloat(orderData.valor_total || 0);
+            var _totalCob = _vPed + _vEnt;
+            var _userResp = await fetch(API + "/users/" + user.id);
+            var _userData = await _userResp.json();
+            var _saldo = parseFloat(_userData.balance || 0);
+            var _credito = parseFloat(_userData.credit_limit || 0);
+            var _saldoDisp = _saldo + _credito;
+            if (_totalCob > _saldoDisp) {
+              var _modoPag = orderData.tipo_pagamento === "dinheiro" ? "dinheiro" : "cartão por aproximação";
+              tg.showAlert("❌ Saldo insuficiente!\nEsta entrega é em " + _modoPag + ".\nValor a cobrar: R$ " + _totalCob.toFixed(2) + "\nSeu saldo disponível: R$ " + _saldoDisp.toFixed(2));
+              return;
+            }
           }
-        }
+        } catch(_e) { /* se falhar a verificação, bloqueia por segurança */ tg.showAlert("❌ Não foi possível verificar seu saldo. Tente novamente."); return; }
       }
 
       /* Codigo de entrega ao finalizar */
