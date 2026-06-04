@@ -628,15 +628,79 @@ function verificarNovosPedidos(orders) {
     fecharAlertaNovoPedido(false);
   }
 }
-/* ========== FIM DO SISTEMA DE ALERTA ========== */
+/* ========== verificarNovosPedidos ========== */
 
 init();async function loadLojaIndicacao(){try{var u=JSON.parse(localStorage.getItem("flashdrop_user")||"{}");if(!u.id)return;var r=await fetch(API+"/referral-code/"+u.id);if(!r.ok)return;var d=await r.json();document.getElementById("loja-ref-code").textContent=d.code||"---";var r2=await fetch(API+"/referrals/user/"+u.id);if(r2.ok){var list=await r2.json();var mb=list.filter(function(x){return x.referred_role==="motoboy";}).length;var tot=list.reduce(function(acc,x){return acc+(parseFloat(x.total_ganho)||0);},0);document.getElementById("loja-ref-motoboys").textContent=mb;document.getElementById("loja-ref-ganhos").textContent="R$ "+tot.toFixed(2).replace(".",",");}document.getElementById("loja-indicacao-panel").style.display="block";}catch(e){console.log("ind loja",e);}}
 function copyLojaRefCode(){var code=document.getElementById("loja-ref-code").textContent;if(!code||code==="---")return;if(navigator.clipboard){navigator.clipboard.writeText(code).then(function(){tg.showAlert("Codigo copiado: "+code);});}else{var el=document.createElement("textarea");el.value=code;document.body.appendChild(el);el.select();document.execCommand("copy");document.body.removeChild(el);tg.showAlert("Codigo copiado: "+code);}}
-
-function showLojaTab(tab){
-  var tabs=['pedidos','solicitacoes','cardapio'];
+verificarNovosPedi</body>novo-pedido-alert-boxdos(orders);  var tabs=['pedidos','solicitacoes','cardapio'];
   tabs.forEach(function(t){
-    var sec=document.getElementById('sec-'+t);
+  verificarNovosPedidos(ordersid="novo-pedido-alert"); verificarNaLoja(orders);  var sec=document.getElementById('sec-'+t);
+
+   /* ========== ALERTA MOTOBOY NA LOJA ========== */
+ var _naLojaIdsVistos = new Set(JSON.parse(localStorage.getItem('_fdNaLojaSeen')||'[]'));
+ var _naLojaAlertAtivo = false;
+ var _naLojaInterval = null;
+
+ function _salvarNaLojaVistos() {
+   var arr = Array.from(_naLojaIdsVistos);
+   if (arr.length > 200) arr = arr.slice(arr.length - 200);
+   localStorage.setItem('_fdNaLojaSeen', JSON.stringify(arr));
+ }
+
+ function _tocarAlertaNaLoja() {
+   try {
+     var ctx = new (window.AudioContext || window.webkitAudioContext)();
+     // Som urgente: 3 bipes rapidos
+     [0, 0.18, 0.36].forEach(function(t) {
+       var osc = ctx.createOscillator();
+       var gain = ctx.createGain();
+       osc.connect(gain); gain.connect(ctx.destination);
+       osc.frequency.value = 880;
+       osc.type = 'square';
+       gain.gain.setValueAtTime(0.6, ctx.currentTime + t);
+       gain.gain.linearRampToValueAtTime(0, ctx.currentTime + t + 0.14);
+       osc.start(ctx.currentTime + t);
+       osc.stop(ctx.currentTime + t + 0.15);
+ });
+ } catch(e) {}
+   if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+ }
+
+ function mostrarAlertaNaLoja(pedidoId, lojaName) {
+   _naLojaAlertAtivo = true;
+   var modal = document.getElementById('na-loja-alert');
+   if (!modal) return;
+   var nm = document.getElementById('na-loja-pedido-num');
+   if (nm) nm.textContent = '#' + pedidoId + (lojaName ? ' - ' + lojaName : '');
+   modal.style.display = 'flex';
+   _tocarAlertaNaLoja();
+   if (_naLojaInterval) clearInterval(_naLojaInterval);
+   _naLojaInterval = setInterval(function() {
+     if (!_naLojaAlertAtivo) { clearInterval(_naLojaInterval); return; }
+     _tocarAlertaNaLoja();
+     var box = document.getElementById('na-loja-alert-box');
+     if (box) { box.classList.add('shake'); setTimeout(function(){ box.classList.remove('shake'); }, 450); }
+ }, 6000);
+ }
+
+ function fecharAlertaNaLoja() {
+   _naLojaAlertAtivo = false;
+   if (_naLojaInterval) { clearInterval(_naLojaInterval); _naLojaInterval = null; }
+   var modal = document.getElementById('na-loja-alert');
+   if (modal) modal.style.display = 'none';
+ }
+
+ function verificarNaLoja(orders) {
+   if (!orders || !orders.length) return;
+   orders.forEach(function(o) {
+     if (o.status === 'na_loja' && !_naLojaIdsVistos.has(o.id)) {
+       _naLojaIdsVistos.add(o.id);
+       _salvarNaLojaVistos();
+       mostrarAlertaNaLoja(o.id, o.loja_name || o.loja_user);
+ }
+ });
+ }
+ /* ========== FIM ALERTA MOTOBOY NA LOJA ========== */
     var btn=document.getElementById('tab-'+t);
     if(!sec||!btn)return;
     var active=(t===tab);
@@ -1515,6 +1579,23 @@ function pollPagamentoSaldo(paymentId, valor, token) {
 <button onclick="fecharAlertaNovoPedido(false)" style="width:100%;margin-top:10px;padding:11px;background:transparent;border:1px solid #555;border-radius:10px;color:#888;font-size:13px;cursor:pointer;">✖ Fechar alerta (pedido continua pendente)</button>
 </div>
 </div><div id="print-area" style="display:none;padding:10px;background:#fff;color:#000;font-family:monospace;font-size:12px"></div>
+ <!-- ===== MODAL ALERTA MOTOBOY NA LOJA ===== -->
+ <style>
+  @keyframes pulse-border-loja{0%,100%{box-shadow:0 0 30px rgba(102,16,242,0.7)}50%{box-shadow:0 0 60px rgba(102,16,242,1)}}
+  #na-loja-alert-box{animation:pulse-border-loja 1s infinite}
+  #na-loja-alert-box.shake{animation:shake 0.4s ease,pulse-border-loja 1s infinite}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+  </style>
+ <div id="na-loja-alert" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;flex-direction:column">
+    <div id="na-loja-alert-box" style="background:linear-gradient(135deg,#5b0ecc,#7c2aff);border-radius:20px;padding:32px 24px;max-width:340px;width:90%;text-align:center;border:2px solid rgba(180,140,255,0.5)">
+         <div style="font-size:56px;margin-bottom:6px">🏪</div>div>
+         <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Motoboy na Loja!</div>div>
+         <div id="na-loja-pedido-num" style="font-size:14px;color:#c8a8ff;margin-bottom:14px;font-weight:600"></div>div>
+         <div style="font-size:14px;color:#e0ccff;margin-bottom:22px;line-height:1.6">O motoboy chegou na loja para coletar o pedido.<br><strong>Libere o pedido agora!</strong></div>div>
+        <button onclick="fecharAlertaNaLoja()" style="background:#fff;color:#6610f2;border:none;border-radius:50px;padding:15px 0;font-size:18px;font-weight:900;cursor:pointer;width:100%;box-shadow:0 6px 20px rgba(0,0,0,0.4);letter-spacing:0.5px">✅ OK, ENTENDIDO!</button>button>
+    </div>div>
+ </div>div></strong>
+ </style>
 </body></html>
 <script>
 function initAutocomplete(){
