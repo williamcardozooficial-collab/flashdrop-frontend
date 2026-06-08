@@ -86,6 +86,8 @@ footer span { color: #f5a623; }
 /* Botao remover item */
 .btn-remover-item { background: none; border: 1px solid #3a1a1a; border-radius: 6px; color: #ff6b6b; font-size: 12px; cursor: pointer; padding: 4px 8px; white-space: nowrap; }
 .btn-remover-item:hover { background: #3a1a1a; }
+.btn-mais-igual { width: 100%; margin-top: 8px; background: none; border: 1px dashed #f5a623; border-radius: 6px; color: #f5a623; font-size: 12px; font-weight: 700; cursor: pointer; padding: 6px 10px; transition: background 0.2s; }
+.btn-mais-igual:hover { background: rgba(245,166,35,0.10); }
 .cart-obs-input { width: 100%; padding: 7px 10px; background: #1e1e1e; border: 1px solid #333; border-radius: 6px; color: #ccc; font-size: 12px; resize: none; height: 36px; }
 .cart-obs-input::placeholder { color: #555; }
 .cart-total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 2px solid #2a2a2a; margin-top: 4px; }
@@ -225,6 +227,16 @@ atualizarBarra(lid);
 renderCartLista(lid);
 }
 
+/* Duplica o item (mesmos adicionais) criando nova linha */
+function duplicarItem(lid,uid){
+var c=getCarrinho(lid);
+var item=c.find(function(i){return i.uid===uid;});
+if(!item)return;
+adicionarItem(lid,{id:item.id,nome:item.nome,preco:item.preco,adicionais:item.adicionais.slice(),obs:''});
+atualizarBarra(lid);
+renderCartLista(lid);
+}
+
 function salvarObs(lid,uid,val){
 var c=getCarrinho(lid);
 var item=c.find(function(i){return i.uid===uid;});
@@ -272,6 +284,7 @@ return '<div class="cart-item">'+
 '</div>'+
 tagsHtml+
 '<textarea class="cart-obs-input" placeholder="Observacao: ex. sem ervilha, sem cebola..." onchange="salvarObs('+lid+',\''+it.uid+'\',this.value)">'+esc(it.obs||'')+'</textarea>'+
+'<button class="btn-mais-igual" onclick="duplicarItem('+lid+',\''+it.uid+'\')">+ Adicionar mais um igual</button>'+
 '</div>';
 }).join('');
 document.getElementById('cart-total-val').textContent='R$ '+totalCarrinho(lid).toFixed(2);
