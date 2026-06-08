@@ -28,10 +28,10 @@ h<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewp
 .alert-counter{display:inline-block;background:#ff5000;color:#fff;border-radius:20px;font-size:13px;font-weight:900;padding:3px 12px;margin-bottom:10px}
 .novo-pedido-card-destaque{border:2px solid #ff5000!important;animation:alertBorder 1.5s ease infinite}
 @media print {
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; color: #000 !important; background: #fff !important; }
   body > *:not(#print-area) { display: none !important; }
   #print-area { display: block !important; }
-  @page { margin: 2mm; size: 80mm auto; }
+  @page { margin: 0; size: 80mm auto; }
 }
 #print-area { display: none; }
 
@@ -397,96 +397,94 @@ h+='</div></div>';
   startPreparoTimers(filtered);
 }
 function printOrder(orderId){
-  var o=(_myOrders||[]).find(function(x){return String(x.id)===String(orderId);})||{};
-  if(!o.id){return;}
-  var SEP1='================================';
-  var SEP2='--------------------------------';
-  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  function line(d){return '<div style="font-size:11px;letter-spacing:1px;margin:4px 0;color:#000">'+d+'</div>';}
-  function title(t){return '<div style="font-size:17px;font-weight:900;text-align:center;margin:2px 0;letter-spacing:1px">'+esc(t)+'</div>';}
-  function sub(t){return '<div style="font-size:12px;text-align:center;margin:1px 0">'+esc(t)+'</div>';}
-  function section(t){return '<div style="font-size:11px;font-weight:900;text-align:center;margin:5px 0 2px 0;letter-spacing:2px;text-transform:uppercase">'+esc(t)+'</div>';}
-  function field(l,v){return '<div style="font-size:13px;margin:3px 0"><b>'+esc(l)+':</b> '+esc(v||'-')+'</div>';}
-  function bigVal(l,v){return '<div style="margin:5px 0"><div style="font-size:11px;font-weight:bold">'+esc(l)+'</div><div style="font-size:22px;font-weight:900;letter-spacing:1px">'+esc(v)+'</div></div>';}
-  var sL={novo:'NOVO',em_preparo:'EM PREPARO',pendente:'PENDENTE',aceito:'ACEITO',na_loja:'NA LOJA',coletado:'COLETADO',no_cliente:'NO CLIENTE',entregue:'ENTREGUE',cancelado:'CANCELADO',retornado:'RETORNADO'};
-  var itensHTML='';
-  if(o.obs_coleta){
-    var raw=o.obs_coleta.replace(/^Itens:\s*/,'');
-    // Split items by " | " outside of [ ] brackets
-    var itemList=[];
-    var cur='';var depth=0;
-    for(var ci=0;ci<raw.length;ci++){
-      var ch=raw[ci];
-      if(ch==='['){depth++;cur+=ch;continue;}
-      if(ch===']'){depth--;cur+=ch;continue;}
-      if(depth===0&&ch==='|'&&raw[ci-1]===' '&&raw[ci+1]===' '){itemList.push(cur.trim());cur='';ci++;continue;}
-      cur+=ch;
-    }
-    if(cur.trim())itemList.push(cur.trim());
-    itemList.forEach(function(item){
-      var pm=item.match(/\(R\$([\d.]+)\)\s*$/);
-      var ps=pm?'R$'+parseFloat(pm[1]).toFixed(2).replace('.',','):'';
-      var ib=item.replace(/\(R\$[\d.]+\)\s*$/,'').trim();
-      ib=ib.replace(/^\d+x\s*/,'');
-      var cm=ib.match(/\[([^\[\]]+)\]/);
-      var comps=[];
-      if(cm){comps=cm[1].split(' | ');ib=ib.replace(/\s*\[[^\[\]]+\]/,'').trim();}
-      var obsM=ib.match(/\(obs:\s*(.+?)\)\s*$/);
-      var obsText='';
-      if(obsM){obsText=obsM[1];ib=ib.replace(/\s*\(obs:.+?\)\s*$/,'').trim();}
-      itensHTML+='<div style="margin:6px 0;padding:7px 10px;background:#1a1a00;border-left:3px solid #f5a623;border-radius:5px;">';
-      itensHTML+='<div style="font-size:14px;font-weight:700;color:#fff;">&#127829; '+esc(ib)+(ps?' <span style="color:#f5a623;font-weight:normal;font-size:13px;">— '+ps+'</span>':'')+'</div>';
-      comps.forEach(function(c){c=c.trim();if(c)itensHTML+='<div style="font-size:12px;padding-left:12px;color:#ccc;margin-top:3px;line-height:1.4;">&#8226; '+esc(c)+'</div>';});
-      if(obsText)itensHTML+='<div style="font-size:11px;padding-left:12px;color:#888;margin-top:3px;font-style:italic;">obs: '+esc(obsText)+'</div>';
-      itensHTML+='</div>';
-    });
-  }
-  var dtCriado=o.created_at?new Date(o.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
-  var subtotal=0;
-  if(o.obs_coleta){(o.obs_coleta.match(/\(R\$(\d+\.\d+)\)/g)||[]).forEach(function(p){subtotal+=parseFloat(p.replace('(R$','').replace(')',''))||0;});}
-  var taxa=parseFloat(o.valor_total||0);
-  var total=subtotal+taxa;
-  var troco='';
-  if(o.tipo_pagamento==='dinheiro'&&o.valor_pedido&&parseFloat(o.valor_pedido)>total){troco='R$'+(parseFloat(o.valor_pedido)-total).toFixed(2).replace('.',',');}
-  var h2='<div style="font-family:monospace;font-size:13px;color:#000;background:#fff;width:100%;max-width:80mm;margin:0 auto;padding:4px">';
-  h2+=title(user.name||'');
-  if(user.phone)h2+=sub('Tel: '+user.phone);
-  if(user.address)h2+=sub(user.address);
-  h2+=line(SEP1);
-  h2+=section('PEDIDO #'+o.id);
-  h2+=field('Data',dtCriado);
-  h2+=line(SEP2);
-  h2+=section('CLIENTE');
-  h2+=field('Nome',o.nome_cliente);
-  if(o.telefone_cliente)h2+=field('Tel',o.telefone_cliente);
-  if(o.endereco_entrega)h2+='<div style="font-size:13px;margin:3px 0"><b>Endere\u00E7o:</b> '+esc(o.endereco_entrega)+(o.complemento_entrega?' - '+esc(o.complemento_entrega):'')+'</div>';
-  if(o.bairro_destino)h2+=field('Bairro',o.bairro_destino);
-  if(o.obs_entrega_loja)h2+=field('Obs',o.obs_entrega_loja);
-  h2+=line(SEP2);
-  h2+=section('ITENS DO PEDIDO');
-  h2+=itensHTML||'<div style="font-size:13px">-</div>';
-  h2+=line(SEP2);
-  h2+=section('VALORES');
-  if(subtotal>0)h2+=field('Subtotal','R$'+subtotal.toFixed(2).replace('.',','));
-  h2+=field('Taxa de Entrega','R$'+taxa.toFixed(2).replace('.',','));
-  h2+=line(SEP2);
-  h2+=bigVal('TOTAL','R$ '+total.toFixed(2).replace('.',','));
-  h2+=line(SEP2);
-  h2+=section('PAGAMENTO');
-  var pn={dinheiro:'Dinheiro',maquina:'Cart\u00E3o',pix:'PIX'};
-  h2+=field('Forma',pn[o.tipo_pagamento]||o.tipo_pagamento||'-');
-  if(troco)h2+=field('Troco para',troco);
-  h2+=line(SEP1);
-  h2+=sub('Pedido criado: '+dtCriado);
-  h2+='<div style="font-size:14px;font-weight:bold;text-align:center;margin:6px 0">Obrigado pela prefer\u00EAncia!</div>';
-  h2+=line(SEP1);
-  h2+='</div>';
-  var area=document.getElementById('print-area');
-  area.innerHTML=h2;area.style.display='block';
-  window.print();
-  area.style.display='none';
+var o=(_myOrders||[]).find(function(x){return String(x.id)===String(orderId);})||{};
+if(!o.id){return;}
+var SEP1='================================';
+var SEP2='--------------------------------';
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function line(d){return '<div style="font-size:12px;font-family:monospace;color:#000;margin:2px 0;font-weight:bold">'+d+'</div>';}
+function title(t){return '<div style="font-size:15px;font-weight:900;text-align:center;margin:3px 0;color:#000;font-family:monospace">'+esc(t)+'</div>';}
+function sub(t){return '<div style="font-size:11px;text-align:center;margin:1px 0;color:#000;font-family:monospace;font-weight:bold">'+esc(t)+'</div>';}
+function section(t){return '<div style="font-size:11px;font-weight:900;text-align:center;margin:4px 0 2px 0;letter-spacing:1px;text-transform:uppercase;color:#000;font-family:monospace">'+esc(t)+'</div>';}
+function field(l,v){return '<div style="font-size:12px;margin:2px 0;color:#000;font-family:monospace;font-weight:bold"><b>'+esc(l)+':</b> '+esc(v||'-')+'</div>';}
+function bigVal(l,v){return '<div style="margin:4px 0"><div style="font-size:11px;font-weight:900;color:#000;font-family:monospace">'+esc(l)+'</div><div style="font-size:18px;font-weight:900;letter-spacing:1px;color:#000;font-family:monospace">'+esc(v)+'</div></div>';}
+var sL={novo:'NOVO',em_preparo:'EM PREPARO',pendente:'PENDENTE',aceito:'ACEITO',na_loja:'NA LOJA',coletado:'COLETADO',no_cliente:'NO CLIENTE',entregue:'ENTREGUE',cancelado:'CANCELADO',retornado:'RETORNADO'};
+var itensHTML='';
+if(o.obs_coleta){
+var raw=o.obs_coleta.replace(/^Itens:\s*/,'');
+var itemList=[];
+var cur='';var depth=0;
+for(var ci=0;ci<raw.length;ci++){
+var ch=raw[ci];
+if(ch==='['){depth++;cur+=ch;continue;}
+if(ch===']'){depth--;cur+=ch;continue;}
+if(depth===0&&ch==='|'&&raw[ci-1]===' '&&raw[ci+1]===' '){itemList.push(cur.trim());cur='';ci++;continue;}
+cur+=ch;
 }
-
+if(cur.trim())itemList.push(cur.trim());
+itemList.forEach(function(item){
+var pm=item.match(/\(R\$([\d.]+)\)\s*$/);
+var ps=pm?'R$ '+parseFloat(pm[2]).toFixed(2).replace('.',','):'';
+var ib=item.replace(/\(R\$[\d.]+\)\s*$/,'').trim();
+ib=ib.replace(/^\d+x\s*/,'');
+var cm=ib.match(/\[([^\[\]]+)\]/);
+var comps=[];
+if(cm){comps=cm[1].split('|').map(function(c){return c.trim();}).filter(Boolean);ib=ib.replace(/\s*\[[^\[\]]+\]/,'').trim();}
+var obsM=ib.match(/\(obs:\s*(.+?)\)\s*$/);
+var obsText='';
+if(obsM){obsText=obsM[1];ib=ib.replace(/\s*\(obs:.+?\)\s*$/,'').trim();}
+itensHTML+='<div style="margin:4px 0;padding:4px 6px;border-left:2px solid #000;">';
+itensHTML+='<div style="font-size:13px;font-weight:900;color:#000;font-family:monospace">'+esc(ib)+(ps?' - '+esc(ps):'')+'</div>';
+comps.forEach(function(c){c=c.trim();var cName=c.replace(/^[^:]+:/,'').replace(/\(\+R\$[\d\.]+\)/,'').trim();if(cName)itensHTML+='<div style="font-size:11px;padding-left:8px;color:#000;font-family:monospace;font-weight:bold">- '+esc(cName)+'</div>';});
+if(obsText)itensHTML+='<div style="font-size:11px;padding-left:8px;color:#000;font-family:monospace;font-style:italic">Obs: '+esc(obsText)+'</div>';
+itensHTML+='</div>';
+});
+}
+var dtCriado=o.created_at?new Date(o.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
+var subtotal=0;
+if(o.obs_coleta){(o.obs_coleta.match(/\(R\$([\d.]+)\)/g)||[]).forEach(function(p){subtotal+=parseFloat(p.replace('(R$','').replace(')',''))||0;});}
+var taxa=parseFloat(o.valor_total||0);
+var total=subtotal+taxa;
+var troco='';
+if(o.tipo_pagamento==='dinheiro'&&o.valor_pedido&&parseFloat(o.valor_pedido)>total){troco='R$ '+(parseFloat(o.valor_pedido)-total).toFixed(2).replace('.',',');}
+var h2='<div style="font-family:monospace;font-size:12px;color:#000;background:#fff;width:100%;max-width:76mm;margin:0 auto;padding:2mm 0">';
+h2+=title(user.name||'');
+if(user.phone)h2+=sub('Tel: '+user.phone);
+if(user.address){var uAddr='';try{var a=JSON.parse(user.address);uAddr=[a.rua+(a.num?' '+a.num:''),a.bairro,a.cidade].filter(Boolean).join(', ');}catch(e){uAddr=user.address;}h2+=sub(uAddr);}
+h2+=line(SEP1);
+h2+=section('PEDIDO #'+o.id);
+h2+=field('Data',dtCriado);
+h2+=line(SEP2);
+h2+=section('CLIENTE');
+h2+=field('Nome',o.nome_cliente);
+if(o.telefone_cliente)h2+=field('Tel',o.telefone_cliente);
+if(o.endereco_entrega)h2+=field('Entrega',(o.endereco_entrega||'')+(o.complemento_entrega?' - '+o.complemento_entrega:''));
+if(o.bairro_destino)h2+=field('Bairro',o.bairro_destino);
+if(o.obs_entrega_loja)h2+=field('Obs',o.obs_entrega_loja);
+h2+=line(SEP2);
+h2+=section('ITENS DO PEDIDO');
+h2+=itensHTML||'<div style="font-size:12px;color:#000;font-family:monospace;font-weight:bold">-</div>';
+h2+=line(SEP2);
+h2+=section('VALORES');
+if(subtotal>0)h2+=field('Subtotal','R$ '+subtotal.toFixed(2).replace('.',','));
+h2+=field('Entrega','R$ '+taxa.toFixed(2).replace('.',','));
+h2+=line(SEP2);
+h2+=bigVal('TOTAL','R$ '+total.toFixed(2).replace('.',','));
+h2+=line(SEP2);
+h2+=section('PAGAMENTO');
+var pn={dinheiro:'Dinheiro',maquina:'Cartao',pix:'PIX',cartao_aproximacao:'Cartao Aprox.'};
+h2+=field('Forma',pn[o.tipo_pagamento]||o.tipo_pagamento||'-');
+if(troco)h2+=field('Troco para',troco);
+h2+=line(SEP1);
+h2+=sub(dtCriado);
+h2+='<div style="font-size:12px;font-weight:900;text-align:center;margin:4px 0;color:#000;font-family:monospace">Obrigado pela preferencia!</div>';
+h2+=line(SEP1);
+h2+='</div>';
+var area=document.getElementById('print-area');
+area.innerHTML=h2;area.style.display='block';
+window.print();
+area.style.display='none';
+}
 function filterLojaOrders(status){
   _lojaFilter=status;
   renderLojaOrders(_myOrders);
