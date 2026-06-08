@@ -424,7 +424,7 @@ cur+=ch;
 if(cur.trim())itemList.push(cur.trim());
 itemList.forEach(function(item){
 var pm=item.match(/\(R\$([\d.]+)\)\s*$/);
-var ps=pm?'R$ '+parseFloat(pm[2]).toFixed(2).replace('.',','):'';
+var ps=pm?'R$ '+parseFloat(pm[1]).toFixed(2).replace('.',','):'';
 var ib=item.replace(/\(R\$[\d.]+\)\s*$/,'').trim();
 ib=ib.replace(/^\d+x\s*/,'');
 var cm=ib.match(/\[([^\[\]]+)\]/);
