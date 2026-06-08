@@ -412,25 +412,35 @@ function printOrder(orderId){
   var itensHTML='';
   if(o.obs_coleta){
     var raw=o.obs_coleta.replace(/^Itens:\s*/,'');
-    var items=[];var depth=0;var cur='';
+    // Split items by " | " outside of [ ] brackets
+    var itemList=[];
+    var cur='';var depth=0;
     for(var ci=0;ci<raw.length;ci++){
-      if(raw[ci]=='['&&raw[ci+1]=='['){depth++;cur+='[[';ci++;continue;}
-      if(raw[ci]==']'&&raw[ci+1]==']'){ depth--;cur+=']]';ci++;continue;}
-      if(depth===0&&raw[ci]=='|'&&raw[ci-1]==' '&&raw[ci+1]==' '){items.push(cur.trim());cur='';ci++;continue;}
-      cur+=raw[ci];
+      var ch=raw[ci];
+      if(ch==='['){depth++;cur+=ch;continue;}
+      if(ch===']'){depth--;cur+=ch;continue;}
+      if(depth===0&&ch==='|'&&raw[ci-1]===' '&&raw[ci+1]===' '){itemList.push(cur.trim());cur='';ci++;continue;}
+      cur+=ch;
     }
-    if(cur.trim())items.push(cur.trim());
-    items.forEach(function(item){
-      var pm=item.match(/\(R\$(\d+\.\d+)\)\s*$/);
+    if(cur.trim())itemList.push(cur.trim());
+    itemList.forEach(function(item){
+      var pm=item.match(/\(R\$([\d.]+)\)\s*$/);
       var ps=pm?'R$'+parseFloat(pm[1]).toFixed(2).replace('.',','):'';
-      var ib=item.replace(/\(R\$\d+\.\d+\)\s*$/,'').trim();
-      var cm=ib.match(/\[\[(.+?)\]\]/);
+      var ib=item.replace(/\(R\$[\d.]+\)\s*$/,'').trim();
+      ib=ib.replace(/^\d+x\s*/,'');
+      var cm=ib.match(/\[([^\[\]]+)\]/);
       var comps=[];
-      if(cm){comps=cm[1].split(' | ');ib=ib.replace(/\[\[.+?\]\]/,'').trim();}
-      itensHTML+='<div style="margin:5px 0;padding-left:4px">';
-      itensHTML+='<div style="font-size:14px;font-weight:900">'+esc(ib)+(ps?' <span style="font-size:13px;font-weight:normal">- '+ps+'</span>':'')+ '</div>';
-      comps.forEach(function(c){c=c.trim();if(c)itensHTML+='<div style="font-size:12px;padding-left:10px">• '+esc(c)+'</div>';});
+      if(cm){comps=cm[1].split(' | ');ib=ib.replace(/\s*\[[^\[\]]+\]/,'').trim();}
+      var obsM=ib.match(/\(obs:\s*(.+?)\)\s*$/);
+      var obsText='';
+      if(obsM){obsText=obsM[1];ib=ib.replace(/\s*\(obs:.+?\)\s*$/,'').trim();}
+      itensHTML+='<div style="margin:6px 0;padding:7px 10px;background:#1a1a00;border-left:3px solid #f5a623;border-radius:5px;">';
+      itensHTML+='<div style="font-size:14px;font-weight:700;color:#fff;">&#127829; '+esc(ib)+(ps?' <span style="color:#f5a623;font-weight:normal;font-size:13px;">— '+ps+'</span>':'')+'</div>';
+      comps.forEach(function(c){c=c.trim();if(c)itensHTML+='<div style="font-size:12px;padding-left:12px;color:#ccc;margin-top:3px;line-height:1.4;">&#8226; '+esc(c)+'</div>';});
+      if(obsText)itensHTML+='<div style="font-size:11px;padding-left:12px;color:#888;margin-top:3px;font-style:italic;">obs: '+esc(obsText)+'</div>';
       itensHTML+='</div>';
+    });
+  }
     });
   }
   var dtCriado=o.created_at?new Date(o.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
