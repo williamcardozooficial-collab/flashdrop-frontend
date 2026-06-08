@@ -441,8 +441,6 @@ function printOrder(orderId){
       itensHTML+='</div>';
     });
   }
-    }
-  }
   var dtCriado=o.created_at?new Date(o.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
   var subtotal=0;
   if(o.obs_coleta){(o.obs_coleta.match(/\(R\$(\d+\.\d+)\)/g)||[]).forEach(function(p){subtotal+=parseFloat(p.replace('(R$','').replace(')',''))||0;});}
