@@ -368,14 +368,18 @@ function iniciarMapaOrdem(oid,tipo,endStr){
   var el=document.getElementById(divId);
   if(!el||_oMaps[divId])return;
   _oMaps[divId]=true;
-  fetch("https://nominatim.openstreetmap.org/search?q="+encodeURIComponent(endStr+", RS, Brasil")+"&format=json&limit=1",{headers:{"User-Agent":"FlashDrop/1.0"}})
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(!d||!d.length){el.innerHTML="<p style='color:#555;font-size:12px;padding:10px'>Endereco nao encontrado</p>";return;}
-    var lt=parseFloat(d[0].lat),ln=parseFloat(d[0].lon),cor=tipo==="coleta"?"#27ae60":"#f5a623";
-    var m=new google.maps.Map(el,{center:{lat:lt,lng:ln},zoom:16,disableDefaultUI:true,zoomControl:true,styles:[{elementType:"geometry",stylers:[{color:"#1a1a1a"}]},{elementType:"labels.text.fill",stylers:[{color:"#aaa"}]},{featureType:"road",elementType:"geometry",stylers:[{color:"#2a2a2a"}]},{featureType:"water",elementType:"geometry",stylers:[{color:"#000"}]},{featureType:"poi",stylers:[{visibility:"off"}]}]});
-    new google.maps.Marker({position:{lat:lt,lng:ln},map:m,icon:{path:google.maps.SymbolPath.CIRCLE,scale:11,fillColor:cor,fillOpacity:1,strokeColor:"#fff",strokeWeight:2}});
-  }).catch(function(){});
+  var cor=tipo==="coleta"?"#27ae60":"#f5a623";
+  var st=[{elementType:"geometry",stylers:[{color:"#1a1a1a"}]},{elementType:"labels.text.fill",stylers:[{color:"#aaa"}]},{featureType:"road",elementType:"geometry",stylers:[{color:"#2a2a2a"}]},{featureType:"water",elementType:"geometry",stylers:[{color:"#000"}]},{featureType:"poi",stylers:[{visibility:"off"}]}];
+  (new google.maps.Geocoder()).geocode({address:endStr+", Brasil"},function(res,status){
+    if(status==="OK"&&res.length>0){
+      var loc=res[0].geometry.location;
+      var m=new google.maps.Map(el,{center:loc,zoom:16,disableDefaultUI:true,zoomControl:true,styles:st});
+      new google.maps.Marker({position:loc,map:m,icon:{path:google.maps.SymbolPath.CIRCLE,scale:11,fillColor:cor,fillOpacity:1,strokeColor:"#fff",strokeWeight:2}});
+    }else{
+      el.innerHTML="<p style='color:#555;font-size:12px;padding:10px'>Endereco nao encontrado</p>";
+    }
+  });
+}
 }
 function cardOrder(o){
     var h="";
