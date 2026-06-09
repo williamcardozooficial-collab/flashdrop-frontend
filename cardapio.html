@@ -671,10 +671,11 @@ break;
 }
 }
 async function init(){
-var id=getParam('id');var _sl=getParam('slug');if(_sl&&!id){try{var _sr=await fetch(API+'/loja/slug/'+_sl);if(_sr.ok){var _sd=await _sr.json();id=_sd.custom_id||String(_sd.id);}else{renderError('Loja nao encontrada.');return;}}catch(e){renderError('Erro ao carregar loja.');return;}}if(!id)
+var id=getParam('id');var _sl=getParam('slug');var _lojaFromSlug=null;if(_sl&&!id){try{var _sr=await fetch(API+'/loja/slug/'+_sl);if(_sr.ok){var _sd=await _sr.json();id=_sd.custom_id||String(_sd.id);_lojaFromSlug=_sd;}else{renderError('Loja nao encontrada.');return;}}catch(e){renderError('Erro ao carregar loja.');return;}}if(!id)
 try{
-var resp=await fetch(API+'/users');var users=await resp.json();
-var loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});
+var loja=_lojaFromSlug||null;
+if(!loja){var resp=await fetch(API+'/users');var users=await resp.json();
+loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});}
 if(!loja){renderErro('Loja nao encontrada.');return;}
 if(!loja.loja_online){renderLojaFechada(loja);return;}
 renderLoja(loja);loadCardapio(loja.id);
