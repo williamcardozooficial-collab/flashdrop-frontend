@@ -74,7 +74,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <h1>FlashDrop Admin</h1>
       <div>
-        <button onclick="(function(){var bc=new BroadcastChannel('flashdrop_reload');bc.postMessage('reload_lojas');setTimeout(function(){bc.close();},500);var activeTab=document.querySelector('.tab-btn.active');var tabId=activeTab?activeTab.getAttribute('onclick').match(/'([^']+)'/):null;loadData(tabId?tabId[1]:'pedidos');})()" style="background:#ffcc00;color:#000;border:none;border-radius:8px;padding:6px 14px;font-weight:bold;cursor:pointer;font-size:13px;">🔄 Atualizar</button>
+        <button onclick="(function(btn){btn.disabled=true;btn.style.background='#4caf50';btn.style.color='#fff';btn.textContent='✓ Atualizando...';var bc=new BroadcastChannel('flashdrop_reload');bc.postMessage('reload_lojas');setTimeout(function(){bc.close();},500);var activeTab=document.querySelector('.tab-btn.active');var tabId=activeTab?activeTab.getAttribute('onclick').match(/'([^']+)'/):null;loadData(tabId?tabId[1]:'pedidos').then(function(){btn.disabled=false;btn.style.background='#ffcc00';btn.style.color='#000';btn.textContent='🔄 Atualizar';});})(this)" style="background:#ffcc00;color:#000;border:none;border-radius:8px;padding:6px 14px;font-weight:bold;cursor:pointer;font-size:13px;">🔄 Atualizar</button>
         <button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:bold;cursor:pointer;font-size:13px;margin-left:6px;">Sair</button>
       </div>
     </div>
