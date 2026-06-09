@@ -456,7 +456,7 @@ btn.disabled=false;btn.textContent='Finalizar Pedido';
 function renderLoja(loja){
 lojaGlobal=loja;
 var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
-var _la=loja.address||'';var _lo={};try{_lo=JSON.parse(_la);}catch(e){_lo=null;}var _laf=_lo&&_lo.rua?[_lo.rua+(_lo.num?' '+_lo.num:''),_lo.bairro,_lo.cidade].filter(Boolean).join(', '):_la;var end=_laf?'<div class="meta-item">&#128205; <strong>'+esc(_laf)+'</strong></div>':'';
+var end='';
 var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div>':'';
 document.getElementById('page-content').innerHTML=
 '<section class="loja-hero"><div class="loja-hero-inner">'+
