@@ -725,7 +725,7 @@ function showLojaTab(tab){
     btn.style.marginBottom=active?'-2px':'0';
     btn.style.fontWeight=active?'700':'600';
   });
-  if(tab==='cardapio'){loadVitrineConfig();loadProdutosLoja();loadCategorias();}
+  if(tab==='cardapio'){loadVitrineConfig();loadCategorias().then(function(){loadProdutosLoja();});}
   if(tab==='solicitacoes'){renderSolicitacoes();(_myOrders||[]).filter(function(o){return o.plataforma==='cardapio'&&o.status!=='cancelado';}).forEach(function(o){_alertIdsVistos.add(o.id);});_salvarVistos();if(_alertAtivo)fecharAlertaNovoPedido(false);}
 }
 
