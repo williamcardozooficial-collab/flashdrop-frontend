@@ -701,7 +701,14 @@ function verificarNaLoja(orders) {
 }
 /* ========== FIM ALERTA MOTOBOY NA LOJA ========== */
 
-init();async function loadLojaIndicacao(){try{var u=JSON.parse(localStorage.getItem("flashdrop_user")||"{}");if(!u.id)return;var r=await fetch(API+"/referral-code/"+u.id);if(!r.ok)return;var d=await r.json();document.getElementById("loja-ref-code").textContent=d.code||"---";var r2=await fetch(API+"/referrals/user/"+u.id);if(r2.ok){var list=await r2.json();var mb=list.filter(function(x){return x.referred_role==="motoboy";}).length;var tot=list.reduce(function(acc,x){return acc+(parseFloat(x.total_ganho)||0);},0);document.getElementById("loja-ref-motoboys").textContent=mb;document.getElementById("loja-ref-ganhos").textContent="R$ "+tot.toFixed(2).replace(".",",");}document.getElementById("loja-indicacao-panel").style.display="block";}catch(e){console.log("ind loja",e);}}
+init();
+// Escuta sinal de reload do admin
+(function(){
+  var bc = new BroadcastChannel('flashdrop_reload');
+  bc.onmessage = function(e) {
+    if (e.data === 'reload_lojas') { location.reload(); }
+  };
+})();async function loadLojaIndicacao(){try{var u=JSON.parse(localStorage.getItem("flashdrop_user")||"{}");if(!u.id)return;var r=await fetch(API+"/referral-code/"+u.id);if(!r.ok)return;var d=await r.json();document.getElementById("loja-ref-code").textContent=d.code||"---";var r2=await fetch(API+"/referrals/user/"+u.id);if(r2.ok){var list=await r2.json();var mb=list.filter(function(x){return x.referred_role==="motoboy";}).length;var tot=list.reduce(function(acc,x){return acc+(parseFloat(x.total_ganho)||0);},0);document.getElementById("loja-ref-motoboys").textContent=mb;document.getElementById("loja-ref-ganhos").textContent="R$ "+tot.toFixed(2).replace(".",",");}document.getElementById("loja-indicacao-panel").style.display="block";}catch(e){console.log("ind loja",e);}}
 function copyLojaRefCode(){var code=document.getElementById("loja-ref-code").textContent;if(!code||code==="---")return;if(navigator.clipboard){navigator.clipboard.writeText(code).then(function(){tg.showAlert("Codigo copiado: "+code);});}else{var el=document.createElement("textarea");el.value=code;document.body.appendChild(el);el.select();document.execCommand("copy");document.body.removeChild(el);tg.showAlert("Codigo copiado: "+code);}}
 
 function showLojaTab(tab){
