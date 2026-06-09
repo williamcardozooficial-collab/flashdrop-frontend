@@ -671,7 +671,7 @@ break;
 }
 }
 async function init(){
-var id=getParam('id');if(!id){renderErro('Nenhuma loja especificada.');return;}
+var id=getParam('id');var _sl=getParam('slug');if(_sl&&!id){try{var _sr=await fetch(API+'/loja/slug/'+_sl);if(_sr.ok){var _sd=await _sr.json();id=_sd.custom_id||String(_sd.id);}else{renderError('Loja nao encontrada.');return;}}catch(e){renderError('Erro ao carregar loja.');return;}}if(!id)
 try{
 var resp=await fetch(API+'/users');var users=await resp.json();
 var loja=users.find(function(u){return u.role==='loja'&&u.custom_id===id;});
