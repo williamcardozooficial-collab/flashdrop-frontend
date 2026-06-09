@@ -34,21 +34,6 @@
   @page { margin: 0; size: 80mm auto; }
 }
 #print-area { display: none; }
-/* ===== PREVIEW CARDAPIO ===== */
-.prev-cat-section{margin:0 0 8px}
-.prev-cat-title{font-size:1rem;font-weight:700;color:#fff;margin-bottom:0;padding:10px 14px;background:#1a1a1a;border-left:4px solid #bb86fc;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.prev-cat-arrow{font-size:12px;color:#888;transition:transform 0.2s}
-.prev-cat-title.aberto .prev-cat-arrow{transform:rotate(180deg)}
-.prev-cat-produtos{display:none;padding-top:8px}
-.prev-cat-produtos.aberto{display:block}
-.prev-prod-card{display:flex;align-items:center;gap:10px;background:#1e1e2e;border-radius:10px;padding:10px;border:1px solid #2a2a4a;margin-bottom:8px}
-.prev-prod-foto{width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0}
-.prev-prod-placeholder{width:60px;height:60px;border-radius:8px;background:#2a2a4a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
-.prev-prod-info{flex:1;min-width:0}
-.prev-prod-nome{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
-.prev-prod-desc{font-size:11px;color:#888;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prev-prod-preco{font-size:13px;font-weight:700;color:#bb86fc}
-.prev-prod-actions{display:flex;gap:4px;flex-shrink:0}
 
 </style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio.html?id='+(user&&user.custom_id?user.custom_id:'L000001');if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div id="store-address" style="font-size:12px;margin-top:3px;opacity:0.85">...</div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div></div></div>
 <div id="loja-status-bar" style="margin:0 20px 0;background:#1a1a1a;border:2px solid #555;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -115,11 +100,6 @@
 <div style="display:flex;gap:8px;"><button onclick="fecharFormNovoProduto()" style="flex:1;padding:10px;border:1px solid #555;background:transparent;color:#aaa;border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button><button id="btn-salvar-novo-produto" onclick="salvarNovoProduto()" style="flex:1;padding:10px;border:none;background:#bb86fc;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Salvar</button></div>
 </div>
 <div id="produtos-loja-list" style="margin-top:12px;"></div>
-<!-- ===== PREVIEW CARDAPIO ===== -->
-<div style="margin-top:18px">
-  <button onclick="togglePreviewCardapio()" id="btn-preview-cardapio" style="width:100%;padding:11px;background:#1a1a2e;border:1px solid #bb86fc;color:#bb86fc;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">&#128065; Ver Preview do Cardapio</button>
-  <div id="preview-cardapio" style="display:none"></div>
-</div>
 </div><div id="sec-solicitacoes" style="display:none;padding:12px 0"><div id="solic-lista"></div></div><div id="sec-pedidos"><div id="order-filter-bar" style="overflow-x:auto;white-space:nowrap;padding:0 0 10px 0;margin-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div><div id="orders-list"></div></div></div><div id="modal-produto" class="modal" style="display:none"><div class="modal-box" style="max-width:420px"><h3 id="mp-titulo" style="margin-bottom:14px;color:#bb86fc">Novo Produto</h3><input id="mp-nome" class="input" placeholder="Nome do produto *" style="margin-bottom:8px"><textarea id="mp-desc" class="input" placeholder="Descricao" rows="2" style="margin-bottom:8px;resize:none"></textarea><div style="display:flex;gap:8px;margin-bottom:8px"><input id="mp-preco" class="input" type="number" placeholder="Preco (R$)" step="0.01" style="flex:1"><input id="mp-cat" class="input" placeholder="Categoria" style="flex:1"></div><input id="mp-foto" class="input" placeholder="URL da foto (opcional)" style="margin-bottom:8px"><div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><input id="mp-ordem" class="input" type="number" placeholder="Ordem (0=primeiro)" style="flex:1"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;flex:1"><input type="checkbox" id="mp-ativo" checked style="accent-color:#bb86fc"> Ativo</label></div><div style="display:flex;gap:8px;margin-top:6px"><button onclick="salvarProduto()" class="btn-primary" style="flex:1">Salvar</button><button onclick="document.getElementById('modal-produto').style.display='none'" class="btn-secondary" style="flex:1">Cancelar</button></div></div></div><div id="modal-order" class="modal" style="background:rgba(0,0,0,0.85);padding:0"><div style="background:#1a1a1a;width:100%;max-width:520px;margin:0 auto;min-height:100vh;overflow-y:auto;position:relative"><div style="background:#111;padding:16px 20px;border-bottom:1px solid #2a2a2a;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10"><h2 style="color:#fff;font-size:18px;font-weight:800;margin:0">&#x1F4CB; Novo Pedido</h2><button onclick="closeModal()" style="background:rgba(255,255,255,0.08);border:none;color:#aaa;font-size:22px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1">&times;</button></div>
 <div style="padding:20px"><form id="orderForm">
 
@@ -723,82 +703,6 @@ function verificarNaLoja(orders) {
 /* ========== FIM ALERTA MOTOBOY NA LOJA ========== */
 
 init();
-// ===== PREVIEW CARDAPIO =====
-function togglePreviewCardapio(){
-  var div=document.getElementById('preview-cardapio');
-  var btn=document.getElementById('btn-preview-cardapio');
-  if(!div)return;
-  if(div.style.display==='none'){
-    div.style.display='block';
-    btn.textContent='\u274C Fechar Preview';
-    renderPreviewCardapio();
-  } else {
-    div.style.display='none';
-    btn.textContent='\u{1F441} Ver Preview do Cardapio';
-  }
-}
-function renderPreviewCardapio(){
-  var div=document.getElementById('preview-cardapio');
-  if(!div)return;
-  var cats=window._categoriasLoja||[];
-  var prods=window._produtosLoja||[];
-  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  var html='';
-  // Categoria pills
-  if(cats.length){
-    html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">';
-    cats.forEach(function(c){
-      html+='<button onclick="prevScrollToCat(\'' + esc(c.nome) + '\')" style="padding:5px 12px;border-radius:20px;border:1px solid #444;background:#1a1a1a;color:#ddd;font-size:12px;cursor:pointer">'+esc(c.nome)+'</button>';
-    });
-    html+='</div>';
-  }
-  // Sections por categoria
-  cats.forEach(function(c){
-    var pc=prods.filter(function(p){return p.categoria===c.nome&&p.ativo!==false;});
-    if(!pc.length)return;
-    html+='<div class="prev-cat-section" id="prev-cat-'+esc(c.nome)+'">';
-    html+='<div class="prev-cat-title" onclick="prevToggleCat(this)">'+esc(c.nome)+' <span class="prev-cat-arrow">&#9660;</span></div>';
-    html+='<div class="prev-cat-produtos aberto">';
-    pc.forEach(function(p){html+=renderPrevProd(p);});
-    html+='</div></div>';
-  });
-  // Sem categoria
-  var sem=prods.filter(function(p){return !p.categoria&&p.ativo!==false;});
-  if(sem.length){
-    html+='<div class="prev-cat-section">';
-    html+='<div class="prev-cat-title aberto" onclick="prevToggleCat(this)">Sem categoria <span class="prev-cat-arrow">&#9660;</span></div>';
-    html+='<div class="prev-cat-produtos aberto">';
-    sem.forEach(function(p){html+=renderPrevProd(p);});
-    html+='</div></div>';
-  }
-  if(!html)html='<div style="text-align:center;color:#555;padding:20px">Nenhum produto ainda.</div>';
-  div.innerHTML=html;
-}
-function renderPrevProd(p){
-  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  var foto=p.foto_url
-    ?'<img src="'+esc(p.foto_url)+'" class="prev-prod-foto">'
-    :'<div class="prev-prod-placeholder">&#127869;</div>';
-  return '<div class="prev-prod-card">'+foto+
-    '<div class="prev-prod-info">'+
-    '<div class="prev-prod-nome">'+esc(p.nome)+'</div>'+
-    (p.descricao?'<div class="prev-prod-desc">'+esc(p.descricao)+'</div>':'')+
-    '<div class="prev-prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
-    '</div>'+
-    '<div class="prev-prod-actions">'+
-    '<button onclick="editarProduto('+p.id+')" style="background:#bb86fc;border:none;color:#fff;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer">Editar</button>'+
-    '</div></div>';
-}
-function prevToggleCat(el){
-  el.classList.toggle('aberto');
-  var prod=el.nextElementSibling;
-  if(prod)prod.classList.toggle('aberto');
-}
-function prevScrollToCat(nome){
-  var el=document.getElementById('prev-cat-'+nome);
-  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
-}
-// ===== FIM PREVIEW CARDAPIO =====
 // Escuta sinal de reload do admin
 (function(){
   var bc = new BroadcastChannel('flashdrop_reload');
@@ -1122,29 +1026,67 @@ try{
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 if(!u.id)return;
 var r=await fetch(API+'/produtos?loja_id='+u.id);
-var prods=await r.json();prods.sort(function(a,b){return ((a.ordem!=null?a.ordem:9999))-(b.ordem!=null?b.ordem:9999);});window._produtosLoja=prods;if(document.getElementById('preview-cardapio')&&document.getElementById('preview-cardapio').style.display!=='none'){renderPreviewCardapio();}
+var prods=await r.json();
+prods.sort(function(a,b){return ((a.ordem!=null?a.ordem:9999))-(b.ordem!=null?b.ordem:9999);});
+window._produtosLoja=prods;
+if(document.getElementById('preview-cardapio')&&document.getElementById('preview-cardapio').style.display!=='none'){renderPreviewCardapio();}
 var el=document.getElementById('produtos-loja-list');
 if(!Array.isArray(prods)||!prods.length){el.innerHTML='<div style="text-align:center;color:#555;padding:20px">Nenhum produto ainda.</div>';return;}
-el.innerHTML=prods.map(function(p){
-var nome=(p.nome||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-var cat=(p.categoria||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-var fotoHtml=p.foto_url
-?'<img src="'+p.foto_url+'" style="width:48px;height:48px;border-radius:6px;object-fit:cover">'
-:'<div style="width:48px;height:48px;border-radius:6px;background:#2a2a4a;display:flex;align-items:center;justify-content:center;font-size:20px">&#127869;</div>';
-return '<div style="background:#1a1a2e;border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid '+(p.ativo?'#2a2a4a':'#3a1a1a')+';display:flex;align-items:center;gap:10px">'
-+fotoHtml
-+'<div style="flex:1;min-width:0">'
-+'<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">'+nome+'</div>'
-+'<div style="font-size:12px;color:#ccc">'+(cat?cat+' &middot; ':'')+' R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'
-+'</div>'
-+'<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'
-+'<button onclick="reordenarProduto('+p.id+',-1)" style="background:#2a2a4a;border:none;color:#aaa;padding:4px 7px;border-radius:6px;font-size:11px;cursor:pointer" title="Subir">&#9650;</button>'
-+'<button onclick="reordenarProduto('+p.id+',1)" style="background:#2a2a4a;border:none;color:#aaa;padding:4px 7px;border-radius:6px;font-size:11px;cursor:pointer" title="Descer">&#9660;</button>'
-+'<button onclick="toggleVisivelProduto('+p.id+','+(p.ativo!==false)+')" style="background:'+(p.ativo!==false?'#1a6b3a':'#5a2a2a')+';border:none;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:bold" title="Visibilidade">'+(p.ativo!==false?'&#10003; Vis':'× Ocul')+'</button>'
-+'<button onclick="editarProduto('+p.id+')" style="background:#2a2a4a;border:none;color:#bb86fc;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer">&#9998;</button>'
-+'<button onclick="excluirProduto('+p.id+')" style="background:#3a1a1a;border:none;color:#cf6679;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer">&#128465;</button>'
-+'</div></div>';
-}).join('');
+
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderProdCard(p){
+  var nome=esc(p.nome);
+  var cat=esc(p.categoria||'');
+  var fotoHtml=p.foto_url
+    ?'<img src="'+p.foto_url+'" style="width:48px;height:48px;border-radius:6px;object-fit:cover">'
+    :'<div style="width:48px;height:48px;border-radius:6px;background:#2a2a4a;display:flex;align-items:center;justify-content:center;font-size:20px">&#127869;</div>';
+  return '<div style="background:#1a1a2e;border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid '+(p.ativo?'#2a2a4a':'#3a1a1a')+';display:flex;align-items:center;gap:10px">'
+    +fotoHtml
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">'+nome+'</div>'
+    +'<div style="font-size:12px;color:#ccc">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'
+    +'<button onclick="reordenarProduto('+p.id+',-1)" style="background:#2a2a4a;border:none;color:#aaa;padding:4px 7px;border-radius:6px;font-size:11px;cursor:pointer" title="Subir">&#9650;</button>'
+    +'<button onclick="reordenarProduto('+p.id+',1)" style="background:#2a2a4a;border:none;color:#aaa;padding:4px 7px;border-radius:6px;font-size:11px;cursor:pointer" title="Descer">&#9660;</button>'
+    +'<button onclick="toggleVisivelProduto('+p.id+','+(p.ativo!==false)+')" style="background:'+(p.ativo!==false?'#1a6b3a':'#5a2a2a')+';border:none;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:bold" title="Visibilidade">'+(p.ativo!==false?'&#10003; Vis':'&#215; Ocul')+'</button>'
+    +'<button onclick="editarProduto('+p.id+')" style="background:#2a2a4a;border:none;color:#bb86fc;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer">&#9998;</button>'
+    +'<button onclick="excluirProduto('+p.id+')" style="background:#3a1a1a;border:none;color:#cf6679;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer">&#128465;</button>'
+    +'</div></div>';
+}
+
+// Build grouped HTML by category
+var cats=window._categoriasLoja||[];
+var html='';
+
+// Products grouped by known categories (in order)
+cats.forEach(function(c){
+  var pc=prods.filter(function(p){return p.categoria===c.nome;});
+  if(!pc.length)return;
+  html+='<div style="margin-bottom:6px">'
+    +'<div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.loja-cat-arrow\').style.transform=this.nextElementSibling.style.display===\'none\'?\'\' :\'rotate(180deg)\'" '
+    +'style="font-size:13px;font-weight:700;color:#fff;padding:8px 12px;background:#1a1a2e;border-left:3px solid #bb86fc;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+    +esc(c.nome)+' <span style="font-size:11px;color:#888;background:#2a2a4a;padding:1px 7px;border-radius:10px">'+pc.length+'</span>'
+    +' <span class="loja-cat-arrow" style="font-size:10px;color:#888;transition:transform 0.2s">&#9660;</span>'
+    +'</div>'
+    +'<div>'+pc.map(renderProdCard).join('')+'</div>'
+    +'</div>';
+});
+
+// Products without category
+var sem=prods.filter(function(p){return !p.categoria;});
+if(sem.length){
+  html+='<div style="margin-bottom:6px">'
+    +'<div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.loja-cat-arrow\').style.transform=this.nextElementSibling.style.display===\'none\'?\'\' :\'rotate(180deg)\'" '
+    +'style="font-size:13px;font-weight:700;color:#fff;padding:8px 12px;background:#1a1a2e;border-left:3px solid #555;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+    +'Sem categoria <span style="font-size:11px;color:#888;background:#2a2a4a;padding:1px 7px;border-radius:10px">'+sem.length+'</span>'
+    +' <span class="loja-cat-arrow" style="font-size:10px;color:#888;transition:transform 0.2s">&#9660;</span>'
+    +'</div>'
+    +'<div>'+sem.map(renderProdCard).join('')+'</div>'
+    +'</div>';
+}
+
+el.innerHTML=html||'<div style="text-align:center;color:#555;padding:20px">Nenhum produto ainda.</div>';
 }catch(e){console.error('loadProdutosLoja error:',e);}
 }
 
