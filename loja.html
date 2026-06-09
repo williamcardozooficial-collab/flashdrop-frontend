@@ -35,6 +35,10 @@
 }
 #print-area { display: none; }
 
+
+.order-map-container{margin:6px 0 2px;border-radius:8px;overflow:hidden;}
+.order-map-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:5px 8px;background:#111;}
+.order-map-div{width:100%;height:180px;background:#111;}
 </style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio/'+(user&&user.slug?user.slug:(user&&user.custom_id?user.custom_id:'cardapio'));if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:3px"><div id="store-address" style="font-size:12px;opacity:0.85">...</div><button id="btn-toggle-endereco-print" onclick="toggleEnderecoPrint()" title="Mostrar/Ocultar endereço no imprimir" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;white-space:nowrap">🖨️ End: ✅</button></div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div></div></div>
 <div id="loja-status-bar" style="margin:0 20px 0;background:#1a1a1a;border:2px solid #555;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
 <div>
@@ -357,7 +361,23 @@ function renderLojaOrders(orders){
     }
   var filtered=_lojaFilter==="todos"?ordersParaPedidos:ordersParaPedidos.filter(function(o){return o.status===_lojaFilter;});
   var sL={novo:"🆕 Novo Pedido",em_preparo:"🔄 Em Preparo",pendente:"⏳ Pendente",aceito:"✅ Aceito",na_loja:"🏪 Na Loja",coletado:"📦 Coletado",no_cliente:"🏠 No Cliente",entregue:"🎉 Entregue",cancelado:"❌ Cancelado",retornado:"🔄 Retornado"};
-  function cardOrder(o){
+  var _oMaps={};
+function iniciarMapaOrdem(oid,tipo,endStr){
+  if(!endStr||endStr.length<5)return;
+  var divId="order-map-"+tipo+"-"+oid;
+  var el=document.getElementById(divId);
+  if(!el||_oMaps[divId])return;
+  _oMaps[divId]=true;
+  fetch("https://nominatim.openstreetmap.org/search?q="+encodeURIComponent(endStr+", RS, Brasil")+"&format=json&limit=1",{headers:{"User-Agent":"FlashDrop/1.0"}})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(!d||!d.length){el.innerHTML="<p style='color:#555;font-size:12px;padding:10px'>Endereco nao encontrado</p>";return;}
+    var lt=parseFloat(d[0].lat),ln=parseFloat(d[0].lon),cor=tipo==="coleta"?"#27ae60":"#f5a623";
+    var m=new google.maps.Map(el,{center:{lat:lt,lng:ln},zoom:16,disableDefaultUI:true,zoomControl:true,styles:[{elementType:"geometry",stylers:[{color:"#1a1a1a"}]},{elementType:"labels.text.fill",stylers:[{color:"#aaa"}]},{featureType:"road",elementType:"geometry",stylers:[{color:"#2a2a2a"}]},{featureType:"water",elementType:"geometry",stylers:[{color:"#000"}]},{featureType:"poi",stylers:[{visibility:"off"}]}]});
+    new google.maps.Marker({position:{lat:lt,lng:ln},map:m,icon:{path:google.maps.SymbolPath.CIRCLE,scale:11,fillColor:cor,fillOpacity:1,strokeColor:"#fff",strokeWeight:2}});
+  }).catch(function(){});
+}
+function cardOrder(o){
     var h="";
     h+='<div class="order-card">';
     h+='<div class="order-header"><strong>Pedido #'+o.id+'</strong><span class="status-badge status-'+o.status+'">'+( sL[o.status]||o.status)+'</span></div>';
@@ -365,8 +385,9 @@ function renderLojaOrders(orders){
     if(o.status==='cancelado'){h+='<div style="background:#2a0000;border:1px solid #cc0000;border-radius:8px;padding:8px 12px;margin:6px 0;text-align:center;font-size:12px;color:#ff6b6b">🔒 Dados do cliente ocultos — pedido cancelado</div>';}
 h+='<div style="font-size:13px;margin:4px 0"><strong>&#128100; Cliente:</strong> '+(o.status==='cancelado'?'<span style="color:#888;font-style:italic">Oculto</span>':(o.nome_cliente||"—"))+'</div>';
     h+=(o.status!=='cancelado'?'<div style="font-size:13px;margin:4px 0"><strong>&#128241; Tel:</strong> '+(o.telefone_cliente||"—")+(o.telefone_cliente?' <a href="https://wa.me/55'+o.telefone_cliente.replace(/\D/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:#25d366;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;text-decoration:none;vertical-align:middle">WhatsApp</a>':'')+'</div>':'');
-    h+=(o.status!=='cancelado'?'<div style="font-size:13px;margin:4px 0"><strong>&#128205; Entrega:</strong> '+(o.endereco_entrega||"—")+(o.complemento_entrega?" — "+o.complemento_entrega:"")+'</div>':'');
+    h+=(o.status!=='cancelado'?'<div style="font-size:13px;margin:4px 0"><strong>&#128205; Entrega:</strong> '+(o.endereco_entrega||"—")+(o.complemento_entrega?" — "+o.complemento_entrega:"")+'</div>+'<div class="order-map-container" style="border:1.5px solid #f5a623"><div class="order-map-label" style="color:#f5a623">&#128205; Local de Entrega</div><div id="order-map-entrega-'+o.id+'" class="order-map-div" data-end="'+encodeURIComponent(o.endereco_entrega||'')+'" ></div></div>'':'');
     if(o.obs_entrega_loja&&o.status!=='cancelado'){h+='<div style="font-size:12px;margin:2px 0;color:#888"><strong>&#128203; Obs:</strong> '+o.obs_entrega_loja+'</div>';}
+        if(o.endereco_coleta&&o.status!=='cancelado'){h+='<div style="font-size:13px;margin:4px 0"><strong>&#127968; Coleta:</strong> '+o.endereco_coleta+'</div><div class="order-map-container" style="border:1.5px solid #27ae60"><div class="order-map-label" style="color:#27ae60">&#127968; Local de Coleta</div><div id="order-map-coleta-'+o.id+'" class="order-map-div" data-end="'+encodeURIComponent(o.endereco_coleta||'')+'" ></div></div>';}
     if(o.obs_coleta&&o.status!=='cancelado'&&(o.plataforma==='cardapio_aceito'||o.plataforma==='cardapio')){var rawItens=o.obs_coleta.replace('Itens: ','');var itensHtml='';var partes=[];var depth=0;var cur='';for(var ci=0;ci<rawItens.length;ci++){if(rawItens[ci]==='['&&rawItens[ci+1]==='['){depth++;cur+='[[';ci++;continue;}if(rawItens[ci]===']'&&rawItens[ci+1]===']'){depth--;cur+=']]';ci++;continue;}if(depth===0&&rawItens[ci]==='|'&&rawItens[ci-1]===' '&&rawItens[ci+1]===' '){partes.push(cur.trim());cur='';ci++;continue;}cur+=rawItens[ci];}if(cur.trim())partes.push(cur.trim());partes.forEach(function(parte){var m=parte.match(/^(\d+x\s+[^\[]+)\[\[([^\]]+)\]\]\s*(\(R\$[\d\.]+\))?/);if(m){var nomeProd=m[1].trim();var opcoesRaw=m[2];var preco=m[3]?m[3].replace(/[()]/g,''):'';var opcoes=opcoesRaw.split('|').map(function(op){return op.replace(/^[^:]+:/,'').trim();}).filter(function(op){return op;});itensHtml+='<div style="margin-bottom:8px"><div style="font-weight:700;font-size:13px;color:#7c5a00">'+nomeProd+(preco?' — <span style="color:#27ae60">'+preco+'</span>':'')+'</div>';opcoes.forEach(function(op){itensHtml+='<div style="font-size:12px;color:#555;padding-left:10px">• '+op+'</div>';});itensHtml+='</div>';}else{var ms=parte.match(/^(.+?)\s*(\(R\$[\d\.]+\))?$/);var nomeProd=ms?ms[1].trim():parte;var preco=ms&&ms[2]?ms[2].replace(/[()]/g,''):'';itensHtml+='<div style="margin-bottom:6px;font-weight:700;font-size:13px;color:#7c5a00">'+nomeProd+(preco?' — <span style="color:#27ae60">'+preco+'</span>':'')+'</div>';}});var totalVal=parseFloat(o.valor_pedido||0)+parseFloat(o.valor_total||0);itensHtml+='<div style="border-top:1px solid #ffe082;margin-top:6px;padding-top:6px;text-align:right;font-size:13px;font-weight:700;color:#7c5a00">Total: <span style="color:#27ae60">R$ '+totalVal.toFixed(2)+'</span></div>';h+='<div style="background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:8px 10px;margin:4px 0"><strong>&#128214; Itens do pedido:</strong>'+itensHtml+'</div>';}
     var pagLabel={dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX",cartao_aproximacao:"💳 Aprox. (créd/déb)"};
     h+='<div style="font-size:13px;margin:4px 0"><strong>&#128179; Pagamento:</strong> '+(pagLabel[o.tipo_pagamento]||o.tipo_pagamento||"—")+'</div>';
@@ -396,6 +417,16 @@ h+='</div></div>';
   }
   document.getElementById("orders-list").innerHTML=filtered.map(cardOrder).join("");
   startPreparoTimers(filtered);
+
+  setTimeout(function(){
+    if(typeof google==='undefined'||!google.maps)return;
+    document.querySelectorAll('[id^="order-map-entrega-"]').forEach(function(el){
+      iniciarMapaOrdem(el.id.replace('order-map-entrega-',''),'entrega',decodeURIComponent(el.dataset.end||''));
+    });
+    document.querySelectorAll('[id^="order-map-coleta-"]').forEach(function(el){
+      iniciarMapaOrdem(el.id.replace('order-map-coleta-',''),'coleta',decodeURIComponent(el.dataset.end||''));
+    });
+  },800);
 }
 function printOrder(orderId){
 var o=(_myOrders||[]).find(function(x){return String(x.id)===String(orderId);})||{};
