@@ -117,40 +117,8 @@
       <button onclick="fecharCriarPromocao()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
     </div>
     <div style="font-size:12px;color:#888;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Escolha o tipo:</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <button onclick="selecionarTipoPromocao('cupom')" id="ptb-cupom" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:24px;margin-bottom:4px">🏷️</div><div style="font-size:11px;font-weight:700;color:#fff">Cupom</div><div style="font-size:10px;color:#888">Código de desconto</div>
-      </button>
-      <button onclick="selecionarTipoPromocao('frete')" id="ptb-frete" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:24px;margin-bottom:4px">🚚</div><div style="font-size:11px;font-weight:700;color:#fff">Frete Grátis</div><div style="font-size:10px;color:#888">A partir de X valor</div>
-      </button>
-      <button onclick="selecionarTipoPromocao('tempo')" id="ptb-tempo" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:24px;margin-bottom:4px">🕐</div><div style="font-size:11px;font-weight:700;color:#fff">Por Tempo</div><div style="font-size:10px;color:#888">Horário/duração</div>
-      </button>
-      <button onclick="selecionarTipoPromocao('combo')" id="ptb-combo" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:24px;margin-bottom:4px">🛒</div><div style="font-size:11px;font-weight:700;color:#fff">Compre X Leve Y</div><div style="font-size:10px;color:#888">Brinde ou desconto</div>
-      </button>
-      <button onclick="selecionarTipoPromocao('minimo')" id="ptb-minimo" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:24px;margin-bottom:4px">💰</div><div style="font-size:11px;font-weight:700;color:#fff">Valor Mínimo</div><div style="font-size:10px;color:#888">Desconto a partir de</div>
-      </button>
-      <button onclick="selecionarTipoPromocao('destaque')" id="ptb-destaque" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:24px;margin-bottom:4px">⭐</div><div style="font-size:11px;font-weight:700;color:#fff">Destaque</div><div style="font-size:10px;color:#888">Oferta do dia</div>
-      </button>
-      <button onclick="selecionarTipoPromocao('pagamento')" id="ptb-pagamento" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center;grid-column:1/-1">
-        <div style="font-size:24px;margin-bottom:4px">💳</div><div style="font-size:11px;font-weight:700;color:#fff">Forma de Pagamento</div><div style="font-size:10px;color:#888">Desconto no Pix, cartão, etc.</div>
-      </button>
-    </div>
-    <div id="form-promo-cupom" style="display:none">
-      <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">🏷️ CUPOM DE DESCONTO</div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Código do Cupom</label>
-      <input id="promo-cupom-codigo" placeholder="Ex: PIZZA10" maxlength="20" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px;text-transform:uppercase">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Tipo de desconto</label>
-      <select id="promo-cupom-tipo" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px"><option value="percent">Percentual (%)</option><option value="fixed">Valor fixo (R$)</option></select>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Valor do desconto</label>
-      <input id="promo-cupom-valor" type="number" min="1" placeholder="Ex: 10" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Limite de usos (0 = ilimitado)</label>
-      <input id="promo-cupom-limite" type="number" min="0" value="0" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px"><button onclick="selecionarTipoPromocao('frete')" id="ptb-frete" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center;grid-column:1/-1"><div style="font-size:24px;margin-bottom:4px">🚚</div><div style="font-size:11px;font-weight:700;color:#fff">Frete Grátis</div><div style="font-size:10px;color:#888">A partir de X valor</div></button></div>
+    
     <div id="form-promo-frete" style="display:none">
       <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">🚚 FRETE GRÁTIS</div>
       <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Valor mínimo do pedido (R$)</label>
@@ -158,55 +126,11 @@
       <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Nome da promoção</label>
       <input id="promo-frete-nome" placeholder="Ex: Frete grátis acima de R$50" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
     </div>
-    <div id="form-promo-tempo" style="display:none">
-      <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">🕐 PROMOÇÃO POR TEMPO</div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Nome da promoção</label>
-      <input id="promo-tempo-nome" placeholder="Ex: Happy Hour 20% off" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div><label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Hora início</label><input id="promo-tempo-inicio" type="time" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px"></div>
-        <div><label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Hora fim</label><input id="promo-tempo-fim" type="time" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px"></div>
-      </div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Desconto (%)</label>
-      <input id="promo-tempo-desc" type="number" min="1" max="100" placeholder="Ex: 20" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-    </div>
-    <div id="form-promo-combo" style="display:none">
-      <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">🛒 COMPRE X LEVE Y</div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Nome da promoção</label>
-      <input id="promo-combo-nome" placeholder="Ex: Compre 2 pizzas ganhe 1 refri" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div><label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Qtd. mínima (X)</label><input id="promo-combo-x" type="number" min="1" value="2" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px"></div>
-        <div><label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Brinde/desconto (Y)</label><input id="promo-combo-y" type="number" min="1" value="1" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px"></div>
-      </div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Descrição do brinde</label>
-      <input id="promo-combo-brinde" placeholder="Ex: 1 refrigerante grátis" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-    </div>
-    <div id="form-promo-minimo" style="display:none">
-      <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">💰 DESCONTO POR VALOR MÍNIMO</div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Valor mínimo do pedido (R$)</label>
-      <input id="promo-minimo-valor" type="number" min="0" placeholder="Ex: 80" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Desconto (%)</label>
-      <input id="promo-minimo-desc" type="number" min="1" max="100" placeholder="Ex: 15" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Nome da promoção</label>
-      <input id="promo-minimo-nome" placeholder="Ex: 15% off acima de R$80" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-    </div>
-    <div id="form-promo-destaque" style="display:none">
-      <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">⭐ DESTAQUE / OFERTA DO DIA</div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Nome do produto em destaque</label>
-      <input id="promo-destaque-produto" placeholder="Ex: Pizza Margherita" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Preço promocional (R$)</label>
-      <input id="promo-destaque-preco" type="number" min="0" step="0.01" placeholder="Ex: 29.90" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Descrição (opcional)</label>
-      <input id="promo-destaque-desc" placeholder="Ex: Só hoje! De R$45 por R$29,90" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-    </div>
-    <div id="form-promo-pagamento" style="display:none">
-      <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">💳 DESCONTO POR PAGAMENTO</div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Forma de pagamento</label>
-      <select id="promo-pagamento-forma" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px"><option value="pix">Pix</option><option value="credito">Cartão de Crédito</option><option value="debito">Cartão de Débito</option><option value="dinheiro">Dinheiro</option><option value="vale">Vale Refeição</option></select>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Desconto (%)</label>
-      <input id="promo-pagamento-desc" type="number" min="1" max="100" placeholder="Ex: 5" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Nome da promoção</label>
-      <input id="promo-pagamento-nome" placeholder="Ex: 5% de desconto no Pix" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-    </div>
+    
+    
+    
+    
+    
     <button id="btn-salvar-promocao" onclick="salvarPromocao()" style="display:none;width:100%;padding:13px;background:#bb86fc;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">✅ Criar Promoção</button>
   </div>
 </div>
@@ -1811,7 +1735,7 @@ function initMapNovoPedidoEntrega(lat,lng){var el=document.getElementById('novo-
 function geocodeAndShowMap(endStr,tipo){if(!endStr||endStr.length<5)return;var geocoder=new google.maps.Geocoder();geocoder.geocode({address:endStr+', Brasil'},function(results,status){if(status==='OK'&&results[0]){var loc=results[0].geometry.location;if(tipo==='coleta')initMapNovoPedidoColeta(loc.lat(),loc.lng());else initMapNovoPedidoEntrega(loc.lat(),loc.lng());}});}
 
 var _tipoPromoAtivo=null;
-function abrirCriarPromocao(tipo){var painel=document.getElementById('painel-criar-promocao');var empty=document.getElementById('promo-empty');if(painel)painel.style.display='block';if(empty)empty.style.display='none';_tipoPromoAtivo=null;['cupom','frete','tempo','combo','minimo','destaque','pagamento'].forEach(function(t){var b=document.getElementById('ptb-'+t);if(b){b.style.border='2px solid #2a2a4a';b.style.background='#111';}var f=document.getElementById('form-promo-'+t);if(f)f.style.display='none';});var bs=document.getElementById('btn-salvar-promocao');if(bs)bs.style.display='none';if(tipo)selecionarTipoPromocao(tipo);setTimeout(function(){if(painel)painel.scrollIntoView({behavior:'smooth',block:'start'});},100);}
+function abrirCriarPromocao(tipo){var painel=document.getElementById('painel-criar-promocao');var empty=document.getElementById('promo-empty');if(painel)painel.style.display='block';if(empty)empty.style.display='none';_tipoPromoAtivo=null;['frete'].forEach(function(t){var b=document.getElementById('ptb-'+t);if(b){b.style.border='2px solid #2a2a4a';b.style.background='#111';}var f=document.getElementById('form-promo-'+t);if(f)f.style.display='none';});var bs=document.getElementById('btn-salvar-promocao');if(bs)bs.style.display='none';if(tipo)selecionarTipoPromocao(tipo);setTimeout(function(){if(painel)painel.scrollIntoView({behavior:'smooth',block:'start'});},100);}
 function fecharCriarPromocao(){var painel=document.getElementById('painel-criar-promocao');if(painel)painel.style.display='none';atualizarListaPromocoes();}
 function selecionarTipoPromocao(tipo){_tipoPromoAtivo=tipo;['cupom','frete','tempo','combo','minimo','destaque','pagamento'].forEach(function(t){var b=document.getElementById('ptb-'+t);var f=document.getElementById('form-promo-'+t);var active=(t===tipo);if(b){b.style.border=active?'2px solid #bb86fc':'2px solid #2a2a4a';b.style.background=active?'#1a0a2e':'#111';}if(f)f.style.display=active?'block':'none';});var bs=document.getElementById('btn-salvar-promocao');if(bs)bs.style.display='block';}
 function salvarPromocao(){if(!_tipoPromoAtivo){alert('Selecione um tipo!');return;}var promo={id:Date.now(),tipo:_tipoPromoAtivo,ativa:true,criadaEm:new Date().toLocaleDateString('pt-BR')};var btn=document.getElementById('btn-salvar-promocao');if(btn){btn.disabled=true;btn.textContent='Salvando...';}var ok=true;if(_tipoPromoAtivo==='cupom'){var cod=(document.getElementById('promo-cupom-codigo')||{}).value||'';var tp=(document.getElementById('promo-cupom-tipo')||{}).value||'percent';var vl=parseFloat((document.getElementById('promo-cupom-valor')||{}).value||0);var lm=parseInt((document.getElementById('promo-cupom-limite')||{}).value||0);if(!cod||!vl){alert('Preencha código e valor!');ok=false;}else{promo.codigo=cod.toUpperCase();promo.tipoDesc=tp;promo.valor=vl;promo.limite=lm;promo.usos=0;promo.titulo=(tp==='percent'?vl+'% off':'R$'+vl.toFixed(2)+' off')+' com cupom '+cod.toUpperCase();promo.icone='🏷️';}}else if(_tipoPromoAtivo==='frete'){var mn=parseFloat((document.getElementById('promo-frete-minimo')||{}).value||0);var nm=(document.getElementById('promo-frete-nome')||{}).value||'Frete grátis a partir de R$'+mn;promo.minimo=mn;promo.titulo=nm;promo.icone='🚚';}else if(_tipoPromoAtivo==='tempo'){var nt=(document.getElementById('promo-tempo-nome')||{}).value||'';var in2=(document.getElementById('promo-tempo-inicio')||{}).value||'';var fm=(document.getElementById('promo-tempo-fim')||{}).value||'';var dt=parseFloat((document.getElementById('promo-tempo-desc')||{}).value||0);if(!nt||!in2||!fm||!dt){alert('Preencha todos os campos!');ok=false;}else{promo.titulo=nt+' ('+in2+' às '+fm+', '+dt+'% off)';promo.icone='🕐';}}else if(_tipoPromoAtivo==='combo'){var nc=(document.getElementById('promo-combo-nome')||{}).value||'';var cx=parseInt((document.getElementById('promo-combo-x')||{}).value||2);var cy=parseInt((document.getElementById('promo-combo-y')||{}).value||1);var bd=(document.getElementById('promo-combo-brinde')||{}).value||'';if(!nc){alert('Preencha o nome!');ok=false;}else{promo.x=cx;promo.y=cy;promo.brinde=bd;promo.titulo=nc;promo.icone='🛒';}}else if(_tipoPromoAtivo==='minimo'){var mv=parseFloat((document.getElementById('promo-minimo-valor')||{}).value||0);var md=parseFloat((document.getElementById('promo-minimo-desc')||{}).value||0);var mn2=(document.getElementById('promo-minimo-nome')||{}).value||md+'% off acima de R$'+mv;if(!mv||!md){alert('Preencha valor mínimo e desconto!');ok=false;}else{promo.minimo=mv;promo.valor=md;promo.titulo=mn2;promo.icone='💰';}}else if(_tipoPromoAtivo==='destaque'){var dp=(document.getElementById('promo-destaque-produto')||{}).value||'';var dr=parseFloat((document.getElementById('promo-destaque-preco')||{}).value||0);var dd=(document.getElementById('promo-destaque-desc')||{}).value||'';if(!dp||!dr){alert('Preencha produto e preço!');ok=false;}else{promo.produto=dp;promo.preco=dr;promo.descricao=dd;promo.titulo=dp+' por R$'+dr.toFixed(2).replace('.',',');promo.icone='⭐';}}else if(_tipoPromoAtivo==='pagamento'){var pf=(document.getElementById('promo-pagamento-forma')||{}).value||'pix';var pd=parseFloat((document.getElementById('promo-pagamento-desc')||{}).value||0);var pn=(document.getElementById('promo-pagamento-nome')||{}).value||pd+'% no '+pf;if(!pd){alert('Preencha o desconto!');ok=false;}else{promo.forma=pf;promo.valor=pd;promo.titulo=pn;promo.icone='💳';}}
