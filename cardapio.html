@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FlashDrop - Cardapio</title>
-<style>
+<style>h
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
 header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
@@ -820,7 +820,7 @@ finalizarPedido();
 function atualizarTaxaCartao(){
 if(taxaCalculada===0){
 var pag0=document.getElementById('ch-pag').value;
-if(pag0==='pix')mostrarBlocoPix();else esconderBlocoPix();
+esconderBlocoPix();
 var aviso=document.getElementById('aviso-dinheiro');if(aviso)aviso.style.display=(pag0==='dinheiro')?'block':'none';
 return;
 }
@@ -832,7 +832,7 @@ var totalItens=lid?totalCarrinho(lid):0;
 var totalFinal=totalItens+taxaFinal;
 document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
 document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
-if(pag==='pix')mostrarBlocoPix();else esconderBlocoPix();
+esconderBlocoPix();
 }
 
 function toggleCat(el){
