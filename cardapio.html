@@ -363,10 +363,10 @@ function confirmarPinMapa() {
   if (!_pinEntrega) return;
   var pos = _pinEntrega.getPosition();
   _coordPinConfirmado = { lat: pos.lat(), lon: pos.lng() };
-  // Também atualiza coordClienteAutocomplete para usar na próxima vez
+  // TambÃ©m atualiza coordClienteAutocomplete para usar na prÃ³xima vez
   window.coordClienteAutocomplete = _coordPinConfirmado;
   var btn = document.querySelector('.btn-confirmar-pin');
-  if (btn) { btn.textContent = '✅ Local confirmado!'; btn.style.background = '#27ae60'; btn.style.color = '#fff'; setTimeout(function(){ btn.textContent = '✓ Confirmar local no mapa'; btn.style.background = '#f5a623'; btn.style.color = '#000'; }, 2000); }
+  if (btn) { btn.textContent = 'â Local confirmado!'; btn.style.background = '#27ae60'; btn.style.color = '#fff'; setTimeout(function(){ btn.textContent = 'â Confirmar local no mapa'; btn.style.background = '#f5a623'; btn.style.color = '#000'; }, 2000); }
 }
 
 async function carregarSettings(){
@@ -417,13 +417,13 @@ if(!coordLoja){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Nao foi p
 if(!coordCliente){
   statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Endereco nao encontrado automaticamente. Marque o local no mapa abaixo e clique em Confirmar.</span>';
   btn.disabled=false;btn.textContent='Recalcular com pin do mapa';
-  // centralizar na cidade da loja ou coords padrão RS
+  // centralizar na cidade da loja ou coords padrÃ£o RS
   var latFallback=-29.168, lonFallback=-51.179;
   if(coordLoja){ latFallback=coordLoja.lat; lonFallback=coordLoja.lon; }
   iniciarMapaEntrega(latFallback, lonFallback, true);
   return;
 }
-// Mostrar mapa com pin no endereço encontrado para confirmação
+// Mostrar mapa com pin no endereÃ§o encontrado para confirmaÃ§Ã£o
 iniciarMapaEntrega(coordCliente.lat, coordCliente.lon, true);
 var km=await calcularDistanciaKm(coordLoja.lat,coordLoja.lon,coordCliente.lat,coordCliente.lon);
 if(km===null){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Erro ao calcular rota. Tente novamente.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
@@ -595,11 +595,13 @@ if(totalEl)totalEl.textContent='R$ '+parseFloat(totalFinal).toFixed(2);
 var linkEl=document.getElementById('mp-checkout-link');
 if(linkEl)linkEl.href=checkoutUrl;
 modal.classList.add('ativo');
+iniciarPollingPagamento();
 }
 
 function fecharModalPagamentoOnline(){
 var modal=document.getElementById('modal-pagamento-online');
 if(modal)modal.classList.remove('ativo');
+pararPollingPagamento();
 }
 
 async function confirmarPagamentoConcluido(){
@@ -634,11 +636,13 @@ var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'applicat
 if(r.ok){
 sessionStorage.removeItem('flashdrop_pedido_mp');
 sessionStorage.removeItem('flashdrop_loja_lid');
-if(lid&&carrinho[lid]){carrinho[lid]=[];}
+var lidNum=lid?parseInt(lid):null;
+if(lidNum&&carrinho[lidNum]){carrinho[lidNum]=[];}
 taxaCalculada=0;distanciaCalculada=0;
-atualizarBarra(lid?parseInt(lid):null);
+atualizarBarra(lidNum);
 fecharCarrinho();
 fecharModalPagamentoOnline();
+pararPollingPagamento();
 var bloco=document.getElementById('bloco-taxa-resultado');
 if(bloco)bloco.style.display='none';
 alert('Pagamento confirmado! Pedido enviado com sucesso. Em breve a loja confirmara e iniciara o preparo.');
@@ -652,6 +656,67 @@ alert('Erro de conexao. Tente novamente.');
 if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedido';}
 }
 }
+
+/* ---- POLLING AUTOMATICO DE PAGAMENTO ---- */
+var _pollingInterval=null;
+var _pollingTentativas=0;
+var _POLLING_MAX=24; /* 24 x 5s = 2 minutos de verificacao automatica */
+
+function iniciarPollingPagamento(){
+pararPollingPagamento();
+_pollingTentativas=0;
+_pollingInterval=setInterval(function(){
+_pollingTentativas++;
+if(_pollingTentativas>_POLLING_MAX){pararPollingPagamento();return;}
+verificarPagamentoAutomatico();
+},5000);
+}
+
+function pararPollingPagamento(){
+if(_pollingInterval){clearInterval(_pollingInterval);_pollingInterval=null;}
+_pollingTentativas=0;
+}
+
+async function verificarPagamentoAutomatico(){
+var dados=sessionStorage.getItem('flashdrop_pedido_mp');
+var lid=sessionStorage.getItem('flashdrop_loja_lid');
+if(!dados)return;
+var pedido=JSON.parse(dados);
+var prefId=pedido.preference_id;
+var lojaId=lojaGlobal?lojaGlobal.id:null;
+if(!prefId||!lojaId)return;
+/* Verificar se o modal ainda esta aberto */
+var modal=document.getElementById('modal-pagamento-online');
+if(!modal||!modal.classList.contains('ativo'))return;
+try{
+var vrRes=await fetch(API+'/mercadopago/verificar-pagamento-pedido?preference_id='+encodeURIComponent(prefId)+'&loja_id='+lojaId);
+if(!vrRes.ok)return;
+var vrData=await vrRes.json();
+if(vrData.pago){
+pararPollingPagamento();
+/* Pagamento detectado automaticamente - enviar pedido */
+var btn=document.getElementById('btn-mp-confirmar');
+if(btn){btn.disabled=true;btn.textContent='Pagamento confirmado! Enviando...';}
+var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pedido)});
+if(r.ok){
+sessionStorage.removeItem('flashdrop_pedido_mp');
+sessionStorage.removeItem('flashdrop_loja_lid');
+var lidNum=lid?parseInt(lid):null;
+if(lidNum&&carrinho[lidNum]){carrinho[lidNum]=[];}
+taxaCalculada=0;distanciaCalculada=0;
+atualizarBarra(lidNum);
+fecharCarrinho();
+fecharModalPagamentoOnline();
+var bloco=document.getElementById('bloco-taxa-resultado');
+if(bloco)bloco.style.display='none';
+alert('\u2705 Pagamento confirmado automaticamente! Pedido enviado com sucesso. Em breve a loja confirmara e iniciara o preparo.');
+}else{
+if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedido';}
+}
+}
+}catch(e){}
+}
+
 
 /* ---- RENDER LOJA ---- */
 function renderLoja(loja){
@@ -675,7 +740,7 @@ var formasStr=loja.loja_formas_pagamento||'';
 var formas=formasStr?formasStr.split(','):[];
 if(!formas.length)formas=['pix','dinheiro','cartao_credito'];
 sel.innerHTML='<option value="">-- Selecione --</option>';
-if(formas.includes('pix'))sel.innerHTML+='<option value="pix">⚡ Pagamento Online</option>';
+if(formas.includes('pix'))sel.innerHTML+='<option value="pix">â¡ Pagamento Online</option>';
 if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">&#128181; Dinheiro</option>';
 if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">&#128179; Maquina de Cartao (cobra ida+volta)</option>';
 if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">&#128179; Cartao por aproximacao</option>';
@@ -990,7 +1055,7 @@ var latP = place.geometry.location.lat();
 var lonP = place.geometry.location.lng();
 window.coordClienteAutocomplete = { lat: latP, lon: lonP };
 _coordPinConfirmado = null;
-// Mostrar mapa com pin para confirmação visual
+// Mostrar mapa com pin para confirmaÃ§Ã£o visual
 setTimeout(function(){ iniciarMapaEntrega(latP, lonP, true); }, 300);
 } else {
 window.coordClienteAutocomplete = null;
