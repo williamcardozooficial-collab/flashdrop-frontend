@@ -477,7 +477,7 @@ if(!bairro){alert('Informe o bairro.');return;}
 if(!cidade){alert('Informe a cidade.');return;}
 if(taxaCalculada===0){alert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
 var endCompleto=rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
-/* Montar string de itens: cada linha separada */
+/* Montar string de itens */
 var itens=c.map(function(i){
 var adText=i.adicionais&&i.adicionais.length?' ['+i.adicionais.join(' | ')+']':'';
 var obsText=i.obs?' (obs: '+i.obs+')':'';
@@ -487,11 +487,67 @@ var totalItens=totalCarrinho(lid);
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var totalFinal=totalItens+taxaFinal;
-if(pag==='pix'&&!_finalizarPosConfirmacaoPix){
-document.getElementById('modal-pix-confirm').classList.add('ativo');
+
+/* ---- PAGAMENTO ONLINE (Mercado Pago Checkout Pro) ---- */
+if(pag==='pix'){
+var btn=document.getElementById('btn-finalizar');
+btn.disabled=true;btn.textContent='Gerando link de pagamento...';
+try{
+/* Montar array de itens para a preferencia */
+var itensMp=c.map(function(i){return{nome:i.nome,preco:parseFloat(i.preco.toFixed(2)),qtd:1};});
+/* Adicionar taxa de entrega como item separado */
+if(taxaFinal>0)itensMp.push({nome:'Taxa de entrega',preco:taxaFinal,qtd:1});
+var mpRes=await fetch(API+'/mercadopago/checkout-pedido',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+loja_id:lojaGlobal.id,
+itens:itensMp,
+totalItens:totalItens,
+taxaEntrega:taxaFinal,
+totalFinal:totalFinal,
+nomeCliente:nome
+})
+});
+var mpData=await mpRes.json();
+btn.disabled=false;btn.textContent='Finalizar Pedido';
+if(!mpRes.ok||!mpData.checkout_url){
+alert('Erro ao gerar pagamento: '+(mpData.error||'Tente novamente.'));
 return;
 }
-_finalizarPosConfirmacaoPix=false;
+/* Salvar dados do pedido pendente no sessionStorage para enviar apos confirmacao */
+var pedidoPendente={
+loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
+endereco_coleta:lojaGlobal.address||'',
+endereco_entrega:endCompleto,
+nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
+cod_pedido:'FD-'+Date.now().toString().slice(-6),
+cobrar_cliente:'nao',
+valor_pedido:totalItens,
+valor_produtos:totalItens,
+valor_taxa_entrega:taxaFinal,
+distancia:Math.round(distanciaCalculada*10)/10,
+tipo_pagamento:'pix',
+valor_total:taxaFinal,valor_motoboy:0,comissao:0,
+obs_coleta:'Itens: '+itens,
+obs_entrega_loja:obs_entrega||null,
+plataforma:'cardapio',
+status:'pendente',
+complemento_coleta:null,
+complemento_entrega:complemento||null,
+preference_id:mpData.preference_id
+};
+sessionStorage.setItem('flashdrop_pedido_mp', JSON.stringify(pedidoPendente));
+sessionStorage.setItem('flashdrop_loja_lid', String(lid));
+/* Mostrar modal com link de pagamento */
+mostrarModalPagamentoOnline(mpData.checkout_url, totalFinal);
+}catch(e){
+btn.disabled=false;btn.textContent='Finalizar Pedido';
+alert('Erro ao conectar com o servidor. Tente novamente.');
+}
+return;
+}
+/* ---- DEMAIS FORMAS DE PAGAMENTO (fluxo original) ---- */
 var btn=document.getElementById('btn-finalizar');
 btn.disabled=true;btn.textContent='Enviando pedido...';
 try{
@@ -529,6 +585,55 @@ alert('Erro: '+(err.error||r.status));
 }catch(e){alert('Erro de conexao. Tente novamente.');}
 btn.disabled=false;btn.textContent='Finalizar Pedido';
 }
+
+/* ---- MODAL PAGAMENTO ONLINE (Mercado Pago) ---- */
+function mostrarModalPagamentoOnline(checkoutUrl, totalFinal){
+var modal=document.getElementById('modal-pagamento-online');
+if(!modal)return;
+var totalEl=document.getElementById('mp-checkout-total');
+if(totalEl)totalEl.textContent='R$ '+parseFloat(totalFinal).toFixed(2);
+var linkEl=document.getElementById('mp-checkout-link');
+if(linkEl)linkEl.href=checkoutUrl;
+modal.classList.add('ativo');
+}
+
+function fecharModalPagamentoOnline(){
+var modal=document.getElementById('modal-pagamento-online');
+if(modal)modal.classList.remove('ativo');
+}
+
+async function confirmarPagamentoConcluido(){
+/* Cliente diz que pagou — envia o pedido para a loja */
+var dados=sessionStorage.getItem('flashdrop_pedido_mp');
+var lid=sessionStorage.getItem('flashdrop_loja_lid');
+if(!dados){alert('Dados do pedido nao encontrados.');fecharModalPagamentoOnline();return;}
+var pedido=JSON.parse(dados);
+var btn=document.getElementById('btn-mp-confirmar');
+if(btn){btn.disabled=true;btn.textContent='Enviando pedido...';}
+try{
+var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pedido)});
+if(r.ok){
+sessionStorage.removeItem('flashdrop_pedido_mp');
+sessionStorage.removeItem('flashdrop_loja_lid');
+if(lid&&carrinho[lid]){carrinho[lid]=[];}
+taxaCalculada=0;distanciaCalculada=0;
+atualizarBarra(lid?parseInt(lid):null);
+fecharCarrinho();
+fecharModalPagamentoOnline();
+var bloco=document.getElementById('bloco-taxa-resultado');
+if(bloco)bloco.style.display='none';
+alert('Pedido enviado com sucesso! Em breve a loja confirmara e iniciara o preparo.');
+}else{
+var err=await r.json().catch(function(){return{};});
+alert('Erro ao enviar pedido: '+(err.error||r.status));
+if(btn){btn.disabled=false;btn.textContent='Ja paguei — Enviar Pedido';}
+}
+}catch(e){
+alert('Erro de conexao. Tente novamente.');
+if(btn){btn.disabled=false;btn.textContent='Ja paguei — Enviar Pedido';}
+}
+}
+
 
 /* ---- RENDER LOJA ---- */
 function renderLoja(loja){
@@ -1038,6 +1143,23 @@ document.getElementById('ch-cidade').focus();
 <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5;">Confirme que o pagamento foi efetuado na chave PIX da loja antes de finalizar.</div>
 <button onclick="confirmarPixPago()" style="width:100%;padding:14px;background:#27ae60;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">&#x2705; Sim, ja paguei</button>
 <button onclick="fecharModalPixConfirm()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer;">&#x274C; Ainda nao</button>
+</div>
+</div>
+
+<!-- Modal Pagamento Online (Mercado Pago Checkout Pro) -->
+<div id="modal-pagamento-online" class="modal-overlay" onclick="if(event.target===this)fecharModalPagamentoOnline()">
+<div class="modal-box" style="max-width:400px;text-align:center;">
+<div style="font-size:52px;margin-bottom:10px;">&#9889;</div>
+<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:6px;">Pagamento Online</div>
+<div style="font-size:14px;color:#aaa;margin-bottom:18px;line-height:1.5;">Clique no botao abaixo para ir ao checkout seguro do Mercado Pago e efetuar o pagamento.</div>
+<div style="background:#0d1f0d;border:1px solid #27ae60;border-radius:10px;padding:12px;margin-bottom:18px;">
+<div style="font-size:12px;color:#888;margin-bottom:4px;">Total a pagar</div>
+<div id="mp-checkout-total" style="font-size:26px;font-weight:800;color:#27ae60;">R$ 0,00</div>
+</div>
+<a id="mp-checkout-link" href="#" target="_blank" style="display:block;width:100%;padding:14px;background:#009ee3;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">&#128179; Ir para o Checkout Mercado Pago</a>
+<button id="btn-mp-confirmar" onclick="confirmarPagamentoConcluido()" style="width:100%;padding:14px;background:#27ae60;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">&#x2705; Ja paguei &#8212; Enviar Pedido</button>
+<div style="font-size:11px;color:#888;margin-bottom:14px;line-height:1.4;">Clique em "Ja paguei" somente apos concluir o pagamento no Mercado Pago.</div>
+<button onclick="fecharModalPagamentoOnline()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer;">&#x274C; Cancelar</button>
 </div>
 </div>
 </body>
