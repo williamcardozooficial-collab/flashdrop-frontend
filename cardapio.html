@@ -540,7 +540,7 @@ preference_id:mpData.preference_id
 sessionStorage.setItem('flashdrop_pedido_mp', JSON.stringify(pedidoPendente));
 sessionStorage.setItem('flashdrop_loja_lid', String(lid));
 /* Mostrar modal com link de pagamento */
-mostrarModalPagamentoOnline(mpData.checkout_url, totalFinal);
+mostrarModalPagamentoOnline(mpData.checkout_url, totalFinal, mpData.pix_copia_cola||null, mpData.pix_qrcode_base64||null);
 }catch(e){
 btn.disabled=false;btn.textContent='Finalizar Pedido';
 alert('Erro ao conectar com o servidor. Tente novamente.');
@@ -587,13 +587,20 @@ btn.disabled=false;btn.textContent='Finalizar Pedido';
 }
 
 /* ---- MODAL PAGAMENTO ONLINE (Mercado Pago) ---- */
-function mostrarModalPagamentoOnline(checkoutUrl, totalFinal){
+function mostrarModalPagamentoOnline(checkoutUrl, totalFinal, pixCopiaCola, pixQrBase64){
 var modal=document.getElementById('modal-pagamento-online');
 if(!modal)return;
 var totalEl=document.getElementById('mp-checkout-total');
 if(totalEl)totalEl.textContent='R$ '+parseFloat(totalFinal).toFixed(2);
 var linkEl=document.getElementById('mp-checkout-link');
 if(linkEl)linkEl.href=checkoutUrl;
+var pixBloco=document.getElementById('mp-pix-bloco');
+var pixColaEl=document.getElementById('mp-pix-copia-cola');
+if(pixBloco&&pixColaEl&&pixCopiaCola){pixColaEl.value=pixCopiaCola;pixBloco.style.display='block';}
+else if(pixBloco){pixBloco.style.display='none';}
+var qrImg=document.getElementById('mp-pix-qrcode');
+if(qrImg&&pixQrBase64){qrImg.src='data:image/png;base64,'+pixQrBase64;qrImg.style.display='block';}
+else if(qrImg){qrImg.style.display='none';}
 modal.classList.add('ativo');
 iniciarPollingPagamento();
 }
@@ -604,34 +611,26 @@ if(modal)modal.classList.remove('ativo');
 pararPollingPagamento();
 }
 
+
+function copiarPixCopiaECola(){
+var el=document.getElementById('mp-pix-copia-cola');
+if(!el)return;
+el.select();
+if(navigator.clipboard){
+navigator.clipboard.writeText(el.value).then(function(){
+var btn=document.querySelector('#mp-pix-bloco button');
+if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';btn.style.background='#1a6b3a';setTimeout(function(){btn.innerHTML=orig;btn.style.background='#27ae60';},2000);}
+}).catch(function(){document.execCommand('copy');});
+}else{document.execCommand('copy');}
+}
 async function confirmarPagamentoConcluido(){
-/* Verifica pagamento no MP antes de enviar o pedido para a loja */
 var dados=sessionStorage.getItem('flashdrop_pedido_mp');
 var lid=sessionStorage.getItem('flashdrop_loja_lid');
-if(!dados){alert('Dados do pedido nao encontrados.');fecharModalPagamentoOnline();return;}
+if(!dados){alert('Dados do pedido nao encontrados. Por favor refaca o pedido.');fecharModalPagamentoOnline();return;}
 var pedido=JSON.parse(dados);
 var btn=document.getElementById('btn-mp-confirmar');
-var prefId=pedido.preference_id;
-var lojaId=lojaGlobal?lojaGlobal.id:null;
-if(!prefId||!lojaId){
-alert('Erro: dados de pagamento ausentes. Tente novamente.');
-return;
-}
-if(btn){btn.disabled=true;btn.textContent='Verificando pagamento...';}
+if(btn){btn.disabled=true;btn.textContent='Enviando pedido...';}
 try{
-var vrRes=await fetch(API+'/mercadopago/verificar-pagamento-pedido?preference_id='+encodeURIComponent(prefId)+'&loja_id='+lojaId);
-var vrData=await vrRes.json();
-if(!vrRes.ok){
-if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedido';}
-alert('Erro ao verificar pagamento: '+(vrData.error||'Tente novamente.'));
-return;
-}
-if(!vrData.pago){
-if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedido';}
-alert('\u26a0\ufe0f Pagamento ainda n\u00e3o identificado no Mercado Pago.\n\nPor favor:\n1. Conclua o pagamento clicando em \"Ir para o Checkout Mercado Pago\"\n2. Aguarde a confirma\u00e7\u00e3o\n3. Ent\u00e3o clique em \"Ja paguei\" novamente');
-return;
-}
-if(btn){btn.textContent='Enviando pedido...';}
 var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pedido)});
 if(r.ok){
 sessionStorage.removeItem('flashdrop_pedido_mp');
@@ -639,13 +638,10 @@ sessionStorage.removeItem('flashdrop_loja_lid');
 var lidNum=lid?parseInt(lid):null;
 if(lidNum&&carrinho[lidNum]){carrinho[lidNum]=[];}
 taxaCalculada=0;distanciaCalculada=0;
-atualizarBarra(lidNum);
-fecharCarrinho();
-fecharModalPagamentoOnline();
-pararPollingPagamento();
+atualizarBarra(lidNum);fecharCarrinho();fecharModalPagamentoOnline();pararPollingPagamento();
 var bloco=document.getElementById('bloco-taxa-resultado');
 if(bloco)bloco.style.display='none';
-alert('Pagamento confirmado! Pedido enviado com sucesso. Em breve a loja confirmara e iniciara o preparo.');
+alert('\u2705 Pedido enviado com sucesso! Em breve a loja confirmara e iniciara o preparo.');
 }else{
 var err=await r.json().catch(function(){return{};});
 alert('Erro ao enviar pedido: '+(err.error||r.status));
@@ -1231,17 +1227,24 @@ document.getElementById('ch-cidade').focus();
 
 <!-- Modal Pagamento Online (Mercado Pago Checkout Pro) -->
 <div id="modal-pagamento-online" class="modal-overlay" onclick="if(event.target===this)fecharModalPagamentoOnline()">
-<div class="modal-box" style="max-width:400px;text-align:center;">
+<div class="modal-box" style="max-width:420px;text-align:center;">
 <div style="font-size:52px;margin-bottom:10px;">&#9889;</div>
 <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:6px;">Pagamento Online</div>
-<div style="font-size:14px;color:#aaa;margin-bottom:18px;line-height:1.5;">Clique no botao abaixo para ir ao checkout seguro do Mercado Pago e efetuar o pagamento.</div>
+<div style="font-size:14px;color:#aaa;margin-bottom:18px;line-height:1.5;">Pague pelo PIX abaixo ou acesse o checkout do Mercado Pago.</div>
 <div style="background:#0d1f0d;border:1px solid #27ae60;border-radius:10px;padding:12px;margin-bottom:18px;">
 <div style="font-size:12px;color:#888;margin-bottom:4px;">Total a pagar</div>
 <div id="mp-checkout-total" style="font-size:26px;font-weight:800;color:#27ae60;">R$ 0,00</div>
 </div>
-<a id="mp-checkout-link" href="#" target="_blank" style="display:block;width:100%;padding:14px;background:#009ee3;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">&#128179; Ir para o Checkout Mercado Pago</a>
+<div id="mp-pix-bloco" style="display:none;margin-bottom:16px;background:#0a1a0a;border:2px solid #27ae60;border-radius:12px;padding:14px;">
+<div style="font-size:12px;font-weight:700;color:#27ae60;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">&#128273; PIX Copia e Cola</div>
+<img id="mp-pix-qrcode" src="" alt="QR Code PIX" style="display:none;width:160px;height:160px;margin:0 auto 12px;border-radius:8px;background:#fff;padding:4px;" />
+<textarea id="mp-pix-copia-cola" readonly onclick="this.select()" style="width:100%;padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#ccc;font-size:11px;resize:none;height:60px;font-family:monospace;cursor:pointer;"></textarea>
+<button onclick="copiarPixCopiaECola()" style="width:100%;margin-top:8px;padding:11px;background:#27ae60;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">&#128203; COPIAR CODIGO PIX</button>
+<div style="font-size:11px;color:#888;margin-top:8px;">Abra seu banco, escolha PIX e cole o codigo acima</div>
+</div>
+<a id="mp-checkout-link" href="#" target="_blank" style="display:block;width:100%;padding:12px;background:#009ee3;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">&#128179; Pagar pelo Mercado Pago</a>
 <button id="btn-mp-confirmar" onclick="confirmarPagamentoConcluido()" style="width:100%;padding:14px;background:#27ae60;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">&#x2705; Ja paguei &#8212; Enviar Pedido</button>
-<div style="font-size:11px;color:#888;margin-bottom:14px;line-height:1.4;">Clique em "Ja paguei" somente apos concluir o pagamento no Mercado Pago.</div>
+<div style="font-size:11px;color:#888;margin-bottom:14px;line-height:1.4;">Clique em "Ja paguei" somente apos concluir o pagamento.</div>
 <button onclick="fecharModalPagamentoOnline()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer;">&#x274C; Cancelar</button>
 </div>
 </div>
