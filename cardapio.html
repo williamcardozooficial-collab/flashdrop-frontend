@@ -552,7 +552,7 @@ var formasStr=loja.loja_formas_pagamento||'';
 var formas=formasStr?formasStr.split(','):[];
 if(!formas.length)formas=['pix','dinheiro','cartao_credito'];
 sel.innerHTML='<option value="">-- Selecione --</option>';
-if(formas.includes('pix'))sel.innerHTML+='<option value="pix">&#128241; PIX</option>';
+if(formas.includes('pix'))sel.innerHTML+='<option value="pix">⚡ Pagamento Online</option>';
 if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">&#128181; Dinheiro</option>';
 if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">&#128179; Maquina de Cartao (cobra ida+volta)</option>';
 if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">&#128179; Cartao por aproximacao</option>';
