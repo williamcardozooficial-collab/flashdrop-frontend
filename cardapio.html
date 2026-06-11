@@ -603,14 +603,48 @@ if(modal)modal.classList.remove('ativo');
 }
 
 async function confirmarPagamentoConcluido(){
-/* Cliente diz que pagou — envia o pedido para a loja */
+/* Verifica pagamento no MP antes de enviar o pedido para a loja */
 var dados=sessionStorage.getItem('flashdrop_pedido_mp');
 var lid=sessionStorage.getItem('flashdrop_loja_lid');
 if(!dados){alert('Dados do pedido nao encontrados.');fecharModalPagamentoOnline();return;}
 var pedido=JSON.parse(dados);
 var btn=document.getElementById('btn-mp-confirmar');
-if(btn){btn.disabled=true;btn.textContent='Enviando pedido...';}
+var prefId=pedido.preference_id;
+var lojaId=lojaGlobal?lojaGlobal.id:null;
+
+if(!prefId||!lojaId){
+alert('Erro: dados de pagamento ausentes. Tente novamente.');
+return;
+}
+
+/* Desabilita botao e mostra verificando */
+if(btn){btn.disabled=true;btn.textContent='Verificando pagamento...';}
+
 try{
+/* Chama o backend para verificar se ha pagamento aprovado no MP */
+var vrRes=await fetch(API+'/mercadopago/verificar-pagamento-pedido?preference_id='+encodeURIComponent(prefId)+'&loja_id='+lojaId);
+var vrData=await vrRes.json();
+
+if(!vrRes.ok){
+if(btn){btn.disabled=false;btn.textContent='✅ Ja paguei — Enviar Pedido';}
+alert('Erro ao verificar pagamento: '+(vrData.error||'Tente novamente.'));
+return;
+}
+
+if(!vrData.pago){
+/* Pagamento ainda nao confirmado no MP */
+if(btn){btn.disabled=false;btn.textContent='✅ Ja paguei — Enviar Pedido';}
+alert('⚠️ Pagamento ainda não identificado no Mercado Pago.
+
+Por favor:
+1. Conclua o pagamento clicando em "Ir para o Checkout Mercado Pago"
+2. Aguarde a confirmação do pagamento
+3. Então clique em "Ja paguei" novamente');
+return;
+}
+
+/* Pagamento aprovado — envia o pedido */
+if(btn){btn.textContent='Enviando pedido...';}
 var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pedido)});
 if(r.ok){
 sessionStorage.removeItem('flashdrop_pedido_mp');
@@ -622,11 +656,16 @@ fecharCarrinho();
 fecharModalPagamentoOnline();
 var bloco=document.getElementById('bloco-taxa-resultado');
 if(bloco)bloco.style.display='none';
-alert('Pedido enviado com sucesso! Em breve a loja confirmara e iniciara o preparo.');
+alert('Pagamento confirmado! Pedido enviado com sucesso. Em breve a loja confirmara e iniciara o preparo.');
 }else{
 var err=await r.json().catch(function(){return{};});
 alert('Erro ao enviar pedido: '+(err.error||r.status));
-if(btn){btn.disabled=false;btn.textContent='Ja paguei — Enviar Pedido';}
+if(btn){btn.disabled=false;btn.textContent='✅ Ja paguei — Enviar Pedido';}
+}
+}catch(e){
+alert('Erro de conexao. Tente novamente.');
+if(btn){btn.disabled=false;btn.textContent='✅ Ja paguei — Enviar Pedido';}
+}
 }
 }catch(e){
 alert('Erro de conexao. Tente novamente.');
