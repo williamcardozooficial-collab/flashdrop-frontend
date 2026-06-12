@@ -444,9 +444,11 @@ var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxa*2:taxa;
 var lid=lojaGlobal.id;
 var totalItens=totalCarrinho(lid);
+var _descontoRes2=await calcularDescontoPromocao(lid,totalItens,pag,taxa);var descontoFrete=_descontoRes2&&_descontoRes2.desconto?parseFloat(_descontoRes2.desconto):0;if(descontoFrete>0){taxa=Math.max(0,taxa-descontoFrete);taxaFinal=isCartao?taxa*2:taxa;}descontoFreteAtual=descontoFrete;
 var totalFinal=totalItens+taxaFinal;
 document.getElementById('taxa-distancia').textContent=km.toFixed(1)+' km';
 document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
+var _dr=document.getElementById('taxa-desconto-row');var _dv=document.getElementById('taxa-desconto-val');if(_dr&&_dv){if(descontoFrete>0){_dr.style.display='flex';_dv.textContent='-R$ '+descontoFrete.toFixed(2);}else{_dr.style.display='none';}}
 var _dr=document.getElementById('taxa-desconto-row');var _dv=document.getElementById('taxa-desconto-val');if(_dr&&_dv){if(descontoFrete>0){_dr.style.display='flex';_dv.textContent='-R$ '+descontoFrete.toFixed(2);}else{_dr.style.display='none';}}
 document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
 document.getElementById('bloco-taxa-resultado').style.display='block';
