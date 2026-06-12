@@ -493,6 +493,7 @@ return '1x '+i.nome+adText+obsText+' (R$'+i.preco.toFixed(2)+')';
 var totalItens=totalCarrinho(lid);
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
+var taxaBruta=taxaFinal;
 var _descontoRes=await calcularDescontoPromocao(lid,totalItens,pag,taxaFinal);
 var descontoFrete=_descontoRes&&_descontoRes.desconto?parseFloat(_descontoRes.desconto):0;
 if(descontoFrete>0){taxaFinal=Math.max(0,taxaFinal-descontoFrete);}
@@ -536,11 +537,13 @@ cod_pedido:'FD-'+Date.now().toString().slice(-6),
 cobrar_cliente:'nao',
 valor_pedido:totalItens,
 valor_produtos:totalItens,
-valor_taxa_entrega:taxaFinal,
+valor_taxa_entrega:taxaBruta,
+desconto_promocao:descontoFrete,
+nome_promocao:_descontoRes&&_descontoRes.promo?_descontoRes.promo.nome:null,
 distancia:Math.round(distanciaCalculada*10)/10,
 tipo_pagamento:'pix',
-valor_total:taxaFinal,valor_motoboy:0,comissao:0,
-obs_coleta:'Itens: '+itens,
+valor_total:taxaBruta,valor_motoboy:0,comissao:0,
+obs_coleta:'Itens: '+itens+(descontoFrete>0?' | 🎉 PROMOÇÃO: '+((_descontoRes&&_descontoRes.promo)?_descontoRes.promo.nome:'Frete grátis')+' - Desconto R$ '+descontoFrete.toFixed(2)+' (loja arca com o desconto)':''),
 obs_entrega_loja:obs_entrega||null,
 plataforma:'cardapio',
 status:'pendente',
@@ -572,10 +575,12 @@ cod_pedido:'FD-'+Date.now().toString().slice(-6),
 cobrar_cliente:'sim',
 valor_pedido:totalItens,
 valor_produtos:totalItens,
-valor_taxa_entrega:taxaFinal,
+valor_taxa_entrega:taxaBruta,
+desconto_promocao:descontoFrete,
+nome_promocao:_descontoRes&&_descontoRes.promo?_descontoRes.promo.nome:null,
 distancia:Math.round(distanciaCalculada*10)/10,
 tipo_pagamento:pag,
-valor_total:taxaFinal,valor_motoboy:0,comissao:0,
+valor_total:taxaBruta,valor_motoboy:0,comissao:0,
 obs_coleta:'Itens: '+itens,
 obs_entrega_loja:obs_entrega||null,
 plataforma:'cardapio',
