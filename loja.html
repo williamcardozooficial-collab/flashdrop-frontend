@@ -1805,7 +1805,7 @@ function atualizarListaPromocoes(promos){
       '</div>';
   }).join('');
   if(lista)lista.innerHTML=html;
-  else if(empty)empty.insertAdjacentHTML('beforebegin',html);
+  else if(empty){var _olds=empty.parentElement.querySelectorAll('.promo-card-gerado');Array.from(_olds).forEach(function(c){c.remove();});var _w=document.createElement('div');_w.className='promo-card-gerado';_w.innerHTML=html;empty.parentElement.insertBefore(_w,empty);}
 }
 async function salvarPromocaoLoja(){
   const userData=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
