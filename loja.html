@@ -1766,5 +1766,89 @@ setTimeout(function(){if(btn){btn.disabled=false;btn.textContent='✅ Criar Prom
 function atualizarListaPromocoes(){var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');var key='flashdrop_promocoes_'+u.id;var lista=JSON.parse(localStorage.getItem(key)||'[]');var container=document.getElementById('lista-promocoes-ativas');var empty=document.getElementById('promo-empty');var painel=document.getElementById('painel-criar-promocao');if(!container)return;if(painel)painel.style.display='none';var ativas=lista.filter(function(p){return p.ativa;});if(!ativas.length){container.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';container.innerHTML=ativas.map(function(p,i){return '<div style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">'+p.icone+'</div><div><div style="font-size:13px;font-weight:700;color:#fff">'+p.titulo+'</div><div style="font-size:11px;color:#888">Criada em '+p.criadaEm+(p.usos!==undefined?' · '+p.usos+' uso(s)':'')+' · Ativa</div></div></div><button onclick="desativarPromocao('+i+')" style="background:#2a0a0a;border:1px solid #5a1a1a;border-radius:8px;padding:6px 12px;color:#e74c3c;font-size:11px;font-weight:700;cursor:pointer">Pausar</button></div>';}).join('');}
 function desativarPromocao(idx){var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');var key='flashdrop_promocoes_'+u.id;var lista=JSON.parse(localStorage.getItem(key)||'[]');var ativas=lista.filter(function(p){return p.ativa;});if(ativas[idx])ativas[idx].ativa=false;localStorage.setItem(key,JSON.stringify(lista));atualizarListaPromocoes();}
 
-function showSubTab(sub){window._activeSubTab=sub;var subs=['promocao'];subs.forEach(function(k){var sec=document.getElementById('sec-'+k);var btn=document.getElementById('subtab-'+k);var active=(k===sub);if(sec)sec.style.display=active?'block':'none';if(btn){btn.style.color=active?'#bb86fc':'#888';btn.style.borderBottom=active?'2px solid #bb86fc':'2px solid transparent';}});if(sub==='promocao')setTimeout(atualizarListaPromocoes,50);}
+function showSubTab(sub){window._activeSubTab=sub;var subs=['promocao'];subs.forEach(function(k){var sec=document.getElementById('sec-'+k);var btn=document.getElementById('subtab-'+k);var active=(k===sub);if(sec)sec.style.display=active?'block':'none';if(btn){btn.style.color=active?'#bb86fc':'#888';btn.style.borderBottom=active?'2px solid #bb86fc':'2px solid transparent';}});if(sub==='promocao'){setTimeout(carregarPromocoesLoja,50);}}
+
+async function carregarPromocoesLoja(){
+  const userData=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+  const token=userData.token;
+  if(!token)return;
+  try{
+    const resp=await fetch(API+'/loja-promocoes/all',{headers:{'Authorization':'Bearer '+token}});
+    const promos=await resp.json();
+    atualizarListaPromocoes(promos);
+  }catch(e){console.log('erro carregar promos:',e.message);}
+}
+function atualizarListaPromocoes(promos){
+  const lista=document.getElementById('promo-lista');
+  const empty=document.getElementById('promo-empty');
+  if(!lista&&!empty)return;
+  if(!promos||!promos.length){
+    if(lista)lista.innerHTML='';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  if(empty)empty.style.display='none';
+  const html=promos.map(function(p){
+    const pags=p.formas_pagamento&&p.formas_pagamento.length?p.formas_pagamento.map(function(f){return ({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação'})[f]||f;}).join(', '):'Todas';
+    const descMax=p.desconto_maximo?'R$ '+parseFloat(p.desconto_maximo).toFixed(2).replace('.',','):'frete total';
+    return '<div style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:16px;margin-bottom:12px;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
+      '<strong style="color:#bb86fc;">'+p.nome+'</strong>'+
+      '<span style="font-size:11px;background:'+(p.ativa?'#1a3a1a':'#3a1a1a')+';color:'+(p.ativa?'#4caf50':'#f44336')+';padding:3px 8px;border-radius:10px;">'+(p.ativa?'Ativa':'Inativa')+'</span>'+
+      '</div>'+
+      '<div style="font-size:12px;color:#aaa;">Mínimo: R$ '+parseFloat(p.valor_minimo).toFixed(2).replace('.',',')+' | Desconto máx: '+descMax+'</div>'+
+      '<div style="font-size:12px;color:#aaa;margin-top:2px;">Pagamentos: '+pags+'</div>'+
+      '<div style="margin-top:10px;display:flex;gap:8px;">'+
+      '<button onclick="deletarPromocaoLoja('+p.id+')" style="background:#c0392b;color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;">🗑 Excluir</button>'+
+      '<button onclick="togglePromocaoLoja('+p.id+','+(!p.ativa)+')" style="background:#2a2a4a;color:#bb86fc;border:1px solid #bb86fc;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;">'+(p.ativa?'Desativar':'Ativar')+'</button>'+
+      '</div>'+
+      '</div>';
+  }).join('');
+  if(lista)lista.innerHTML=html;
+  else if(empty)empty.insertAdjacentHTML('beforebegin',html);
+}
+async function salvarPromocaoLoja(){
+  const userData=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+  const token=userData.token;
+  if(!token){alert('Sessão expirada. Faça login novamente.');return;}
+  const nome=(document.getElementById('promo-frete-nome')||{}).value||'';
+  const valorMinimo=parseFloat((document.getElementById('promo-frete-minimo')||{}).value||'0');
+  const descontoMaximo=parseFloat((document.getElementById('promo-desconto-maximo')||{}).value||'0')||null;
+  const checkboxes=document.querySelectorAll('.promo-pagamento-check:checked');
+  const formasPagamento=Array.from(checkboxes).map(function(c){return c.value;});
+  const editId=(document.getElementById('promo-edit-id')||{}).value||'';
+  if(!nome.trim()){alert('Informe o nome da promoção');return;}
+  if(!valorMinimo||valorMinimo<=0){alert('Informe o valor mínimo do pedido');return;}
+  const payload={nome:nome.trim(),tipo:'frete_gratis',valor_minimo:valorMinimo,desconto_maximo:descontoMaximo,formas_pagamento:formasPagamento};
+  try{
+    const url=editId?API+'/loja-promocoes/'+editId:API+'/loja-promocoes';
+    const method=editId?'PUT':'POST';
+    const resp=await fetch(url,{method:method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
+    const data=await resp.json();
+    if(data.error){alert('Erro: '+data.error);return;}
+    const painel=document.getElementById('painel-criar-promocao');
+    if(painel)painel.style.display='none';
+    carregarPromocoesLoja();
+  }catch(e){alert('Erro ao salvar: '+e.message);}
+}
+async function deletarPromocaoLoja(id){
+  if(!confirm('Excluir esta promoção?'))return;
+  const userData=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+  const token=userData.token;
+  try{
+    const resp=await fetch(API+'/loja-promocoes/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+    const data=await resp.json();
+    if(data.ok)carregarPromocoesLoja();
+    else alert('Erro: '+JSON.stringify(data));
+  }catch(e){alert('Erro: '+e.message);}
+}
+async function togglePromocaoLoja(id,ativa){
+  const userData=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+  const token=userData.token;
+  try{
+    const resp=await fetch(API+'/loja-promocoes/'+id,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({ativa:ativa})});
+    const data=await resp.json();
+    if(data.id)carregarPromocoesLoja();
+  }catch(e){alert('Erro: '+e.message);}
+}
 </script>
