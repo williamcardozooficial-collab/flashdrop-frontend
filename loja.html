@@ -102,29 +102,26 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <button onclick="abrirCriarPromocao(null)" style="background:#bb86fc;color:#000;border:none;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">+ Nova Promoção</button>
 </div>
 <div id="lista-promocoes-ativas" style="margin-bottom:16px"></div>
-<div id="painel-criar-promocao" style="display:none">
-  <div style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:14px;padding:18px;margin-bottom:14px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:14px;font-weight:700;color:#fff">Nova Promoção</div>
-      <button onclick="fecharCriarPromocao()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
+<div <div id="painel-criar-promocao" style="margin-top:16px;display:none;">
+  <div style="background:#1a1a2e;border:1px solid #3a3a5c;border-radius:12px;padding:16px;">
+    <h3 style="color:#bb86fc;margin:0 0 14px 0;font-size:15px;">🏷️ FRETE GRÁTIS</h3>
+    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Nome da promoção</label>
+    <input id="promo-frete-nome" type="text" placeholder="Ex: Frete Grátis no Pix" style="width:100%;padding:10px;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;">
+    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Valor mínimo do pedido (R$)</label>
+    <input id="promo-frete-minimo" type="number" min="0" step="0.01" placeholder="Ex: 50.00" style="width:100%;padding:10px;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;">
+    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Desconto máximo (R$) <span style="color:#666;font-size:11px;">opcional — teto do desconto</span></label>
+    <input id="promo-desconto-maximo" type="number" min="0" step="0.01" placeholder="Deixe vazio para frete grátis total" style="width:100%;padding:10px;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;">
+    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:8px;">Formas de pagamento válidas <span style="color:#666;font-size:11px;">(vazio = todas)</span></label>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+      <label style="display:flex;align-items:center;gap:6px;background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:8px 12px;cursor:pointer;color:#ddd;font-size:13px;"><input type="checkbox" class="promo-pagamento-check" value="pix" style="accent-color:#bb86fc;"> ⚡ Pix / Pag. Online</label>
+      <label style="display:flex;align-items:center;gap:6px;background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:8px 12px;cursor:pointer;color:#ddd;font-size:13px;"><input type="checkbox" class="promo-pagamento-check" value="dinheiro" style="accent-color:#bb86fc;"> 💵 Dinheiro</label>
+      <label style="display:flex;align-items:center;gap:6px;background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:8px 12px;cursor:pointer;color:#ddd;font-size:13px;"><input type="checkbox" class="promo-pagamento-check" value="cartao" style="accent-color:#bb86fc;"> 💳 Máquina de Cartão</label>
+      <label style="display:flex;align-items:center;gap:6px;background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:8px 12px;cursor:pointer;color:#ddd;font-size:13px;"><input type="checkbox" class="promo-pagamento-check" value="aproximacao" style="accent-color:#bb86fc;"> 📱 Cartão por Aproximação</label>
     </div>
-    <div style="font-size:12px;color:#888;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Escolha o tipo:</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px"><button onclick="selecionarTipoPromocao('frete')" id="ptb-frete" style="background:#111;border:2px solid #2a2a4a;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center;grid-column:1/-1"><div style="font-size:24px;margin-bottom:4px">🚚</div><div style="font-size:11px;font-weight:700;color:#fff">Frete Grátis</div><div style="font-size:10px;color:#888">A partir de X valor</div></button></div>
-    
-    <div id="form-promo-frete" style="display:none">
-      <div style="font-size:12px;color:#bb86fc;font-weight:700;margin-bottom:10px;border-top:1px solid #2a2a4a;padding-top:10px">🚚 FRETE GRÁTIS</div>
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Valor mínimo do pedido (R$)</label>
-      <input id="promo-frete-minimo" type="text" inputmode="decimal" min="0" placeholder="Ex: 50" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-      <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">Nome da promoção</label>
-      <input id="promo-frete-nome" placeholder="Ex: Frete grátis acima de R$50" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;margin-bottom:10px">
-    </div>
-    
-    
-    
-    
-    
-    <button id="btn-salvar-promocao" onclick="salvarPromocao()" style="display:none;width:100%;padding:13px;background:#bb86fc;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">✅ Criar Promoção</button>
+    <button id="btn-salvar-promocao" onclick="salvarPromocaoLoja()" style="width:100%;padding:12px;background:#bb86fc;color:#000;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">💾 Salvar Promoção</button>
+    <input type="hidden" id="promo-edit-id" value="">
   </div>
+</div>
 </div>
 <div id="promo-empty" style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:14px;padding:24px;text-align:center">
   <div style="font-size:40px;margin-bottom:10px">🏷️</div>
