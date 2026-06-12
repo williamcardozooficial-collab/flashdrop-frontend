@@ -489,6 +489,9 @@ return '1x '+i.nome+adText+obsText+' (R$'+i.preco.toFixed(2)+')';
 var totalItens=totalCarrinho(lid);
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
+var _descontoRes=await calcularDescontoPromocao(lid,totalItens,pag,taxaFinal);
+var descontoFrete=_descontoRes&&_descontoRes.desconto?parseFloat(_descontoRes.desconto):0;
+if(descontoFrete>0){taxaFinal=Math.max(0,taxaFinal-descontoFrete);}
 var totalFinal=totalItens+taxaFinal;
 
 /* ---- PAGAMENTO ONLINE (Mercado Pago Checkout Pro) ---- */
@@ -756,7 +759,7 @@ document.getElementById('page-content').innerHTML=
 '<div class="loja-foto-grande">'+foto+'</div>'+
 '<div class="loja-hero-info"><h2>'+esc(loja.name||'Loja')+'</h2>'+
 '<div class="loja-hero-meta">'+end+tel+'</div></div></div></section>'+
-'<main><div id="cardapio-section"></div></main>';
+'<div id=\"banner-promocoes\" style=\"display:none;padding:0 0 8px 0;\"></div><main><div id="cardapio-section"></div></main>';
 document.title=esc(loja.name||'Loja')+' - FlashDrop Delivery';
 preencherFormasPagamento(loja);
 }
@@ -1099,22 +1102,25 @@ document.getElementById('ch-cidade').focus();
 </script>
 
 <!-- Google Places Autocomplete API -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places,maps&callback=initAutocomplete" async defer>
-async function calcularDescontoPromocao(lojaId,subtotal,formaPagamento,valorFrete){
-  try{
-    const resp=await fetch('/loja-promocoes/calcular-desconto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_id:lojaId,subtotal,forma_pagamento:formaPagamento,valor_frete:valorFrete})});
-    if(!resp.ok)return{desconto:0,promo:null};
-    return await resp.json();
-  }catch(e){return{desconto:0,promo:null};}
-}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places,maps&callback=initAutocomplete" async defer></script>
 
+<script>
+async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorFrete) {
+  try {
+    var resp = await fetch(API + '/loja-promocoes/calcular-desconto', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({loja_id: lojaId, subtotal: subtotal, forma_pagamento: formaPagamento, valor_frete: valorFrete})
+    });
+    if (!resp.ok) return {desconto: 0, promo: null};
+    return await resp.json();
+  } catch(e) { return {desconto: 0, promo: null}; }
+}
 </script>
 
 <!-- Barra flutuante do carrinho -->
 
-  <!-- BANNER PROMOÇÕES ATIVAS -->
-  <div id="banner-promocoes" style="display:none;padding:8px 12px 0 12px;"></div>
-  <div id="carrinho-bar" class="carrinho-bar">
+    <div id="carrinho-bar" class="carrinho-bar">
 <div class="carrinho-bar-info">
 <span id="bar-qtd">0 itens</span>
 <small id="bar-total">R$ 0.00</small>
