@@ -718,6 +718,33 @@ if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedid
 
 
 /* ---- RENDER LOJA ---- */
+async function carregarBannerPromocoes(lojaId) {
+  try {
+    const resp = await fetch(API+'/loja-promocoes?loja_id='+lojaId);
+    if(!resp.ok) return;
+    const promos = await resp.json();
+    const banner = document.getElementById('banner-promocoes');
+    if(!banner) return;
+    if(!promos||!promos.length){banner.style.display='none';return;}
+    banner.style.display='block';
+    banner.innerHTML=promos.map(p=>{
+      const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação'})[f]||f).join(' ou '):'';
+      const dMax=p.desconto_maximo?' (até R$ '+parseFloat(p.desconto_maximo).toFixed(2)+' off)':'';
+      return '<div style="background:linear-gradient(135deg,#ff6f00,#ff8f00);border-radius:12px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(255,111,0,0.35);">'+
+        '<div style="font-size:26px;flex-shrink:0;">🚚</div>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-weight:800;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">'+p.nome+'</div>'+
+          '<div style="color:rgba(255,255,255,0.92);font-size:12px;margin-top:2px;">Frete grátis'+dMax+' acima de <b>R$ '+parseFloat(p.valor_minimo).toFixed(2)+'</b>'+(pag?' '+pag:'')+'</div>'+
+        '</div>'+
+        '<div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:6px 10px;text-align:center;flex-shrink:0;">'+
+          '<div style="color:#fff;font-weight:900;font-size:15px;">R$ '+parseFloat(p.valor_minimo).toFixed(2)+'</div>'+
+          '<div style="color:rgba(255,255,255,0.8);font-size:9px;text-transform:uppercase;">mínimo</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } catch(e){}
+}
+
 function renderLoja(loja){
     if(loja&&(loja.id||loja.user_id)) carregarBannerPromocoes(loja.id||loja.user_id);
 lojaGlobal=loja;
@@ -1073,32 +1100,6 @@ document.getElementById('ch-cidade').focus();
 
 <!-- Google Places Autocomplete API -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places,maps&callback=initAutocomplete" async defer>
-async function carregarBannerPromocoes(lojaId) {
-  try {
-    const resp = await fetch('/loja-promocoes?loja_id='+lojaId);
-    if(!resp.ok) return;
-    const promos = await resp.json();
-    const banner = document.getElementById('banner-promocoes');
-    if(!banner) return;
-    if(!promos||!promos.length){banner.style.display='none';return;}
-    banner.style.display='block';
-    banner.innerHTML=promos.map(p=>{
-      const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação'})[f]||f).join(' ou '):'';
-      const dMax=p.desconto_maximo?' (até R$ '+parseFloat(p.desconto_maximo).toFixed(2)+' off)':'';
-      return '<div style="background:linear-gradient(135deg,#ff6f00,#ff8f00);border-radius:12px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(255,111,0,0.35);">'+
-        '<div style="font-size:26px;flex-shrink:0;">🚚</div>'+
-        '<div style="flex:1;min-width:0;">'+
-          '<div style="font-weight:800;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">'+p.nome+'</div>'+
-          '<div style="color:rgba(255,255,255,0.92);font-size:12px;margin-top:2px;">Frete grátis'+dMax+' acima de <b>R$ '+parseFloat(p.valor_minimo).toFixed(2)+'</b>'+(pag?' '+pag:'')+'</div>'+
-        '</div>'+
-        '<div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:6px 10px;text-align:center;flex-shrink:0;">'+
-          '<div style="color:#fff;font-weight:900;font-size:15px;">R$ '+parseFloat(p.valor_minimo).toFixed(2)+'</div>'+
-          '<div style="color:rgba(255,255,255,0.8);font-size:9px;text-transform:uppercase;">mínimo</div>'+
-        '</div>'+
-      '</div>';
-    }).join('');
-  } catch(e){}
-}
 async function calcularDescontoPromocao(lojaId,subtotal,formaPagamento,valorFrete){
   try{
     const resp=await fetch('/loja-promocoes/calcular-desconto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_id:lojaId,subtotal,forma_pagamento:formaPagamento,valor_frete:valorFrete})});
