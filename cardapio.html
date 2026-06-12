@@ -313,6 +313,7 @@ var _coordPinConfirmado = null;
 var taxaSettings = null;
 var taxaCalculada = 0;
 var distanciaCalculada = 0;
+var descontoFreteAtual = 0;
 
 
 /* ---- MAPA ENTREGA ---- */
@@ -446,6 +447,7 @@ var totalItens=totalCarrinho(lid);
 var totalFinal=totalItens+taxaFinal;
 document.getElementById('taxa-distancia').textContent=km.toFixed(1)+' km';
 document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
+var _dr=document.getElementById('taxa-desconto-row');var _dv=document.getElementById('taxa-desconto-val');if(_dr&&_dv){if(descontoFrete>0){_dr.style.display='flex';_dv.textContent='-R$ '+descontoFrete.toFixed(2);}else{_dr.style.display='none';}}
 document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
 document.getElementById('bloco-taxa-resultado').style.display='block';
 statusEl.innerHTML='';
@@ -492,6 +494,7 @@ var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var _descontoRes=await calcularDescontoPromocao(lid,totalItens,pag,taxaFinal);
 var descontoFrete=_descontoRes&&_descontoRes.desconto?parseFloat(_descontoRes.desconto):0;
 if(descontoFrete>0){taxaFinal=Math.max(0,taxaFinal-descontoFrete);}
+descontoFreteAtual=descontoFrete;
 var totalFinal=totalItens+taxaFinal;
 
 /* ---- PAGAMENTO ONLINE (Mercado Pago Checkout Pro) ---- */
@@ -930,7 +933,7 @@ fecharModalPixConfirm();
 _finalizarPosConfirmacaoPix=true;
 finalizarPedido();
 }
-function atualizarTaxaCartao(){
+async function atualizarTaxaCartao(){
 if(taxaCalculada===0){
 var pag0=document.getElementById('ch-pag').value;
 esconderBlocoPix();
@@ -945,6 +948,22 @@ var totalItens=lid?totalCarrinho(lid):0;
 var totalFinal=totalItens+taxaFinal;
 document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
 document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(2);
+// Recalcular desconto com nova forma de pagamento
+var _pag2=document.getElementById('ch-pag').value;
+var _lid2=lojaGlobal?lojaGlobal.id:null;
+var _sub2=_lid2?totalCarrinho(_lid2):0;
+if(taxaCalculada>0&&_lid2){
+  var _dr2=await calcularDescontoPromocao(_lid2,_sub2,_pag2,taxaFinal);
+  var _df2=_dr2&&_dr2.desconto?parseFloat(_dr2.desconto):0;
+  descontoFreteAtual=_df2;
+  var _taxaComDesconto2=Math.max(0,taxaFinal-_df2);
+  var _total2=_sub2+_taxaComDesconto2;
+  var _drEl=document.getElementById('taxa-desconto-row');
+  var _dvEl=document.getElementById('taxa-desconto-val');
+  var _tfEl=document.getElementById('total-final-val');
+  if(_drEl&&_dvEl){if(_df2>0){_drEl.style.display='flex';_dvEl.textContent='-R$ '+_df2.toFixed(2);}else{_drEl.style.display='none';}}
+  if(_tfEl){_tfEl.textContent='R$ '+_total2.toFixed(2);}
+}
 esconderBlocoPix();
 }
 
@@ -1220,6 +1239,7 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
 <div id="bloco-taxa-resultado" style="display:none;margin-top:10px;">
 <div class="taxa-detalhe-row" style="display:none"><span>Distancia</span><span id="taxa-distancia" class="taxa-detalhe-val">-</span></div>
 <div class="taxa-detalhe-row"><span>Taxa de entrega</span><span id="taxa-valor" class="taxa-detalhe-val" style="color:#f5a623;">R$ -</span></div>
+<div id="taxa-desconto-row" class="taxa-detalhe-row" style="display:none;color:#27ae60;"><span>🎉 Desconto frete grátis</span><span id="taxa-desconto-val" class="taxa-detalhe-val" style="color:#27ae60;">-R$ 0,00</span></div>
 <div class="taxa-detalhe-row taxa-total-final"><span>Total com entrega</span><span id="total-final-val" style="color:#f5a623;font-size:16px;font-weight:800;">R$ -</span></div>
 </div>
 <div id="bloco-pix-loja" style="display:none;margin-top:12px;background:#0a1f14;border:2px solid #27ae60;border-radius:12px;padding:14px 16px;">
