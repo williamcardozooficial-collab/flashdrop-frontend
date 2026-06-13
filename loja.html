@@ -39,7 +39,7 @@
 .novo-pedido-map-wrap{margin:14px 0 0 0;}
 .novo-pedido-map-label{font-size:12px;color:#aaa;margin-bottom:6px;}
 .novo-pedido-map-div{width:100%;height:200px;border-radius:10px;border:1.5px solid #f5a623;overflow:hidden;}
-input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}</style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio/'+(user&&user.slug?user.slug:(user&&user.custom_id?user.custom_id:'cardapio'));if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:3px"><div id="store-address" style="font-size:12px;opacity:0.85">...</div><button id="btn-toggle-endereco-print" onclick="toggleEnderecoPrint()" title="Mostrar/Ocultar endereço no imprimir" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;white-space:nowrap">🖨️ End: ✅</button></div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div></div></div>
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}</style></head><body><div class="header" style="position:relative"><button onclick="location.reload()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;">🔄</button><a href="https://wa.me/54993011327" target="_blank" style="position:absolute;top:44px;right:12px;background:rgba(37,211,102,0.2);color:#25d366;border:1px solid rgba(37,211,102,0.5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">💬 Suporte</a><button onclick="var url='https://flashdrop-frontend-six.vercel.app/cardapio/'+(user&&user.slug?user.slug:(user&&user.custom_id?user.custom_id:'cardapio'));if(navigator.share){navigator.share({title:'Cardapio',url:url});}else{navigator.clipboard.writeText(url).then(function(){var b=document.getElementById('btn-compartilhar');var orig=b.innerHTML;b.innerHTML='✅ Copiado!';setTimeout(function(){b.innerHTML=orig;},2000);});}" id="btn-compartilhar" style="position:absolute;top:76px;right:12px;background:rgba(37,211,102,0.15);color:#fff;border:1px solid rgba(37,211,102,0.6);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;text-decoration:none;display:block;text-align:center;">📤 Cardápio</button><div style="position:relative;display:inline-block;margin-bottom:8px"><img id="header-foto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.6);display:none" onerror="this.style.display='none';document.getElementById('header-foto-placeholder').style.display='flex'"><div id="header-foto-placeholder" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🏪</div><button onclick="abrirModalFoto()" title="Alterar foto" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#f5a623;border:2px solid #fff;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✏️</button></div><h1 id="store-name">...</h1><div id="store-custom-id" style="font-size:12px;margin-top:3px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px"></div><div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:3px"><div id="store-address" style="font-size:12px;opacity:0.85">...</div><button id="btn-toggle-endereco-print" onclick="toggleEnderecoPrint()" title="Mostrar/Ocultar endereço no imprimir" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;white-space:nowrap">🖨️ End: ✅</button></div></div><div class="stats"><div class="stat-card"><div class="stat-value" id="stat-orders">0</div><div class="stat-label">Pedidos Hoje</div></div><div class="stat-card" onclick="abrirHistoricoCredito()" style="cursor:pointer;position:relative"><div class="stat-value" id="stat-balance">R$ 0,00</div><div class="stat-label">Crédito</div><div style="font-size:10px;color:#aaa;margin-top:3px">📋 Ver extrato</div><button class="loja-saque-solicitar-btn" onclick="event.stopPropagation();abrirSaqueLojaModal()">💸 Solicitar Saque</button></div></div>
 <div id="loja-status-bar" style="margin:0 20px 0;background:#1a1a1a;border:2px solid #555;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
 <div>
 <div id="status-label" style="font-size:13px;font-weight:700;color:#555">🔴 OFFLINE</div>
@@ -259,7 +259,27 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <button type="submit" id="submitBtn" disabled style="width:100%;padding:16px;background:#ff9500;border:none;border-radius:14px;color:#000;font-size:16px;font-weight:800;cursor:pointer;opacity:0.4;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px">&#x1F6D2; Finalizar Pedido</button>
 </div>
 
-</form></div></div></div><style>.btn-edit{display:inline-block;padding:7px 14px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:10px;margin-right:6px}.btn-delete{display:inline-block;padding:7px 14px;background:#fff;color:#e53935;border:1px solid #e53935;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:10px}</style><div id="modal-edit" class="modal"><div class="modal-content"><h2>Editar Pedido</h2><div class="form-group"><label>👤 Nome do Cliente</label><input id="edit-client" class="input"></div><div class="form-group"><label>📱 Telefone</label><input id="edit-phone" class="input"></div><div class="form-group"><label>📍 Endereço de Entrega</label><input id="edit-dest" class="input"></div><div class="form-group"><label>📦 Código do Pedido</label><input id="edit-code" class="input"></div><div class="form-group"><label>📝 Observação</label><input id="edit-obs" class="input"></div><button class="btn-submit" onclick="saveEdit()" style="margin-top:10px">Salvar Alterações</button><button class="btn-secondary" onclick="closeEditModal()">Cancelar</button></div></div><div id="modal-foto" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:2000;padding:20px;overflow-y:auto"><div style="background:#1a1a2e;border-radius:20px;padding:24px;max-width:420px;margin:60px auto;border:1px solid #3a3a5a"><h3 style="color:#bb86fc;margin-bottom:6px;font-size:16px">📷 Foto de Perfil</h3><p style="color:#888;font-size:12px;margin-bottom:14px">Cole a URL direta da imagem (ex: i.ibb.co de imgbb.com)</p><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><input id="foto-url-input" class="input" placeholder="https://i.ibb.co/..." style="flex:1;background:#0d0d1a;color:#fff;border-color:#3a3a5a;margin-bottom:0"><button onclick="salvarFotoPerfil()" style="padding:10px 14px;background:#f5a623;border:none;color:#000;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Salvar</button></div><div id="foto-modal-preview" style="display:none;text-align:center;margin-bottom:12px"><img id="foto-preview-img" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #f5a623" /></div><button onclick="document.getElementById('modal-foto').style.display='none'" style="width:100%;padding:10px;background:#2a2a4a;border:none;color:#aaa;border-radius:8px;font-size:13px;cursor:pointer">Cancelar</button></div></div><script>/* v1781059403064 */const API='https://flashdrop-backend-production.up.railway.app';
+</form></div></div></div><style>.btn-edit{display:inline-block;padding:7px 14px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:10px;margin-right:6px}.btn-delete{display:inline-block;padding:7px 14px;background:#fff;color:#e53935;border:1px solid #e53935;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:10px}
+  .loja-saque-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
+  .loja-saque-box{background:#1e1e1e;border-radius:16px;padding:24px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto}
+  .loja-saque-box h3{font-size:18px;font-weight:700;margin-bottom:14px;color:#fff}
+  .loja-saque-saldo{text-align:center;margin-bottom:14px;color:#aaa;font-size:13px}
+  .loja-saque-input{width:100%;background:#2a2a2a;border:1px solid #444;border-radius:8px;padding:12px;color:#fff;font-size:15px;margin-bottom:10px;box-sizing:border-box}
+  .loja-saque-input:focus{outline:none;border-color:#ff9500}
+  .loja-saque-btn{width:100%;background:#ff9500;color:#000;font-weight:700;border:none;border-radius:10px;padding:14px;font-size:15px;cursor:pointer;margin-bottom:8px}
+  .loja-saque-cancel{width:100%;background:#2a2a2a;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;cursor:pointer;margin-bottom:16px}
+  .loja-saque-hist-title{font-size:13px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+  .loja-saque-item{background:#2a2a2a;border-radius:10px;padding:12px 14px;margin-bottom:8px;border-left:3px solid #555}
+  .loja-saque-item.aprovado{border-left-color:#27ae60}
+  .loja-saque-item.recusado{border-left-color:#e74c3c}
+  .loja-saque-item.pendente{border-left-color:#f39c12}
+  .loja-saque-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .loja-saque-item-valor{font-weight:700;font-size:15px;color:#fff}
+  .loja-saque-item-status{font-size:12px;font-weight:700}
+  .loja-saque-item-info{font-size:11px;color:#888}
+  .loja-saque-solicitar-btn{background:none;border:1px solid #ff9500;color:#ff9500;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;margin-top:6px;display:block;width:100%;box-sizing:border-box}
+
+  </style><div id="modal-edit" class="modal"><div class="modal-content"><h2>Editar Pedido</h2><div class="form-group"><label>👤 Nome do Cliente</label><input id="edit-client" class="input"></div><div class="form-group"><label>📱 Telefone</label><input id="edit-phone" class="input"></div><div class="form-group"><label>📍 Endereço de Entrega</label><input id="edit-dest" class="input"></div><div class="form-group"><label>📦 Código do Pedido</label><input id="edit-code" class="input"></div><div class="form-group"><label>📝 Observação</label><input id="edit-obs" class="input"></div><button class="btn-submit" onclick="saveEdit()" style="margin-top:10px">Salvar Alterações</button><button class="btn-secondary" onclick="closeEditModal()">Cancelar</button></div></div><div id="modal-foto" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:2000;padding:20px;overflow-y:auto"><div style="background:#1a1a2e;border-radius:20px;padding:24px;max-width:420px;margin:60px auto;border:1px solid #3a3a5a"><h3 style="color:#bb86fc;margin-bottom:6px;font-size:16px">📷 Foto de Perfil</h3><p style="color:#888;font-size:12px;margin-bottom:14px">Cole a URL direta da imagem (ex: i.ibb.co de imgbb.com)</p><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><input id="foto-url-input" class="input" placeholder="https://i.ibb.co/..." style="flex:1;background:#0d0d1a;color:#fff;border-color:#3a3a5a;margin-bottom:0"><button onclick="salvarFotoPerfil()" style="padding:10px 14px;background:#f5a623;border:none;color:#000;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Salvar</button></div><div id="foto-modal-preview" style="display:none;text-align:center;margin-bottom:12px"><img id="foto-preview-img" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #f5a623" /></div><button onclick="document.getElementById('modal-foto').style.display='none'" style="width:100%;padding:10px;background:#2a2a4a;border:none;color:#aaa;border-radius:8px;font-size:13px;cursor:pointer">Cancelar</button></div></div><script>/* v1781059403064 */const API='https://flashdrop-backend-production.up.railway.app';
 function fmtDt(ts){if(!ts)return null;var d=new Date(ts);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 function buildTimeline(o){var events=[{label:'Pedido criado',icon:'🆕',ts:o.created_at},{label:'Aceito pelo motoboy',icon:'✅',ts:o.t_aceito},{label:'Motoboy na loja',icon:'🏪',ts:o.t_na_loja},{label:'Pedido coletado',icon:'📦',ts:o.t_coletado},{label:'Chegou no cliente',icon:'🏠',ts:o.t_no_cliente},{label:'Entregue',icon:'🎉',ts:o.t_entregue},{label:'Retornado',icon:'🔄',ts:o.t_retornado}].filter(function(e){return !!e.ts;});if(events.length===0)return '';return '<div style="margin-top:8px;border-top:1px solid #eee;padding-top:8px">'+events.map(function(e){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px"><span>'+e.icon+'</span><span style="color:#555;flex:1">'+e.label+'</span><span style="color:#667eea;font-weight:600;white-space:nowrap">'+fmtDt(e.ts)+'</span></div>';}).join('')+'</div>';}function buildMotoboyInfo(o){
   if(!o.motoboy_id && !o.motoboy_name) return '';
@@ -1706,6 +1726,19 @@ function pollPagamentoSaldo(paymentId, valor, token) {
     <button onclick="fecharAlertaNaLoja()" style="background:#fff;color:#6610f2;border:none;border-radius:50px;padding:15px 0;font-size:18px;font-weight:900;cursor:pointer;width:100%">&#10003; OK, ENTENDIDO!</button>
   </div>
 </div>
+
+<div id="loja-saque-modal" class="loja-saque-modal" style="display:none">
+  <div class="loja-saque-box">
+    <h3>💸 Solicitar Saque</h3>
+    <div class="loja-saque-saldo" id="loja-saque-saldo-info"></div>
+    <input id="loja-saque-valor" class="loja-saque-input" type="number" placeholder="Valor do saque (R$)" min="1" step="0.01"/>
+    <input id="loja-saque-pix" class="loja-saque-input" type="text" placeholder="Chave PIX (CPF, e-mail, telefone...)"/>
+    <button class="loja-saque-btn" onclick="submitSaqueLoja()">Solicitar Saque</button>
+    <button class="loja-saque-cancel" onclick="fecharSaqueLojaModal()">Cancelar</button>
+    <div class="loja-saque-hist-title">Histórico de Saques</div>
+    <div id="loja-saque-history"></div>
+  </div>
+</div>
 </body></html>
 <script>
 function initAutocomplete(){
@@ -1848,4 +1881,47 @@ async function togglePromocaoLoja(id,ativa){
     if(data.id)carregarPromocoesLoja();
   }catch(e){alert('Erro: '+e.message);}
 }
+
+async function abrirSaqueLojaModal() {
+  await syncUser();
+  document.getElementById('loja-saque-saldo-info').textContent = 'Seu crédito atual: R$ ' + parseFloat(user.credit || 0).toFixed(2);
+  document.getElementById('loja-saque-valor').value = '';
+  document.getElementById('loja-saque-pix').value = user.pix_key || '';
+  document.getElementById('loja-saque-modal').style.display = 'flex';
+  await loadSaqueLojaHistory();
+}
+function fecharSaqueLojaModal() {
+  document.getElementById('loja-saque-modal').style.display = 'none';
+}
+async function loadSaqueLojaHistory() {
+  var listEl = document.getElementById('loja-saque-history');
+  try {
+    var r = await fetch(API + '/withdrawals/loja/' + user.id);
+    var items = await r.json();
+    if (!items || items.length === 0) { listEl.innerHTML = '<div style="color:#666;font-size:12px;text-align:center">Nenhum saque solicitado.</div>'; return; }
+    var statusLabel = { aprovado: '✅ Aprovado', recusado: '❌ Recusado', pendente: '⏳ Pendente' };
+    var statusColor = { aprovado: '#27ae60', recusado: '#e74c3c', pendente: '#f39c12' };
+    listEl.innerHTML = items.map(function(s) {
+      var d = s.created_at ? new Date(s.created_at).toLocaleString('pt-BR') : '';
+      var obs = s.obs ? '<br>Obs: ' + s.obs : '';
+      return '<div class="loja-saque-item ' + (s.status||'pendente') + '"><div class="loja-saque-item-top"><span class="loja-saque-item-valor">R$ ' + parseFloat(s.valor).toFixed(2) + '</span><span class="loja-saque-item-status" style="color:' + (statusColor[s.status]||'#aaa') + '">' + (statusLabel[s.status]||s.status) + '</span></div><div class="loja-saque-item-info">PIX: ' + s.pix_key + '<br>' + d + obs + '</div></div>';
+    }).join('');
+  } catch(e) { listEl.innerHTML = '<div style="color:#e74c3c;font-size:12px">Erro ao carregar histórico.</div>'; }
+}
+async function submitSaqueLoja() {
+  var valor = parseFloat(document.getElementById('loja-saque-valor').value);
+  var pixKey = document.getElementById('loja-saque-pix').value.trim();
+  if (!valor || valor <= 0) { tg.showAlert('Informe um valor válido.'); return; }
+  if (!pixKey) { tg.showAlert('Informe a chave PIX.'); return; }
+  if (valor > parseFloat(user.credit || 0)) { tg.showAlert('Valor maior que seu crédito disponível.'); return; }
+  try {
+    var r = await fetch(API + '/withdrawals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loja_id: user.id, loja_name: user.name, valor: valor, pix_key: pixKey }) });
+    var data = await r.json();
+    if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Tente novamente.')); return; }
+    tg.showAlert('✅ Saque de R$ ' + valor.toFixed(2) + ' solicitado! Aguarde aprovação.');
+    document.getElementById('loja-saque-valor').value = '';
+    await loadSaqueLojaHistory();
+  } catch(e) { tg.showAlert('Erro: ' + e.message); }
+}
+
 </script>
