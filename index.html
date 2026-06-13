@@ -1189,7 +1189,7 @@ function renderFinance(users) {
         '<strong style="font-size:16px">R$ ' + parseFloat(w.valor).toFixed(2) + '</strong>' +
         '<span style="color:' + (statusColor[w.status]||'#aaa') + ';font-weight:700">' + (statusLabel[w.status]||w.status) + '</span>' +
         '</div>' +
-        '<div class="row"><span class="val">Motoboy:</span><span>' + (w.motoboy_name||'—') + '</span></div>' +
+        '<div class="row"><span class="val">' + (w.loja_id ? 'Loja:' : 'Motoboy:') + '</span><span>' + (w.loja_name || w.motoboy_name||'—') + '</span></div>' +
         '<div class="row"><span class="val">Chave PIX:</span><span style="word-break:break-all">' + w.pix_key + '</span></div>' +
         '<div class="row"><span class="val">Data:</span><span>' + dt + '</span></div>' +
         (w.obs ? '<div class="row"><span class="val">Obs:</span><span>' + w.obs + '</span></div>' : '') +
