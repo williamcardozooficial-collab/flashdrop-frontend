@@ -1883,7 +1883,7 @@ async function togglePromocaoLoja(id,ativa){
 }
 
 async function abrirSaqueLojaModal() {
-  await syncUser();
+  try { var ur = await fetch(API + '/users/' + user.id); var ud = await ur.json(); if (ud && ud.id) user = Object.assign(user, ud); } catch(e) {}
   document.getElementById('loja-saque-saldo-info').textContent = 'Seu crédito atual: R$ ' + parseFloat(user.credit || 0).toFixed(2);
   document.getElementById('loja-saque-valor').value = '';
   document.getElementById('loja-saque-pix').value = user.pix_key || '';
