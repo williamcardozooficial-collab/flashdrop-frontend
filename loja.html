@@ -1543,6 +1543,7 @@ function atualizarBotaoEnderecoPrint(){var cur=localStorage.getItem('fd_endereco
     <div id="mp-pix-container" style="display:none;background:#0f0f23;border-radius:12px;padding:16px;margin-bottom:16px;text-align:center;">
       <p style="color:#27ae60;font-weight:700;font-size:14px;margin-bottom:12px;">✅ PIX Gerado!</p>
       <p style="color:#aaa;font-size:12px;margin-bottom:8px;">Copie o código PIX abaixo:</p>
+      <img id="mp-qr-img" src="" alt="QR Code PIX" style="display:none;width:200px;height:200px;margin:12px auto;border-radius:12px;border:3px solid #00e5a0;display:block;">
       <div id="mp-pix-code" style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:10px;font-size:11px;color:#7ec8e3;word-break:break-all;margin-bottom:10px;font-family:monospace;"></div>
       <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
         <button onclick="copiarPixSaldo()" id="mp-copiar-btn" style="background:#27ae60;border:none;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">📋 Copiar código PIX</button>
@@ -1647,6 +1648,7 @@ async function gerarPixSaldo() {
     document.getElementById('mp-loading').style.display = 'none';
     if (resp.ok && data.pix_code) {
       document.getElementById('mp-pix-code').textContent = data.pix_code;
+        if (data.qr_code_base64) { const qrImg = document.getElementById('mp-qr-img'); qrImg.src = 'data:image/png;base64,' + data.qr_code_base64; qrImg.style.display = 'block'; }
       document.getElementById('mp-pix-container').style.display = 'block';
       if (data.expiry) {
         const exp = new Date(data.expiry);
