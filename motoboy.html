@@ -6,7 +6,7 @@
   <title>FlashDrop - Motoboy</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;min-height:100vh;padding-bottom:80px}
+    body{font-family:-apple-system,sans-serihf;background:#1a1a1a;color:#fff;min-height:100vh;padding-bottom:80px}
     .header{background:#0f0f0f;padding:20px;text-align:center;border-bottom:2px solid #333}
     .header h1{font-size:24px;margin-bottom:5px}
     .status-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-top:8px}
@@ -771,7 +771,7 @@ function makeInfoRow(label, value, highlight) {
         document.getElementById("total-entregas").textContent = done.length;
           var hoje = new Date().toISOString().slice(0, 10);
           var doneHoje = done.filter(function(o) { return o.created_at && o.created_at.slice(0,10) === hoje; });
-          var totalGanhos = doneHoje.reduce(function(s, o) { return s + parseFloat(o.valor_motoboy || 0); }, 0);
+          var totalGanhos = doneHoje.reduce(function(s, o) { var vm = parseFloat(o.valor_motoboy || 0); var vc = parseFloat(o.comissao || 0); return s + (vm - vc); }, 0);
         document.getElementById("total-ganhos").textContent = "R$ " + totalGanhos.toFixed(2);
         updateTabBadge('available', available.length);
         updateTabBadge('mine', active.length);
