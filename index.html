@@ -237,7 +237,20 @@
 
   <div id="saques" class="section">
     <div class="card">
-      <h3 style="margin-bottom:12px;color:#ffcc00;">💸 Solicitações de Saque</h3>
+      <div id="mp-config-panel" style="background:#1a1a2e;border:1px solid #009ee3;border-radius:12px;padding:16px;margin-bottom:20px">
+  <h4 style="color:#009ee3;margin:0 0 12px 0;font-size:15px">💳 Configuração Mercado Pago</h4>
+  <div style="margin-bottom:10px">
+    <label style="color:#ccc;font-size:13px;display:block;margin-bottom:4px">Access Token (Produção):</label>
+    <input id="mp-access-token-input" type="password" placeholder="APP_USR-..." style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid #333;background:#0d0d1a;color:#fff;font-size:13px">
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <label style="color:#ccc;font-size:13px">Pagamento Automático ao Aprovar:</label>
+    <input id="mp-auto-toggle" type="checkbox" style="width:18px;height:18px;cursor:pointer">
+    <span id="mp-auto-label" style="color:#ffcc00;font-size:12px">Desligado</span>
+  </div>
+  <button onclick="saveMPConfig()" style="background:#009ee3;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-weight:700;font-size:13px;cursor:pointer">💾 Salvar Configuração</button>
+</div>
+<h3 style="margin-bottom:12px;color:#ffcc00;">💸 Solicitações de Saque</h3>
       <p id="saques-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p>
       <div id="saques-list"></div>
     </div>
@@ -1163,6 +1176,9 @@ function renderFinance(users) {
 
     /* ── CADASTROS PENDENTES ── */
     async function loadSaques() {
+  loadMPConfig();
+  // Update auto toggle label
+  setTimeout(function(){ var tog=document.getElementById('mp-auto-toggle'); if(tog){ tog.onchange=function(){ var lbl=document.getElementById('mp-auto-label'); if(lbl) lbl.textContent=tog.checked?'Ligado ✅':'Desligado'; }; var lbl=document.getElementById('mp-auto-label'); if(lbl) lbl.textContent=tog.checked?'Ligado ✅':'Desligado'; } }, 300);
   try {
     var r = await fetch(API + '/withdrawals');
     var list = await r.json();
@@ -1195,31 +1211,78 @@ function renderFinance(users) {
         (w.obs ? '<div class="row"><span class="val">Obs:</span><span>' + w.obs + '</span></div>' : '') +
         (w.status === 'pendente' ?
           '<div style="display:flex;gap:8px;margin-top:10px">' +
-          '<button class="btn btn-primary btn-sm" onclick="processWithdrawal(' + w.id + ',\'aprovado\')">✅ Aprovar</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="processWithdrawal(' + w.id + ',\'recusado\')">❌ Recusar</button>' +
+          '<button onclick="pagarViaMP('+w.id+')" style="background:#009ee3;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;margin-right:4px">💳 Pagar via MP</button>' +
+          '<button onclick="processWithdrawal('+w.id+",'aprovado','manual'" + ')" style="background:#28a745;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;margin-right:4px">✅ Aprovar Manual</button>' +
+          '<button onclick="processWithdrawal('+w.id+",'recusado'" + ')" style="background:#dc3545;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">❌ Recusar</button>' +
           '</div>' : '') +
         '</div>';
     }).join('');
   } catch(e) { console.error('Erro ao carregar saques:', e); }
 }
 
-async function processWithdrawal(id, status) {
-  var msg = status === 'aprovado' ? 'Aprovar este saque? O valor será debitado do saldo do motoboy.' : 'Recusar este saque?';
-  if (!confirm(msg)) return;
-  var obs = status === 'recusado' ? prompt('Motivo da recusa (opcional):') : null;
+async function processWithdrawal(id, status, paymentMethod) {
+  const conf = status === 'aprovado' ? confirm('Aprovar este saque' + (paymentMethod === 'manual' ? ' manualmente' : '') + '?') : confirm('Recusar este saque?');
+  if (!conf) return;
+  const obs = status === 'aprovado' && paymentMethod === 'manual' ? 'Pago manualmente pelo admin' : (status === 'recusado' ? 'Recusado pelo admin' : '');
   try {
-    var r = await fetch(API + '/withdrawals/' + id, {
+    const r = await fetch(API + '/withdrawals/' + id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: status, obs: obs || null })
+      body: JSON.stringify({ status: status, obs: obs })
     });
-    var data = await r.json();
-    if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Tente novamente.')); return; }
-    tg.showAlert(status === 'aprovado' ? '✅ Saque aprovado! Saldo debitado.' : '❌ Saque recusado.');
+    const data = await r.json();
+    if (!r.ok) { alert('Erro: ' + (data.error || 'Tente novamente.')); return; }
+    alert(status === 'aprovado' ? '✅ Saque aprovado!' : '❌ Saque recusado!');
     loadSaques();
-  } catch(e) { tg.showAlert('Erro: ' + e.message); }
+  } catch(e) { alert('Erro: ' + e.message); }
 }
 
+async function pagarViaMP(id) {
+  try {
+    const cfgR = await fetch(API + '/settings/mp-config');
+    const cfg = await cfgR.json();
+    if (!cfg.mp_access_token) {
+      alert('⚠️ Configure a chave API do Mercado Pago antes de pagar automaticamente.');
+      document.getElementById('mp-config-panel').scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (!confirm('Pagar este saque via Mercado Pago (PIX)?')) return;
+    const r = await fetch(API + '/withdrawals/' + id + '/pagar-mp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await r.json();
+    if (!r.ok) { alert('Erro MP: ' + (data.error || 'Tente novamente.')); return; }
+    alert('✅ PIX enviado via Mercado Pago!\nID: ' + (data.payment_id || '-'));
+    loadSaques();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function loadMPConfig() {
+  try {
+    const r = await fetch(API + '/settings/mp-config');
+    const d = await r.json();
+    const inp = document.getElementById('mp-access-token-input');
+    if (inp && d.mp_access_token) inp.value = d.mp_access_token;
+    const tog = document.getElementById('mp-auto-toggle');
+    if (tog) tog.checked = d.mp_auto === true || d.mp_auto === 'true';
+  } catch(e) {}
+}
+
+async function saveMPConfig() {
+  const token = document.getElementById('mp-access-token-input').value.trim();
+  const auto = document.getElementById('mp-auto-toggle').checked;
+  if (!token) { alert('Informe o Access Token do Mercado Pago.'); return; }
+  try {
+    const r = await fetch(API + '/settings/mp-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mp_access_token: token, mp_auto: auto })
+    });
+    if (r.ok) alert('✅ Configuração do Mercado Pago salva!');
+    else alert('Erro ao salvar.');
+  } catch(e) { alert('Erro: ' + e.message); }
+}
 async function loadPending() {
       try {
         var r = await fetch(API + '/users/pending');
