@@ -769,7 +769,7 @@ function makeInfoRow(label, value, highlight) {
         }
 
         document.getElementById("total-entregas").textContent = done.length;
-          var hoje = new Date().toISOString().slice(0, 10);
+          var hoje = new Date().toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'}).split('/').reverse().join('-');
           var doneHoje = done.filter(function(o) { return o.created_at && o.created_at.slice(0,10) === hoje; });
           var totalGanhos = doneHoje.reduce(function(s, o) { var vm = parseFloat(o.valor_motoboy || 0); var vc = parseFloat(o.comissao || 0); return s + (vm - vc); }, 0);
         document.getElementById("total-ganhos").textContent = "R$ " + totalGanhos.toFixed(2);
