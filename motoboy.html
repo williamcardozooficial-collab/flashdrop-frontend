@@ -897,6 +897,8 @@ if (!geoPassed) return;
 
         if (action.startTimer) startTimer(orderId, 0);
         if (action.stopTimer)  stopTimer(orderId);
+        if (action.next === 'aceito') iniciarGPS(orderId);
+        if (action.next === 'entregue' || action.next === 'retornado') pararGPS();
 
         tg.showAlert(action.msg);
         await loadOrders();
@@ -1188,5 +1190,35 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
     <button onclick="fecharModalPagarRestaurante()" style="width:100%;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:13px;cursor:pointer;">Cancelar</button>
   </div>
 </div>
+<script>
+var _gpsInterval=null,_gpsOrderId=null;
+var API_GPS='https://flashdrop-backend-production.up.railway.app';
+function enviarLocalizacao(orderId){
+  if(!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
+    var token=u.token;
+    if(!token)return;
+    var motoboyId=u.id;
+    fetch(API_GPS+'/motoboys/'+motoboyId+'/localizacao',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude,order_id:orderId})
+    }).catch(function(){});
+  },function(){},{enableHighAccuracy:true,timeout:5000});
+}
+function iniciarGPS(orderId){
+  pararGPS();
+  _gpsOrderId=orderId;
+  enviarLocalizacao(orderId);
+  _gpsInterval=setInterval(function(){enviarLocalizacao(_gpsOrderId);},15000);
+  console.log('[GPS] Iniciado para pedido #'+orderId);
+}
+function pararGPS(){
+  if(_gpsInterval){clearInterval(_gpsInterval);_gpsInterval=null;}
+  _gpsOrderId=null;
+  console.log('[GPS] Parado');
+}
+</script>
 </body>
 </html>
