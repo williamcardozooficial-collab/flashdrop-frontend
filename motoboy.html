@@ -752,6 +752,10 @@ function makeInfoRow(label, value, highlight) {
           myDiv.innerHTML = "<div class=\"empty\">Nenhuma entrega ativa</div>";
         } else {
           active.forEach(function(o) { myDiv.appendChild(makeOrderCard(o, "mine")); });
+          /* GPS: reiniciar se ha pedido ativo e GPS parado */
+          var pedidoGps = active.find(function(o){ return ['aceito','na_loja','coletado','no_cliente'].indexOf(o.status) > -1; });
+          if (pedidoGps && !_gpsInterval) iniciarGPS(pedidoGps.id);
+          if (!pedidoGps && _gpsInterval) pararGPS();
           Object.keys(activeTimers).forEach(function(tid) {
             var still = active.find(function(o) { return String(o.id) === tid && o.status === "aceito"; });
             if (!still) stopTimer(tid);
