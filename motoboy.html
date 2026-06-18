@@ -573,8 +573,10 @@ function makeInfoRow(label, value, highlight) {
           /* iFood badge e localizador */
           if (o.tipo_pagamento === "ifood") {
             var ifoodDiv = document.createElement("div");
-            ifoodDiv.style.cssText = "background:#ea1d2c;border-radius:10px;padding:10px 14px;margin:10px 0;display:flex;align-items:center;gap:10px;";
-            ifoodDiv.innerHTML = "<span style='background:#fff;color:#ea1d2c;font-weight:900;font-size:12px;padding:3px 8px;border-radius:6px;'>iFood</span>" + "<span style='color:#fff;font-size:13px;font-weight:600;'>Entrega Própria</span>";
+            ifoodDiv.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0;";
+            var ifoodPill = "<span style='background:#c8392b;color:#fff;font-weight:700;font-size:12px;padding:5px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;'>" + "🍟 iFood" + "</span>";
+            var numPedido = o.ifood_numero_pedido ? "<span style='color:#ea1d2c;font-weight:700;font-size:14px;'>Pedido #" + o.ifood_numero_pedido + "</span>" : "";
+            ifoodDiv.innerHTML = ifoodPill + numPedido;
             card.appendChild(ifoodDiv);
             if (o.ifood_localizador) {
               var locDiv = document.createElement("div");
