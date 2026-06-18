@@ -572,18 +572,13 @@ function makeInfoRow(label, value, highlight) {
             }
           /* iFood badge e localizador */
           if (o.tipo_pagamento === "ifood") {
-            var ifoodDiv = document.createElement("div");
-            ifoodDiv.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0;";
-            var ifoodPill = "<span style='background:#c8392b;color:#fff;font-weight:700;font-size:12px;padding:5px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;'>" + "🍟 iFood" + "</span>";
-            var numPedido = o.ifood_numero_pedido ? "<span style='color:#ea1d2c;font-weight:700;font-size:14px;'>Pedido #" + o.ifood_numero_pedido + "</span>" : "";
-            ifoodDiv.innerHTML = ifoodPill + numPedido;
-            card.appendChild(ifoodDiv);
-            if (o.ifood_localizador) {
-              var locDiv = document.createElement("div");
-              locDiv.style.cssText = "background:#1a1a1a;border:1px solid #ea1d2c;border-radius:8px;padding:8px 12px;margin:4px 0;font-size:12px;color:#ccc;";
-              locDiv.innerHTML = "🔢 <b style='color:#ea1d2c;'>Localizador iFood:</b> <span style='font-family:monospace;font-size:14px;color:#fff;letter-spacing:2px;'>" + o.ifood_localizador + "</span>";
-              card.appendChild(locDiv);
-            }
+            var ifoodCard = document.createElement("div");
+            ifoodCard.style.cssText = "background:#1a0000;border:2px solid #ea1d2c;border-radius:10px;padding:10px 14px;margin:8px 0;";
+            var ifoodPill = "<span style='background:#c8392b;color:#fff;font-weight:700;font-size:12px;padding:4px 12px;border-radius:20px;'> iFood</span>";
+            var numPart = o.ifood_numero_pedido ? " <span style='color:#ea1d2c;font-weight:700;font-size:14px;margin-left:6px;'>Pedido #" + o.ifood_numero_pedido + "</span>" : "";
+            var nomePart = o.ifood_nome_cliente ? "<div style='color:#ea1d2c;font-weight:700;font-size:14px;margin-top:6px;'>" + o.ifood_nome_cliente + "</div>" : "";
+            ifoodCard.innerHTML = "<div style='display:flex;align-items:center;'>" + ifoodPill + numPart + "</div>" + nomePart;
+            card.appendChild(ifoodCard);
           }
           }
         }
