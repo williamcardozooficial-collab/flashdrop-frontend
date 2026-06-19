@@ -487,6 +487,22 @@
     '<div class="input-group" style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:#aaa">Bairro</label><input id="u-addr-bairro'+sfx+'" class="input" placeholder="Ex: Centro" value="'+ev(a.bairro||'')+'"></div><div style="flex:1"><label style="font-size:11px;color:#aaa">Cidade</label><input id="u-addr-cidade'+sfx+'" class="input" placeholder="Ex: Caxias do Sul" value="'+(ev(a.cidade||'')||'Caxias do Sul')+'"></div></div>';
 }
 
+    function fmtAddr(addr) {
+      if (!addr) return '—';
+      try {
+        var a = typeof addr === 'string' ? JSON.parse(addr) : addr;
+        var parts = [];
+        if (a.rua) parts.push(a.rua + (a.num ? ', ' + a.num : '') + (a.comp ? ' ' + a.comp : ''));
+        if (a.bairro) parts.push(a.bairro);
+        if (a.cidade) parts.push(a.cidade);
+        return parts.join(' — ') || '—';
+      } catch(e) { return addr || '—'; }
+    }
+    function fixStr(s) {
+      if (!s) return s;
+      try { return decodeURIComponent(escape(s)); } catch(e) { return s; }
+    }
+
 function esc(v) {
       if (v === null || v === undefined) return '';
       return String(v)
@@ -496,27 +512,7 @@ function esc(v) {
         .replace(/"/g,'&quot;')
         .replace(/'/g,'&#x27;');
     }
-
-      function fmtAddr(addr) {
-        if (!addr) return '—';
-        try {
-          var a = typeof addr === 'string' ? JSON.parse(addr) : addr;
-          var parts = [];
-          if (a.rua) parts.push(a.rua + (a.num ? ', ' + a.num : '') + (a.comp ? ' ' + a.comp : ''));
-          if (a.bairro) parts.push(a.bairro);
-          if (a.cidade) parts.push(a.cidade);
-          return parts.join(' — ') || '—';
-        } catch(e) { return addr || '—'; }
-      }
-    var
-      function fixStr(s) {
-        if (!s) return s;
-        try {
-          // Fix double-encoded UTF-8 (Latin1 bytes reinterpreted)
-          return decodeURIComponent(escape(s));
-        } catch(e) { return s; }
-      }
- _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
+    var _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
     const API = 'https://flashdrop-backend-production.up.railway.app';
     const tg = (window.Telegram && window.Telegram.WebApp)
       ? window.Telegram.WebApp
