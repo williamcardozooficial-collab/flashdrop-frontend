@@ -496,7 +496,27 @@ function esc(v) {
         .replace(/"/g,'&quot;')
         .replace(/'/g,'&#x27;');
     }
-    var _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
+
+      function fmtAddr(addr) {
+        if (!addr) return '—';
+        try {
+          var a = typeof addr === 'string' ? JSON.parse(addr) : addr;
+          var parts = [];
+          if (a.rua) parts.push(a.rua + (a.num ? ', ' + a.num : '') + (a.comp ? ' ' + a.comp : ''));
+          if (a.bairro) parts.push(a.bairro);
+          if (a.cidade) parts.push(a.cidade);
+          return parts.join(' — ') || '—';
+        } catch(e) { return addr || '—'; }
+      }
+    var
+      function fixStr(s) {
+        if (!s) return s;
+        try {
+          // Fix double-encoded UTF-8 (Latin1 bytes reinterpreted)
+          return decodeURIComponent(escape(s));
+        } catch(e) { return s; }
+      }
+ _u=localStorage.getItem('flashdrop_user');if(!_u){window.location.href='login.html';}else{var _cu=JSON.parse(_u);if(!_cu||_cu.role!=='admin'){localStorage.removeItem('flashdrop_user');window.location.href='login.html';}}
     const API = 'https://flashdrop-backend-production.up.railway.app';
     const tg = (window.Telegram && window.Telegram.WebApp)
       ? window.Telegram.WebApp
@@ -687,8 +707,8 @@ function esc(v) {
           '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📱 Telefone</span><span style="color:#ddd">' + (esc(u.phone) || '—') + '</span></div>' +
           (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">🏍️ Veículo</span><span style="color:#ddd">' + (esc(u.vehicle) || '—') + '</span></div>' : '') +
           (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📄 CPF</span><span style="color:#ff9500">' + (esc(u.cpf) || '—') + '</span></div>' : '') +
-          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📍 Endereço</span><span style="color:#ff9500;text-align:right;max-width:60%">' + (esc(u.address) || '—') + '</span></div>' : '') +
-          (!isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📍 Endereço</span><span style="color:#ddd;text-align:right;max-width:60%">' + (esc(u.address) || '—') + '</span></div>' : '') +
+          (isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#ff9500">📍 Endereço</span><span style="color:#ff9500;text-align:right;max-width:60%">' + (fmtAddr(u.address) || '—') + '</span></div>' : '') +
+          (!isMotoboy ? '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#888">📍 Endereço</span><span style="color:#ddd;text-align:right;max-width:60%">' + (fmtAddr(u.address) || '—') + '</span></div>' : '') +
           '<div style="display:flex;justify-content:space-between;border-top:1px solid #222;padding-top:6px;margin-top:4px"><span style="color:#888">💰 ' + (u.role === 'loja' ? 'Crédito' : 'Saldo') + '</span><strong style="color:#4caf50">R$ ' + Number(saldo || 0).toFixed(2) + '</strong></div>' +
         (isMotoboy ? '<div style="display:flex;justify-content:space-between;padding-top:4px;margin-top:2px"><span style="color:#888">&#128179; Limite de Crédito</span><strong style="color:' + (parseFloat(u.custom_credit_limit||0)>0?'#ffcc00':'#666') + '">R$ ' + Number(u.custom_credit_limit||0).toFixed(2) + '</strong></div>' : '') +
         '</div>' +
@@ -848,7 +868,7 @@ function renderFinance(users) {
       document.getElementById('user-modal-title').textContent = 'Editar - ' + esc(u.name);
       var motoboyCampos = u.role === 'motoboy'
         ? '<div class="input-group"><label>🏍️ Veículo</label><input id="u-vehicle" class="input" value="' + (esc(u.vehicle) || '') + '"></div>' +
-          '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (esc(u.address) || '') + '"></div>' +
+          '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (fmtAddr(u.address) || '') + '"></div>' +
           '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
           '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>'
         : buildAddrFields(u.address, false);
@@ -1318,7 +1338,7 @@ async function loadPending() {
             '<div class="field"><strong>📱 Telefone:</strong> ' + (esc(u.phone) || '—') + '</div>' +
             '<div class="field"><strong>🏍️ Veículo:</strong> ' + (esc(u.vehicle) || '—') + '</div>' +
             '<div class="field private"><strong>📄 CPF (confidencial):</strong> ' + (esc(u.cpf) || '—') + '</div>' +
-            '<div class="field private"><strong>📍 Endereço (confidencial):</strong> ' + (esc(u.address) || '—') + '</div>' +
+            '<div class="field private"><strong>📍 Endereço (confidencial):</strong> ' + (fmtAddr(u.address) || '—') + '</div>' +
             '<div class="field" style="color:#888;font-size:11px;">Cadastrado em: ' + new Date(u.created_at).toLocaleString('pt-BR') + '</div>' +
             '<button class="pending-btn approve" onclick="approvePending(' + u.id + ', this)">✅ Aprovar</button>' +
             '<button class="pending-btn reject" onclick="rejectPending(' + u.id + ', this)">❌ Recusar</button>';
@@ -1450,7 +1470,7 @@ loadSaques();
           var icon = icons[ev.tipo] || '📌';
           var sinal = ev.tipo === 'saque' ? '− ' : '+ ';
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222">' +
-            '<div><span>' + icon + ' </span><span style="color:#ddd;font-size:13px">' + (ev.descricao || ev.tipo) + '</span><br>' +
+            '<div><span>' + icon + ' </span><span style="color:#ddd;font-size:13px">' + (fixStr(ev.descricao || ev.tipo)) + '</span><br>' +
             '<span style="color:#666;font-size:11px">' + dtStr + '</span></div>' +
             '<strong style="color:' + col + ';font-size:15px;white-space:nowrap;margin-left:10px">' + sinal + 'R$ ' + parseFloat(ev.valor).toFixed(2).replace('.', ',') + '</strong>' +
             '</div>';
