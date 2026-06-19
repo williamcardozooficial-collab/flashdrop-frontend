@@ -500,21 +500,18 @@
     }
     function fixStr(s) {
       if (!s) return s;
-      var map = [
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'ã'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'ç'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'é'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'á'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'ó'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'ê'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'â'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'ú'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'í'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'õ'],
-        [/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂ/g, 'ô']
-      ];
-      map.forEach(function(pair) { s = s.replace(pair[0], pair[1]); });
-      return s;
+      var result = s;
+      for (var pass = 0; pass < 6; pass++) {
+        var bytes = new Uint8Array(result.length);
+        for (var i = 0; i < result.length; i++) bytes[i] = result.charCodeAt(i) & 0xFF;
+        var decoded = new TextDecoder('utf-8', {fatal:false}).decode(bytes);
+        if (decoded === result) break;
+        result = decoded;
+      }
+      result = result.replace(/Ã£/g,'ã').replace(/Ã©/g,'é').replace(/Ã¡/g,'á')
+        .replace(/Ã³/g,'ó').replace(/Ã§/g,'ç').replace(/Ãµ/g,'õ')
+        .replace(/Ãª/g,'ê').replace(/Ãº/g,'ú').replace(/Ã­/g,'í').replace(/Ã´/g,'ô');
+      return result;
     }
 
 function esc(v) {
