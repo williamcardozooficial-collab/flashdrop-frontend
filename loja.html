@@ -1352,12 +1352,7 @@ if(btnAg)btnAg.style.display='none';
 }
 }
 
-async 
-  function abrirWhatsappBot() {
-    alert('Em breve! O WhatsApp Bot para lojas está chegando 🤖');
-  }
-
-  function toggleLojaOnline(){
+async function toggleLojaOnline(){
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 var isOnline=u.loja_online;
 var novoStatus=!isOnline;
@@ -1945,4 +1940,9 @@ async function submitSaqueLoja() {
   } catch(e) { tg.showAlert('Erro: ' + e.message); }
 }
 
+
+
+  function abrirWhatsappBot() {
+    alert('Em breve! O WhatsApp Bot para lojas está chegando 🤖');
+  }
 </script>
