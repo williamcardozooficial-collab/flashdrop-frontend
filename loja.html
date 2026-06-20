@@ -1755,6 +1755,22 @@ function resetIfoodVerificacao(){_ifoodVerificado=false;_ifoodNomeCliente="";_if
 function atualizarBotaoFinalizar(){var b=document.getElementById("submitBtn");if(!b)return;var s=document.getElementById("tipoPagamento");if(s&&s.value==="ifood"){b.disabled=!_ifoodVerificado;b.style.opacity=_ifoodVerificado?"1":"0.4";}else{b.disabled=false;b.style.opacity="";}}
 function verificarLocalizadorIfood(){var loc=_getLocalizadorFromBoxes(),btn=document.getElementById("btnVerificarIfood"),res=document.getElementById("ifoodResultado");_syncHiddenLocalizador();if(loc.length!==8){if(res){res.style.display="block";res.style.background="#ffe0e0";res.style.color="#c00";res.innerHTML="Digite os 8 digitos do localizador.";}return;}var boxes=document.querySelectorAll(".ifood-box");boxes.forEach(function(b){b.style.borderColor="#ea1d2c";});btn.disabled=true;btn.textContent="Verificando...";res.style.display="block";res.style.background="#f5f5f5";res.style.color="#555";res.innerHTML="Consultando iFood...";fetch("https://flashdrop-backend-production.up.railway.app/ifood/verificar-localizador",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({localizador:loc})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.textContent="Verificar";if(d.ok){_ifoodVerificado=true;_ifoodNomeCliente=d.nomeCliente;_ifoodNumeroPedido=d.numeroPedidoIfood||"";boxes.forEach(function(b){b.style.borderColor="#22c55e";});res.style.background="#e6ffe6";res.style.color="#1a7a1a";res.innerHTML="Cliente: <strong>"+d.nomeCliente+"</strong>"+(d.numeroPedidoIfood?" | Pedido iFood: <strong>#"+d.numeroPedidoIfood+"</strong>":"");atualizarBotaoFinalizar();}else{_ifoodVerificado=false;boxes.forEach(function(b){b.style.borderColor="#ea1d2c";});res.style.background="#ffe0e0";res.style.color="#c00";res.innerHTML="Erro: "+(d.erro||"Localizador nao encontrado");atualizarBotaoFinalizar();}}).catch(function(){btn.disabled=false;btn.textContent="Verificar";res.style.background="#ffe0e0";res.style.color="#c00";res.innerHTML="Erro ao conectar.";});}
 window.getIfoodDados=function(){return{localizador:document.getElementById("ifoodLocalizador")?document.getElementById("ifoodLocalizador").value:"",nomeCliente:_ifoodNomeCliente,numeroPedido:_ifoodNumeroPedido,verificado:_ifoodVerificado};};</script>
+
+  <!-- Modal WhatsApp Bot -->
+  <div id="modal-wbot" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#1a1a2e;border-radius:16px;padding:28px;width:90%;max-width:380px;position:relative;text-align:center;">
+      <button onclick="fecharModalWbot()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;">×</button>
+      <div style="font-size:32px;margin-bottom:8px;">🤖</div>
+      <h3 style="color:#25D366;margin:0 0 6px;">WhatsApp Bot</h3>
+      <p style="color:#aaa;font-size:13px;margin:0 0 20px;">Conecte seu WhatsApp para enviar notificações automáticas aos clientes</p>
+      <div id="wbot-status" style="font-size:15px;font-weight:bold;margin-bottom:16px;"><span style="color:#888">● Verificando...</span></div>
+      <img id="wbot-qr" src="" style="display:none;width:220px;height:220px;border-radius:12px;margin:0 auto 16px;display:block;" />
+      <div id="wbot-phone" style="display:none;color:#25D366;font-size:18px;font-weight:bold;margin-bottom:16px;"></div>
+      <button id="wbot-btn-conectar" onclick="conectarWbot()" style="display:none;background:#25D366;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:bold;cursor:pointer;width:100%;margin-bottom:8px;">📱 Conectar WhatsApp</button>
+      <button id="wbot-btn-desconectar" onclick="desconectarWbot()" style="display:none;background:#c0392b;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;cursor:pointer;width:100%;">Desconectar</button>
+      <p style="color:#555;font-size:11px;margin-top:14px;">As notificações serão enviadas pelo número conectado</p>
+    </div>
+  </div>
 </body></html>
 <script>
 function initAutocomplete(){
@@ -1943,6 +1959,78 @@ async function submitSaqueLoja() {
 
 
   function abrirWhatsappBot() {
-    alert('Em breve! O WhatsApp Bot para lojas está chegando 🤖');
+    document.getElementById('modal-wbot').style.display = 'flex';
+    carregarStatusWbot();
+  }
+
+  function fecharModalWbot() {
+    document.getElementById('modal-wbot').style.display = 'none';
+    clearInterval(window._wbotQrInterval);
+  }
+
+  async function carregarStatusWbot() {
+    const u = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+    const lojaId = u.username || u.id;
+    if (!lojaId) return;
+    try {
+      const r = await fetch('https://flashdrop-loja-bot-production.up.railway.app/api/loja/' + lojaId + '/status');
+      const d = await r.json();
+      const statusEl = document.getElementById('wbot-status');
+      const qrEl = document.getElementById('wbot-qr');
+      const phoneEl = document.getElementById('wbot-phone');
+      const btnDesconectar = document.getElementById('wbot-btn-desconectar');
+      const btnConectar = document.getElementById('wbot-btn-conectar');
+      if (d.status === 'connected') {
+        statusEl.innerHTML = '<span style="color:#25D366">● Conectado</span>';
+        phoneEl.textContent = '+' + d.phone;
+        phoneEl.style.display = 'block';
+        qrEl.style.display = 'none';
+        btnDesconectar.style.display = 'inline-block';
+        btnConectar.style.display = 'none';
+        clearInterval(window._wbotQrInterval);
+      } else if (d.status === 'qr' && d.qrCode) {
+        statusEl.innerHTML = '<span style="color:#f0a500">● Escaneie o QR Code</span>';
+        qrEl.src = d.qrCode;
+        qrEl.style.display = 'block';
+        phoneEl.style.display = 'none';
+        btnDesconectar.style.display = 'none';
+        btnConectar.style.display = 'none';
+      } else if (d.status === 'loading') {
+        statusEl.innerHTML = '<span style="color:#aaa">● Iniciando...</span>';
+        qrEl.style.display = 'none';
+        phoneEl.style.display = 'none';
+        btnDesconectar.style.display = 'none';
+        btnConectar.style.display = 'none';
+      } else {
+        statusEl.innerHTML = '<span style="color:#888">● Desconectado</span>';
+        qrEl.style.display = 'none';
+        phoneEl.style.display = 'none';
+        btnDesconectar.style.display = 'none';
+        btnConectar.style.display = 'inline-block';
+      }
+    } catch(e) {
+      document.getElementById('wbot-status').innerHTML = '<span style="color:#f44">● Erro ao conectar</span>';
+    }
+  }
+
+  async function conectarWbot() {
+    const u = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+    const lojaId = u.username || u.id;
+    if (!lojaId) return;
+    document.getElementById('wbot-status').innerHTML = '<span style="color:#aaa">● Iniciando...</span>';
+    document.getElementById('wbot-btn-conectar').style.display = 'none';
+    await fetch('https://flashdrop-loja-bot-production.up.railway.app/api/loja/' + lojaId + '/connect', { method: 'POST' });
+    clearInterval(window._wbotQrInterval);
+    window._wbotQrInterval = setInterval(carregarStatusWbot, 3000);
+    carregarStatusWbot();
+  }
+
+  async function desconectarWbot() {
+    const u = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+    const lojaId = u.username || u.id;
+    if (!lojaId) return;
+    if (!confirm('Deseja desconectar o WhatsApp Bot?')) return;
+    await fetch('https://flashdrop-loja-bot-production.up.railway.app/api/loja/' + lojaId + '/disconnect', { method: 'POST' });
+    carregarStatusWbot();
   }
 </script>
