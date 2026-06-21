@@ -231,7 +231,21 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   </div>
   <div style="margin-bottom:10px">
     <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Forma de pagamento *</label>
-    <select id="tipoPagamento" onchange="onTipoPagChange()" style="width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23888%22 d=%22M6 8L0 0h12z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='#333'"><option value="" style="background:#252525">-- Selecione --</option><option value="dinheiro" style="background:#252525">&#x1F4B5; Dinheiro</option><option value="maquina" style="background:#252525">&#x1F4B3; Maquina de Cartao</option><option value="pix" style="background:#252525">&#x26A1; PIX (pago)</option><option value="cartao_aproximacao" style="background:#252525">&#x1F4B3; Cartão por aproximação crédito ou débito</option>
+    <select id="tipoPagamento" onchange="onTipoPagChange()" style="display:none;width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23888%22 d=%22M6 8L0 0h12z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='#333'"><option value="" style="background:#252525">-- Selecione --</option><option value="dinheiro" style="background:#252525">&#x1F4B5; Dinheiro</option><option value="maquina" style="background:#252525">&#x1F4B3; Maquina de Cartao</option><option value="pix" style="background:#252525">&#x26A1; PIX (pago)</option><option value="cartao_aproximacao" style="background:#252525">&#x1F4B3; Cartão por aproximação crédito ou débito</option>
+    <div id="customPagDropdown" style="position:relative;width:100%;">
+      <div id="customPagSelected" onclick="togglePagDropdown()" style="width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;font-size:14px;">
+        <span id="customPagLabel">-- Selecione --</span>
+        <span style="color:#aaa;font-size:12px;">&#9660;</span>
+      </div>
+      <div id="customPagOptions" style="display:none;position:absolute;top:100%;left:0;width:100%;background:#252525;border:1.5px solid #555;border-radius:10px;z-index:9999;overflow:hidden;">
+        <div class="pag-opt" data-value="" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#aaa;font-size:14px;">-- Selecione --</div>
+        <div class="pag-opt" data-value="dinheiro" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">💵 Dinheiro</div>
+        <div class="pag-opt" data-value="maquina" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">💳 Maquina de Cartao</div>
+        <div class="pag-opt" data-value="pix" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">⚡ PIX (pago)</div>
+        <div class="pag-opt" data-value="cartao_aproximacao" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">💳 Cartão por aproximação crédito ou débito</div>
+        <div class="pag-opt" data-value="ifood" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;display:flex;align-items:center;gap:8px;"><span style="background:#ea1d2c;color:#fff;border-radius:20px;padding:3px 12px;font-weight:700;font-size:13px;">iFood</span> Entrega Propria</div>
+      </div>
+    </div>
           <option value="ifood">iFood Entrega Propria</option></select>
   </div>
   <div id="valorPedidoGroup" style="display:none;margin-top:10px">
@@ -2033,4 +2047,7 @@ async function submitSaqueLoja() {
     await fetch('https://flashdrop-loja-bot-production.up.railway.app/api/loja/' + lojaId + '/disconnect', { method: 'POST' });
     carregarStatusWbot();
   }
+function togglePagDropdown(){var o=document.getElementById("customPagOptions");o.style.display=o.style.display==="none"?"block":"none";}
+function selectPagOption(el){var val=el.getAttribute("data-value");var sel=document.getElementById("tipoPagamento");sel.value=val;document.getElementById("customPagOptions").style.display="none";var lbl=document.getElementById("customPagLabel");if(val==="ifood"){lbl.innerHTML="<span style=\"background:#ea1d2c;color:#fff;border-radius:20px;padding:3px 12px;font-weight:700;font-size:13px;\">iFood</span> Entrega Propria";}else{lbl.textContent=el.textContent.trim();}sel.dispatchEvent(new Event("change",{bubbles:true}));}
+document.addEventListener("click",function(e){var dd=document.getElementById("customPagDropdown");if(dd&&!dd.contains(e.target)){var opts=document.getElementById("customPagOptions");if(opts)opts.style.display="none";}});
 </script>
