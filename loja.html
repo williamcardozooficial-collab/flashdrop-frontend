@@ -232,6 +232,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <div style="margin-bottom:10px">
     <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Forma de pagamento *</label>
     <select id="tipoPagamento" onchange="onTipoPagChange()" style="display:none;width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23888%22 d=%22M6 8L0 0h12z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='#333'"><option value="" style="background:#252525">-- Selecione --</option><option value="dinheiro" style="background:#252525">&#x1F4B5; Dinheiro</option><option value="maquina" style="background:#252525">&#x1F4B3; Maquina de Cartao</option><option value="pix" style="background:#252525">&#x26A1; PIX (pago)</option><option value="cartao_aproximacao" style="background:#252525">&#x1F4B3; Cartão por aproximação crédito ou débito</option>
+          <option value="ifood">iFood Entrega Propria</option></select>
     <div id="customPagDropdown" style="position:relative;width:100%;">
       <div id="customPagSelected" onclick="togglePagDropdown()" style="width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;font-size:14px;">
         <span id="customPagLabel">-- Selecione --</span>
@@ -246,7 +247,6 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         <div class="pag-opt" data-value="ifood" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;display:flex;align-items:center;gap:8px;"><span style="background:#ea1d2c;color:#fff;border-radius:20px;padding:3px 12px;font-weight:700;font-size:13px;">iFood</span> Entrega Propria</div>
       </div>
     </div>
-          <option value="ifood">iFood Entrega Propria</option></select>
   </div>
   <div id="valorPedidoGroup" style="display:none;margin-top:10px">
     <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Valor do Produto (R$)</label>
