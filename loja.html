@@ -50,15 +50,15 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <button id="btn-toggle-online" onclick="toggleLojaOnline()" style="padding:8px 18px;border:none;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;background:#555;color:#fff">Abrir Loja</button>
 <button onclick="abrirModalOfflineTimer()" id="btn-agendar-off" style="display:none;padding:8px 14px;border:1px solid #f5a623;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:#f5a623">⏰ Agendar</button>
 </div>
-</div>PIX (pago)
-<div id="loja-formaPIX (pago)</option><option value="pix_direto" style="background:#252525">&#x1F4B8; Pix Direto</option>s-pag-bar" style="margin:8px 20px 0;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:10px 14px">
+</div>
+<div id="loja-formas-pag-bar" style="margin:8px 20px 0;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:10px 14px">
 <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:8px">💳 Formas de pagamento aceitas no cardápio</div>
 <div style="display:flex;gap:10px;flex-wrap:wrap">
 <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="fp-pix" onchange="salvarFormasPagamento()" style="accent-color:#bb86fc;width:16px;height:16px"> ⚡ Pagamento Online</label>
 <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="fp-dinheiro" onchange="salvarFormasPagamento()" style="accent-color:#bb86fc;width:16px;height:16px"> 💵 Dinheiro</label>
 <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="fp-cartao" onchange="salvarFormasPagamento()" style="accent-color:#bb86fc;width:16px;height:16px"> 💳 Maquina de Cartão</label>
 <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="fp-cartao-aprox" onchange="salvarFormasPagamento()" style="accent-color:#bb86fc;width:16px;height:16px"> 💳 Cartão por aproximação</label>
- <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="fp-pix-direto" onchange="salvarFormasPagamento()" style="accent-color:#27ae60;width:16px;height:16px"> 💸 Pix Direto</label>label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="fp-pix-direto" onchange="salvarFormasPagamento()" style="width:16px;height:16px"> 💸 Pix Direto</label>
 </div>
 </div>
 <div id="loja-pix-bar" style="margin:8px 20px 0;background:#0d1f1a;border:1px solid #1a4a3a;border-radius:12px;padding:12px 14px">
@@ -232,7 +232,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   </div>
   <div style="margin-bottom:10px">
     <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Forma de pagamento *</label>
-    <select id="tipoPagamento" onchange="onTipoPagChange()" style="display:none;width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23888%22 d=%22M6 8L0 0h12z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='#333'"><option value="" style="background:#252525">-- Selecione --</option><option value="dinheiro" style="background:#252525">&#x1F4B5; Dinheiro</option><option value="maquina" style="background:#252525">&#x1F4B3; Maquina de Cartao</option><option value="pix" style="background:#252525">&#x26A1; PIX (pago)</option><option value="cartao_aproximacao" style="background:#252525">&#x1F4B3; Cartão por aproximação crédito ou débito</option>
+    <select id="tipoPagamento" onchange="onTipoPagChange()" style="display:none;width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23888%22 d=%22M6 8L0 0h12z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='#333'"><option value="" style="background:#252525">-- Selecione --</option><option value="dinheiro" style="background:#252525">&#x1F4B5; Dinheiro</option><option value="maquina" style="background:#252525">&#x1F4B3; Maquina de Cartao</option><option value="pix" style="background:#252525">&#x26A1; PIX (pago)</option>
+            <option value="pix_direto">💸 Pix Direto</option><option value="cartao_aproximacao" style="background:#252525">&#x1F4B3; Cartão por aproximação crédito ou débito</option>
           <option value="ifood">iFood Entrega Propria</option></select>
     <div id="customPagDropdown" style="position:relative;width:100%;">
       <div id="customPagSelected" onclick="togglePagDropdown()" style="width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;font-size:14px;">
@@ -244,12 +245,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         <div class="pag-opt" data-value="dinheiro" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">💵 Dinheiro</div>
         <div class="pag-opt" data-value="maquina" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">💳 Maquina de Cartao</div>
         <div class="pag-opt" data-value="pix" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">⚡ PIX (pago)</div>
+          <div class="pag-opt" data-value="pix_direto" style="background:#2c5f2e;color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px">💸 Pix Direto</div>
         <div class="pag-opt" data-value="cartao_aproximacao" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;">💳 Cartão por aproximação crédito ou débito</div>
         <div class="pag-opt" data-value="ifood" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;display:flex;align-items:center;gap:8px;"><span style="background:#ea1d2c;color:#fff;border-radius:20px;padding:3px 12px;font-weight:700;font-size:13px;">iFood</span> Entrega Propria</div>
       </div>
     </div>
   </div>
- <div class="pag-opt" data-value="pix_direto" onclick="selectPagOption(this)" style="padding:12px 14px;cursor:pointer;color:#fff;font-size:14px;border-top:1px solid #333;display:flex;align-items:center;gap:8px">&#x1F4B8; Pix Direto</div>
   <div id="valorPedidoGroup" style="display:none;margin-top:10px">
     <label style="font-size:13px;font-weight:600;color:#ccc;display:block;margin-bottom:6px">Valor do Produto (R$)</label>
     <input id="valorPedido" type="number" step="0.01" style="width:100%;padding:13px 14px;background:#252525;border:1.5px solid #333;border-radius:10px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='#333'" placeholder="0,00">
@@ -434,7 +435,7 @@ h+='<div style="font-size:13px;margin:4px 0"><strong>&#128100; Cliente:</strong>
     h+=(o.status!=='cancelado'?'<div style="font-size:13px;margin:4px 0"><strong>&#128205; Entrega:</strong> '+(o.endereco_entrega||"—")+(o.complemento_entrega?" — "+o.complemento_entrega:"")+'</div>':'');
     if(o.obs_entrega_loja&&o.status!=='cancelado'){h+='<div style="font-size:12px;margin:2px 0;color:#888"><strong>&#128203; Obs:</strong> '+o.obs_entrega_loja+'</div>';}
     if(o.obs_coleta&&o.status!=='cancelado'&&(o.plataforma==='cardapio_aceito'||o.plataforma==='cardapio')){var rawItens=o.obs_coleta.replace('Itens: ','');var itensHtml='';var partes=[];var depth=0;var cur='';for(var ci=0;ci<rawItens.length;ci++){if(rawItens[ci]==='['&&rawItens[ci+1]==='['){depth++;cur+='[[';ci++;continue;}if(rawItens[ci]===']'&&rawItens[ci+1]===']'){depth--;cur+=']]';ci++;continue;}if(depth===0&&rawItens[ci]==='|'&&rawItens[ci-1]===' '&&rawItens[ci+1]===' '){partes.push(cur.trim());cur='';ci++;continue;}cur+=rawItens[ci];}if(cur.trim())partes.push(cur.trim());partes.forEach(function(parte){var m=parte.match(/^(\d+x\s+[^\[]+)\[{1,2}([^\]]+)\]{1,2}\s*(\(R\$[\d\.]+\))?/);if(m){var nomeProd=m[1].trim();var opcoesRaw=m[2];var preco=m[3]?m[3].replace(/[()]/g,''):'';var opcoes=opcoesRaw.split(/\||\n/).map(function(op){return op.replace(/^[^:]+:/,'').trim();}).filter(function(op){return op;});itensHtml+='<div style="margin-bottom:8px"><div style="font-weight:700;font-size:13px;color:#7c5a00">'+nomeProd+(preco?' — <span style="color:#27ae60">'+preco+'</span>':'')+'</div>';opcoes.forEach(function(op){itensHtml+='<div style="font-size:12px;color:#555;padding-left:10px">• '+op+'</div>';});itensHtml+='</div>';}else{var ms=parte.match(/^(.+?)\s*(\(R\$[\d\.]+\))?$/);var nomeProd=ms?ms[1].trim():parte;var preco=ms&&ms[2]?ms[2].replace(/[()]/g,''):'';itensHtml+='<div style="margin-bottom:6px;font-weight:700;font-size:13px;color:#7c5a00">'+nomeProd+(preco?' — <span style="color:#27ae60">'+preco+'</span>':'')+'</div>';}});var totalVal=parseFloat(o.valor_pedido||0)+parseFloat(o.valor_total||0);itensHtml+='<div style="border-top:1px solid #ffe082;margin-top:6px;padding-top:6px;text-align:right;font-size:13px;font-weight:700;color:#7c5a00">Total: <span style="color:#27ae60">R$ '+totalVal.toFixed(2)+'</span></div>';h+='<div style="background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:8px 10px;margin:4px 0"><strong>&#128214; Itens do pedido:</strong>'+itensHtml+'</div>';}
-    var pagLabel={dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX",cartao_aproximacao:"💳 Aprox. (créd/déb)",pix_direto:"💸 Pix Direto"};
+    var pagLabel={dinheiro:"💵 Dinheiro",maquina:"💳 Máquina",pix:"📱 PIX",cartao_aproximacao:"💳 Aprox. (créd/déb)"};
     h+='<div style="font-size:13px;margin:4px 0"><strong>&#128179; Pagamento:</strong> '+(pagLabel[o.tipo_pagamento]||o.tipo_pagamento||"—")+'</div>';
     if(o.tipo_pagamento==="dinheiro"&&o.valor_pedido>0){h+='<div style="font-size:13px;margin:4px 0;color:#27ae60"><strong>&#128176; Valor Cobrado:</strong> R$ '+parseFloat(o.valor_pedido).toFixed(2)+'</div>';}if(o.tipo_pagamento==="cartao_aproximacao"&&o.valor_pedido>0){h+='<div style="font-size:13px;margin:4px 0;color:#f5a623"><strong>&#128179; Valor produto (cobrar do cliente):</strong> R$ '+parseFloat(o.valor_pedido).toFixed(2)+'</div>';}
     h+='<div style="text-align:right;font-size:12px"><span style="color:#888">&#128757; Taxa de entrega:</span> <strong style="color:#667eea">R$ '+parseFloat(o.valor_total).toFixed(2)+'</strong></div>';
@@ -539,7 +540,7 @@ h2+=line(SEP2);
 h2+=bigVal('TOTAL','R$ '+total.toFixed(2).replace('.',','));
 h2+=line(SEP2);
 h2+=section('PAGAMENTO');
-var pn={dinheiro:'Dinheiro',maquina:'Cartao',pix:'PIX',cartao_aproximacao:'Cartao Aprox.',pix_direto:'Pix Direto'};
+var pn={dinheiro:'Dinheiro',maquina:'Cartao',pix:'PIX',cartao_aproximacao:'Cartao Aprox.',pix_direto:'💸 Pix Direto'};
 h2+=field('Forma',pn[o.tipo_pagamento]||o.tipo_pagamento||'-');
 if(troco)h2+=field('Troco para',troco);
 h2+=line(SEP1);
@@ -1318,7 +1319,8 @@ var fd=document.getElementById('fp-dinheiro');
 var fc=document.getElementById('fp-cartao');
 if(fp)fp.checked=formas.includes('pix');
 if(fd)fd.checked=formas.includes('dinheiro');
-if(fc)fc.checked=formas.includes('cartao_credito');var fa=document.getElementById('fp-cartao-aprox');if(fa)fa.checked=formas.includes('cartao_aproximacao');document.getElementById('fp-pix-direto').checked=formas.includes('pix_direto');
+if(fc)fc.checked=formas.includes('cartao_credito');var fa=document.getElementById('fp-cartao-aprox');if(fa)fa.checked=formas.includes('cartao_aproximacao');
+var fpd=document.getElementById('fp-pix-direto');if(fpd)fpd.checked=formas.includes('pix_direto');
 }
 async function carregarStatusOnline(){
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
