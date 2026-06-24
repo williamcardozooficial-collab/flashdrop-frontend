@@ -741,7 +741,7 @@ async function carregarBannerPromocoes(lojaId) {
     if(!promos||!promos.length){banner.style.display='none';return;}
     banner.style.display='block';
     banner.innerHTML=promos.map(p=>{
-      const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação'})[f]||f).join(' ou '):'';
+      const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação',pix_direto:'Pix Direto'ção'})[f]||f).join(' ou '):'';
       const dMax=p.desconto_maximo?' (até R$ '+parseFloat(p.desconto_maximo).toFixed(2)+' off)':'';
       return '<div style="background:linear-gradient(135deg,#ff6f00,#ff8f00);border-radius:12px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(255,111,0,0.35);">'+
         '<div style="font-size:26px;flex-shrink:0;">🚚</div>'+
@@ -783,7 +783,7 @@ sel.innerHTML='<option value="">-- Selecione --</option>';
 if(formas.includes('pix'))sel.innerHTML+='<option value="pix">Pix / Pagamento Online</option>';
 if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">&#128181; Dinheiro</option>';
 if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">&#128179; Maquina de Cartao (cobra ida+volta)</option>';
-if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">&#128179; Cartao por aproximacao</option>';
+if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">&#128179; Cartao por aproximacao</option>';if(formas.includes('pix_direto'))sel.innerHTML+='<option value="pix_direto">&#x1F4B8; Pix Direto</option>';
 }
 function renderLojaFechada(loja){
 var nome=loja.name||loja.nome||'';
