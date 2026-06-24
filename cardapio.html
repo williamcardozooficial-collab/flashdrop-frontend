@@ -741,7 +741,7 @@ async function carregarBannerPromocoes(lojaId) {
     if(!promos||!promos.length){banner.style.display='none';return;}
     banner.style.display='block';
     banner.innerHTML=promos.map(p=>{
-      const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação',pix_direto:'Pix Direto'ção'})[f]||f).join(' ou '):'';
+      const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação',pix_direto:'Pix Direto'})[f]||f).join(' ou '):'';
       const dMax=p.desconto_maximo?' (até R$ '+parseFloat(p.desconto_maximo).toFixed(2)+' off)':'';
       return '<div style="background:linear-gradient(135deg,#ff6f00,#ff8f00);border-radius:12px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(255,111,0,0.35);">'+
         '<div style="font-size:26px;flex-shrink:0;">🚚</div>'+
