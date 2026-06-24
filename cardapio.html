@@ -763,7 +763,7 @@ function renderLoja(loja){
 lojaGlobal=loja;
 var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
 var end='';
-var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div>':'';
+var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div><a href="https://wa.me/55'+esc(loja.phone).replace(/\D/g,\'\')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;margin-left:8px">WhatsApp</a>':'';
 document.getElementById('page-content').innerHTML=
 '<section class="loja-hero"><div class="loja-hero-inner">'+
 '<div class="loja-foto-grande">'+foto+'</div>'+
@@ -1027,7 +1027,7 @@ return '<div class="prod-card">'+
 '<div class="prod-card-top">'+foto+
 '<div class="prod-info">'+
 '<div class="prod-nome">'+esc(p.nome)+'</div>'+
-(p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
+(p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div><a href="https://wa.me/55'+esc(loja.phone).replace(/\D/g,\'\')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;margin-left:8px">WhatsApp</a>':'')+
 '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
 '</div></div>'+
 '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" data-variacoes="'+esc(JSON.stringify(p.variacoes||[]))+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
