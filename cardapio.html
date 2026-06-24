@@ -763,7 +763,7 @@ function renderLoja(loja){
 lojaGlobal=loja;
 var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
 var end='';
-var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div><a href="https://wa.me/55'+esc(loja.phone).replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px;width:fit-content;flex-shrink:0">WhatsApp</a>':'';
+var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+' <a href="https://wa.me/55'+esc(loja.phone).replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px;width:fit-content;flex-shrink:0">WhatsApp</a></div>':''
 document.getElementById('page-content').innerHTML=
 '<section class="loja-hero"><div class="loja-hero-inner">'+
 '<div class="loja-foto-grande">'+foto+'</div>'+
