@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FlashDrop - Cardapio</title>
 <style>h
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }h
 body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', Arial, sansh-serif; min-height: 100vh; }
-header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
+header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20pxh; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(245,166,35,0.15); }
 .header-logo { display: flex; align-items: center; gap: 12px; }
 .header-logo .icon { width: 42px; height: 42px; background: #f5a623; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
 .header-logo h1 { font-size: 1.5rem; font-weight: 700; color: #fff; }
@@ -763,7 +763,7 @@ function renderLoja(loja){
 lojaGlobal=loja;
 var foto=loja.foto_url?'<img src="'+loja.foto_url+'" alt="'+esc(loja.name||'')+'" />':'&#127978;';
 var end='';
-var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div><a href="https://wa.me/55'+esc(loja.phone).replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;margin-left:8px">WhatsApp</a>':'';
+var tel=loja.phone?'<div class="meta-item">&#128241; '+esc(loja.phone)+'</div><a href="https://wa.me/55'+esc(loja.phone).replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px;width:fit-content;flex-shrink:0">WhatsApp</a>':'';
 document.getElementById('page-content').innerHTML=
 '<section class="loja-hero"><div class="loja-hero-inner">'+
 '<div class="loja-foto-grande">'+foto+'</div>'+
@@ -1027,7 +1027,7 @@ return '<div class="prod-card">'+
 '<div class="prod-card-top">'+foto+
 '<div class="prod-info">'+
 '<div class="prod-nome">'+esc(p.nome)+'</div>'+
-(p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div> target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;margin-left:8px">WhatsApp</a>':'')+
+(p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div> target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px;width:fit-content;flex-shrink:0">WhatsApp</a>':'')+
 '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
 '</div></div>'+
 '<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" data-variacoes="'+esc(JSON.stringify(p.variacoes||[]))+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
