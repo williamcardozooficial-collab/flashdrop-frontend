@@ -56,6 +56,16 @@
       .lojas-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
       .loja-foto { height: 120px; }
     }
+    @media (max-width: 600px) {
+      header { height: auto; padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
+      .header-logo h1 { font-size: 1.1rem; }
+      .header-logo .icon { width: 34px; height: 34px; font-size: 18px; }
+      .header-subtitle { display: none; }
+      .header-badge { font-size: 0.6rem; padding: 3px 7px; }
+      .header-logo { gap: 8px; }
+      .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+      .btn-cadastro { font-size: 0.7rem; padding: 6px 10px; }
+    }
   </style>
 </head>
 <body>
@@ -67,7 +77,7 @@
         <div class="header-subtitle">Entrega rapida na sua cidade</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px"><div class="header-badge">DELIVERY</div><a href="https://flashdrop-frontend-six.vercel.app/login.html" style="background:#f5a623;color:#000;font-weight:700;font-size:0.78rem;padding:8px 14px;border-radius:20px;text-decoration:none;white-space:nowrap;box-shadow:0 2px 8px rgba(245,166,35,0.4);transition:background 0.2s" onmouseover="this.style.background='#ffc107'" onmouseout="this.style.background='#f5a623'">&#127981; Cadastre sua loja</a></div>
+    <div  class="header-right"style="display:flex;align-items:center;gap:10px"><div class="header-badge">DELIVERY</div><a class="btn-cadastro" href="https://flashdrop-frontend-six.vercel.app/login.html" style="background:#f5a623;color:#000;font-weight:700;font-size:0.78rem;padding:8px 14px;border-radius:20px;text-decoration:none;white-space:nowrap;box-shadow:0 2px 8px rgba(245,166,35,0.4);transition:background 0.2s" onmouseover="this.style.background='#ffc107'" onmouseout="this.style.background='#f5a623'">&#127981; Cadastre sua loja</a></div>
   </header>
   <section class="hero">
     <h2>Nossas <span>Lojas</span> Parceiras</h2>
