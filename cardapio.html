@@ -195,14 +195,14 @@ function getCarrinho(lid){if(!carrinho[lid])carrinho[lid]=[];return carrinho[lid
 function gerarUid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
 
 function addFromBtn(btn){
-var lid=parseInt(btn.dataset.lid),id=parseInt(btn.dataset.id),nome=btn.dataset.nome,preco=parseFloat(btn.dataset.preco);
+var lid=parseInt(btn.dataset.lid),id=parseInt(btn.dataset.id),nome=btn.dataset.nome,preco=parseFloat(btn.dataset.preco);var validoPromo=btn.dataset.valido!=='false';
 var varStr=btn.dataset.variacoes||'';
 var variacoes=[];
 try{if(varStr)variacoes=JSON.parse(varStr);}catch(e){}
 if(variacoes&&variacoes.length>0){
-abrirModalVariacoes(lid,{id:id,nome:nome,preco:preco,variacoes:variacoes});
+abrirModalVariacoes(lid,{id:id,nome:nome,preco:preco,variacoes:variacoes,valido_promocao:validoPromo});
 }else{
-adicionarItem(lid,{id:id,nome:nome,preco:preco,adicionais:[],obs:''});
+adicionarItem(lid,{id:id,nome:nome,preco:preco,adicionais:[],obs:'',valido_promocao:validoPromo});
 btn.textContent='Adicionado!';
 setTimeout(function(){btn.textContent='+ Adicionar';},900);
 }
@@ -211,7 +211,7 @@ setTimeout(function(){btn.textContent='+ Adicionar';},900);
 /* Cada chamada adiciona UMA nova linha independente no carrinho */
 function adicionarItem(lid,prod){
 var c=getCarrinho(lid);
-c.push({uid:gerarUid(),id:prod.id,nome:prod.nome,preco:prod.preco,adicionais:prod.adicionais||[],obs:prod.obs||''});
+c.push({uid:gerarUid(),id:prod.id,nome:prod.nome,preco:prod.preco,adicionais:prod.adicionais||[],obs:prod.obs||'',valido_promocao:prod.valido_promocao});
 atualizarBarra(lid);
 }
 
@@ -242,7 +242,7 @@ function duplicarItem(lid,uid){
 var c=getCarrinho(lid);
 var item=c.find(function(i){return i.uid===uid;});
 if(!item)return;
-adicionarItem(lid,{id:item.id,nome:item.nome,preco:item.preco,adicionais:item.adicionais.slice(),obs:''});
+adicionarItem(lid,{id:item.id,nome:item.nome,preco:item.preco,adicionais:item.adicionais.slice(),obs:'',valido_promocao:item.valido_promocao});
 atualizarBarra(lid);
 renderCartLista(lid);
 }
@@ -253,7 +253,7 @@ var item=c.find(function(i){return i.uid===uid;});
 if(item)item.obs=val;
 }
 
-function totalCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.preco;},0);}
+function totalCarrinho(lid){return getCarrinho(lid).reduce(function(s,i){return s+i.preco;},0);}function totalCarrinhoValidoPromocao(lid){return getCarrinho(lid).reduce(function(s,i){return s+(i.valido_promocao!==false?i.preco:0);},0);}
 function qtdCarrinho(lid){return getCarrinho(lid).length;}
 
 function atualizarBarra(lid){
@@ -444,7 +444,7 @@ var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxa*2:taxa;
 var lid=lojaGlobal.id;
 var totalItens=totalCarrinho(lid);
-var _descontoRes2=await calcularDescontoPromocao(lid,totalItens,pag,taxa);var descontoFrete=_descontoRes2&&_descontoRes2.desconto?parseFloat(_descontoRes2.desconto):0;if(descontoFrete>0){taxa=Math.max(0,taxa-descontoFrete);taxaFinal=isCartao?taxa*2:taxa;}descontoFreteAtual=descontoFrete;
+var _descontoRes2=await calcularDescontoPromocao(lid,totalCarrinhoValidoPromocao(lid),pag,taxa);var descontoFrete=_descontoRes2&&_descontoRes2.desconto?parseFloat(_descontoRes2.desconto):0;if(descontoFrete>0){taxa=Math.max(0,taxa-descontoFrete);taxaFinal=isCartao?taxa*2:taxa;}descontoFreteAtual=descontoFrete;
 var totalFinal=totalItens+taxaFinal;
 document.getElementById('taxa-distancia').textContent=km.toFixed(1)+' km';
 document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
@@ -494,7 +494,7 @@ var totalItens=totalCarrinho(lid);
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var taxaBruta=taxaFinal;
-var _descontoRes=await calcularDescontoPromocao(lid,totalItens,pag,taxaFinal);
+var _descontoRes=await calcularDescontoPromocao(lid,totalCarrinhoValidoPromocao(lid),pag,taxaFinal);
 var descontoFrete=_descontoRes&&_descontoRes.desconto?parseFloat(_descontoRes.desconto):0;
 if(descontoFrete>0){taxaFinal=Math.max(0,taxaFinal-descontoFrete);}
 descontoFreteAtual=descontoFrete;
@@ -889,7 +889,7 @@ adicionais.push(label);
 });
 var precoFinal = parseFloat(prod.preco) + extra;
 /* Adiciona nova linha com os adicionais como array - sem por na obs */
-adicionarItem(lid,{id:prod.id,nome:prod.nome,preco:precoFinal,adicionais:adicionais,obs:''});
+adicionarItem(lid,{id:prod.id,nome:prod.nome,preco:precoFinal,adicionais:adicionais,obs:'',valido_promocao:prod.valido_promocao});
 fecharModalVariacoes();
 }
 
@@ -1030,7 +1030,7 @@ return '<div class="prod-card">'+
 (p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
 '<div class="prod-preco">R$ '+parseFloat(p.preco||0).toFixed(2)+'</div>'+
 '</div></div>'+
-'<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" data-variacoes="'+esc(JSON.stringify(p.variacoes||[]))+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
+'<button class="btn-add" data-lid="'+lid+'" data-id="'+p.id+'" data-nome="'+esc(p.nome)+'" data-preco="'+parseFloat(p.preco||0)+'" data-variacoes="'+esc(JSON.stringify(p.variacoes||[]))+'" data-valido="'+(p.valido_promocao!==false)+'" onclick="addFromBtn(this)">+ Adicionar</button>'+
 '</div>';
 }
 var allCats = [];
