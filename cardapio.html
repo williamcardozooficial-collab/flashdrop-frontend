@@ -158,7 +158,7 @@ filter: invert(70%) sepia(60%) saturate(400%) hue-rotate(0deg) !important;
 .btn-marcar-mapa { width: 100%; margin-top: 8px; background: transparent; border: 2px dashed #f5a623; color: #f5a623; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
 
   @keyframes pulsePromo {0%,100%{transform:scale(1);box-shadow:0 4px 12px rgba(255,111,0,0.35);}50%{transform:scale(1.01);box-shadow:0 6px 20px rgba(255,111,0,0.6);}}
-  #banner-promocoes > div { animation: pulsePromo 2.5s ease-in-out infinite; }
+  #banner-promocoes > div { animation: pulsePromo 2.5s ease-in-out infinite; } @keyframes promoFade{0%{opacity:0;transform:translateY(6px);}100%{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 <body>
@@ -296,7 +296,7 @@ tagsHtml+
 '<textarea class="cart-obs-input" placeholder="Observacao: ex. sem ervilha, sem cebola..." onchange="salvarObs('+lid+',\''+it.uid+'\',this.value)">'+esc(it.obs||'')+'</textarea>'+
 '<button class="btn-mais-igual" onclick="duplicarItem('+lid+',\''+it.uid+'\')">+ Adicionar mais um igual</button>'+
 '</div>';
-}).join('');
+});const __dotsHtml=__cards.length>1?('<div id="banner-promo-dots" style="display:flex;gap:6px;justify-content:center;margin-top:8px;">'+__cards.map(function(_,i){return '<span style="width:7px;height:7px;border-radius:50%;background:'+(i===0?'#ff8f00':'rgba(255,143,0,0.35)')+';display:inline-block;transition:background .3s;"></span>';}).join('')+'</div>'):'';banner.innerHTML='<div id="banner-promo-slide" style="animation:promoFade .5s ease;">'+__cards[0]+'</div>'+__dotsHtml;if(__promoCarouselTimer){clearInterval(__promoCarouselTimer);}if(__cards.length>1){__promoCarouselIdx=0;__promoCarouselTimer=setInterval(function(){__promoCarouselIdx=(__promoCarouselIdx+1)%__cards.length;var __slide=document.getElementById('banner-promo-slide');if(!__slide)return;__slide.style.animation='none';void __slide.offsetHeight;__slide.innerHTML=__cards[__promoCarouselIdx];__slide.style.animation='promoFade .5s ease';var __dots=document.querySelectorAll('#banner-promo-dots span');__dots.forEach(function(d,i){d.style.background=(i===__promoCarouselIdx?'#ff8f00':'rgba(255,143,0,0.35)');});},3500);}
 document.getElementById('cart-total-val').textContent='R$ '+totalCarrinho(lid).toFixed(2);
 }
 function abrirCarrinho(){
@@ -737,10 +737,10 @@ let __promoCarouselTimer=null,__promoCarouselIdx=0; async function carregarBanne
     if(!resp.ok) return;
     const promos = await resp.json();
     const banner = document.getElementById('banner-promocoes');
-    if(!banner) return;
-    if(!promos||!promos.length){banner.style.display='none';return;}
+    if(!banner) return; if(__promoCarouselTimer){clearInterval(__promoCarouselTimer);__promoCarouselTimer=null;}
+    if(!promos||!promos.length){banner.style.display='none';banner.innerHTML='';return;}
     banner.style.display='block';
-    banner.innerHTML=promos.map(p=>{
+    const __cards=promos.map(p=>{
       const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação',pix_direto:'PIX'})[f]||f).join(' ou '):'';
       const dMax=p.desconto_maximo?' (até R$ '+parseFloat(p.desconto_maximo).toFixed(2)+' off)':'';
       return '<div style="background:linear-gradient(135deg,#ff6f00,#ff8f00);border-radius:12px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(255,111,0,0.35);">'+
@@ -754,7 +754,7 @@ let __promoCarouselTimer=null,__promoCarouselIdx=0; async function carregarBanne
           '<div style="color:rgba(255,255,255,0.8);font-size:9px;text-transform:uppercase;">mínimo</div>'+
         '</div>'+
       '</div>';
-    }).join('');
+    });const __dotsHtml=__cards.length>1?('<div id="banner-promo-dots" style="display:flex;gap:6px;justify-content:center;margin-top:8px;">'+__cards.map(function(_,i){return '<span style="width:7px;height:7px;border-radius:50%;background:'+(i===0?'#ff8f00':'rgba(255,143,0,0.35)')+';display:inline-block;transition:background .3s;"></span>';}).join('')+'</div>'):'';banner.innerHTML='<div id="banner-promo-slide" style="animation:promoFade .5s ease;">'+__cards[0]+'</div>'+__dotsHtml;if(__promoCarouselTimer){clearInterval(__promoCarouselTimer);}if(__cards.length>1){__promoCarouselIdx=0;__promoCarouselTimer=setInterval(function(){__promoCarouselIdx=(__promoCarouselIdx+1)%__cards.length;var __slide=document.getElementById('banner-promo-slide');if(!__slide)return;__slide.style.animation='none';void __slide.offsetHeight;__slide.innerHTML=__cards[__promoCarouselIdx];__slide.style.animation='promoFade .5s ease';var __dots=document.querySelectorAll('#banner-promo-dots span');__dots.forEach(function(d,i){d.style.background=(i===__promoCarouselIdx?'#ff8f00':'rgba(255,143,0,0.35)');});},3500);}
   } catch(e){}
 }
 
