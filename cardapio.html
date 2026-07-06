@@ -296,7 +296,7 @@ tagsHtml+
 '<textarea class="cart-obs-input" placeholder="Observacao: ex. sem ervilha, sem cebola..." onchange="salvarObs('+lid+',\''+it.uid+'\',this.value)">'+esc(it.obs||'')+'</textarea>'+
 '<button class="btn-mais-igual" onclick="duplicarItem('+lid+',\''+it.uid+'\')">+ Adicionar mais um igual</button>'+
 '</div>';
-});const __dotsHtml=__cards.length>1?('<div id="banner-promo-dots" style="display:flex;gap:6px;justify-content:center;margin-top:8px;">'+__cards.map(function(_,i){return '<span style="width:7px;height:7px;border-radius:50%;background:'+(i===0?'#ff8f00':'rgba(255,143,0,0.35)')+';display:inline-block;transition:background .3s;"></span>';}).join('')+'</div>'):'';banner.innerHTML='<div id="banner-promo-slide" style="animation:promoFade .5s ease;">'+__cards[0]+'</div>'+__dotsHtml;if(__promoCarouselTimer){clearInterval(__promoCarouselTimer);}if(__cards.length>1){__promoCarouselIdx=0;__promoCarouselTimer=setInterval(function(){__promoCarouselIdx=(__promoCarouselIdx+1)%__cards.length;var __slide=document.getElementById('banner-promo-slide');if(!__slide)return;__slide.style.animation='none';void __slide.offsetHeight;__slide.innerHTML=__cards[__promoCarouselIdx];__slide.style.animation='promoFade .5s ease';var __dots=document.querySelectorAll('#banner-promo-dots span');__dots.forEach(function(d,i){d.style.background=(i===__promoCarouselIdx?'#ff8f00':'rgba(255,143,0,0.35)');});},3500);}
+                }).join('');
 document.getElementById('cart-total-val').textContent='R$ '+totalCarrinho(lid).toFixed(2);
 }
 function abrirCarrinho(){
