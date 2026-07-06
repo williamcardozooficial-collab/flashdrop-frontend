@@ -731,7 +731,7 @@ if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedid
 
 
 /* ---- RENDER LOJA ---- */
-async function carregarBannerPromocoes(lojaId) {
+let __promoCarouselTimer=null,__promoCarouselIdx=0; async function carregarBannerPromocoes(lojaId) {
   try {
     const resp = await fetch(API+'/loja-promocoes?loja_id='+lojaId);
     if(!resp.ok) return;
