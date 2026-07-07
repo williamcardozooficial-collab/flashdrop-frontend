@@ -975,7 +975,7 @@ document.getElementById('total-final-val').textContent='R$ '+totalFinal.toFixed(
 // Recalcular desconto com nova forma de pagamento
 var _pag2=document.getElementById('ch-pag').value;
 var _lid2=lojaGlobal?lojaGlobal.id:null;
-var _sub2=_lid2?totalCarrinho(_lid2):0;
+var _sub2=_lid2?totalCarrinhoValidoPromocao(_lid2):0;
 if(taxaCalculada>0&&_lid2){
   var _dr2=await calcularDescontoPromocao(_lid2,_sub2,_pag2,taxaFinal);
   var _df2=_dr2&&_dr2.desconto?parseFloat(_dr2.desconto):0;
