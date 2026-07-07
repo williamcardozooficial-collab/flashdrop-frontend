@@ -159,6 +159,7 @@ filter: invert(70%) sepia(60%) saturate(400%) hue-rotate(0deg) !important;
 
   @keyframes pulsePromo {0%,100%{transform:scale(1);box-shadow:0 4px 12px rgba(255,111,0,0.35);}50%{transform:scale(1.01);box-shadow:0 6px 20px rgba(255,111,0,0.6);}}
   #banner-promocoes > div { animation: pulsePromo 2.5s ease-in-out infinite; }
+  @keyframes promoFade{0%{opacity:0;transform:translateY(6px);}100%{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 <body>
@@ -731,16 +732,18 @@ if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedid
 
 
 /* ---- RENDER LOJA ---- */
+let __promoCarouselTimer=null,__promoCarouselIdx=0;
 async function carregarBannerPromocoes(lojaId) {
   try {
+    if(__promoCarouselTimer){clearInterval(__promoCarouselTimer);__promoCarouselTimer=null;}
     const resp = await fetch(API+'/loja-promocoes?loja_id='+lojaId);
     if(!resp.ok) return;
     const promos = await resp.json();
     const banner = document.getElementById('banner-promocoes');
     if(!banner) return;
-    if(!promos||!promos.length){banner.style.display='none';return;}
+    if(!promos||!promos.length){banner.style.display='none';banner.innerHTML='';return;}
     banner.style.display='block';
-    banner.innerHTML=promos.map(p=>{
+    const __cards=promos.map(p=>{
       const pag=p.formas_pagamento&&p.formas_pagamento.length>0?'pagando no '+p.formas_pagamento.map(f=>({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação',pix_direto:'PIX'})[f]||f).join(' ou '):'';
       const dMax=p.desconto_maximo?' (até R$ '+parseFloat(p.desconto_maximo).toFixed(2)+' off)':'';
       return '<div style="background:linear-gradient(135deg,#ff6f00,#ff8f00);border-radius:12px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(255,111,0,0.35);">'+
@@ -754,7 +757,21 @@ async function carregarBannerPromocoes(lojaId) {
           '<div style="color:rgba(255,255,255,0.8);font-size:9px;text-transform:uppercase;">mínimo</div>'+
         '</div>'+
       '</div>';
-    }).join('');
+    });
+    __promoCarouselIdx=0;
+    const __dotsHtml=__cards.length>1?'<div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">'+__cards.map((c,i)=>'<span data-dot="'+i+'" style="width:7px;height:7px;border-radius:50%;background:'+(i===0?'#f5a623':'rgba(255,255,255,0.3)')+';display:inline-block;transition:background 0.3s;"></span>').join('')+'</div>':'';
+    banner.innerHTML='<div id="banner-promo-slide">'+__cards[0]+'</div>'+__dotsHtml;
+    if(__cards.length>1){
+      __promoCarouselTimer=setInterval(()=>{
+        __promoCarouselIdx=(__promoCarouselIdx+1)%__cards.length;
+        const slide=document.getElementById('banner-promo-slide');
+        if(!slide){clearInterval(__promoCarouselTimer);__promoCarouselTimer=null;return;}
+        slide.style.animation='promoFade 0.5s ease';
+        slide.innerHTML=__cards[__promoCarouselIdx];
+        banner.querySelectorAll('[data-dot]').forEach((d,i)=>{d.style.background=(i===__promoCarouselIdx)?'#f5a623':'rgba(255,255,255,0.3)';});
+        setTimeout(()=>{if(slide)slide.style.animation='';},550);
+      },3500);
+    }
   } catch(e){}
 }
 
