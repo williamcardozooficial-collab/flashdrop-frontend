@@ -586,7 +586,7 @@ function esc(v) {
         document.getElementById('cfg-noturna-fim').value = data.taxa_noturna_hora_fim || '06:00';
         document.getElementById('cfg-perc-cartao-aprox').value = data.perc_cartao_aprox || 5;
         var savedDays = localStorage.getItem('flashdrop_cleanup_days');
-        if (savedDays) document.getElementById('cfg-days').value = savedDays;
+        if (data.historico_limpeza_dias) { document.getElementById('cfg-days').value = data.historico_limpeza_dias; } else if (savedDays) { document.getElementById('cfg-days').value = savedDays; }
       } else if (tab === 'cadastros') {
         loadPending();
       } else if (tab === 'avisos') {
@@ -1191,7 +1191,7 @@ function renderFinance(users) {
     function saveCleanupDays() {
       var days = parseInt(document.getElementById('cfg-days').value);
       if (isNaN(days) || days < 1) { tg.showAlert('Informe um numero valido de dias.'); return; }
-      localStorage.setItem('flashdrop_cleanup_days', days);
+      localStorage.setItem('flashdrop_cleanup_days', days); fetch(API + '/settings/cleanup-days', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ historico_limpeza_dias: days }) }).catch(function(){});
       document.getElementById('cleanup-msg').textContent = '\u2705 Prazo salvo: ' + days + ' dias.';
     }
 
