@@ -1401,7 +1401,7 @@ var horario=document.getElementById('inp-horario-offline').value;
 if(!horario){tg.showAlert('Selecione um horario.');return;}
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 try{
-var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_offline:horario})});
+var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_offline:horario,loja_fechamento_ultimo_dia:null})});
 if(r.ok){
 u.loja_horario_offline=horario;
 localStorage.setItem('flashdrop_user',JSON.stringify(u));
@@ -1414,7 +1414,7 @@ tg.showAlert('Horario salvo! A loja fechara automaticamente as '+horario+'.');
 async function removerHorarioOffline(){
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 try{
-var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_offline:null})});
+var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_offline:null,loja_fechamento_ultimo_dia:null})});
 if(r.ok){
 u.loja_horario_offline=null;
 localStorage.setItem('flashdrop_user',JSON.stringify(u));
@@ -1521,7 +1521,7 @@ function atualizarBotaoEnderecoPrint(){var cur=localStorage.getItem('fd_endereco
 <label style="font-size:12px;font-weight:700;color:#aaa;display:block;margin-bottom:6px">Horario de fechamento</label>
 <input id="inp-horario-offline" type="time" style="width:100%;padding:12px;border:2px solid #333;border-radius:10px;font-size:20px;font-weight:700;text-align:center;background:#111;color:#f5a623;outline:none">
 </div>
-<div style="background:#1a1000;border:1px solid #f5a623;border-radius:8px;padding:10px;margin-bottom:16px;font-size:12px;color:#f5a623">⚡ A loja so volta ONLINE manualmente. O fechamento automatico e apenas uma vez.</div>
+<div style="background:#1a1000;border:1px solid #f5a623;border-radius:8px;padding:10px;margin-bottom:16px;font-size:12px;color:#f5a623">⚡ A loja so volta ONLINE manualmente. O fechamento automatico se repete todos os dias neste horario.</div>
 <div style="display:flex;flex-direction:column;gap:8px">
 <button onclick="salvarHorarioOffline()" style="padding:12px;background:#f5a623;border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;cursor:pointer">✅ Salvar horario</button>
 <button onclick="removerHorarioOffline()" style="padding:10px;background:transparent;border:1px solid #e53935;border-radius:10px;color:#e53935;font-size:13px;cursor:pointer">🗑 Remover horario automatico</button>
