@@ -809,7 +809,7 @@ function renderFinance(users) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [type]: newVal })
       });
-      closeModal('modal-finance');
+      if (type === 'credit') { fetch(API + '/loja/' + currentUserId + '/wallet-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tipo: (action==='add'?'ajuste_admin_credito':'ajuste_admin_debito'), valor: val, descricao: (action==='add'?'Admin aumentou o saldo em R$ ':'Admin diminuiu o saldo em R$ ') + val.toFixed(2) }) }).catch(function(e){}); } closeModal('modal-finance');
       loadData('financeiro');
       tg.showAlert('Saldo atualizado!');
     }
