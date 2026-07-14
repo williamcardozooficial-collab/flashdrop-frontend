@@ -562,7 +562,7 @@ async function init(){document.getElementById('store-name').textContent=user.nam
 function openEditModal(id){currentEditId=id;const o=allOrders.find(x=>x.id===id);if(!o)return;document.getElementById('edit-client').value=o.nome_cliente||'';document.getElementById('edit-phone').value=o.telefone_cliente||'';document.getElementById('edit-dest').value=o.endereco_entrega||'';document.getElementById('edit-code').value=o.cod_pedido||'';document.getElementById('edit-obs').value=o.obs||'';document.getElementById('modal-edit').style.display='block';}
 function closeEditModal(){document.getElementById('modal-edit').style.display='none';currentEditId=null;}
 async function saveEdit(){if(!currentEditId)return;const update={nome_cliente:document.getElementById('edit-client').value,telefone_cliente:document.getElementById('edit-phone').value,endereco_entrega:document.getElementById('edit-dest').value,cod_pedido:document.getElementById('edit-code').value,obs:document.getElementById('edit-obs').value};await fetch(API+'/orders/'+currentEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(update)});tg.showAlert('✅ Pedido atualizado!');closeEditModal();loadData();}
-async function cancelOrderLoja(id){if(!confirm('Cancelar pedido #'+id+'? Esta ação cancela a entrega.'))return;await fetch(API+'/orders/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'cancelado'})});tg.showAlert('✅ Pedido cancelado.');loadData();}
+async function cancelOrderLoja(id){if(!confirm('Cancelar pedido #'+id+'? Esta ação cancela a entrega.'))return;await fetch(API+'/orders/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'cancelado',cancelado_por:'loja'})});tg.showAlert('✅ Pedido cancelado.');loadData();}
 async function moverParaPreparo(id, autoMin){
 var ord=(_myOrders||[]).find(function(x){return x.id===id;});
 var delayMin=settings.launch_delay_minutes||60;
@@ -1446,8 +1446,8 @@ async function abrirHistoricoCredito(){
       lista.innerHTML='<div style="text-align:center;color:#666;padding:20px">Nenhum evento nos ultimos 7 dias.</div>';
       return;
     }
-    var tipoLabel={recebimento_dinheiro:'💵 Recebimento dinheiro',estorno:'↩️ Estorno',debito_pedido:'📤 Debito pedido',debito_cardapio:'📤 Debito cardapio',recarga_mp:'💰 Recarga via PIX',pagamento_motoboy:'🛵 Motoboy pagou (aceito)',pagamento_motoboy_recusado:'🚫 Motoboy pagou (recusado)',ajuste_admin_credito:'➕ Ajuste do admin (crédito)',ajuste_admin_debito:'➖ Ajuste do admin (débito)'};
-    var tipoColor={recebimento_dinheiro:'#27ae60',estorno:'#f39c12',debito_pedido:'#e53935',debito_cardapio:'#e53935',recarga_mp:'#27ae60',pagamento_motoboy:'#e53935',pagamento_motoboy_recusado:'#888',ajuste_admin_credito:'#27ae60',ajuste_admin_debito:'#e53935'};
+    var tipoLabel={recebimento_dinheiro:'💵 Recebimento dinheiro',estorno:'↩️ Estorno',debito_pedido:'📤 Debito pedido',debito_cardapio:'📤 Debito cardapio',recarga_mp:'💰 Recarga via PIX',pagamento_motoboy:'🛵 Motoboy pagou (aceito)',pagamento_motoboy_recusado:'🚫 Motoboy pagou (recusado)',ajuste_admin_credito:'➕ Ajuste do admin (crédito)',ajuste_admin_debito:'➖ Ajuste do admin (débito)',taxa_cancelamento:'⚠️ Taxa de Cancelamento'};
+    var tipoColor={recebimento_dinheiro:'#27ae60',estorno:'#f39c12',debito_pedido:'#e53935',debito_cardapio:'#e53935',recarga_mp:'#27ae60',pagamento_motoboy:'#e53935',pagamento_motoboy_recusado:'#888',ajuste_admin_credito:'#27ae60',ajuste_admin_debito:'#e53935',taxa_cancelamento:'#e53935'};
     var saldo=parseFloat(u.credit||0);
     lista.innerHTML='<div style="background:#111;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between"><span style="color:#888;font-size:12px">Saldo atual</span><span style="color:#bb86fc;font-weight:700;font-size:15px">R$ '+saldo.toFixed(2)+'</span></div>'
     + events.map(function(ev){
