@@ -1446,8 +1446,8 @@ async function abrirHistoricoCredito(){
       lista.innerHTML='<div style="text-align:center;color:#666;padding:20px">Nenhum evento nos ultimos 7 dias.</div>';
       return;
     }
-    var tipoLabel={recebimento_dinheiro:'💵 Recebimento dinheiro',estorno:'↩️ Estorno',debito_pedido:'📤 Debito pedido',debito_cardapio:'📤 Debito cardapio',recarga_mp:'💰 Recarga via PIX'};
-    var tipoColor={recebimento_dinheiro:'#27ae60',estorno:'#f39c12',debito_pedido:'#e53935',debito_cardapio:'#e53935',recarga_mp:'#27ae60'};
+    var tipoLabel={recebimento_dinheiro:'💵 Recebimento dinheiro',estorno:'↩️ Estorno',debito_pedido:'📤 Debito pedido',debito_cardapio:'📤 Debito cardapio',recarga_mp:'💰 Recarga via PIX',pagamento_motoboy:'🛵 Motoboy pagou (aceito)',pagamento_motoboy_recusado:'🚫 Motoboy pagou (recusado)'};
+    var tipoColor={recebimento_dinheiro:'#27ae60',estorno:'#f39c12',debito_pedido:'#e53935',debito_cardapio:'#e53935',recarga_mp:'#27ae60',pagamento_motoboy:'#e53935',pagamento_motoboy_recusado:'#888'};
     var saldo=parseFloat(u.credit||0);
     lista.innerHTML='<div style="background:#111;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between"><span style="color:#888;font-size:12px">Saldo atual</span><span style="color:#bb86fc;font-weight:700;font-size:15px">R$ '+saldo.toFixed(2)+'</span></div>'
     + events.map(function(ev){
