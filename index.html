@@ -154,7 +154,7 @@
           <label>Max pedidos por motoboy</label>
           <input id="cfg-max" class="input" type="number">
         </div> <div class="input-group"> <label>⏳ Delay de Preparo (minutos, 1-99)</label> <input id="cfg-delay" class="input" type="number" min="1" max="99"> <small style="color:#888;font-size:11px">Tempo que o pedido fica em preparo antes de ir ao sistema automaticamente.</small> </div>
-        <button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
+        <div class="input-group"><label>⚠️ Taxa de Cancelamento (R$)</label><input id="cfg-cancelamento" class="input" type="number" step="0.50"><small style="color:#888;font-size:11px">Cobrada da loja quando ela cancela um pedido. Cobre custos de dados e recursos usados pelo sistema nesse processo.</small></div><button class="btn btn-primary" onclick="saveSettings()">Salvar Ajustes</button>
 
       <!-- PORCENTAGEM CARTAO APROXIMACAO -->
       <div class="taxa-card" id="cartao-aprox-card" style="margin-top:16px;">
@@ -584,7 +584,7 @@ function esc(v) {
         toggleTaxaCard('noturna');
         document.getElementById('cfg-noturna-inicio').value = data.taxa_noturna_hora_inicio || '22:00';
         document.getElementById('cfg-noturna-fim').value = data.taxa_noturna_hora_fim || '06:00';
-        document.getElementById('cfg-perc-cartao-aprox').value = data.perc_cartao_aprox || 5;
+        document.getElementById('cfg-perc-cartao-aprox').value = data.perc_cartao_aprox || 5; document.getElementById('cfg-cancelamento').value = data.taxa_cancelamento || 0;
         var savedDays = localStorage.getItem('flashdrop_cleanup_days');
         if (data.historico_limpeza_dias) { document.getElementById('cfg-days').value = data.historico_limpeza_dias; } else if (savedDays) { document.getElementById('cfg-days').value = savedDays; }
       } else if (tab === 'cadastros') {
@@ -1033,7 +1033,7 @@ function renderFinance(users) {
           taxa_noturna_ativa: taxaNoturnaAtiva,
           taxa_noturna_hora_inicio: document.getElementById('cfg-noturna-inicio').value || '22:00',
           taxa_noturna_hora_fim: document.getElementById('cfg-noturna-fim').value || '06:00',
-          perc_cartao_aprox: parseFloat(document.getElementById('cfg-perc-cartao-aprox').value) || 5.00
+          perc_cartao_aprox: parseFloat(document.getElementById('cfg-perc-cartao-aprox').value) || 5.00, taxa_cancelamento: parseFloat(document.getElementById('cfg-cancelamento').value) || 0
         })
       });
       tg.showAlert('Ajustes salvos!');
