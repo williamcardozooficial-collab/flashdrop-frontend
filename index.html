@@ -1472,17 +1472,17 @@ loadSaques();
           document.getElementById('caixa-events').innerHTML = '<p style="color:#666;text-align:center;padding:20px 0">Nenhum evento nas últimas 48h</p>';
           return;
         }
-        var icons = { comissao: '✅', saque: '💸' };
+        var icons = { comissao: '✅', saque: '💸', recebimento_dinheiro:'💵', estorno:'↩️', debito_pedido:'📤', debito_cardapio:'📤', recarga_mp:'💰', pagamento_motoboy:'🛵', pagamento_motoboy_recusado:'🚫', ajuste_admin_credito:'➕', ajuste_admin_debito:'➖', taxa_cancelamento:'⚠️', cobranca_cliente:'💵', corrida:'🛵', debito_cartao_aprox:'📤', taxa_extra:'🌧️', bonus_promo:'🎉', comissao_indicacao_loja:'🤝', bonus_indicacao:'🧲', pagamento_loja:'✅' }; var origemLabel = { plataforma:'🏦 Plataforma', loja:'🏪 Loja', motoboy:'🛵 Motoboy' }; var creditTipos = ['comissao','recebimento_dinheiro','estorno','recarga_mp','ajuste_admin_credito','corrida','taxa_extra','bonus_promo','comissao_indicacao_loja','bonus_indicacao','pagamento_loja'];
         var colors = { comissao: '#4caf50', saque: '#e53935' };
         document.getElementById('caixa-events').innerHTML = events.map(function(ev) {
           var dt = new Date(ev.created_at);
           var dtStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-          var col = colors[ev.tipo] || '#aaa';
+          var col = creditTipos.indexOf(ev.tipo) !== -1 ? '#4caf50' : '#e53935';
           var icon = icons[ev.tipo] || '📌';
-          var sinal = ev.tipo === 'saque' ? '− ' : '+ ';
+          var sinal = creditTipos.indexOf(ev.tipo) !== -1 ? '+ ' : '− '; var origTag = origemLabel[ev.origem] || ''; var nomeTag = ev.nome ? (' • ' + ev.nome) : '';
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222">' +
             '<div><span>' + icon + ' </span><span style="color:#ddd;font-size:13px">' + (fixStr(ev.descricao || ev.tipo)) + '</span><br>' +
-            '<span style="color:#666;font-size:11px">' + dtStr + '</span></div>' +
+            '<span style="color:#666;font-size:11px">' + origTag + nomeTag + ' • ' + dtStr + '</span></div>' +
             '<strong style="color:' + col + ';font-size:15px;white-space:nowrap;margin-left:10px">' + sinal + 'R$ ' + parseFloat(ev.valor).toFixed(2).replace('.', ',') + '</strong>' +
             '</div>';
         }).join('');
