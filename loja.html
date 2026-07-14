@@ -1446,12 +1446,12 @@ async function abrirHistoricoCredito(){
       lista.innerHTML='<div style="text-align:center;color:#666;padding:20px">Nenhum evento nos ultimos 7 dias.</div>';
       return;
     }
-    var tipoLabel={recebimento_dinheiro:'💵 Recebimento dinheiro',estorno:'↩️ Estorno',debito_pedido:'📤 Debito pedido',debito_cardapio:'📤 Debito cardapio',recarga_mp:'💰 Recarga via PIX',pagamento_motoboy:'🛵 Motoboy pagou (aceito)',pagamento_motoboy_recusado:'🚫 Motoboy pagou (recusado)'};
-    var tipoColor={recebimento_dinheiro:'#27ae60',estorno:'#f39c12',debito_pedido:'#e53935',debito_cardapio:'#e53935',recarga_mp:'#27ae60',pagamento_motoboy:'#e53935',pagamento_motoboy_recusado:'#888'};
+    var tipoLabel={recebimento_dinheiro:'💵 Recebimento dinheiro',estorno:'↩️ Estorno',debito_pedido:'📤 Debito pedido',debito_cardapio:'📤 Debito cardapio',recarga_mp:'💰 Recarga via PIX',pagamento_motoboy:'🛵 Motoboy pagou (aceito)',pagamento_motoboy_recusado:'🚫 Motoboy pagou (recusado)',ajuste_admin_credito:'➕ Ajuste do admin (crédito)',ajuste_admin_debito:'➖ Ajuste do admin (débito)'};
+    var tipoColor={recebimento_dinheiro:'#27ae60',estorno:'#f39c12',debito_pedido:'#e53935',debito_cardapio:'#e53935',recarga_mp:'#27ae60',pagamento_motoboy:'#e53935',pagamento_motoboy_recusado:'#888',ajuste_admin_credito:'#27ae60',ajuste_admin_debito:'#e53935'};
     var saldo=parseFloat(u.credit||0);
     lista.innerHTML='<div style="background:#111;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between"><span style="color:#888;font-size:12px">Saldo atual</span><span style="color:#bb86fc;font-weight:700;font-size:15px">R$ '+saldo.toFixed(2)+'</span></div>'
     + events.map(function(ev){
-      var isCredit = ev.tipo==='recebimento_dinheiro'||ev.tipo==='cartao_aproximacao'||ev.tipo==='estorno'||ev.tipo==='recarga_mp';
+      var isCredit = ev.tipo==='recebimento_dinheiro'||ev.tipo==='cartao_aproximacao'||ev.tipo==='estorno'||ev.tipo==='recarga_mp'||ev.tipo==='ajuste_admin_credito';
       var color = isCredit?'#27ae60':'#e53935';
       var sign = isCredit?'+':'-';
       var label = tipoLabel[ev.tipo]||ev.tipo;
