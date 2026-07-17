@@ -168,7 +168,7 @@
         </div>
       </div>
 
-      <!-- TAXA DE CHUVA -->
+      <!-- FORMAS DE PAGAMENTO - NOVO PEDIDO DA LOJA --><div class="taxa-card" id="formas-pag-np-card" style="margin-top:16px;"><div class="taxa-card-header"><span class="taxa-card-title">💳 Formas de Pagamento - Novo Pedido da Loja</span></div><div class="taxa-card-body"><small style="color:#aaa;font-size:11px;display:block;margin-bottom:10px">Desmarque para ocultar a forma de pagamento no Novo Pedido da loja. Nao afeta nenhuma outra area do sistema.</small><div style="display:flex;flex-direction:column;gap:8px"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="cfg-fp-np-dinheiro" checked style="width:16px;height:16px"> 💵 Dinheiro</label><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="cfg-fp-np-maquina" checked style="width:16px;height:16px"> 💳 Maquina de Cartao</label><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="cfg-fp-np-pix" checked style="width:16px;height:16px"> ⚡ PIX</label><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="cfg-fp-np-pix-direto" checked style="width:16px;height:16px"> 💸 Pix Direto</label><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="cfg-fp-np-cartao-aprox" checked style="width:16px;height:16px"> 💳 Cartao por aproximacao</label><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer"><input type="checkbox" id="cfg-fp-np-ifood" checked style="width:16px;height:16px"> 🛵 iFood Entrega Propria</label></div></div></div><!-- TAXA DE CHUVA -->
       <div class="taxa-card" id="taxa-chuva-card">
         <div class="taxa-card-header">
           <span class="taxa-card-title">🌧️ Taxa de Chuva</span>
@@ -584,7 +584,7 @@ function esc(v) {
         toggleTaxaCard('noturna');
         document.getElementById('cfg-noturna-inicio').value = data.taxa_noturna_hora_inicio || '22:00';
         document.getElementById('cfg-noturna-fim').value = data.taxa_noturna_hora_fim || '06:00';
-        document.getElementById('cfg-perc-cartao-aprox').value = data.perc_cartao_aprox || 5; document.getElementById('cfg-cancelamento').value = data.taxa_cancelamento || 0;
+        document.getElementById('cfg-perc-cartao-aprox').value = data.perc_cartao_aprox || 5; document.getElementById('cfg-cancelamento').value = data.taxa_cancelamento || 0; var _fpNp=(data.formas_pagamento_novo_pedido!==undefined&&data.formas_pagamento_novo_pedido!==null&&data.formas_pagamento_novo_pedido!=='')?data.formas_pagamento_novo_pedido.split(','):['dinheiro','maquina','pix','pix_direto','cartao_aproximacao','ifood'];document.getElementById('cfg-fp-np-dinheiro').checked=_fpNp.indexOf('dinheiro')!==-1;document.getElementById('cfg-fp-np-maquina').checked=_fpNp.indexOf('maquina')!==-1;document.getElementById('cfg-fp-np-pix').checked=_fpNp.indexOf('pix')!==-1;document.getElementById('cfg-fp-np-pix-direto').checked=_fpNp.indexOf('pix_direto')!==-1;document.getElementById('cfg-fp-np-cartao-aprox').checked=_fpNp.indexOf('cartao_aproximacao')!==-1;document.getElementById('cfg-fp-np-ifood').checked=_fpNp.indexOf('ifood')!==-1;
         var savedDays = localStorage.getItem('flashdrop_cleanup_days');
         if (data.historico_limpeza_dias) { document.getElementById('cfg-days').value = data.historico_limpeza_dias; } else if (savedDays) { document.getElementById('cfg-days').value = savedDays; }
       } else if (tab === 'cadastros') {
@@ -1033,7 +1033,7 @@ function renderFinance(users) {
           taxa_noturna_ativa: taxaNoturnaAtiva,
           taxa_noturna_hora_inicio: document.getElementById('cfg-noturna-inicio').value || '22:00',
           taxa_noturna_hora_fim: document.getElementById('cfg-noturna-fim').value || '06:00',
-          perc_cartao_aprox: parseFloat(document.getElementById('cfg-perc-cartao-aprox').value) || 5.00, taxa_cancelamento: parseFloat(document.getElementById('cfg-cancelamento').value) || 0
+          perc_cartao_aprox: parseFloat(document.getElementById('cfg-perc-cartao-aprox').value) || 5.00, taxa_cancelamento: parseFloat(document.getElementById('cfg-cancelamento').value) || 0, formas_pagamento_novo_pedido: (function(){var arr=[];if(document.getElementById('cfg-fp-np-dinheiro').checked)arr.push('dinheiro');if(document.getElementById('cfg-fp-np-maquina').checked)arr.push('maquina');if(document.getElementById('cfg-fp-np-pix').checked)arr.push('pix');if(document.getElementById('cfg-fp-np-pix-direto').checked)arr.push('pix_direto');if(document.getElementById('cfg-fp-np-cartao-aprox').checked)arr.push('cartao_aproximacao');if(document.getElementById('cfg-fp-np-ifood').checked)arr.push('ifood');return arr.join(',');})()
         })
       });
       tg.showAlert('Ajustes salvos!');
