@@ -1947,7 +1947,7 @@ async function loadSaqueLojaHistory() {
   var listEl = document.getElementById('loja-saque-history');
   try {
     var r = await fetch(API + '/withdrawals/loja/' + user.id);
-    var items = await r.json();
+    var items = await r.json(); var __cutoff30 = Date.now() - 30*24*60*60*1000; items = (items||[]).filter(function(s){ return !s.created_at || new Date(s.created_at).getTime() >= __cutoff30; });
     if (!items || items.length === 0) { listEl.innerHTML = '<div style="color:#666;font-size:12px;text-align:center">Nenhum saque solicitado.</div>'; return; }
     var statusLabel = { aprovado: '✅ Aprovado', recusado: '❌ Recusado', pendente: '⏳ Pendente' };
     var statusColor = { aprovado: '#27ae60', recusado: '#e74c3c', pendente: '#f39c12' };
