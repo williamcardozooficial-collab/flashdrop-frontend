@@ -888,7 +888,7 @@ function renderFinance(users) {
         '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
         '<div class="input-group"><label>Nome</label><input id="u-name" class="input" value="' + (esc(u.name) || '') + '"></div>' +
         '<div class="input-group"><label>Senha (deixe em branco para manter)</label><div style="position:relative"><input id="u-pass" class="input" type="password" style="padding-right:42px" value="' + (esc(u.password) || '') + '"><button type="button" onclick="var i=document.getElementById(\'u-pass\');i.type=i.type===\'password\'?\'text\':\'password\';this.textContent=i.type===\'password\'?\'👁️\':\'🙈\';" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;color:#aaa">👁️</button></div></div>' +
-        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (esc(u.phone) || '') + '"></div>' +
+        '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (esc(u.phone) || '') + '"></div>' + '<div class="input-group"><label>💰 Saldo Atual: R$ ' + Number((u.role === 'loja' ? u.credit : u.balance) || 0).toFixed(2) + '</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-primary btn-sm" onclick="adjustBalanceFromEdit(\'add\')">➕ Aumentar</button><button type="button" class="btn btn-danger btn-sm" onclick="adjustBalanceFromEdit(\'sub\')">➖ Diminuir</button></div></div>' +
         motoboyCampos;
       openModal('modal-user');
     }
@@ -1166,7 +1166,7 @@ function renderFinance(users) {
       loadIndicacoes();
     }
 
-    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function openModal(id) { document.getElementById(id).classList.add('active'); } async function adjustBalanceFromEdit(action) { var u = allUsers.find(function(x){ return x.id === currentUserId; }); if (!u) return; var type = u.role === 'loja' ? 'credit' : 'balance'; var val = parseFloat(prompt((action === 'add' ? 'Aumentar' : 'Diminuir') + ' saldo - Valor (R$):')); if (isNaN(val) || val <= 0) { tg.showAlert('Valor invalido'); return; } var newVal = parseFloat(u[type] || 0) + (action === 'sub' ? -val : val); fetch(API + '/users/' + u.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [type]: newVal }) }).then(function(){ if (type === 'credit') { fetch(API + '/loja/' + u.id + '/wallet-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: (action === 'add' ? 'ajuste_admin_credito' : 'ajuste_admin_debito'), valor: val, descricao: (action === 'add' ? 'Admin aumentou o saldo em R$ ' : 'Admin diminuiu o saldo em R$ ') + val.toFixed(2) }) }).catch(function(){}); } u[type] = newVal; tg.showAlert('Saldo atualizado!'); openEditUser(u.id); }); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
     async function deleteUser(id, name) {
