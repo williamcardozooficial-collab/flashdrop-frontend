@@ -881,7 +881,7 @@ function renderFinance(users) {
         ? '<div class="input-group"><label>🏍️ Veículo</label><input id="u-vehicle" class="input" value="' + (esc(u.vehicle) || '') + '"></div>' +
           '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (fmtAddr(u.address) || '') + '"></div>' +
           '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
-          '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>'
+          '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>' + '<div class="input-group"><label>🎁 Bônus por Entrega (R$)</label><input id="u-bonus-entrega" class="input" type="number" step="0.01" min="0" value="' + (u.bonus_por_entrega !== null && u.bonus_por_entrega !== undefined ? Number(u.bonus_por_entrega).toFixed(2) : '0.00') + '"><div style="font-size:11px;color:#aaa;margin-top:4px">Valor extra pago automaticamente a este motoboy a cada pedido entregue. Deixe 0,00 para nao aplicar.</div></div>'
         : buildAddrFields(u.address, false);
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
@@ -944,7 +944,7 @@ function renderFinance(users) {
         var clEl = document.getElementById('u-credit-limit');
         if (clEl) {
           var clVal = parseFloat(clEl.value);
-          data.custom_credit_limit = isNaN(clVal) || clVal <= 0 ? null : clVal;
+          data.custom_credit_limit = isNaN(clVal) || clVal <= 0 ? null : clVal; var beEl = document.getElementById('u-bonus-entrega'); if (beEl) { var beVal = parseFloat(beEl.value); data.bonus_por_entrega = isNaN(beVal) || beVal <= 0 ? null : beVal; }
           var refLojaEl = document.getElementById('u-ref-loja-new');
           if (refLojaEl && refLojaEl.value.trim()) {
             data.referral_code = refLojaEl.value.trim().toUpperCase();
