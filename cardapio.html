@@ -593,7 +593,7 @@ preference_id:mpData.preference_id
 sessionStorage.setItem('flashdrop_pedido_mp', JSON.stringify(pedidoPendente));
 sessionStorage.setItem('flashdrop_loja_lid', String(lid));
 /* Mostrar modal com link de pagamento */
-mostrarModalPagamentoOnline(mpData.checkout_url, totalFinal, mpData.pix_copia_cola||null, mpData.pix_qrcode_base64||null);
+try{var rEnvioImediato=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pedidoPendente)});if(rEnvioImediato.ok){sessionStorage.removeItem('flashdrop_pedido_mp');sessionStorage.removeItem('flashdrop_loja_lid');var lidNumImediato=lid?parseInt(lid):null;if(lidNumImediato&&carrinho[lidNumImediato]){carrinho[lidNumImediato]=[];}taxaCalculada=0;distanciaCalculada=0;atualizarBarra(lidNumImediato);var blocoImediato=document.getElementById('bloco-taxa-resultado');if(blocoImediato)blocoImediato.style.display='none';}}catch(eEnvioImediato){} mostrarModalPagamentoOnline(mpData.checkout_url, totalFinal, mpData.pix_copia_cola||null, mpData.pix_qrcode_base64||null);
 }catch(e){
 btn.disabled=false;btn.textContent='Finalizar Pedido';
 alert('Erro ao conectar com o servidor. Tente novamente.');
@@ -681,7 +681,7 @@ if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';btn.style.backg
 async function confirmarPagamentoConcluido(){
 var dados=sessionStorage.getItem('flashdrop_pedido_mp');
 var lid=sessionStorage.getItem('flashdrop_loja_lid');
-if(!dados){alert('Dados do pedido nao encontrados. Por favor refaca o pedido.');fecharModalPagamentoOnline();return;}
+if(!dados){fecharModalPagamentoOnline();alert('Pedido ja foi enviado para a loja! Aguarde a confirmacao.');return;}
 var pedido=JSON.parse(dados);
 var btn=document.getElementById('btn-mp-confirmar');
 if(btn){btn.disabled=true;btn.textContent='Enviando pedido...';}
