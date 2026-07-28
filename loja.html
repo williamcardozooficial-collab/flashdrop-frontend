@@ -1328,15 +1328,15 @@ try{
 var r=await fetch(API+'/users/'+u.id);
 var data=await r.json();
 u.loja_online=data.loja_online;
-u.loja_horario_offline=data.loja_horario_offline;
+u.loja_horario_offline=data.loja_horario_offline;u.loja_horario_automatico=data.loja_horario_automatico;u.loja_horarios_semana=data.loja_horarios_semana;
 u.loja_formas_pagamento=data.loja_formas_pagamento;
 localStorage.setItem('flashdrop_user',JSON.stringify(u));
 }catch(e){}
-atualizarUIStatusOnline(u.loja_online,u.loja_horario_offline);
+atualizarUIStatusOnline(u.loja_online,u.loja_horario_offline,u.loja_horario_automatico);
 atualizarCheckboxFormas(u.loja_formas_pagamento);
 }
 
-function atualizarUIStatusOnline(online, horario){
+function atualizarUIStatusOnline(online, horario, automatico){
 var bar=document.getElementById('loja-status-bar');
 var lbl=document.getElementById('status-label');
 var sub=document.getElementById('status-sub');
@@ -1349,7 +1349,7 @@ bar.style.background='#0d1f0d';
 lbl.textContent='🟢 ONLINE';
 lbl.style.color='#27ae60';
 var subTxt='Loja visivel para os clientes';
-if(horario)subTxt+=' | Fecha automaticamente as '+horario;
+if(automatico)subTxt+=' | Horario automatico ativado';else if(horario)subTxt+=' | Fecha automaticamente as '+horario;
 sub.textContent=subTxt;
 sub.style.color='#4caf50';
 btn.style.background='#c0392b';
@@ -1382,7 +1382,7 @@ if(r.ok){
 u.loja_online=novoStatus;
 if(!novoStatus)u.loja_horario_offline=null;
 localStorage.setItem('flashdrop_user',JSON.stringify(u));
-atualizarUIStatusOnline(novoStatus,u.loja_horario_offline);
+atualizarUIStatusOnline(novoStatus,u.loja_horario_offline,u.loja_horario_automatico);
 }
 }catch(e){tg.showAlert('Erro ao atualizar status.');}
 }
@@ -1390,39 +1390,64 @@ atualizarUIStatusOnline(novoStatus,u.loja_horario_offline);
 function abrirModalOfflineTimer(){
 document.getElementById('modal-offline-timer').style.display='flex';
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
-var inp=document.getElementById('inp-horario-offline');
-if(inp&&u.loja_horario_offline)inp.value=u.loja_horario_offline;
+var chk=document.getElementById('chk-horario-automatico');
+if(chk)chk.checked=!!u.loja_horario_automatico;
+var dias=[1,2,3,4,5,6,0];
+var sched={};
+try{sched=u.loja_horarios_semana?JSON.parse(u.loja_horarios_semana):{};}catch(eSch){sched={};}
+dias.forEach(function(d){
+var turnos=sched[d]||[];
+var i1=document.getElementById('hf-d'+d+'-t1i'),f1=document.getElementById('hf-d'+d+'-t1f');
+var i2=document.getElementById('hf-d'+d+'-t2i'),f2=document.getElementById('hf-d'+d+'-t2f');
+if(i1)i1.value=(turnos[0]&&turnos[0].abertura)||'';
+if(f1)f1.value=(turnos[0]&&turnos[0].fechamento)||'';
+if(i2)i2.value=(turnos[1]&&turnos[1].abertura)||'';
+if(f2)f2.value=(turnos[1]&&turnos[1].fechamento)||'';
+});
 }
 function fecharModalOfflineTimer(){
 document.getElementById('modal-offline-timer').style.display='none';
 }
 async function salvarHorarioOffline(){
-var horario=document.getElementById('inp-horario-offline').value;
-if(!horario){tg.showAlert('Selecione um horario.');return;}
+var chk=document.getElementById('chk-horario-automatico');
+var automatico=chk?chk.checked:false;
+var dias=[1,2,3,4,5,6,0];
+var sched={};
+dias.forEach(function(d){
+var i1=document.getElementById('hf-d'+d+'-t1i'),f1=document.getElementById('hf-d'+d+'-t1f');
+var i2=document.getElementById('hf-d'+d+'-t2i'),f2=document.getElementById('hf-d'+d+'-t2f');
+var turnos=[];
+if(i1&&f1&&i1.value&&f1.value)turnos.push({abertura:i1.value,fechamento:f1.value});
+if(i2&&f2&&i2.value&&f2.value)turnos.push({abertura:i2.value,fechamento:f2.value});
+sched[d]=turnos;
+});
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 try{
-var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_offline:horario,loja_fechamento_ultimo_dia:null})});
+var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_automatico:automatico,loja_horarios_semana:JSON.stringify(sched),loja_horario_offline:null,loja_fechamento_ultimo_dia:null})});
 if(r.ok){
-u.loja_horario_offline=horario;
+u.loja_horario_automatico=automatico;
+u.loja_horarios_semana=JSON.stringify(sched);
+u.loja_horario_offline=null;
 localStorage.setItem('flashdrop_user',JSON.stringify(u));
-atualizarUIStatusOnline(u.loja_online,horario);
+atualizarUIStatusOnline(u.loja_online,null,automatico);
 fecharModalOfflineTimer();
-tg.showAlert('Horario salvo! A loja fechara automaticamente as '+horario+'.');
+tg.showAlert(automatico?'Horario automatico salvo!':'Horarios salvos (automatico desativado).');
 }
 }catch(e){tg.showAlert('Erro ao salvar horario.');}
 }
 async function removerHorarioOffline(){
 var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
 try{
-var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_offline:null,loja_fechamento_ultimo_dia:null})});
+var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({loja_horario_automatico:false,loja_horario_offline:null,loja_fechamento_ultimo_dia:null})});
 if(r.ok){
+u.loja_horario_automatico=false;
 u.loja_horario_offline=null;
 localStorage.setItem('flashdrop_user',JSON.stringify(u));
-atualizarUIStatusOnline(u.loja_online,null);
+atualizarUIStatusOnline(u.loja_online,null,false);
 fecharModalOfflineTimer();
-tg.showAlert('Horario automatico removido.');
+tg.showAlert('Horario automatico desativado.');
 }
-}catch(e){tg.showAlert('Erro.');}
+}catch(e){tg.showAlert('Erro ao desativar horario.');}
 }
 
 if (!window._pagRestLojaStarted) {
@@ -1513,18 +1538,125 @@ function atualizarBotaoEnderecoPrint(){var cur=localStorage.getItem('fd_endereco
     <button onclick="responderPagRestLoja('aceito')" style="width:100%;padding:14px;background:#1a472a;border:2px solid #27ae60;border-radius:10px;color:#27ae60;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;">&#x2705; ACEITAR</button>
     <button onclick="responderPagRestLoja('recusado')" style="width:100%;padding:14px;background:#4a0000;border:2px solid #cc0000;border-radius:10px;color:#ff4444;font-size:16px;font-weight:700;cursor:pointer;">&#x274C; RECUSAR</button>
   </div>
-</div><div id="modal-offline-timer" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:4000;align-items:center;justify-content:center;padding:20px">
-<div style="background:#1a1a2e;border:2px solid #f5a623;border-radius:16px;padding:24px;width:100%;max-width:360px">
-<h3 style="color:#f5a623;margin-bottom:6px;font-size:15px">⏰ Fechar loja automaticamente</h3>
-<p style="color:#888;font-size:12px;margin-bottom:16px">Defina o horario em que a loja ficara offline automaticamente.</p>
-<div style="margin-bottom:16px">
-<label style="font-size:12px;font-weight:700;color:#aaa;display:block;margin-bottom:6px">Horario de fechamento</label>
-<input id="inp-horario-offline" type="time" style="width:100%;padding:12px;border:2px solid #333;border-radius:10px;font-size:20px;font-weight:700;text-align:center;background:#111;color:#f5a623;outline:none">
+</div><div id="modal-offline-timer" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:4000;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+<div style="background:#1a1a2e;border:2px solid #f5a623;border-radius:16px;padding:24px;width:100%;max-width:380px;margin:20px auto">
+<h3 style="color:#f5a623;margin-bottom:6px;font-size:15px">⏰ Horario de Funcionamento</h3>
+<p style="color:#888;font-size:12px;margin-bottom:12px">Configure os horarios em que a loja fica online sozinha, por dia da semana. Cada dia pode ter ate 2 turnos (ex: almoco e noite). Horario de Brasilia.</p>
+<label style="display:flex;align-items:center;gap:8px;background:#1a1000;border:1px solid #f5a623;border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px;color:#f5a623;cursor:pointer">
+<input id="chk-horario-automatico" type="checkbox" style="width:16px;height:16px;flex-shrink:0">
+Ativar horario automatico (abre e fecha sozinha)
+</label>
+<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:340px;overflow-y:auto;padding-right:4px">
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px">
+<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px">Segunda-feira</div>
+<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T1</span>
+<input id="hf-d1-t1i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d1-t1f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
 </div>
-<div style="background:#1a1000;border:1px solid #f5a623;border-radius:8px;padding:10px;margin-bottom:16px;font-size:12px;color:#f5a623">⚡ A loja so volta ONLINE manualmente. O fechamento automatico se repete todos os dias neste horario.</div>
+<div style="display:flex;align-items:center;gap:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T2</span>
+<input id="hf-d1-t2i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d1-t2f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+</div>
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px">
+<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px">Terca-feira</div>
+<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T1</span>
+<input id="hf-d2-t1i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d2-t1f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T2</span>
+<input id="hf-d2-t2i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d2-t2f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+</div>
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px">
+<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px">Quarta-feira</div>
+<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T1</span>
+<input id="hf-d3-t1i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d3-t1f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T2</span>
+<input id="hf-d3-t2i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d3-t2f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+</div>
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px">
+<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px">Quinta-feira</div>
+<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T1</span>
+<input id="hf-d4-t1i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d4-t1f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T2</span>
+<input id="hf-d4-t2i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d4-t2f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+</div>
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px">
+<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px">Sexta-feira</div>
+<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T1</span>
+<input id="hf-d5-t1i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d5-t1f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T2</span>
+<input id="hf-d5-t2i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d5-t2f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+</div>
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px">
+<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px">Sabado</div>
+<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T1</span>
+<input id="hf-d6-t1i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d6-t1f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T2</span>
+<input id="hf-d6-t2i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d6-t2f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+</div>
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px">
+<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px">Domingo</div>
+<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T1</span>
+<input id="hf-d0-t1i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d0-t1f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<span style="font-size:9px;color:#888;width:24px;flex-shrink:0">T2</span>
+<input id="hf-d0-t2i" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+<span style="font-size:9px;color:#666;flex-shrink:0">as</span>
+<input id="hf-d0-t2f" type="time" style="flex:1;min-width:0;padding:6px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#f5a623;font-size:12px">
+</div>
+</div>
+</div>
+<div style="background:#111;border:1px solid #333;border-radius:8px;padding:8px;margin-bottom:14px;font-size:11px;color:#888">Deixe um turno em branco se a loja nao abrir nele. Se os dois turnos do dia ficarem vazios, a loja fica fechada nesse dia (folga).</div>
 <div style="display:flex;flex-direction:column;gap:8px">
 <button onclick="salvarHorarioOffline()" style="padding:12px;background:#f5a623;border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;cursor:pointer">✅ Salvar horario</button>
-<button onclick="removerHorarioOffline()" style="padding:10px;background:transparent;border:1px solid #e53935;border-radius:10px;color:#e53935;font-size:13px;cursor:pointer">🗑 Remover horario automatico</button>
+<button onclick="removerHorarioOffline()" style="padding:10px;background:transparent;border:1px solid #e53935;border-radius:10px;color:#e53935;font-size:13px;cursor:pointer">🗑 Desativar horario automatico</button>
 <button onclick="fecharModalOfflineTimer()" style="padding:10px;background:#2a2a4a;border:none;border-radius:10px;color:#aaa;font-size:13px;cursor:pointer">Cancelar</button>
 </div>
 </div>
