@@ -466,7 +466,7 @@ h+='</div></div>';
 }
 function printOrder(orderId){
 var o=(_myOrders||[]).find(function(x){return String(x.id)===String(orderId);})||{};
-if(!o.id){return;}
+if(!o.id){return;} if(o.status==='cancelado'){alert('Pedido cancelado. Impressao nao disponivel.'); return;}
 var SEP1='================================';
 var SEP2='--------------------------------';
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
