@@ -483,7 +483,7 @@ var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxa*2:taxa;
 var lid=lojaGlobal.id;
 var totalItens=totalCarrinho(lid);
-var _descontoRes2=await calcularDescontoPromocao(lid,totalCarrinhoValidoPromocao(lid),pag,taxa);var descontoFrete=_descontoRes2&&_descontoRes2.desconto?parseFloat(_descontoRes2.desconto):0;if(descontoFrete>0){taxa=Math.max(0,taxa-descontoFrete);taxaFinal=isCartao?taxa*2:taxa;}descontoFreteAtual=descontoFrete;
+var _descontoRes2=await calcularDescontoPromocao(lid,totalCarrinhoValidoPromocao(lid),pag,taxa);var descontoFrete=_descontoRes2&&_descontoRes2.desconto?parseFloat(_descontoRes2.desconto):0;var _tipoPromo2=_descontoRes2&&_descontoRes2.promo?_descontoRes2.promo.tipo:null;if(descontoFrete>0){if(_tipoPromo2==='desconto_produto'){totalItens=Math.max(0,totalItens-descontoFrete);}else{taxa=Math.max(0,taxa-descontoFrete);taxaFinal=isCartao?taxa*2:taxa;}}descontoFreteAtual=descontoFrete;
 var totalFinal=totalItens+taxaFinal;
 document.getElementById('taxa-distancia').textContent=km.toFixed(1)+' km';
 document.getElementById('taxa-valor').textContent='R$ '+taxaFinal.toFixed(2)+(isCartao?' (ida+volta)':'');
@@ -535,7 +535,7 @@ var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var taxaBruta=taxaFinal;
 var _descontoRes=await calcularDescontoPromocao(lid,totalCarrinhoValidoPromocao(lid),pag,taxaFinal);
 var descontoFrete=_descontoRes&&_descontoRes.desconto?parseFloat(_descontoRes.desconto):0;
-if(descontoFrete>0){taxaFinal=Math.max(0,taxaFinal-descontoFrete);}
+var _tipoPromo=_descontoRes&&_descontoRes.promo?_descontoRes.promo.tipo:null;if(descontoFrete>0){if(_tipoPromo==='desconto_produto'){totalItens=Math.max(0,totalItens-descontoFrete);}else{taxaFinal=Math.max(0,taxaFinal-descontoFrete);}}
 descontoFreteAtual=descontoFrete;
 var totalFinal=totalItens+taxaFinal;
 
@@ -582,7 +582,7 @@ nome_promocao:_descontoRes&&_descontoRes.promo?_descontoRes.promo.nome:null,
 distancia:Math.round(distanciaCalculada*10)/10,
 tipo_pagamento:'pix',
 valor_total:taxaFinal,valor_motoboy:0,comissao:0,
-obs_coleta:'Itens: '+itens+(descontoFrete>0?' | 🎉 PROMOÇÃO: '+((_descontoRes&&_descontoRes.promo)?_descontoRes.promo.nome:'Frete grátis')+' - Desconto R$ '+descontoFrete.toFixed(2)+' (loja arca com o desconto)':''),
+obs_coleta:'Itens: '+itens+(descontoFrete>0?' | 🎉 PROMOÇÃO: '+((_descontoRes&&_descontoRes.promo)?_descontoRes.promo.nome:'Frete grátis')+' - Desconto R$ '+descontoFrete.toFixed(2)+(_tipoPromo==='desconto_produto'?' (loja arca com o desconto)':' (desconto no frete)'):''),
 obs_entrega_loja:obs_entrega||null,
 plataforma:'cardapio',
 status:'pendente',
@@ -620,7 +620,7 @@ nome_promocao:_descontoRes&&_descontoRes.promo?_descontoRes.promo.nome:null,
 distancia:Math.round(distanciaCalculada*10)/10,
 tipo_pagamento:pag,
 valor_total:taxaFinal,valor_motoboy:0,comissao:0,
-obs_coleta:'Itens: '+itens+(descontoFrete>0?' | 🎉 PROMOÇÃO: '+((_descontoRes&&_descontoRes.promo)?_descontoRes.promo.nome:'Frete grátis')+' - Desconto R$ '+descontoFrete.toFixed(2)+' (loja arca com o desconto)':''),
+obs_coleta:'Itens: '+itens+(descontoFrete>0?' | 🎉 PROMOÇÃO: '+((_descontoRes&&_descontoRes.promo)?_descontoRes.promo.nome:'Frete grátis')+' - Desconto R$ '+descontoFrete.toFixed(2)+(_tipoPromo==='desconto_produto'?' (loja arca com o desconto)':' (desconto no frete)'):''),
 obs_entrega_loja:obs_entrega||null,
 plataforma:'cardapio',
 status:'pendente',
@@ -1018,8 +1018,8 @@ if(taxaCalculada>0&&_lid2){
   var _dr2=await calcularDescontoPromocao(_lid2,_sub2,_pag2,taxaFinal);
   var _df2=_dr2&&_dr2.desconto?parseFloat(_dr2.desconto):0;
   descontoFreteAtual=_df2;
-  var _taxaComDesconto2=Math.max(0,taxaFinal-_df2);
-  var _total2=_sub2+_taxaComDesconto2;
+  var _tipoPromo3=_dr2&&_dr2.promo?_dr2.promo.tipo:null;var _taxaComDesconto2=(_tipoPromo3==='desconto_produto')?taxaFinal:Math.max(0,taxaFinal-_df2);
+  var _total2=(_tipoPromo3==='desconto_produto'?Math.max(0,_sub2-_df2):_sub2)+_taxaComDesconto2;
   var _drEl=document.getElementById('taxa-desconto-row');
   var _dvEl=document.getElementById('taxa-desconto-val');
   var _tfEl=document.getElementById('total-final-val');
