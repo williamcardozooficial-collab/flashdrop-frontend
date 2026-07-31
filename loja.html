@@ -2001,7 +2001,7 @@ function atualizarListaPromocoes(promos){
   }
   if(empty)empty.style.display='none';
   const html=promos.map(function(p){
-    const pags=p.formas_pagamento&&p.formas_pagamento.length?p.formas_pagamento.map(function(f){return ({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação'})[f]||f;}).join(', '):'Todas';
+    const pags=p.formas_pagamento&&p.formas_pagamento.length?p.formas_pagamento.map(function(f){return ({pix:'Pix/Online',dinheiro:'Dinheiro',cartao:'Cartão',aproximacao:'Aproximação',pix_direto:'PIX'})[f]||f;}).join(', '):'Todas';
     const descMax=p.desconto_maximo?'R$ '+parseFloat(p.desconto_maximo).toFixed(2).replace('.',','):'frete total';
     return '<div style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:16px;margin-bottom:12px;">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
