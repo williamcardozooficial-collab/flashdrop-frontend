@@ -20,7 +20,7 @@ router.post('/enviar', async (req, res) => {
   } else if (evento === 'cadastro_aprovado') {
     message = `Parabens, *${nome}*! 🎉\n\nSeu cadastro na *FlashDrop* foi *aprovado*! ✅\n\nVoce ja pode acessar sua conta e comecar a usar a plataforma. Bem-vindo(a)!`;
   } else if (evento === 'novo_pedido') {
-    const pagLabel = { dinheiro: '💵 Dinheiro', maquina: '💳 Máquina de Cartão', pix: '📱 PIX', cartao_aproximacao: '💳 Cartão por Aproximação' };
+    const pagLabel = { dinheiro: '💵 Dinheiro', maquina: '💳 Máquina de Cartão', pix: '📱 PIX', cartao_aproximacao: '💳 Cartão por Aproximação', pix_direto: '📱 PIX' };
     const pagStr = pagLabel[tipo_pagamento] || tipo_pagamento || '—';
     const valorStr = valor_total ? `R$ ${parseFloat(valor_total).toFixed(2)}` : '—';
     message = `🛵 *Novo Pedido #${pedido_id}* — *${loja_nome || nome}*\n\n`;
