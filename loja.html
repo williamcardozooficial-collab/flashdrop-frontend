@@ -106,12 +106,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <div id="lista-promocoes-ativas" style="margin-bottom:16px"></div>
 <div <div id="painel-criar-promocao" style="margin-top:16px;display:none;">
   <div style="background:#1a1a2e;border:1px solid #3a3a5c;border-radius:12px;padding:16px;">
-    <h3 style="color:#bb86fc;margin:0 0 14px 0;font-size:15px;">🏷️ FRETE GRÁTIS</h3>
+    <h3 style="color:#bb86fc;margin:0 0 14px 0;font-size:15px;">🏷️ NOVA PROMOÇÃO</h3><label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Tipo de promoção</label><select id="promo-tipo" onchange="atualizarLabelDescontoPromo()" style="width:100%;padding:10px;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;"><option value="frete_gratis">🚚 Frete Grátis (desconto na taxa de entrega)</option><option value="desconto_produto">🏷️ Desconto no Produto (loja arca com o desconto)</option></select>
     <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Nome da promoção</label>
     <input id="promo-frete-nome" type="text" placeholder="Ex: Frete Grátis no Pix" style="width:100%;padding:10px;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;">
     <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Valor mínimo do pedido (R$)</label>
     <input id="promo-frete-minimo" type="number" min="0" step="0.01" placeholder="Ex: 50.00" style="width:100%;padding:10px;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;">
-    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Desconto máximo (R$) <span style="color:#666;font-size:11px;">opcional — teto do desconto</span></label>
+    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;"><span id="label-desconto-maximo-texto">Desconto máximo (R$)</span> <span style="color:#666;font-size:11px;" id="label-desconto-maximo-sub">opcional — teto do desconto</span></label>
     <input id="promo-desconto-maximo" type="number" min="0" step="0.01" placeholder="Deixe vazio para frete grátis total" style="width:100%;padding:10px;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;">
     <label style="color:#aaa;font-size:12px;display:block;margin-bottom:8px;">Formas de pagamento válidas <span style="color:#666;font-size:11px;">(vazio = todas)</span></label>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
@@ -2019,7 +2019,7 @@ function atualizarListaPromocoes(promos){
   if(lista)lista.innerHTML=html;
   else if(empty){var _olds=empty.parentElement.querySelectorAll('.promo-card-gerado');Array.from(_olds).forEach(function(c){c.remove();});var _w=document.createElement('div');_w.className='promo-card-gerado';_w.innerHTML=html;empty.parentElement.insertBefore(_w,empty);}
 }
-async function salvarPromocaoLoja(){
+function atualizarLabelDescontoPromo(){var tipo=(document.getElementById('promo-tipo')||{}).value;var lbl=document.getElementById('label-desconto-maximo-texto');var sub=document.getElementById('label-desconto-maximo-sub');var inp=document.getElementById('promo-desconto-maximo');if(tipo==='desconto_produto'){if(lbl)lbl.textContent='Valor do desconto no produto (R$)';if(sub)sub.textContent='obrigatorio - valor fixo descontado do produto (loja arca)';if(inp)inp.placeholder='Ex: 15.00';}else{if(lbl)lbl.textContent='Desconto máximo (R$)';if(sub)sub.textContent='opcional — teto do desconto';if(inp)inp.placeholder='Deixe vazio para frete grátis total';}}async function salvarPromocaoLoja(){
   const userData=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
   const token=userData.token;
   if(!token){alert('Sessão expirada. Faça login novamente.');return;}
@@ -2031,7 +2031,7 @@ async function salvarPromocaoLoja(){
   const editId=(document.getElementById('promo-edit-id')||{}).value||'';
   if(!nome.trim()){alert('Informe o nome da promoção');return;}
   if(!valorMinimo||valorMinimo<=0){alert('Informe o valor mínimo do pedido');return;}
-  const payload={nome:nome.trim(),tipo:'frete_gratis',valor_minimo:valorMinimo,desconto_maximo:descontoMaximo,formas_pagamento:formasPagamento};
+  const tipoPromo=(document.getElementById('promo-tipo')||{}).value||'frete_gratis';const payload={nome:nome.trim(),tipo:tipoPromo,valor_minimo:valorMinimo,desconto_maximo:descontoMaximo,formas_pagamento:formasPagamento};
   try{
     const url=editId?API+'/loja-promocoes/'+editId:API+'/loja-promocoes';
     const method=editId?'PUT':'POST';
