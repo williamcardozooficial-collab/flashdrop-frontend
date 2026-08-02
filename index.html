@@ -1857,8 +1857,8 @@ function admNpRecalc(){
   var taxaChuva=(s.taxa_chuva_ativa&&parseFloat(s.taxa_chuva)>0)?parseFloat(s.taxa_chuva):0;
   var taxaNoturna=0;
   if(s.taxa_noturna_ativa&&parseFloat(s.taxa_noturna)>0){
-    var agora=new Date(),hora=agora.getHours()*60+agora.getMinutes();
-    var ini=(s.taxa_noturna_hora_inicio||'22:00').split(':'),fim2=(s.taxa_noturna_hora_fim||'06:00').split(':');
+    var agora=new Date(),hora=agora.getHours()*60+agora.getMinutes();var _diaSemana=agora.getDay();var _schedNoturna=null;try{_schedNoturna=s.taxa_noturna_horarios?JSON.parse(s.taxa_noturna_horarios):null;}catch(e){_schedNoturna=null;}var _diaCfgNoturna=(_schedNoturna&&_schedNoturna[_diaSemana])?_schedNoturna[_diaSemana]:null;
+    var ini=((_diaCfgNoturna&&_diaCfgNoturna.inicio)||s.taxa_noturna_hora_inicio||'22:00').split(':'),fim2=((_diaCfgNoturna&&_diaCfgNoturna.fim)||s.taxa_noturna_hora_fim||'06:00').split(':');
     var hi=parseInt(ini[0])*60+parseInt(ini[1]),hf=parseInt(fim2[0])*60+parseInt(fim2[1]);
     if(hi>hf?(hora>=hi||hora<hf):(hora>=hi&&hora<hf))taxaNoturna=parseFloat(s.taxa_noturna);
   }
