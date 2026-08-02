@@ -1055,7 +1055,7 @@ var method=isEdit?'PUT':'POST';
 var r=await fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
 var data=await r.json();
 if(r.ok){
-alert(isEdit?'✅ Produto "'+nome+'" atualizado!':'✅ Produto "'+nome+'" salvo com sucesso!');
+console.log(isEdit?'Produto "'+nome+'" atualizado!':'Produto "'+nome+'" salvo com sucesso!');
 fecharFormNovoProduto();
 loadProdutosLoja();
 }else{alert('Erro: '+(data.error||'Erro ao salvar produto'));}
