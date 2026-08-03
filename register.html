@@ -86,8 +86,34 @@ body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;min-heig
       <div class="hint">Formato: (00) 0 0000-0000</div>
     </div>
     <div class="input-group">
-      <label>📍 Endereço</label>
-      <input type="text" id="address" placeholder="Rua, número, bairro, cidade"/>
+      <label>📍 Rua / Avenida</label>
+      <input type="text" id="addr-rua" placeholder="Ex: Natal Idalino Fadanelli" autocomplete="off"/>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div class="input-group" style="flex:1">
+        <label>Número</label>
+        <input type="text" id="addr-num" placeholder="Ex: 556"/>
+      </div>
+      <div class="input-group" style="flex:1">
+        <label>Complemento <span style="color:#666;font-weight:400">(opcional)</span></label>
+        <input type="text" id="addr-comp" placeholder="Ex: Sala 2"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div class="input-group" style="flex:1">
+        <label>Bairro</label>
+        <input type="text" id="addr-bairro" placeholder="Ex: Centro"/>
+      </div>
+      <div class="input-group" style="flex:1">
+        <label>Cidade</label>
+        <input type="text" id="addr-cidade" value="Caxias do Sul"/>
+      </div>
+    </div>
+    <input type="hidden" id="addr-lat">
+    <input type="hidden" id="addr-lng">
+    <div class="input-group">
+      <label>📍 Localização no mapa <span style="color:#666;font-weight:400">(arraste o pin para ajustar)</span></label>
+      <div id="reg-map" style="width:100%;height:200px;border-radius:10px;border:1.5px solid #2a2a4a;background:#0f0f1a"></div>
     </div>
 
 <div id="div-motoboy-extra" class="motoboy-only">
@@ -194,7 +220,14 @@ function showSuccess(msg){
     var password2=document.getElementById('password2').value;
     var name=document.getElementById('name').value.trim();
     var phone=document.getElementById('phone').value.trim();
-    var address=document.getElementById('address').value.trim();
+    var addrRua=document.getElementById('addr-rua').value.trim();
+var addrNum=document.getElementById('addr-num').value.trim();
+var addrComp=document.getElementById('addr-comp').value.trim();
+var addrBairro=document.getElementById('addr-bairro').value.trim();
+var addrCidade=document.getElementById('addr-cidade').value.trim()||'Caxias do Sul';
+var address=JSON.stringify({rua:addrRua,num:addrNum,comp:addrComp,bairro:addrBairro,cidade:addrCidade});
+var addrLat=document.getElementById('addr-lat').value;
+var addrLng=document.getElementById('addr-lng').value;
     var cpf='', vehicle='', referralCode='';
     if (isMotoboy) {
       cpf=document.getElementById('cpf').value.trim();
@@ -234,6 +267,8 @@ function showSuccess(msg){
       showError('❌ Informe o Nome/Razão Social da loja.'); return;
     }
     var body = {username: username, password: password, role: tipo, name: name, phone: phone, address: address};
+if (addrLat) body.lat = parseFloat(addrLat);
+if (addrLng) body.lng = parseFloat(addrLng);
     if (isMotoboy) {
       body.cpf = cpf; body.vehicle = vehicle; body.referral_code = referralCode || null; body.cnpj = cnpj || null; body.razao_social = razaoSocial || null;
     } else {
@@ -269,5 +304,61 @@ function showSuccess(msg){
   
 })();
 </script>
+<script>
+var _regMap=null,_regMarker=null;
+function initRegMapView(lat,lng){
+var mapDiv=document.getElementById('reg-map');
+if(!mapDiv||typeof google==='undefined'||!google.maps)return;
+var hasCoord=!!(lat&&lng);
+var latNum=parseFloat(lat)||-29.168;
+var lngNum=parseFloat(lng)||-51.179;
+_regMap=new google.maps.Map(mapDiv,{center:{lat:latNum,lng:lngNum},zoom:hasCoord?16:13,disableDefaultUI:true,zoomControl:true,styles:[{elementType:'geometry',stylers:[{color:'#1a1a2e'}]},{elementType:'labels.text.fill',stylers:[{color:'#aaaaaa'}]},{elementType:'labels.text.stroke',stylers:[{color:'#1a1a2e'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#2a2a4a'}]},{featureType:'poi',stylers:[{visibility:'off'}]}]});
+_regMarker=new google.maps.Marker({position:{lat:latNum,lng:lngNum},map:_regMap,draggable:true,icon:{path:google.maps.SymbolPath.CIRCLE,scale:12,fillColor:'#667eea',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}});
+_regMarker.addListener('dragend',function(e){
+document.getElementById('addr-lat').value=e.latLng.lat();
+document.getElementById('addr-lng').value=e.latLng.lng();
+});
+}
+function updateRegMapPosition(lat,lng){
+document.getElementById('addr-lat').value=lat;
+document.getElementById('addr-lng').value=lng;
+if(!_regMap||!_regMarker){initRegMapView(lat,lng);return;}
+var pos={lat:parseFloat(lat),lng:parseFloat(lng)};
+_regMap.setCenter(pos);_regMap.setZoom(16);_regMarker.setPosition(pos);
+}
+function initRegAutocomplete(){
+var s=document.createElement('style');
+s.textContent=".pac-container{background:#1a1a2e!important;border:1px solid #444!important;border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.7)!important;z-index:99999!important}.pac-item{padding:10px 14px!important;color:#ccc!important;font-size:13px!important;border-top:1px solid #2a2a2a!important;cursor:pointer!important}.pac-item:hover,.pac-item-selected{background:#2a2a2a!important}.pac-item-query{color:#fff!important}.pac-matched{color:#667eea!important;font-weight:700!important}.pac-logo:after{display:none!important}";
+document.head.appendChild(s);
+var el=document.getElementById('addr-rua');
+if(!el)return;
+var a=new google.maps.places.Autocomplete(el,{componentRestrictions:{country:'br'},types:['address'],fields:['address_components','formatted_address','geometry']});
+el.addEventListener('keydown',function(e){if(e.key==='Enter')e.preventDefault();});
+a.addListener('place_changed',function(){
+var p=a.getPlace();if(!p||!p.address_components)return;
+var r='',n='',b='',c='';
+p.address_components.forEach(function(x){
+var t=x.types;
+if(t.indexOf('route')!==-1)r=x.long_name;
+if(t.indexOf('street_number')!==-1)n=x.long_name;
+if((t.indexOf('sublocality_level_1')!==-1||t.indexOf('neighborhood')!==-1)&&!b)b=x.long_name;
+if(t.indexOf('administrative_area_level_2')!==-1)c=x.long_name;
+});
+el.value=r||p.formatted_address||'';
+if(n&&document.getElementById('addr-num'))document.getElementById('addr-num').value=n;
+if(b&&document.getElementById('addr-bairro'))document.getElementById('addr-bairro').value=b;
+if(c&&document.getElementById('addr-cidade'))document.getElementById('addr-cidade').value=c;
+if(!n&&document.getElementById('addr-num'))document.getElementById('addr-num').focus();
+if(p.geometry&&p.geometry.location){
+updateRegMapPosition(p.geometry.location.lat(),p.geometry.location.lng());
+}
+});
+}
+function initRegMap(){
+initRegMapView('','');
+initRegAutocomplete();
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places&callback=initRegMap" async defer></script>
 </body>
 </html>
