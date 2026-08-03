@@ -455,8 +455,9 @@ statusEl.innerHTML='<span style="color:#aaa">&#8987; Calculando distancia...</sp
 try{
 var endCliente=rua+', '+numero+', '+cidade+', RS, Brasil';
 var _lra=lojaGlobal.address||'';var _lro={};try{_lro=JSON.parse(_lra);}catch(e){_lro=null;}var _lraf=_lro&&_lro.rua?[_lro.rua+(_lro.num?' '+_lro.num:''),_lro.bairro,_lro.cidade].filter(Boolean).join(', '):_lra;var endLoja=_lraf+', Brasil';
+var coordLojaSalvo=(lojaGlobal.lat&&lojaGlobal.lng)?{lat:parseFloat(lojaGlobal.lat),lon:parseFloat(lojaGlobal.lng)}:null;
 var coordClientePre=_coordPinConfirmado||window.coordClienteAutocomplete||null;
-var [coordLoja,coordCliente]=await Promise.all([geocodificar(endLoja),coordClientePre?Promise.resolve(coordClientePre):geocodificar(endCliente)]);
+var [coordLoja,coordCliente]=await Promise.all([coordLojaSalvo?Promise.resolve(coordLojaSalvo):geocodificar(endLoja),coordClientePre?Promise.resolve(coordClientePre):geocodificar(endCliente)]);
 if(!coordLoja){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Nao foi possivel localizar o endereco da loja. Fale com a loja.</span>';btn.disabled=false;btn.textContent='Calcular taxa de entrega';return;}
 if(!coordCliente){
   statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; Endereco nao encontrado automaticamente. Marque o local no mapa abaixo e clique em Confirmar.</span>';
