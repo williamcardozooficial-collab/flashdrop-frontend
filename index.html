@@ -479,16 +479,21 @@
 
   <script>
     // PROTECAO XSS - escapar HTML em todos os dados exibidos
-    function buildAddrFields(addrStr, isNew) {
+    function buildAddrFields(addrStr, isNew, lat, lng) {
   var a = {};
   try { a = JSON.parse(addrStr || '{}'); } catch(e) {
     a = { rua: addrStr || '', num: '', comp: '', bairro: '', cidade: 'Caxias do Sul' };
   }
   var sfx = isNew ? '-new' : '';
   var ev = function(v){ return (v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); };
-  return '<div class="input-group"><label style="font-size:11px;color:#aaa">Rua / Avenida</label><input id="u-addr-rua'+sfx+'" class="input" placeholder="Ex: Natal Idalino Fadanelli" value="'+ev(a.rua||'')+'"></div>' +
+var latVal = (lat!==undefined&&lat!==null&&lat!=='') ? lat : '';
+var lngVal = (lng!==undefined&&lng!==null&&lng!=='') ? lng : '';
+  return '<div class="input-group"><label style="font-size:11px;color:#aaa">Rua / Avenida</label><input id="u-addr-rua'+sfx+'" class="input" placeholder="Ex: Natal Idalino Fadanelli" value="'+ev(a.rua||'')+'" autocomplete="off"></div>' +
     '<div class="input-group" style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:#aaa">Número</label><input id="u-addr-num'+sfx+'" class="input" placeholder="Ex: 556" value="'+ev(a.num||'')+'"></div><div style="flex:1"><label style="font-size:11px;color:#aaa">Complemento <span style="color:#666">(opcional)</span></label><input id="u-addr-comp'+sfx+'" class="input" placeholder="Ex: Sala 2" value="'+ev(a.comp||'')+'"></div></div>' +
-    '<div class="input-group" style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:#aaa">Bairro</label><input id="u-addr-bairro'+sfx+'" class="input" placeholder="Ex: Centro" value="'+ev(a.bairro||'')+'"></div><div style="flex:1"><label style="font-size:11px;color:#aaa">Cidade</label><input id="u-addr-cidade'+sfx+'" class="input" placeholder="Ex: Caxias do Sul" value="'+(ev(a.cidade||'')||'Caxias do Sul')+'"></div></div>';
+    '<div class="input-group" style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:#aaa">Bairro</label><input id="u-addr-bairro'+sfx+'" class="input" placeholder="Ex: Centro" value="'+ev(a.bairro||'')+'"></div><div style="flex:1"><label style="font-size:11px;color:#aaa">Cidade</label><input id="u-addr-cidade'+sfx+'" class="input" placeholder="Ex: Caxias do Sul" value="'+(ev(a.cidade||'')||'Caxias do Sul')+'"></div></div>' +
+'<input type="hidden" id="u-addr-lat'+sfx+'" value="'+ev(String(latVal))+'">' +
+'<input type="hidden" id="u-addr-lng'+sfx+'" value="'+ev(String(lngVal))+'">' +
+'<div class="input-group"><label style="font-size:11px;color:#aaa">📍 Localização no mapa <span style="color:#666">(arraste o pin para ajustar)</span></label><div id="u-map'+sfx+'" style="width:100%;height:200px;border-radius:10px;border:2px solid #ffcc00;background:#222"></div></div>';
 }
 
     function fmtAddr(addr) {
@@ -875,6 +880,10 @@ function renderFinance(users) {
         '<div class="input-group"><label>Telegram ID (número)</label><input id="u-tg-new" class="input" type="number" placeholder="Opcional" autocomplete="off"></div>' +
         '<div id="u-extra-fields"><div class="input-group"><label>Limite de Crédito (R$)</label><input id="u-credit-new" class="input" type="number" step="0.01" min="0" value="0" autocomplete="off"></div></div>';
       openModal('modal-user');
+      setTimeout(function(){
+        if (typeof window.acBind === 'function') window.acBind('u-addr-rua-new','u-addr-num-new','u-addr-bairro-new','u-addr-cidade-new','buildOrigin','-new');
+        if (typeof initStoreMap === 'function') initStoreMap('-new', '', '');
+      }, 300);
     }
 
     function updateNewUserFields() {
@@ -898,7 +907,7 @@ function renderFinance(users) {
           '<div class="input-group"><label>📍 Endereço</label><input id="u-address" class="input" value="' + (fmtAddr(u.address) || '') + '"></div>' +
           '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
           '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>' + '<div class="input-group"><label>🎁 Bônus por Entrega (R$)</label><input id="u-bonus-entrega" class="input" type="number" step="0.01" min="0" value="' + (u.bonus_por_entrega !== null && u.bonus_por_entrega !== undefined ? Number(u.bonus_por_entrega).toFixed(2) : '0.00') + '"><div style="font-size:11px;color:#aaa;margin-top:4px">Valor extra pago automaticamente a este motoboy a cada pedido entregue. Deixe 0,00 para nao aplicar.</div></div>'
-        : buildAddrFields(u.address, false);
+        : buildAddrFields(u.address, false, u.lat, u.lng);
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
         '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
@@ -907,6 +916,12 @@ function renderFinance(users) {
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (esc(u.phone) || '') + '"></div>' + '<div class="input-group"><label>💰 Saldo Atual: R$ ' + Number((u.role === 'loja' ? u.credit : u.balance) || 0).toFixed(2) + '</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-primary btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + (u.role === 'loja' ? 'credit' : 'balance') + '\',\'add\')">➕ Aumentar</button><button type="button" class="btn btn-danger btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + (u.role === 'loja' ? 'credit' : 'balance') + '\',\'sub\')">➖ Diminuir</button></div></div>' +
         motoboyCampos;
       openModal('modal-user');
+      if (u.role !== 'motoboy') {
+        setTimeout(function(){
+          if (typeof window.acBind === 'function') window.acBind('u-addr-rua','u-addr-num','u-addr-bairro','u-addr-cidade','buildOrigin','');
+          if (typeof initStoreMap === 'function') initStoreMap('', u.lat||'', u.lng||'');
+        }, 300);
+      }
     }
 
     async function saveUser() {
@@ -932,6 +947,10 @@ function renderFinance(users) {
             bairro: (document.getElementById('u-addr-bairro-new')||{value:''}).value.trim(),
             cidade: (document.getElementById('u-addr-cidade-new')||{value:'Caxias do Sul'}).value.trim() || 'Caxias do Sul'
           });
+var latNewEl = document.getElementById('u-addr-lat-new');
+var lngNewEl = document.getElementById('u-addr-lng-new');
+if (latNewEl && latNewEl.value) data.lat = parseFloat(latNewEl.value);
+if (lngNewEl && lngNewEl.value) data.lng = parseFloat(lngNewEl.value);
         }
         var cpfNewEl = document.getElementById('u-cpf-new');
         if (cpfNewEl && cpfNewEl.value.trim()) data.cpf = cpfNewEl.value.trim();
@@ -955,6 +974,10 @@ function renderFinance(users) {
             bairro: (document.getElementById('u-addr-bairro')||{value:''}).value.trim(),
             cidade: (document.getElementById('u-addr-cidade')||{value:'Caxias do Sul'}).value.trim() || 'Caxias do Sul'
           });
+var latEl = document.getElementById('u-addr-lat');
+var lngEl = document.getElementById('u-addr-lng');
+if (latEl && latEl.value) data.lat = parseFloat(latEl.value);
+if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         }
         if (cpfEl && cpfEl.value.trim()) data.cpf = cpfEl.value.trim();
         var clEl = document.getElementById('u-credit-limit');
@@ -1922,14 +1945,41 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
 <div id="print-area" style="display:none;padding:10px;background:#fff;color:#000;font-family:monospace;font-size:12px"></div></body>
 </html>
 <script>
+var _storeMaps={};
+var _storeMarkers={};
+function initStoreMap(sfx, lat, lng){
+var mapDiv=document.getElementById('u-map'+sfx);
+if(!mapDiv||typeof google==='undefined'||!google.maps)return;
+var hasCoord=!!(lat&&lng);
+var latNum=parseFloat(lat)||-29.168;
+var lngNum=parseFloat(lng)||-51.179;
+var map=new google.maps.Map(mapDiv,{center:{lat:latNum,lng:lngNum},zoom:hasCoord?16:13,disableDefaultUI:true,zoomControl:true,styles:[{elementType:'geometry',stylers:[{color:'#1a1a1a'}]},{elementType:'labels.text.fill',stylers:[{color:'#aaaaaa'}]},{elementType:'labels.text.stroke',stylers:[{color:'#1a1a1a'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#2a2a2a'}]},{featureType:'poi',stylers:[{visibility:'off'}]}]});
+var marker=new google.maps.Marker({position:{lat:latNum,lng:lngNum},map:map,draggable:true,icon:{path:google.maps.SymbolPath.CIRCLE,scale:12,fillColor:'#ffcc00',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}});
+marker.addListener('dragend',function(e){
+var latEl=document.getElementById('u-addr-lat'+sfx),lngEl=document.getElementById('u-addr-lng'+sfx);
+if(latEl)latEl.value=e.latLng.lat();
+if(lngEl)lngEl.value=e.latLng.lng();
+});
+_storeMaps[sfx]=map;
+_storeMarkers[sfx]=marker;
+}
+function updateStoreMapPosition(sfx, lat, lng){
+var latEl=document.getElementById('u-addr-lat'+sfx),lngEl=document.getElementById('u-addr-lng'+sfx);
+if(latEl)latEl.value=lat;
+if(lngEl)lngEl.value=lng;
+var map=_storeMaps[sfx],marker=_storeMarkers[sfx];
+if(!map||!marker){initStoreMap(sfx,lat,lng);return;}
+var pos={lat:parseFloat(lat),lng:parseFloat(lng)};
+map.setCenter(pos);map.setZoom(16);marker.setPosition(pos);
+}
 function initAutocomplete(){
   // Inject dark-theme CSS for autocomplete dropdown
   var s=document.createElement("style");
   s.textContent=".pac-container{background:#1e1e1e!important;border:1px solid #444!important;border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.7)!important;z-index:99999!important}.pac-item{padding:10px 14px!important;color:#ccc!important;font-size:13px!important;border-top:1px solid #2a2a2a!important;cursor:pointer!important}.pac-item:hover,.pac-item-selected{background:#2a2a2a!important}.pac-item-query{color:#fff!important}.pac-matched{color:#667eea!important;font-weight:700!important}.pac-logo:after{display:none!important}";
   document.head.appendChild(s);
-  function ac(id,nid,bid,cid,buildFn){
+  window.acBind=function(id,nid,bid,cid,buildFn,mapSfx){
     var el=document.getElementById(id);if(!el)return;
-    var a=new google.maps.places.Autocomplete(el,{componentRestrictions:{country:"br"},types:["address"],fields:["address_components","formatted_address"]});
+    var a=new google.maps.places.Autocomplete(el,{componentRestrictions:{country:"br"},types:["address"],fields:(mapSfx!==undefined&&mapSfx!==null)?["address_components","formatted_address","geometry"]:["address_components","formatted_address"]});
     el.addEventListener("keydown",function(e){if(e.key==="Enter")e.preventDefault();});
     a.addListener("place_changed",function(){
       var p=a.getPlace();if(!p||!p.address_components)return;
@@ -1948,14 +1998,15 @@ function initAutocomplete(){
       if(c&&document.getElementById(cid)){document.getElementById(cid).value=c;trigger(document.getElementById(cid));}
       if(typeof window[buildFn]==="function")window[buildFn]();
       if(!n&&document.getElementById(nid))document.getElementById(nid).focus();
+if(mapSfx!==undefined&&mapSfx!==null&&p.geometry&&p.geometry.location){updateStoreMapPosition(mapSfx,p.geometry.location.lat(),p.geometry.location.lng());}
     });
   }
   // Store address (user profile)
-  ac("u-addr-rua","u-addr-num","u-addr-bairro","u-addr-cidade","buildOrigin");
+  window.acBind("u-addr-rua","u-addr-num","u-addr-bairro","u-addr-cidade","buildOrigin","");
   // Admin new order - coleta (pickup)
-  ac("adm-np-col-rua","adm-np-col-num","adm-np-col-bairro","adm-np-col-cidade","buildAdmColeta");
+  window.acBind("adm-np-col-rua","adm-np-col-num","adm-np-col-bairro","adm-np-col-cidade","buildAdmColeta");
   // Admin new order - entrega (delivery)
-  ac("adm-np-ent-rua","adm-np-ent-num","adm-np-ent-bairro","adm-np-ent-cidade","buildAdmEntrega");
+  window.acBind("adm-np-ent-rua","adm-np-ent-num","adm-np-ent-bairro","adm-np-ent-cidade","buildAdmEntrega");
 }
 </script>
 <!-- IMPORTANT: Replace AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI with your actual key. Enable Places API in Google Cloud Console. -->
