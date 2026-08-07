@@ -2099,7 +2099,7 @@ async function submitSaqueLoja() {
   var pixKey = document.getElementById('loja-saque-pix').value.trim();
   if (!valor || valor <= 0) { tg.showAlert('Informe um valor válido.'); return; }
   if (!pixKey) { tg.showAlert('Informe a chave PIX.'); return; }
-  if (valor > parseFloat(user.credit || 0)) { tg.showAlert('Valor maior que seu crédito disponível.'); return; }
+  if (valor > parseFloat(user.credit || 0)) { tg.showAlert('Valor maior que seu crédito disponível.'); return; } var horaBR = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23' }).format(new Date())); if (horaBR < 10 || horaBR >= 22) { tg.showAlert('Saques disponíveis apenas das 10h às 22h.'); return; }
   try {
     var r = await fetch(API + '/withdrawals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loja_id: user.id, loja_name: user.name, valor: valor, pix_key: pixKey }) });
     var data = await r.json();
