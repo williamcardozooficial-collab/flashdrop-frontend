@@ -634,7 +634,7 @@ function esc(v) {
       var filterBar = '<div class="filter-bar">' +
         '<button onclick="abrirAdminNovoPedido()" style="background:#e67e00;color:#000;border:none;border-radius:16px;padding:6px 14px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap">&#128230; Novo Pedido</button>' +
         filters.map(function(f){
-          var lbl = f === 'todos' ? 'Todos' : (STATUS_LABELS[f] || f);
+          var lbl = f === 'todos' ? 'Todos' : (STATUS_LABELS[f] || f); if (f !== 'todos') { var cnt = orders.filter(function(o){ return o.status === f; }).length; lbl = lbl + ' (' + cnt + ')'; }
           var active = currentOrderFilter === f ? ' active' : '';
           return '<button class="filter-btn' + active + '" onclick="filterOrders(\'' + f + '\')">' + lbl + '</button>';
         }).join('') +
