@@ -1484,12 +1484,12 @@ async function abrirHistoricoCredito(){
       var color = isCredit?'#27ae60':'#e53935';
       var sign = isCredit?'+':'-';
       var label = tipoLabel[ev.tipo]||ev.tipo;
-      var dt = ev.created_at?new Date(ev.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''; var saldoApos=saldoRunning; saldoRunning=saldoApos-(isCredit?parseFloat(ev.valor||0):-parseFloat(ev.valor||0));
+      var dt = ev.created_at?new Date(ev.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''; var saldoApos=saldoRunning; saldoRunning=saldoApos-(isCredit?parseFloat(ev.valor||0):-parseFloat(ev.valor||0)); var saldoAntes=saldoRunning;
       return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #2a2a4a">'
         + '<div>'
         + '<div style="font-size:13px;color:#ddd;font-weight:600">'+label+'</div>'
         + '<div style="font-size:11px;color:#777;margin-top:2px">'+(ev.descricao||'')+'</div>'
-        + '<div style="font-size:10px;color:#555;margin-top:2px">'+dt+'</div>'
+        + '<div style="font-size:10px;color:#555;margin-top:2px">'+dt+'</div>' + '<div style="font-size:10px;color:#666;margin-top:2px">R$ '+saldoAntes.toFixed(2)+' '+sign+' R$ '+parseFloat(ev.valor).toFixed(2)+' = R$ '+saldoApos.toFixed(2)+'</div>'
         + '</div>'
         + '<div style="text-align:right">'+'<div style="font-size:15px;font-weight:700;color:'+color+';white-space:nowrap">'+sign+'R$ '+parseFloat(ev.valor).toFixed(2)+'</div>'+'<div style="font-size:10px;color:#666;margin-top:2px;white-space:nowrap">Saldo: R$ '+saldoApos.toFixed(2)+'</div>'+'</div>'
         + '</div>';
