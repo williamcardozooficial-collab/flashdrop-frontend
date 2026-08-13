@@ -1136,9 +1136,10 @@ if(e.target.id==='ch-cel'){e.target.value=fmtTel(e.target.value);}
 function initAutocomplete() {
 var ruaInput = document.getElementById('ch-rua');
 if (!ruaInput) return;
+var caxiasBounds = new google.maps.LatLngBounds(new google.maps.LatLng(-29.28, -51.35), new google.maps.LatLng(-29.05, -50.95));
 var autocomplete = new google.maps.places.Autocomplete(ruaInput, {
 componentRestrictions: { country: 'br' },
-types: ['address'],
+bounds: caxiasBounds,
 fields: ['address_components', 'formatted_address', 'geometry']
 });
 ruaInput.addEventListener('keydown', function(e) {
