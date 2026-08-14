@@ -315,6 +315,7 @@ var taxaSettings = null;
 var taxaCalculada = 0;
 var distanciaCalculada = 0;
 var descontoFreteAtual = 0;
+function invalidarTaxaEntrega(){if(taxaCalculada>0){taxaCalculada=0;distanciaCalculada=0;var bloco=document.getElementById('bloco-taxa-resultado');if(bloco)bloco.style.display='none';var btnCalc=document.getElementById('btn-calcular-taxa');if(btnCalc)btnCalc.textContent='Calcular taxa de entrega';var statusEl=document.getElementById('taxa-status');if(statusEl)statusEl.innerHTML='<span style="color:#ff9500">&#9888; Endereco alterado. Calcule a taxa novamente antes de finalizar.</span>';}}
 
 
 /* ---- MAPA ENTREGA ---- */
@@ -362,7 +363,7 @@ function iniciarMapaEntrega(lat, lon, arrastavel) {
     google.maps.event.trigger(_mapEntrega, 'resize');
   }
   _coordPinConfirmado = null;
-  if(_pinEntrega&&!_pinEntrega.__dragendBound){_pinEntrega.__dragendBound=true;_pinEntrega.addListener('dragend',function(e){if(typeof google!=='undefined'&&google.maps&&google.maps.Geocoder){var _geocoderEntregaCli=new google.maps.Geocoder();_geocoderEntregaCli.geocode({location:e.latLng},function(results,status){if(status==='OK'&&results[0]){var comps=results[0].address_components;function _getCompEntregaCli(types){for(var i=0;i<comps.length;i++){for(var j=0;j<types.length;j++){if(comps[i].types.indexOf(types[j])>-1)return comps[i].long_name;}}return '';}var _rua=_getCompEntregaCli(['route']);var _bairro=_getCompEntregaCli(['sublocality_level_1','sublocality','neighborhood']);var _cidade=_getCompEntregaCli(['locality','administrative_area_level_2']);var ruaEl=document.getElementById('ch-rua');var bairroEl=document.getElementById('ch-bairro');var cidadeEl=document.getElementById('ch-cidade');if(ruaEl&&_rua){ruaEl.value=_rua;ruaEl.style.borderColor='#ff9500';}if(bairroEl&&_bairro){bairroEl.value=_bairro;bairroEl.style.borderColor='#ff9500';}if(cidadeEl&&_cidade){cidadeEl.value=_cidade;cidadeEl.style.borderColor='#ff9500';}_coordPinConfirmado={lat:e.latLng.lat(),lon:e.latLng.lng()};var mapaDiv=document.getElementById('mapa-entrega');var avisoEl=document.getElementById('ch-arrasto-aviso');if(!avisoEl&&mapaDiv&&mapaDiv.parentNode){avisoEl=document.createElement('div');avisoEl.id='ch-arrasto-aviso';avisoEl.style.cssText='margin-top:8px;padding:8px 10px;background:#3a2a10;border:1px solid #ff9500;border-radius:8px;color:#ff9500;font-size:12px;font-weight:600';mapaDiv.parentNode.insertBefore(avisoEl,mapaDiv.nextSibling);}if(avisoEl)avisoEl.textContent='Endereco atualizado automaticamente para a posicao do pino.';}});}});}
+  if(_pinEntrega&&!_pinEntrega.__dragendBound){_pinEntrega.__dragendBound=true;_pinEntrega.addListener('dragend',function(e){if(typeof google!=='undefined'&&google.maps&&google.maps.Geocoder){var _geocoderEntregaCli=new google.maps.Geocoder();_geocoderEntregaCli.geocode({location:e.latLng},function(results,status){if(status==='OK'&&results[0]){var comps=results[0].address_components;function _getCompEntregaCli(types){for(var i=0;i<comps.length;i++){for(var j=0;j<types.length;j++){if(comps[i].types.indexOf(types[j])>-1)return comps[i].long_name;}}return '';}var _rua=_getCompEntregaCli(['route']);var _bairro=_getCompEntregaCli(['sublocality_level_1','sublocality','neighborhood']);var _cidade=_getCompEntregaCli(['locality','administrative_area_level_2']);var ruaEl=document.getElementById('ch-rua');var bairroEl=document.getElementById('ch-bairro');var cidadeEl=document.getElementById('ch-cidade');if(ruaEl&&_rua){ruaEl.value=_rua;ruaEl.style.borderColor='#ff9500';}if(bairroEl&&_bairro){bairroEl.value=_bairro;bairroEl.style.borderColor='#ff9500';}if(cidadeEl&&_cidade){cidadeEl.value=_cidade;cidadeEl.style.borderColor='#ff9500';}_coordPinConfirmado={lat:e.latLng.lat(),lon:e.latLng.lng()};invalidarTaxaEntrega();var mapaDiv=document.getElementById('mapa-entrega');var avisoEl=document.getElementById('ch-arrasto-aviso');if(!avisoEl&&mapaDiv&&mapaDiv.parentNode){avisoEl=document.createElement('div');avisoEl.id='ch-arrasto-aviso';avisoEl.style.cssText='margin-top:8px;padding:8px 10px;background:#3a2a10;border:1px solid #ff9500;border-radius:8px;color:#ff9500;font-size:12px;font-weight:600';mapaDiv.parentNode.insertBefore(avisoEl,mapaDiv.nextSibling);}if(avisoEl)avisoEl.textContent='Endereco atualizado automaticamente para a posicao do pino.';}});}});}
 }
 
 function confirmarPinMapa() {
@@ -1136,6 +1137,7 @@ if(e.target.id==='ch-cel'){e.target.value=fmtTel(e.target.value);}
 function initAutocomplete() {
 var ruaInput = document.getElementById('ch-rua');
 if (!ruaInput) return;
+['ch-rua','ch-numero','ch-bairro','ch-cidade'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',invalidarTaxaEntrega);});
 var caxiasBounds = new google.maps.LatLngBounds(new google.maps.LatLng(-29.28, -51.35), new google.maps.LatLng(-29.05, -50.95));
 var autocomplete = new google.maps.places.Autocomplete(ruaInput, {
 componentRestrictions: { country: 'br' },
@@ -1164,6 +1166,7 @@ document.getElementById('ch-rua').value = rua || place.formatted_address || '';
 if (numero) document.getElementById('ch-numero').value = numero;
 if (bairro) document.getElementById('ch-bairro').value = bairro;
 if (cidade) document.getElementById('ch-cidade').value = cidade;
+invalidarTaxaEntrega();
 if (place.geometry && place.geometry.location) {
 var latP = place.geometry.location.lat();
 var lonP = place.geometry.location.lng();
