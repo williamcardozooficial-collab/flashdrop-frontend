@@ -143,11 +143,11 @@ var fotoContent = loja.foto_url
 ? '<img src="' + loja.foto_url + '" alt="' + (loja.name||'') + '" style="width:100%;height:100%;object-fit:cover" />'
 : '<span class="placeholder-icon">&#127978;</span>';
 var badge = aberta ? '' : '<div class="badge-fechado">FECHADO</div>';
-var horarioInfo = aberta ? '' : '<div class="loja-horario-fechado">' + horarioHojeTexto(loja) + '</div>';
+var ratingInfo = loja.avaliacao_media ? '<div class="loja-rating" style="font-size:13px;color:#f5a623;font-weight:700;margin-bottom:4px;">&#11088; ' + parseFloat(loja.avaliacao_media).toFixed(1) + ' <span style="color:#999;font-weight:400;">(' + loja.avaliacao_total + ')</span></div>' : '';var horarioInfo = aberta ? '' : '<div class="loja-horario-fechado">' + horarioHojeTexto(loja) + '</div>';
 card.innerHTML =
 '<div class="loja-foto">' + fotoContent + badge + '<div class="overlay"></div></div>' +
 '<div class="loja-info">' +
-'<div class="loja-nome">' + (loja.name || 'Loja') + '</div>' +
+ratingInfo +
 horarioInfo +
 '<button class="btn-ver" data-id="' + (loja.custom_id||'') + '">&#128722; Ver card&aacute;pio</button>' +
 '</div>';
