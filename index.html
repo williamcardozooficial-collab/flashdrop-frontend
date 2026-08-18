@@ -147,8 +147,7 @@
           <input id="cfg-arr" class="input" type="number" step="0.50">
         </div>
         <div class="input-group">
-          <label>Comissao da Plataforma (R$)</label>
-          <input id="cfg-com" class="input" type="number" step="0.50">
+                    <label>Comissao da Plataforma <span id="cfg-com-label-unit">(R$)</span></label><div style="display:flex;gap:8px;align-items:center"><input id="cfg-com" class="input" type="number" step="0.50" style="flex:1"><button type="button" id="cfg-com-toggle" onclick="toggleComissaoTipo()" style="padding:10px 14px;background:#333;border:1px solid #555;border-radius:8px;color:#ffcc00;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap">R$</button></div><small style="color:#888;font-size:11px">Clique no botao para alternar entre valor fixo (R$) e porcentagem (%) sobre o valor do frete.</small>
         </div>
         <div class="input-group">
           <label>Max pedidos por motoboy</label>
@@ -581,7 +580,7 @@ function esc(v) {
         document.getElementById('cfg-min').value = data.min_fee;
         document.getElementById('cfg-km').value = data.price_per_km;
         document.getElementById('cfg-arr').value = data.arrancada;
-        document.getElementById('cfg-com').value = data.commission;
+        document.getElementById('cfg-com').value = data.commission; _comissaoTipo = data.commission_type === 'percentual' ? 'percentual' : 'valor'; atualizarUnidadeComissao();
         document.getElementById('cfg-max').value = data.max_per_motoboy; document.getElementById('cfg-delay').value = data.launch_delay_minutes || 60;
         // ── Taxas ──
         document.getElementById('cfg-chuva-valor').value = data.taxa_chuva || 0;
@@ -1050,7 +1049,7 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
       loadData('pedidos');
     }
 
-    async function saveSettings() {
+    var _comissaoTipo = 'valor'; function toggleComissaoTipo() { _comissaoTipo = _comissaoTipo === 'valor' ? 'percentual' : 'valor'; atualizarUnidadeComissao(); } function atualizarUnidadeComissao() { var btn = document.getElementById('cfg-com-toggle'); var unitLabel = document.getElementById('cfg-com-label-unit'); var input = document.getElementById('cfg-com'); if (!btn || !unitLabel || !input) return; if (_comissaoTipo === 'percentual') { btn.textContent = '%'; unitLabel.textContent = '(%)'; input.step = '0.1'; input.max = '100'; } else { btn.textContent = 'R$'; unitLabel.textContent = '(R$)'; input.step = '0.50'; input.removeAttribute('max'); } } async function saveSettings() {
       const taxaChuvaAtiva = document.getElementById('cfg-chuva-ativa').checked;
       const taxaNoturnaAtiva = document.getElementById('cfg-noturna-ativa').checked;
       await fetch(API + '/settings', {
@@ -1060,7 +1059,7 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
           min_fee: document.getElementById('cfg-min').value,
           price_per_km: document.getElementById('cfg-km').value,
           arrancada: document.getElementById('cfg-arr').value,
-          commission: document.getElementById('cfg-com').value,
+          commission: document.getElementById('cfg-com').value, commission_type: _comissaoTipo,
           max_per_motoboy: document.getElementById('cfg-max').value,
           launch_delay_minutes: document.getElementById('cfg-delay').value,
           taxa_chuva: parseFloat(document.getElementById('cfg-chuva-valor').value) || 0,
@@ -1814,7 +1813,7 @@ async function salvarLink() {
   </div>
 </div>
 <script>
-var _admNpSettings=null,_admNpDistKm=0,_admNpTaxaCalc=0,_admNpLojaId=null,_admNpLojaUser=null;
+var _admNpSettings=null,_admNpDistKm=0,_admNpTaxaCalc=0,_admNpLojaId=null,_admNpLojaUser=null,_admNpComissaoValor=0;
 async function abrirAdminNovoPedido(){
   ['adm-np-col-rua','adm-np-col-num','adm-np-col-comp','adm-np-col-bairro','adm-np-col-obs','adm-np-cli-nome','adm-np-cli-cel','adm-np-cli-cpf','adm-np-ent-rua','adm-np-ent-num','adm-np-ent-comp','adm-np-ent-bairro','adm-np-ent-obs','adm-np-pagamento','adm-np-valor-produto'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var ec=document.getElementById('adm-np-ent-cidade');if(ec)ec.value='Caxias do Sul';
@@ -1872,7 +1871,7 @@ function admNpRecalc(){
   if(!_admNpSettings||_admNpDistKm<=0)return;
   var s=_admNpSettings;
   var tipo=(document.getElementById('adm-np-pagamento')||{value:''}).value;
-  var minFee=parseFloat(s.min_fee||5),precoKm=parseFloat(s.price_per_km||2),arrancada=parseFloat(s.arrancada||0),commission=parseFloat(s.commission||0);
+  var minFee=parseFloat(s.min_fee||5),precoKm=parseFloat(s.price_per_km||2),arrancada=parseFloat(s.arrancada||0),commissionRaw=parseFloat(s.commission||0);
   var km=_admNpDistKm;if(tipo==='maquina')km=km*2;
   var taxaBase=Math.max(minFee,arrancada+km*precoKm);
   var taxaChuva=(s.taxa_chuva_ativa&&parseFloat(s.taxa_chuva)>0)?parseFloat(s.taxa_chuva):0;
@@ -1883,7 +1882,7 @@ function admNpRecalc(){
     var hi=parseInt(ini[0])*60+parseInt(ini[1]),hf=parseInt(fim2[0])*60+parseInt(fim2[1]);
     if(hi>hf?(hora>=hi||hora<hf):(hora>=hi&&hora<hf))taxaNoturna=parseFloat(s.taxa_noturna);
   }
-  var totalLoja=Math.round(taxaBase+taxaChuva+taxaNoturna+commission);
+  var commission=(s.commission_type==='percentual')?((taxaBase+taxaChuva+taxaNoturna)*commissionRaw/100):commissionRaw; _admNpComissaoValor=commission; var totalLoja=Math.round(taxaBase+taxaChuva+taxaNoturna+commission);
   _admNpTaxaCalc=Math.round(totalLoja);
   var el=document.getElementById('adm-np-taxa-result');
   el.innerHTML='<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Distancia:</span><strong>'+_admNpDistKm.toFixed(2)+' km</strong></div>'+(tipo==='maquina'?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Km (ida+volta):</span><strong>'+km.toFixed(2)+' km</strong></div>':'')+'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Taxa base:</span><strong>R$ '+taxaBase.toFixed(2)+'</strong></div>'+(taxaChuva>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Chuva:</span><strong>R$ '+taxaChuva.toFixed(2)+'</strong></div>':'')+(taxaNoturna>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Noturna:</span><strong>R$ '+taxaNoturna.toFixed(2)+'</strong></div>':'')+'<div style="display:flex;justify-content:space-between;border-top:1px solid #333;padding-top:6px;margin-top:4px"><span style="color:#ffcc00;font-weight:700">Total Loja:</span><strong style="color:#ffcc00;font-size:16px">R$ '+totalLoja.toFixed(2)+'</strong></div>';
@@ -1921,7 +1920,7 @@ async function admNpFinalizarPedido(){
   var codPedido='ADM-'+Date.now().toString().slice(-8);
   var entEndereco=entRua+(entNum?', '+entNum:'')+(entBairro?', '+entBairro:'')+', '+entCidade;
   var colEndereco=colRua+(colNum?', '+colNum:'')+(colBairro?', '+colBairro:'')+', '+colCidade;
-  var body={cod_pedido:codPedido,loja_id:_admNpLojaId,loja_user:lojaUsername,loja_name:lojaName,nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf||null,endereco_coleta:colEndereco,complemento_coleta:(document.getElementById('adm-np-col-comp')||{value:''}).value.trim()||null,obs_coleta:colObs||null,endereco_entrega:entEndereco,complemento_entrega:entComp||null,obs_entrega_loja:entObs||null,tipo_pagamento:tipoPag,valor_pedido:valorProduto,valor_taxa:_admNpTaxaCalc,valor_total:_admNpTaxaCalc,valor_motoboy:Math.round(_admNpTaxaCalc-(parseFloat((_admNpSettings&&_admNpSettings.commission)||0))),distancia_km:_admNpDistKm,status:'em_preparo',plataforma:'admin'};
+  var body={cod_pedido:codPedido,loja_id:_admNpLojaId,loja_user:lojaUsername,loja_name:lojaName,nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf||null,endereco_coleta:colEndereco,complemento_coleta:(document.getElementById('adm-np-col-comp')||{value:''}).value.trim()||null,obs_coleta:colObs||null,endereco_entrega:entEndereco,complemento_entrega:entComp||null,obs_entrega_loja:entObs||null,tipo_pagamento:tipoPag,valor_pedido:valorProduto,valor_taxa:_admNpTaxaCalc,valor_total:_admNpTaxaCalc,valor_motoboy:Math.round(_admNpTaxaCalc-_admNpComissaoValor),distancia_km:_admNpDistKm,status:'em_preparo',plataforma:'admin'};
   try{
     var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     var data=await r.json();
