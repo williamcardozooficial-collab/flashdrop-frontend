@@ -225,7 +225,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
 
     var activeOrders = [];
     var allOrdersCache = [];   /* cache de todos os pedidos, usado no calcBalance */
-    var allUsersCache = [];
+    var allUsersCache = []; var settingsCache = {};
     var activeTimers = {};
   /* ── AUTO-OFFLINE 60min ── */
   var _autoOfflineTimer = null;
@@ -736,13 +736,13 @@ function makeInfoRow(label, value, highlight) {
         var r = await fetch(API + "/orders");
         var orders = await r.json();
         allOrdersCache = orders;   /* salva cache para uso no doAction */
-        try { var ru = await fetch(API + "/users"); allUsersCache = await ru.json(); } catch(e2) {}
+        try { var ru = await fetch(API + "/users"); allUsersCache = await ru.json(); } catch(e2) {} try { var rs = await fetch(API + "/settings"); settingsCache = await rs.json(); } catch(e3) {}
 
         var available = orders.filter(function(o) { return o.status === "pendente" && !o.motoboy_id; });
         var mine      = orders.filter(function(o) { return String(o.motoboy_id) === String(user.id); });
         var active    = mine.filter(function(o)   { return o.status !== "entregue" && o.status !== "retornado" && o.status !== "cancelado"; });
         var done      = mine.filter(function(o)   { return o.status === "entregue" || o.status === "retornado"; });
-        activeOrders  = active;
+        activeOrders  = active; /* Limite de pedidos simultaneos: individual do motoboy, ou padrao do sistema */ var meuUsuario = allUsersCache.find(function(x){ return String(x.id) === String(user.id); }) || {}; var limiteIndividual = (meuUsuario.max_pedidos_individual !== null && meuUsuario.max_pedidos_individual !== undefined && meuUsuario.max_pedidos_individual !== '') ? parseInt(meuUsuario.max_pedidos_individual) : null; var limitePedidos = (limiteIndividual !== null && !isNaN(limiteIndividual)) ? limiteIndividual : (parseInt(settingsCache.max_per_motoboy) || 2); var limiteAtingido = limitePedidos > 0 && active.length >= limitePedidos; if (limiteAtingido) { available = []; }
 
         /* Disponíveis */
         var avDiv = document.getElementById("available-orders");
@@ -750,7 +750,7 @@ function makeInfoRow(label, value, highlight) {
         var doneDiv = document.getElementById("done-orders");
         doneDiv.innerHTML = "";
         if (available.length === 0) {
-          avDiv.innerHTML = "<div class=\"empty\">Nenhum pedido disponivel</div>";
+          avDiv.innerHTML = limiteAtingido ? ("<div class=\"empty\">Voce atingiu seu limite de " + limitePedidos + " pedido(s) simultaneo(s). Finalize uma entrega para ver novos pedidos.</div>") : "<div class=\"empty\">Nenhum pedido disponivel</div>";
         } else {
           available.forEach(function(o) { avDiv.appendChild(makeOrderCard(o, "pending")); });
         }
