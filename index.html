@@ -95,7 +95,7 @@
   <div class="tabs" id="tabs">
     <button class="tab-btn active" onclick="showTab('pedidos', this)">Pedidos</button>
     <button class="tab-btn" onclick="showTab('lojas', this)">Lojas</button>
-    <button class="tab-btn" onclick="showTab('motoboys', this)">Motoboys</button>
+    <button class="tab-btn" onclick="showTab('motoboys', this)">Motoboys</button><button class="tab-btn" onclick="showTab('ranking', this)">📊 Ranking</button>
     <button class="tab-btn" onclick="showTab('mapa', this)">&#x1F5FA; Mapa</button>
     <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
@@ -112,7 +112,7 @@
 
     <div id="lojas" class="section"><div style="padding:10px 0 4px"><input id="search-lojas" class="input" placeholder="🔍 Pesquisar loja por nome, login ou ID..." oninput="filterUsers('lojas')" style="width:100%;box-sizing:border-box"></div><div id="lojas-list"></div></div>
 
-    <div id="motoboys" class="section"><div style="padding:10px 0 4px"><input id="search-motoboys" class="input" placeholder="🔍 Pesquisar motoboy por nome, login ou ID..." oninput="filterUsers('motoboys')" style="width:100%;box-sizing:border-box"></div><div id="motoboys-list"></div></div>
+    <div id="motoboys" class="section"><div style="padding:10px 0 4px"><input id="search-motoboys" class="input" placeholder="🔍 Pesquisar motoboy por nome, login ou ID..." oninput="filterUsers('motoboys')" style="width:100%;box-sizing:border-box"></div><div id="motoboys-list"></div></div><div id="ranking" class="section"><div style="padding:10px 0 4px"><input id="search-ranking" class="input" placeholder="🔍 Pesquisar motoboy por nome..." oninput="renderRanking()" style="width:100%;box-sizing:border-box"></div><div id="ranking-list" style="overflow-x:auto"></div></div>
 
         <div id="mapa" class="section">
       <div class="card">
@@ -540,7 +540,7 @@ function esc(v) {
 
     let currentUserId = null, currentOrderId = null;
     let allUsers = [], allOrders = [];
-    let currentOrderFilter = 'todos';
+    let currentOrderFilter = 'todos'; let _rankingData = []; let _rankingSort = { field: 'pedidos', dir: 'desc' }; function sortRanking(field){ if (_rankingSort.field === field) { _rankingSort.dir = _rankingSort.dir === 'desc' ? 'asc' : 'desc'; } else { _rankingSort.field = field; _rankingSort.dir = 'desc'; } renderRanking(); } function rankArrow(field){ if (_rankingSort.field !== field) return ''; return _rankingSort.dir === 'desc' ? ' ▼' : ' ▲'; }
 
     const STATUS_LABELS = {
  em_preparo: '🔄 Em Preparo',      pendente: 'Pendente',
@@ -569,7 +569,7 @@ function esc(v) {
       } else if (tab === 'lojas' || tab === 'motoboys') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
-        renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }).sort(function(a,b){ var na=parseInt((a.custom_id||'').replace(/\D/g,''))||0; var nb=parseInt((b.custom_id||'').replace(/\D/g,''))||0; return nb-na; }), tab);
+        renderUsers(allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }).sort(function(a,b){ var na=parseInt((a.custom_id||'').replace(/\D/g,''))||0; var nb=parseInt((b.custom_id||'').replace(/\D/g,''))||0; return nb-na; }), tab); } else if (tab === 'ranking') { const [urr, orr] = await Promise.all([fetch(API + '/users'), fetch(API + '/orders')]); allUsers = await urr.json(); allOrders = await orr.json(); _rankingData = allUsers.filter(function(u){ return u.role === 'motoboy'; }).map(function(m){ var mine = allOrders.filter(function(o){ return o.motoboy_id === m.id && o.status === 'entregue'; }); var pedidos = mine.length; var valor = mine.reduce(function(s,o){ return s + (parseFloat(o.valor_motoboy)||0); }, 0); var km = mine.reduce(function(s,o){ return s + (parseFloat(o.distancia)||0); }, 0); var ultimo = null; mine.forEach(function(o){ var d = new Date(o.created_at).getTime(); if (!ultimo || d > ultimo) ultimo = d; }); var dias = ultimo ? Math.floor((Date.now() - ultimo) / 86400000) : null; return { id: m.id, name: m.name, username: m.username, pedidos: pedidos, valor: valor, km: km, dias: dias }; }); renderRanking();
       } else if (tab === 'financeiro') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
@@ -779,7 +779,7 @@ function esc(v) {
     renderUsers(filtered, tab);
 }
 
-function renderFinance(users) {
+function renderRanking(){ var term = (document.getElementById('search-ranking') ? document.getElementById('search-ranking').value : '').toLowerCase(); var filtered = (_rankingData || []).filter(function(r){ return r.name.toLowerCase().indexOf(term) !== -1 || r.username.toLowerCase().indexOf(term) !== -1; }); var f = _rankingSort.field, dir = _rankingSort.dir; filtered.sort(function(a,b){ var av, bv; if (f === 'name') { av = a.name.toLowerCase(); bv = b.name.toLowerCase(); return dir === 'asc' ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0); } if (f === 'dias') { av = a.dias === null ? Infinity : a.dias; bv = b.dias === null ? Infinity : b.dias; } else { av = a[f]; bv = b[f]; } return dir === 'asc' ? av - bv : bv - av; }); var cols = [['name','Nome','left'],['pedidos','Pedidos','right'],['valor','Valor Ganho','right'],['km','Km Total','right'],['dias','Dias sem Pedido','right']]; var html = '<table style="width:100%;border-collapse:collapse;background:#1a1a1a;border-radius:12px;overflow:hidden;font-size:13px"><thead><tr style="background:#252525">'; cols.forEach(function(c){ html += '<th style="padding:10px;text-align:' + c[2] + ';cursor:pointer;color:#ffcc00;white-space:nowrap" onclick="sortRanking(\'' + c[0] + '\')">' + c[1] + rankArrow(c[0]) + '</th>'; }); html += '</tr></thead><tbody>'; filtered.forEach(function(r, idx){ var diasTxt = r.dias === null ? 'Nunca' : (r.dias + (r.dias === 1 ? ' dia' : ' dias')); var diasColor = r.dias === null ? '#666' : (r.dias >= 7 ? '#ff9800;font-weight:bold' : '#fff'); html += '<tr style="border-top:1px solid #333' + (idx % 2 ? ';background:#161616' : '') + '">' + '<td style="padding:10px">' + esc(r.name) + ' <span style="color:#666;font-size:11px">(@' + esc(r.username) + ')</span></td>' + '<td style="padding:10px;text-align:right">' + r.pedidos + '</td>' + '<td style="padding:10px;text-align:right;color:#4caf50">R$ ' + r.valor.toFixed(2) + '</td>' + '<td style="padding:10px;text-align:right">' + r.km.toFixed(1) + ' km</td>' + '<td style="padding:10px;text-align:right;color:' + diasColor + '">' + diasTxt + '</td></tr>'; }); html += '</tbody></table>'; if (!filtered.length) html = '<p style="text-align:center;color:#666;padding:30px">Nenhum motoboy encontrado.</p>'; var el = document.getElementById('ranking-list'); if (el) el.innerHTML = html; } function renderFinance(users) {
       var term = (document.getElementById('search-finance') && document.getElementById('search-finance').value || '').toLowerCase();
       var filtered = users.filter(function(u){
         return u.role !== 'admin' && (esc(u.name).toLowerCase().includes(term) || esc(u.username).toLowerCase().includes(term) || (u.custom_id||'').toLowerCase().includes(term));
