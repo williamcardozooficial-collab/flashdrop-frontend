@@ -1161,7 +1161,7 @@ el.innerHTML=html||'<div style="text-align:center;color:#555;padding:20px">Nenhu
 /* ── PAGAR AO RESTAURANTE - NOTIFICACAO URGENTE LOJA ── */
 var _pagRestInterval = null;
 var _pagRestCountdown = null;
-var _pagRestAtual = null;
+var _pagRestAtual = null;var _pagRestSoundInterval = null;function _tocarAlertaPagRest(){try{var ctx=new (window.AudioContext||window.webkitAudioContext)();[0,0.18,0.36].forEach(function(t){var osc=ctx.createOscillator();var gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=t<0.3?1046:1318;osc.type='square';gain.gain.setValueAtTime(0,ctx.currentTime+t);gain.gain.linearRampToValueAtTime(0.5,ctx.currentTime+t+0.02);gain.gain.linearRampToValueAtTime(0,ctx.currentTime+t+0.16);osc.start(ctx.currentTime+t);osc.stop(ctx.currentTime+t+0.17);});}catch(e){}if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);}
 
 async function checkPagamentoPendenteLoja() {
   var u = JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
@@ -1187,10 +1187,10 @@ function mostrarModalPagarRestLoja(pag) {
   if(elMotoboy) elMotoboy.textContent = pag.motoboy_name || 'Motoboy';
   if(elValor) elValor.textContent = 'R$ ' + parseFloat(pag.valor).toFixed(2);
   if(elPedido) elPedido.textContent = '#' + pag.order_id;
-  if(elModal) elModal.style.display = 'flex';
+  if(elModal) elModal.style.display = 'flex';_tocarAlertaPagRest();if(_pagRestSoundInterval)clearInterval(_pagRestSoundInterval);_pagRestSoundInterval=setInterval(_tocarAlertaPagRest,2000);
   if (_pagRestCountdown) clearInterval(_pagRestCountdown);
   _pagRestCountdown = setInterval(function() {
-    var expiresAt = new Date(pag.expires_at).getTime();
+    var expiresAt = parseInt(pag.expires_at, 10);
     var remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
     var min = Math.floor(remaining / 60);
     var sec = remaining % 60;
@@ -1200,7 +1200,7 @@ function mostrarModalPagarRestLoja(pag) {
       clearInterval(_pagRestCountdown);
       _pagRestCountdown = null;
       _pagRestAtual = null;
-      if(elModal) elModal.style.display = 'none';
+      if(elModal) elModal.style.display = 'none';if(_pagRestSoundInterval){clearInterval(_pagRestSoundInterval);_pagRestSoundInterval=null;}
     }
   }, 1000);
 }
@@ -1208,7 +1208,7 @@ function mostrarModalPagarRestLoja(pag) {
 function fecharModalPagarRestLoja() {
   if (_pagRestAtual) {
     _pagRestAtual = null;
-    if (_pagRestCountdown) { clearInterval(_pagRestCountdown); _pagRestCountdown = null; }
+    if (_pagRestCountdown) { clearInterval(_pagRestCountdown); _pagRestCountdown = null; }if(_pagRestSoundInterval){clearInterval(_pagRestSoundInterval);_pagRestSoundInterval=null;}
     var elModal = document.getElementById('pag-rest-loja-modal');
     if(elModal) elModal.style.display = 'none';
   }
