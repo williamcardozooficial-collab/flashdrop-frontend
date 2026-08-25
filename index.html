@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="viewport" content="width=device-wfhidth,initial-scale=1.0">
   <title>FlashDrop Admin</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
@@ -99,7 +99,7 @@
     <button class="tab-btn" onclick="showTab('mapa', this)">&#x1F5FA; Mapa</button>
     <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
-    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
+    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-emprestimos-btn" onclick="showTab('emprestimos', this)">💰 Emprestimos<span id="emprestimos-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
     <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
       <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
     <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
@@ -267,7 +267,7 @@
       <div id="saques-list"></div>
     </div>
   </div>
-<div id="avisos" class="section">
+<div id="emprestimos" class="section"><div class="card"><h3 style="margin-bottom:12px;color:#ffcc00;">💰 Solicitações de Empréstimo</h3><p id="emprestimos-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p><div id="emprestimos-list"></div></div></div><div id="emprestimos" class="section"><div class="card"><h3 style="margin-bottom:12px;color:#ffcc00;">💰 Solicitações de Empréstimo</h3><p id="emprestimos-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p><div id="emprestimos-list"></div></div></div><div id="avisos" class="section">
   <div class="card">
     <h3 style="margin-bottom:12px;color:#ffcc00;">📢 Gerenciar Avisos</h3>
     <div class="input-group"><label>Título do Aviso</label><input id="aviso-title" class="input" placeholder="Ex: Manutenção programada"></div>
@@ -906,7 +906,7 @@ function renderRanking(){ var term = (document.getElementById('search-ranking') 
           buildAddrFields(u.address, false, u.lat, u.lng) +
           '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
           '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>' + '<div class="input-group"><label>🎁 Bônus por Entrega <span id="u-bonus-entrega-label-unit">(R$)</span></label><div style="display:flex;gap:8px;align-items:center"><input id="u-bonus-entrega" class="input" type="number" step="0.01" min="0" style="flex:1" value="' + (u.bonus_por_entrega !== null && u.bonus_por_entrega !== undefined ? Number(u.bonus_por_entrega).toFixed(2) : '0.00') + '"><button type="button" id="u-bonus-entrega-toggle" onclick="toggleBonusEntregaTipo()" style="padding:10px 14px;background:#333;border:1px solid #555;border-radius:8px;color:#ffcc00;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap">R$</button></div><div style="font-size:11px;color:#aaa;margin-top:4px">Valor extra pago automaticamente a este motoboy a cada pedido entregue (clique no botao para alternar entre R$ fixo e % sobre o valor do frete). Deixe 0,00 para nao aplicar.</div></div>' + '<div class="input-group"><label>🔢 Limite de Pedidos Simultâneos</label><input id="u-max-pedidos" class="input" type="number" step="1" min="0" placeholder="Padrao do sistema" value="' + (u.max_pedidos_individual !== null && u.max_pedidos_individual !== undefined ? u.max_pedidos_individual : '') + '"><div style="font-size:11px;color:#aaa;margin-top:4px">Quantos pedidos ativos este motoboy pode ter ao mesmo tempo. Deixe em branco para usar o padrao do sistema.</div></div>'
-        : buildAddrFields(u.address, false, u.lat, u.lng);
+        : buildAddrFields(u.address, false, u.lat, u.lng) + (u.role === 'loja' ? '<div class="input-group"><label>💰 Limite Manual de Empréstimo (R$)</label><input id="u-limite-emprestimo" class="input" type="number" step="0.01" min="0" value="' + (u.limite_emprestimo_manual !== null && u.limite_emprestimo_manual !== undefined ? Number(u.limite_emprestimo_manual).toFixed(2) : '0.00') + '"><div style="font-size:11px;color:#aaa;margin-top:4px">Deixe 0,00 para usar o calculo automatico (R$ 0,05 por entrega realizada).</div></div>' : '');
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
         '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
@@ -976,7 +976,7 @@ var lngEl = document.getElementById('u-addr-lng');
 if (latEl && latEl.value) data.lat = parseFloat(latEl.value);
 if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         }
-        if (cpfEl && cpfEl.value.trim()) data.cpf = cpfEl.value.trim();
+        if (cpfEl && cpfEl.value.trim()) data.cpf = cpfEl.value.trim(); var leEl = document.getElementById('u-limite-emprestimo'); if (leEl) { var leVal = parseFloat(leEl.value); data.limite_emprestimo_manual = isNaN(leVal) || leVal <= 0 ? null : leVal; }
         var clEl = document.getElementById('u-credit-limit');
         if (clEl) {
           var clVal = parseFloat(clEl.value);
@@ -1343,7 +1343,7 @@ async function pagarViaMP(id) {
   } catch(e) { alert('Erro: ' + e.message); }
 }
 
-async function loadMPConfig() {
+async function loadEmprestimos() { try { var r = await fetch(API + '/emprestimos'); var list = await r.json(); var container = document.getElementById('emprestimos-list'); var emptyMsg = document.getElementById('emprestimos-empty'); var badge = document.getElementById('emprestimos-badge'); container.innerHTML = ''; var pending = list.filter(function(e){ return e.status === 'pendente'; }); var all = list; if (!all || all.length === 0) { emptyMsg.style.display = 'block'; badge.style.display = 'none'; return; } emptyMsg.style.display = 'none'; if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'inline'; } else { badge.style.display = 'none'; } var statusColor = { pendente: '#ffa500', ativo: '#009ee3', quitado: '#4caf50', rejeitado: '#f44336' }; var statusLabel = { pendente: '⏳ Pendente', ativo: '💳 Ativo', quitado: '✅ Quitado', rejeitado: '❌ Rejeitado' }; container.innerHTML = all.map(function(e) { var dt = new Date(e.criado_em).toLocaleDateString('pt-BR') + ' ' + new Date(e.criado_em).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}); var restante = Math.max(0, parseFloat(e.valor_devido) - parseFloat(e.valor_pago||0)); return '<div class="card" style="border-left:3px solid ' + (statusColor[e.status]||'#555') + ';margin-bottom:10px">' + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' + '<strong style="font-size:16px">R$ ' + parseFloat(e.valor_solicitado).toFixed(2) + '</strong>' + '<span style="color:' + (statusColor[e.status]||'#aaa') + ';font-weight:700">' + (statusLabel[e.status]||e.status) + '</span>' + '</div>' + '<div class="row"><span class="val">Loja:</span><span>' + (e.loja_nome || e.loja_username || ('#'+e.loja_id)) + '</span></div>' + '<div class="row"><span class="val">Total a pagar (40% juros):</span><span>R$ ' + parseFloat(e.valor_devido).toFixed(2) + '</span></div>' + (e.status === 'ativo' || e.status === 'quitado' ? '<div class="row"><span class="val">Pago:</span><span>R$ ' + parseFloat(e.valor_pago||0).toFixed(2) + '</span></div>' + '<div class="row"><span class="val">Restante:</span><span>R$ ' + restante.toFixed(2) + '</span></div>' : '') + '<div class="row"><span class="val">Data:</span><span>' + dt + '</span></div>' + (e.status === 'pendente' ? '<div style="display:flex;gap:8px;margin-top:10px">' + '<button onclick="decidirEmprestimo(' + e.id + ",'aprovar'" + ')" style="background:#28a745;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;margin-right:4px">✅ Aprovar</button>' + '<button onclick="decidirEmprestimo(' + e.id + ",'rejeitar'" + ')" style="background:#dc3545;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">❌ Rejeitar</button>' + '</div>' : '') + '</div>'; }).join(''); } catch(e) { console.error('Erro ao carregar emprestimos:', e); } } async function decidirEmprestimo(id, acao) { const conf = acao === 'aprovar' ? confirm('Aprovar este emprestimo?') : confirm('Rejeitar este emprestimo?'); if (!conf) return; try { const r = await fetch(API + '/emprestimos/' + id + '/decidir', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: acao }) }); const data = await r.json(); if (!r.ok) { alert('Erro: ' + (data.error || 'Tente novamente.')); return; } alert(acao === 'aprovar' ? '✅ Emprestimo aprovado!' : '❌ Emprestimo rejeitado!'); loadEmprestimos(); } catch(e) { alert('Erro: ' + e.message); } } async function loadMPConfig() {
   try {
     const r = await fetch(API + '/settings/mp-config');
     const d = await r.json();
@@ -1434,7 +1434,7 @@ async function loadPending() {
 
     /* Recarregar pendentes a cada 30s */
     setInterval(loadPending, 30000);
-setInterval(loadSaques, 30000);
+setInterval(loadSaques, 30000);setInterval(loadEmprestimos, 30000);loadEmprestimos();
 loadSaques();
     loadPending();
 
