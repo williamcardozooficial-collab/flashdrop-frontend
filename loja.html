@@ -1881,7 +1881,7 @@ function pollPagamentoSaldo(paymentId, valor, token) {
   </div>
 </div>
 
-<div id="loja-saque-modal" class="loja-saque-modal" style="display:none">
+<div id="motoboy-credito-modal" class="loja-saque-modal" style="display:none"><div class="loja-saque-box"><h3>&#128176; Definir Crédito</h3><div class="loja-saque-saldo" id="motoboy-credito-nome"></div><input id="motoboy-credito-valor" class="loja-saque-input" type="number" placeholder="Limite de crédito (R$)" min="0" step="0.01"/><button class="loja-saque-btn" onclick="salvarCreditoMotoboy()">Salvar</button><button class="loja-saque-cancel" onclick="fecharCreditoMotoboy()">Cancelar</button></div></div><div id="motoboy-pagamento-modal" class="loja-saque-modal" style="display:none"><div class="loja-saque-box"><h3>&#9989; Registrar Pagamento</h3><div class="loja-saque-saldo" id="motoboy-pagamento-nome"></div><input id="motoboy-pagamento-valor" class="loja-saque-input" type="number" placeholder="Valor pago (R$)" min="0" step="0.01"/><button class="loja-saque-btn" onclick="salvarPagamentoMotoboy()">Confirmar</button><button class="loja-saque-cancel" onclick="fecharPagamentoMotoboy()">Cancelar</button></div></div><div id="loja-saque-modal" class="loja-saque-modal" style="display:none">
   <div class="loja-saque-box">
     <h3>💸 Solicitar Saque</h3>
     <div class="loja-saque-saldo" id="loja-saque-saldo-info"></div><div style="font-size:11px;color:#999;text-align:center;margin-top:4px;">Saques disponíveis das 10h às 22h · Limite de 1 saque por dia</div>
@@ -1890,7 +1890,7 @@ function pollPagamentoSaldo(paymentId, valor, token) {
     <button class="loja-saque-btn" onclick="submitSaqueLoja()">Solicitar Saque</button>
     <button class="loja-saque-cancel" onclick="fecharSaqueLojaModal()">Cancelar</button>
     <div class="loja-saque-hist-title">Histórico de Saques</div>
-    <div id="loja-saque-history"></div><div id="motoboy-credito-modal" class="loja-saque-modal" style="display:none"><div class="loja-saque-box"><h3>&#128176; Definir Crédito</h3><div class="loja-saque-saldo" id="motoboy-credito-nome"></div><input id="motoboy-credito-valor" class="loja-saque-input" type="number" placeholder="Limite de crédito (R$)" min="0" step="0.01"/><button class="loja-saque-btn" onclick="salvarCreditoMotoboy()">Salvar</button><button class="loja-saque-cancel" onclick="fecharCreditoMotoboy()">Cancelar</button></div></div><div id="motoboy-pagamento-modal" class="loja-saque-modal" style="display:none"><div class="loja-saque-box"><h3>&#9989; Registrar Pagamento</h3><div class="loja-saque-saldo" id="motoboy-pagamento-nome"></div><input id="motoboy-pagamento-valor" class="loja-saque-input" type="number" placeholder="Valor pago (R$)" min="0" step="0.01"/><button class="loja-saque-btn" onclick="salvarPagamentoMotoboy()">Confirmar</button><button class="loja-saque-cancel" onclick="fecharPagamentoMotoboy()">Cancelar</button></div></div>
+    <div id="loja-saque-history"></div>
   </div>
 </div>
 <script>
