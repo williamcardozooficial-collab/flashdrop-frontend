@@ -528,7 +528,7 @@ function makeInfoRow(label, value, highlight) {
       if (o.obs_coleta && cardType === "mine") { var obsColetaDiv = document.createElement("div"); obsColetaDiv.style.cssText = "background:#1a2a1a;border:1px solid #4caf50;border-radius:7px;padding:7px 10px;margin:4px 0;font-size:12px;color:#81c784;"; obsColetaDiv.innerHTML = "<strong>📝 Obs Coleta:</strong> " + o.obs_coleta; card.appendChild(obsColetaDiv); }
         /* Botoes de navegação para COLETA — sempre visíveis para pedidos aceitos */
         if (cardType === "mine") {
-          var navColeta = makeNavBtns("Coleta", o.endereco_coleta);
+          var navColeta = makeNavBtns("Coleta", fmtEndereco(o.endereco_coleta));
           if (navColeta) card.appendChild(navColeta);
         }
       }
@@ -545,7 +545,7 @@ function makeInfoRow(label, value, highlight) {
           card.appendChild(makeInfoRow("📍 Entrega", o.endereco_entrega + (o.complemento_entrega ? " — " + o.complemento_entrega : "")));
           if (o.obs_entrega_loja) { var obsEntDiv = document.createElement("div"); obsEntDiv.style.cssText = "background:#1a2210;border:1px solid #ffcc00;border-radius:7px;padding:7px 10px;margin:4px 0;font-size:12px;color:#ffcc00;"; obsEntDiv.innerHTML = "<strong>📝 Obs da Loja:</strong> " + o.obs_entrega_loja; card.appendChild(obsEntDiv); }
           /* Botoes de navegação para ENTREGA — apenas quando dados liberados */
-          var navEntrega = makeNavBtns("Entrega", o.endereco_entrega);
+          var navEntrega = makeNavBtns("Entrega", fmtEndereco(o.endereco_entrega));
           if (navEntrega) card.appendChild(navEntrega);
           /* Caixa de cobrança — somente pedidos dinheiro */
           if (o.tipo_pagamento === "dinheiro") {
@@ -597,7 +597,7 @@ function makeInfoRow(label, value, highlight) {
           retornoTitle.style.cssText = "font-size:12px;color:#ff9500;font-weight:700;margin-bottom:6px;";
           retornoTitle.textContent = "🔄 Retornar ao ponto de coleta";
           retornoDiv.appendChild(retornoTitle);
-          var navRet = makeNavBtns("Retorno", o.endereco_coleta);
+          var navRet = makeNavBtns("Retorno", fmtEndereco(o.endereco_coleta));
           if (navRet) retornoDiv.appendChild(navRet);
           card.appendChild(retornoDiv);
           /* Botao finalizar retorno */
