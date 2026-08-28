@@ -227,10 +227,10 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     var allOrdersCache = [];   /* cache de todos os pedidos, usado no calcBalance */
     var allUsersCache = []; var settingsCache = {};
     var activeTimers = {};
-  /* ── AUTO-OFFLINE 60min ── */
+  /* ── AUTO-OFFLINE 180min ── */
   var _autoOfflineTimer = null;
   var _onlineAt = null;
-  var AUTO_OFFLINE_MS = 60 * 60 * 1000;
+  var AUTO_OFFLINE_MS = 180 * 60 * 1000;
     var TIMER_DURATION = 15 * 60;
 
     var STATUS_LABELS = {
@@ -335,7 +335,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         localStorage.removeItem('_fd_onlineAt');
         _autoOfflineTimer = null;
         syncUser();
-        tg.showAlert("\u23F0 Voc\u00EA foi colocado Offline automaticamente ap\u00F3s 60 minutos.");
+        tg.showAlert("\u23F0 Voc\u00EA foi colocado Offline automaticamente ap\u00F3s 3 horas.");
       }
     } catch(e2) { console.error("auto-offline:", e2); }
   }
