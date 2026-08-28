@@ -180,7 +180,7 @@ filter: invert(70%) sepia(60%) saturate(400%) hue-rotate(0deg) !important;
 
 <script>
 var API = 'https://flashdrop-backend-production.up.railway.app';
-var lojaGlobal = null;
+var lojaGlobal = null; function fmtLojaAddress(addr){var a={};try{a=JSON.parse(addr||'{}');}catch(e){a=null;}if(a&&a.rua){return [a.rua+(a.num?' '+a.num:''),a.bairro,a.cidade].filter(Boolean).join(', ');}return addr||'';}
 var carrinho = {};
 
 function getParam(n){return new URLSearchParams(window.location.search).get(n);}
@@ -572,7 +572,7 @@ return;
 /* Salvar dados do pedido pendente no sessionStorage para enviar apos confirmacao */
 var pedidoPendente={
 loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
-endereco_coleta:lojaGlobal.address||'',
+endereco_coleta:fmtLojaAddress(lojaGlobal.address),
 endereco_entrega:endCompleto,
 nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
 cod_pedido:'FD-'+Date.now().toString().slice(-6),
@@ -610,7 +610,7 @@ try{
 var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},
 body:JSON.stringify({
 loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
-endereco_coleta:lojaGlobal.address||'',
+endereco_coleta:fmtLojaAddress(lojaGlobal.address),
 endereco_entrega:endCompleto,
 nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
 cod_pedido:'FD-'+Date.now().toString().slice(-6),
