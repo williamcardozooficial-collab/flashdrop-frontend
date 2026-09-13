@@ -1167,7 +1167,25 @@ if (!bairro) bairro = comp.long_name;
 }
 if (types.indexOf('administrative_area_level_2') !== -1) cidade = comp.long_name;
 });
-document.getElementById('ch-rua').value = rua || place.formatted_address || '';
+if (!rua) {
+  // O cliente selecionou um estabelecimento/ponto comercial (ex: um posto,
+  // uma loja) em vez de um endereco de rua - o Google as vezes nao retorna
+  // o componente 'route' pra esses lugares. Antes, o codigo jogava o
+  // place.formatted_address inteiro no campo Rua, que passava incolume pela
+  // validacao (so checava se nao estava vazio) e virava um endereco de
+  // entrega quebrado/duplicado ao ser concatenado com bairro/cidade de novo.
+  // Agora, pede pro cliente digitar a rua e numero manualmente.
+  document.getElementById('ch-rua').value = '';
+  if (bairro) document.getElementById('ch-bairro').value = bairro;
+  if (cidade) document.getElementById('ch-cidade').value = cidade;
+  var stRua = document.getElementById('loc-status');
+  if (stRua) { stRua.style.display = 'block'; stRua.innerHTML = '<span style="color:#ff9500">&#9888; Isso e um estabelecimento, nao um endereco. Digite o nome da rua e o numero da casa.</span>'; }
+  window.coordClienteAutocomplete = null;
+  _coordPinConfirmado = null;
+  invalidarTaxaEntrega();
+  return;
+}
+document.getElementById('ch-rua').value = rua;
 if (numero) document.getElementById('ch-numero').value = numero;
 if (bairro) document.getElementById('ch-bairro').value = bairro;
 if (cidade) document.getElementById('ch-cidade').value = cidade;
