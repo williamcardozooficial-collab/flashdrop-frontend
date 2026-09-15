@@ -1791,10 +1791,21 @@ async function gerarPixSaldo() {
   document.getElementById('mp-pix-container').style.display = 'none';
   try {
     const userData = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
+    // O campo "username" da loja normalmente e o proprio email de cadastro
+    // (ex: lucinararosa92@gmail.com). Antes, o codigo sempre colava
+    // "@flashdrop.app" no final dele pra montar o payer.email do Mercado
+    // Pago, o que gerava um email invalido tipo
+    // "lucinararosa92@gmail.com@flashdrop.app" (dois arrobas) e o Mercado
+    // Pago recusava a cobranca com "payer.email must be a valid email".
+    // Agora, se o username ja for um email valido, usa ele direto.
+    const _emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const userEmail = (userData.username && _emailRegex.test(userData.username))
+      ? userData.username
+      : (userData.username || userData.id) + '@flashdrop.app';
     const resp = await fetch('https://flashdrop-backend-production.up.railway.app/mercadopago/gerar-pix', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + userData.token },
-      body: JSON.stringify({ valor, userId: userData.id, userName: userData.name || userData.username, userEmail: (userData.username || userData.id) + '@flashdrop.app' })
+      body: JSON.stringify({ valor, userId: userData.id, userName: userData.name || userData.username, userEmail: userEmail })
     });
     const data = await resp.json();
     document.getElementById('mp-loading').style.display = 'none';
