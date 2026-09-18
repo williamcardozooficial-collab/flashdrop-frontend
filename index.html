@@ -143,6 +143,15 @@
           <input id="cfg-km" class="input" type="number" step="0.10">
         </div>
         <div class="input-group">
+          <label>Km limite para faixa diferenciada</label>
+          <input id="cfg-km-limite" class="input" type="number" step="1" placeholder="Ex: 15">
+          <small style="color:#888;font-size:11px">Se a corrida passar desse limite, TODOS os km da corrida passam a usar o preço abaixo, em vez do "Preço por KM" normal. Deixe em branco ou 0 para não usar faixa diferenciada.</small>
+        </div>
+        <div class="input-group">
+          <label>Preço por KM acima do limite (R$)</label>
+          <input id="cfg-km-acima" class="input" type="number" step="0.10" placeholder="Ex: 2.30">
+        </div>
+        <div class="input-group">
           <label>Taxa de Arrancada (R$)</label>
           <input id="cfg-arr" class="input" type="number" step="0.50">
         </div>
@@ -579,6 +588,8 @@ function esc(v) {
         const data = await r.json();
         document.getElementById('cfg-min').value = data.min_fee;
         document.getElementById('cfg-km').value = data.price_per_km;
+        document.getElementById('cfg-km-limite').value = data.km_limite_faixa || '';
+        document.getElementById('cfg-km-acima').value = data.price_per_km_acima || '';
         document.getElementById('cfg-arr').value = data.arrancada;
         document.getElementById('cfg-com').value = data.commission; _comissaoTipo = data.commission_type === 'percentual' ? 'percentual' : 'valor'; atualizarUnidadeComissao();
         document.getElementById('cfg-max').value = data.max_per_motoboy; document.getElementById('cfg-delay').value = data.launch_delay_minutes || 60;
@@ -1058,6 +1069,8 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         body: JSON.stringify({
           min_fee: document.getElementById('cfg-min').value,
           price_per_km: document.getElementById('cfg-km').value,
+          km_limite_faixa: parseFloat(document.getElementById('cfg-km-limite').value) || 0,
+          price_per_km_acima: parseFloat(document.getElementById('cfg-km-acima').value) || 0,
           arrancada: document.getElementById('cfg-arr').value,
           commission: document.getElementById('cfg-com').value, commission_type: _comissaoTipo,
           max_per_motoboy: document.getElementById('cfg-max').value,
@@ -1873,7 +1886,9 @@ function admNpRecalc(){
   var tipo=(document.getElementById('adm-np-pagamento')||{value:''}).value;
   var minFee=parseFloat(s.min_fee||5),precoKm=parseFloat(s.price_per_km||2),arrancada=parseFloat(s.arrancada||0),commissionRaw=parseFloat(s.commission||0);
   var km=_admNpDistKm;if(tipo==='maquina')km=km*2;
-  var taxaBase=Math.max(minFee,arrancada+km*precoKm);
+  var kmLimite=parseFloat(s.km_limite_faixa)||0,precoKmAcima=parseFloat(s.price_per_km_acima)||0;
+  var precoKmEfetivo=(kmLimite>0&&precoKmAcima>0&&km>kmLimite)?precoKmAcima:precoKm;
+  var taxaBase=Math.max(minFee,arrancada+km*precoKmEfetivo);
   var taxaChuva=(s.taxa_chuva_ativa&&parseFloat(s.taxa_chuva)>0)?parseFloat(s.taxa_chuva):0;
   var taxaNoturna=0;
   if(s.taxa_noturna_ativa&&parseFloat(s.taxa_noturna)>0){
