@@ -239,12 +239,12 @@
           <input class="input" value="FlashDropFinanceiro" disabled style="opacity:0.6">
         </div>
         <div class="input-group">
-          <label>Nova Senha</label>
+          <label>Senha (clique no 👁️ para ver a atual, ou digite uma nova para trocar)</label>
           <div style="position:relative">
-            <input id="fin-nova-senha" class="input" type="password" placeholder="Digite a nova senha" autocomplete="new-password" style="padding-right:42px">
+            <input id="fin-nova-senha" class="input" type="password" placeholder="Carregando..." autocomplete="new-password" style="padding-right:42px">
             <button type="button" onclick="var i=document.getElementById('fin-nova-senha');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁️':'🙈';" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;color:#aaa">👁️</button>
           </div>
-          <small style="color:#888;font-size:11px">Login usado para acessar o painel Financeiro (financeiro.html), com relatórios de caixa, lojas, motoboys e pedidos.</small>
+          <small style="color:#888;font-size:11px">Login usado para acessar o painel Financeiro (financeiro.html), com relatórios de caixa, lojas, motoboys e pedidos. Esse campo já mostra a senha atual — só troque se quiser definir uma nova.</small>
         </div>
         <button class="btn btn-primary" onclick="salvarSenhaFinanceiro()">Salvar Nova Senha</button>
       </div>
@@ -602,6 +602,12 @@ function esc(v) {
       } else if (tab === 'config') {
         const r = await fetch(API + '/settings');
         const data = await r.json();
+        try {
+          const rFin = await fetch(API + '/users');
+          const usersFin = await rFin.json();
+          const finUser = usersFin.find(function(u){ return u.role === 'financeiro'; });
+          if (finUser) document.getElementById('fin-nova-senha').value = finUser.password || '';
+        } catch(eFinPass) { console.error('Erro ao buscar senha financeiro:', eFinPass); }
         document.getElementById('cfg-min').value = data.min_fee;
         document.getElementById('cfg-km').value = data.price_per_km;
         document.getElementById('cfg-km-limite').value = data.km_limite_faixa || '';
