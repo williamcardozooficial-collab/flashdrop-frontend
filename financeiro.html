@@ -43,6 +43,10 @@
     .loading { text-align: center; color: #888; padding: 30px; font-size: 14px; }
     .promo-tag { color: #ffcc00; font-size: 11px; }
     .note-box { background: #221a00; border: 1px solid #443300; border-radius: 10px; padding: 12px; font-size: 12px; color: #e0c060; margin-bottom: 16px; line-height: 1.5; }
+    .evento-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid #222; }
+    .evento-desc { color: #ddd; font-size: 13px; }
+    .evento-meta { color: #666; font-size: 11px; margin-top: 2px; }
+    .evento-valor { font-size: 15px; white-space: nowrap; margin-left: 10px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -54,6 +58,7 @@
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="resumo" onclick="switchTab('resumo')">Resumo</button>
+    <button class="tab-btn" data-tab="caixa" onclick="switchTab('caixa')">Caixa (extrato)</button>
     <button class="tab-btn" data-tab="lojas" onclick="switchTab('lojas')">Lojas</button>
     <button class="tab-btn" data-tab="motoboys" onclick="switchTab('motoboys')">Motoboys</button>
     <button class="tab-btn" data-tab="pedidos" onclick="switchTab('pedidos')">Pedidos</button>
@@ -116,6 +121,12 @@
           <div class="card"><h3>Máquina da loja (não rastreável)</h3><div class="valor" id="r-maquina">-</div><div class="sub" id="r-maquina-qtd"></div></div>
         </div>
       </div>
+    </div>
+
+    <!-- CAIXA (EXTRATO DE EVENTOS) -->
+    <div class="section" id="tab-caixa">
+      <div id="caixa-loading" class="loading">Carregando...</div>
+      <div id="caixa-events" style="display:none"></div>
     </div>
 
     <!-- LOJAS -->
@@ -338,8 +349,48 @@ async function carregarPedidos() {
   }
 }
 
+const EVENTO_ICONS = { comissao: '✅', saque: '💸', recebimento_dinheiro:'💵', estorno:'↩️', debito_pedido:'📤', debito_cardapio:'📤', recarga_mp:'💰', pagamento_motoboy:'🛵', pagamento_motoboy_recusado:'🚫', ajuste_admin_credito:'➕', ajuste_admin_debito:'➖', taxa_cancelamento:'⚠️', cobranca_cliente:'💵', corrida:'🛵', debito_cartao_aprox:'📤', taxa_extra:'🌧️', bonus_promo:'🎉', comissao_indicacao_loja:'🤝', bonus_indicacao:'🧲', pagamento_loja:'✅', bonus_entrega:'🎁', cartao_aproximacao:'💳', taxa_chuva_admin:'🌧️', taxa_noturna:'🌙', promocao:'🎉', indicacao_loja:'🤝' };
+const EVENTO_CREDITO = ['comissao','recebimento_dinheiro','estorno','recarga_mp','ajuste_admin_credito','corrida','taxa_extra','bonus_promo','comissao_indicacao_loja','bonus_indicacao','pagamento_loja','cartao_aproximacao'];
+const EVENTO_ORIGEM_LABEL = { plataforma: '🏦 Plataforma', loja: '🏪 Loja', motoboy: '🛵 Motoboy' };
+
+async function carregarCaixa() {
+  document.getElementById('caixa-loading').style.display = 'block';
+  document.getElementById('caixa-events').style.display = 'none';
+  try {
+    const res = await fetch(`${API}/financeiro/eventos${getRange()}`);
+    const eventos = await res.json();
+    const container = document.getElementById('caixa-events');
+    if (!eventos.length) {
+      container.innerHTML = '<p style="color:#666;text-align:center;padding:20px 0">Nenhum evento no período selecionado</p>';
+    } else {
+      container.innerHTML = eventos.map(ev => {
+        const isCredito = EVENTO_CREDITO.indexOf(ev.tipo) !== -1;
+        const cor = isCredito ? '#4caf50' : '#e53935';
+        const sinal = isCredito ? '+ ' : '− ';
+        const icone = EVENTO_ICONS[ev.tipo] || '📌';
+        const origemTag = EVENTO_ORIGEM_LABEL[ev.origem] || '';
+        const nomeTag = ev.nome ? (' • ' + ev.nome) : '';
+        return `
+          <div class="evento-row">
+            <div>
+              <span class="evento-desc">${icone} ${ev.descricao || ev.tipo}</span>
+              <div class="evento-meta">${origemTag}${nomeTag} • ${fmtData(ev.created_at)}</div>
+            </div>
+            <div class="evento-valor" style="color:${cor}">${sinal}${fmtMoeda(ev.valor)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+    document.getElementById('caixa-loading').style.display = 'none';
+    document.getElementById('caixa-events').style.display = 'block';
+  } catch(e) {
+    document.getElementById('caixa-loading').textContent = 'Erro ao carregar: ' + e.message;
+  }
+}
+
 function carregarTudo() {
   carregarResumo();
+  carregarCaixa();
   carregarLojas();
   carregarMotoboys();
   carregarPedidos();
