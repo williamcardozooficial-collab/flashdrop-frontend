@@ -106,6 +106,7 @@
           <div class="card negativo"><h3>Taxa chuva/noturna repassada</h3><div class="valor" id="r-taxas">-</div><div class="sub" id="r-taxas-qtd"></div></div>
           <div class="card negativo"><h3>Bônus indicação pago a motoboys</h3><div class="valor" id="r-bonus-indicacao">-</div><div class="sub" id="r-bonus-indicacao-qtd"></div></div>
           <div class="card negativo"><h3>Bônus promoção pago a motoboys</h3><div class="valor" id="r-bonus-promo">-</div><div class="sub" id="r-bonus-promo-qtd"></div></div>
+          <div class="card negativo"><h3>Bônus por entrega pago a motoboys</h3><div class="valor" id="r-bonus-entrega">-</div><div class="sub" id="r-bonus-entrega-qtd"></div></div>
         </div>
 
         <div class="section-title">Coleta dos motoboys (no período)</div>
@@ -133,7 +134,7 @@
       <div id="motoboys-loading" class="loading">Carregando...</div>
       <div class="table-wrap" style="display:none" id="motoboys-table-wrap">
         <table>
-          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Saques</th></tr></thead>
+          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Saques</th></tr></thead>
           <tbody id="motoboys-tbody"></tbody>
         </table>
       </div>
@@ -233,6 +234,8 @@ async function carregarResumo() {
     document.getElementById('r-bonus-indicacao-qtd').textContent = d.bonus_indicacao_pago_motoboys.qtd + ' pagamento(s)';
     document.getElementById('r-bonus-promo').textContent = fmtMoeda(d.bonus_promocao_pago_motoboys.total);
     document.getElementById('r-bonus-promo-qtd').textContent = d.bonus_promocao_pago_motoboys.qtd + ' pagamento(s)';
+    document.getElementById('r-bonus-entrega').textContent = fmtMoeda(d.bonus_por_entrega_pago_motoboys.total);
+    document.getElementById('r-bonus-entrega-qtd').textContent = d.bonus_por_entrega_pago_motoboys.qtd + ' pagamento(s)';
 
     document.getElementById('r-dinheiro').textContent = fmtMoeda(d.dinheiro_coletado_motoboys.total);
     document.getElementById('r-dinheiro-qtd').textContent = d.dinheiro_coletado_motoboys.qtd + ' pedido(s)';
@@ -289,9 +292,10 @@ async function carregarMotoboys() {
         <td>${fmtMoeda(m.cartao_aproximacao_coletado.total)} <span class="promo-tag">(${m.cartao_aproximacao_coletado.qtd})</span></td>
         <td>${fmtMoeda(m.bonus_indicacao.total)} <span class="promo-tag">(${m.bonus_indicacao.qtd})</span></td>
         <td>${fmtMoeda(m.bonus_promocao.total)} <span class="promo-tag">(${m.bonus_promocao.qtd})</span></td>
+        <td>${fmtMoeda(m.bonus_por_entrega.total)} <span class="promo-tag">(${m.bonus_por_entrega.qtd})</span></td>
         <td>${fmtMoeda(m.saque.total)} <span class="promo-tag">(${m.saque.qtd})</span></td>
       </tr>
-    `).join('') || '<tr><td colspan="8" style="text-align:center;color:#888">Nenhum motoboy cadastrado</td></tr>';
+    `).join('') || '<tr><td colspan="9" style="text-align:center;color:#888">Nenhum motoboy cadastrado</td></tr>';
     document.getElementById('motoboys-loading').style.display = 'none';
     document.getElementById('motoboys-table-wrap').style.display = 'block';
   } catch(e) {
