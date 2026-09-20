@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>FlashDrop Financeiro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: #0f0f0f; color: #fff; min-height: 100vh; padding-bottom: 40px; }
+    .header { background: #1a1a1a; padding: 20px; text-align: center; border-bottom: 1px solid #333; position: relative; }
+    .header h1 { font-size: 22px; color: #ffcc00; }
+    .header p { color: #999; font-size: 12px; margin-top: 4px; }
+    .logout-btn { position: absolute; top: 18px; right: 16px; background: #333; color: #ffcc00; border: none; border-radius: 8px; padding: 8px 12px; font-size: 12px; cursor: pointer; }
+    .tabs { display: flex; overflow-x: auto; background: #1a1a1a; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
+    .tab-btn { padding: 10px 18px; background: #333; border: none; border-radius: 20px; color: #fff; white-space: nowrap; cursor: pointer; font-size: 13px; }
+    .tab-btn.active { background: #ffcc00; color: #000; font-weight: bold; }
+    .content { padding: 15px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+    .filter-bar .input-group { flex: 1; min-width: 130px; margin-bottom: 0; }
+    .filter-bar label { display: block; font-size: 11px; color: #999; margin-bottom: 4px; }
+    .filter-bar input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; font-size: 13px; }
+    .filter-bar button { padding: 10px 18px; background: #ffcc00; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .card { background: #1a1a1a; border-radius: 12px; padding: 15px; border: 1px solid #333; }
+    .card h3 { font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
+    .card .valor { font-size: 22px; font-weight: 700; color: #ffcc00; }
+    .card .sub { font-size: 12px; color: #888; margin-top: 4px; }
+    .card.positivo .valor { color: #4caf50; }
+    .card.negativo .valor { color: #f44336; }
+    .section-title { font-size: 15px; color: #ffcc00; font-weight: 700; margin: 20px 0 10px; }
+    table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 12px; overflow: hidden; }
+    thead { background: #222; }
+    th, td { padding: 10px 8px; text-align: left; font-size: 12px; border-bottom: 1px solid #2a2a2a; white-space: nowrap; }
+    th { color: #ffcc00; font-size: 11px; text-transform: uppercase; }
+    td { color: #ddd; }
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #333; }
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 10px; text-transform: uppercase; font-weight: 700; }
+    .badge-entregue { background: #4caf50; color: #fff; }
+    .badge-cancelado { background: #f44336; color: #fff; }
+    .badge-outro { background: #555; color: #fff; }
+    .loading { text-align: center; color: #888; padding: 30px; font-size: 14px; }
+    .promo-tag { color: #ffcc00; font-size: 11px; }
+    .note-box { background: #221a00; border: 1px solid #443300; border-radius: 10px; padding: 12px; font-size: 12px; color: #e0c060; margin-bottom: 16px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>💰 FlashDrop Financeiro</h1>
+    <p>Painel completo de movimentação financeira</p>
+    <button class="logout-btn" onclick="logout()">Sair</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="resumo" onclick="switchTab('resumo')">Resumo</button>
+    <button class="tab-btn" data-tab="lojas" onclick="switchTab('lojas')">Lojas</button>
+    <button class="tab-btn" data-tab="motoboys" onclick="switchTab('motoboys')">Motoboys</button>
+    <button class="tab-btn" data-tab="pedidos" onclick="switchTab('pedidos')">Pedidos</button>
+  </div>
+
+  <div class="content">
+    <div class="filter-bar">
+      <div class="input-group">
+        <label>Data inicial</label>
+        <input type="date" id="f-inicio">
+      </div>
+      <div class="input-group">
+        <label>Data final</label>
+        <input type="date" id="f-fim">
+      </div>
+      <button onclick="carregarTudo()">Aplicar filtro</button>
+    </div>
+
+    <div class="note-box">
+      ⚠️ Observações importantes: vendas com promoção só são contabilizadas para pedidos criados a partir desta atualização (pedidos antigos não têm esse dado salvo). Pagamentos pela <strong>máquina de cartão própria da loja</strong> ("maquina") caem direto na conta da loja e não passam pela FlashDrop — por isso não aparecem em nenhum valor "recebido pelo motoboy". Apenas pagamentos via <strong>cartão por aproximação</strong> (integrado ao app) são rastreados como recebimento do motoboy.
+    </div>
+
+    <!-- RESUMO -->
+    <div class="section active" id="tab-resumo">
+      <div id="resumo-loading" class="loading">Carregando...</div>
+      <div id="resumo-content" style="display:none">
+        <div class="section-title">Caixa da Plataforma (saldo atual)</div>
+        <div class="cards-grid">
+          <div class="card"><h3>Saldo atual</h3><div class="valor" id="r-saldo-atual">-</div></div>
+          <div class="card positivo"><h3>Total já ganho</h3><div class="valor" id="r-saldo-ganho">-</div></div>
+          <div class="card negativo"><h3>Total já sacado/pago</h3><div class="valor" id="r-saldo-sacado">-</div></div>
+        </div>
+
+        <div class="section-title">Depósitos e Saques (no período)</div>
+        <div class="cards-grid">
+          <div class="card positivo"><h3>Depósitos das lojas</h3><div class="valor" id="r-deposito-loja">-</div><div class="sub" id="r-deposito-loja-qtd"></div></div>
+          <div class="card negativo"><h3>Saques das lojas</h3><div class="valor" id="r-saque-loja">-</div><div class="sub" id="r-saque-loja-qtd"></div></div>
+          <div class="card negativo"><h3>Saques dos motoboys</h3><div class="valor" id="r-saque-motoboy">-</div><div class="sub" id="r-saque-motoboy-qtd"></div></div>
+        </div>
+
+        <div class="section-title">Pedidos e Vendas (no período)</div>
+        <div class="cards-grid">
+          <div class="card"><h3>Pedidos entregues</h3><div class="valor" id="r-pedidos-qtd">-</div><div class="sub" id="r-pedidos-valor"></div></div>
+          <div class="card"><h3>Vendas com promoção</h3><div class="valor" id="r-promo-qtd">-</div><div class="sub" id="r-promo-valor"></div></div>
+        </div>
+
+        <div class="section-title">Receitas e custos do Admin (no período)</div>
+        <div class="cards-grid">
+          <div class="card positivo"><h3>Comissão recebida</h3><div class="valor" id="r-comissao">-</div><div class="sub" id="r-comissao-qtd"></div></div>
+          <div class="card negativo"><h3>Taxa chuva/noturna repassada</h3><div class="valor" id="r-taxas">-</div><div class="sub" id="r-taxas-qtd"></div></div>
+          <div class="card negativo"><h3>Bônus indicação pago a motoboys</h3><div class="valor" id="r-bonus-indicacao">-</div><div class="sub" id="r-bonus-indicacao-qtd"></div></div>
+          <div class="card negativo"><h3>Bônus promoção pago a motoboys</h3><div class="valor" id="r-bonus-promo">-</div><div class="sub" id="r-bonus-promo-qtd"></div></div>
+        </div>
+
+        <div class="section-title">Coleta dos motoboys (no período)</div>
+        <div class="cards-grid">
+          <div class="card"><h3>Dinheiro coletado</h3><div class="valor" id="r-dinheiro">-</div><div class="sub" id="r-dinheiro-qtd"></div></div>
+          <div class="card"><h3>Cartão aproximação coletado</h3><div class="valor" id="r-cartao-aprox">-</div><div class="sub" id="r-cartao-aprox-qtd"></div></div>
+          <div class="card"><h3>Máquina da loja (não rastreável)</h3><div class="valor" id="r-maquina">-</div><div class="sub" id="r-maquina-qtd"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOJAS -->
+    <div class="section" id="tab-lojas">
+      <div id="lojas-loading" class="loading">Carregando...</div>
+      <div class="table-wrap" style="display:none" id="lojas-table-wrap">
+        <table>
+          <thead><tr><th>Loja</th><th>Saldo atual</th><th>Depósitos</th><th>Saques</th><th>Pedidos entregues</th><th>Valor pedidos</th><th>Vendas c/ promoção</th></tr></thead>
+          <tbody id="lojas-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MOTOBOYS -->
+    <div class="section" id="tab-motoboys">
+      <div id="motoboys-loading" class="loading">Carregando...</div>
+      <div class="table-wrap" style="display:none" id="motoboys-table-wrap">
+        <table>
+          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Saques</th></tr></thead>
+          <tbody id="motoboys-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div class="section" id="tab-pedidos">
+      <div id="pedidos-loading" class="loading">Carregando...</div>
+      <div class="table-wrap" style="display:none" id="pedidos-table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Data</th><th>Loja</th><th>Motoboy</th><th>Pagamento</th><th>Valor produtos</th><th>Valor total</th><th>Valor motoboy</th><th>Comissão</th><th>Promoção</th><th>Status</th></tr></thead>
+          <tbody id="pedidos-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+const API='https://flashdrop-backend-production.up.railway.app';
+
+// Guard: somente usuarios com role financeiro podem acessar esta pagina
+var _u = localStorage.getItem('flashdrop_user');
+if (!_u) {
+  window.location.href = 'login.html';
+} else {
+  var _cu = JSON.parse(_u);
+  if (!_cu || _cu.role !== 'financeiro') {
+    localStorage.removeItem('flashdrop_user');
+    window.location.href = 'login.html';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('flashdrop_user');
+  window.location.href = 'login.html';
+}
+
+function fmtMoeda(v) {
+  const n = parseFloat(v) || 0;
+  return 'R$ ' + n.toFixed(2).replace('.', ',');
+}
+
+function fmtData(d) {
+  try { return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }); } catch(e) { return '-'; }
+}
+
+function getRange() {
+  const inicio = document.getElementById('f-inicio').value;
+  const fim = document.getElementById('f-fim').value;
+  let qs = '';
+  if (inicio) qs += 'inicio=' + inicio;
+  if (fim) qs += (qs ? '&' : '') + 'fim=' + fim;
+  return qs ? '?' + qs : '';
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function initDatas() {
+  const hoje = new Date();
+  const trintaDias = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
+  document.getElementById('f-fim').value = hoje.toISOString().slice(0, 10);
+  document.getElementById('f-inicio').value = trintaDias.toISOString().slice(0, 10);
+}
+
+async function carregarResumo() {
+  document.getElementById('resumo-loading').style.display = 'block';
+  document.getElementById('resumo-content').style.display = 'none';
+  try {
+    const res = await fetch(`${API}/financeiro/resumo${getRange()}`);
+    const d = await res.json();
+
+    document.getElementById('r-saldo-atual').textContent = fmtMoeda(d.saldo_plataforma.balance);
+    document.getElementById('r-saldo-ganho').textContent = fmtMoeda(d.saldo_plataforma.total_ganho);
+    document.getElementById('r-saldo-sacado').textContent = fmtMoeda(d.saldo_plataforma.total_sacado);
+
+    document.getElementById('r-deposito-loja').textContent = fmtMoeda(d.depositos_lojas.total);
+    document.getElementById('r-deposito-loja-qtd').textContent = d.depositos_lojas.qtd + ' depósito(s)';
+    document.getElementById('r-saque-loja').textContent = fmtMoeda(d.saques_lojas.total);
+    document.getElementById('r-saque-loja-qtd').textContent = d.saques_lojas.qtd + ' saque(s)';
+    document.getElementById('r-saque-motoboy').textContent = fmtMoeda(d.saques_motoboys.total);
+    document.getElementById('r-saque-motoboy-qtd').textContent = d.saques_motoboys.qtd + ' saque(s)';
+
+    document.getElementById('r-pedidos-qtd').textContent = d.pedidos_entregues.qtd;
+    document.getElementById('r-pedidos-valor').textContent = fmtMoeda(d.pedidos_entregues.total) + ' em vendas';
+    document.getElementById('r-promo-qtd').textContent = d.vendas_com_promocao.qtd;
+    document.getElementById('r-promo-valor').textContent = fmtMoeda(d.vendas_com_promocao.total_vendido) + ' vendido / ' + fmtMoeda(d.vendas_com_promocao.total_desconto) + ' de desconto';
+
+    document.getElementById('r-comissao').textContent = fmtMoeda(d.receita_comissao_admin.total);
+    document.getElementById('r-comissao-qtd').textContent = d.receita_comissao_admin.qtd + ' pedido(s)';
+    document.getElementById('r-taxas').textContent = fmtMoeda(d.custo_taxas_chuva_noturna_admin.total);
+    document.getElementById('r-taxas-qtd').textContent = d.custo_taxas_chuva_noturna_admin.qtd + ' ocorrência(s)';
+    document.getElementById('r-bonus-indicacao').textContent = fmtMoeda(d.bonus_indicacao_pago_motoboys.total);
+    document.getElementById('r-bonus-indicacao-qtd').textContent = d.bonus_indicacao_pago_motoboys.qtd + ' pagamento(s)';
+    document.getElementById('r-bonus-promo').textContent = fmtMoeda(d.bonus_promocao_pago_motoboys.total);
+    document.getElementById('r-bonus-promo-qtd').textContent = d.bonus_promocao_pago_motoboys.qtd + ' pagamento(s)';
+
+    document.getElementById('r-dinheiro').textContent = fmtMoeda(d.dinheiro_coletado_motoboys.total);
+    document.getElementById('r-dinheiro-qtd').textContent = d.dinheiro_coletado_motoboys.qtd + ' pedido(s)';
+    document.getElementById('r-cartao-aprox').textContent = fmtMoeda(d.cartao_aproximacao_coletado_motoboys.total);
+    document.getElementById('r-cartao-aprox-qtd').textContent = d.cartao_aproximacao_coletado_motoboys.qtd + ' pedido(s)';
+    document.getElementById('r-maquina').textContent = fmtMoeda(d.maquina_loja_nao_rastreavel.total);
+    document.getElementById('r-maquina-qtd').textContent = d.maquina_loja_nao_rastreavel.qtd + ' pedido(s) - vai direto p/ loja';
+
+    document.getElementById('resumo-loading').style.display = 'none';
+    document.getElementById('resumo-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('resumo-loading').textContent = 'Erro ao carregar: ' + e.message;
+  }
+}
+
+async function carregarLojas() {
+  document.getElementById('lojas-loading').style.display = 'block';
+  document.getElementById('lojas-table-wrap').style.display = 'none';
+  try {
+    const res = await fetch(`${API}/financeiro/lojas${getRange()}`);
+    const lista = await res.json();
+    const tbody = document.getElementById('lojas-tbody');
+    tbody.innerHTML = lista.map(l => `
+      <tr>
+        <td>${l.name}</td>
+        <td>${fmtMoeda(l.saldo_atual)}</td>
+        <td>${fmtMoeda(l.deposito.total)} <span class="promo-tag">(${l.deposito.qtd})</span></td>
+        <td>${fmtMoeda(l.saque.total)} <span class="promo-tag">(${l.saque.qtd})</span></td>
+        <td>${l.pedidos.qtd}</td>
+        <td>${fmtMoeda(l.pedidos.total)}</td>
+        <td>${fmtMoeda(l.vendas_com_promocao.total_vendido)} <span class="promo-tag">(${l.vendas_com_promocao.qtd})</span></td>
+      </tr>
+    `).join('') || '<tr><td colspan="7" style="text-align:center;color:#888">Nenhuma loja cadastrada</td></tr>';
+    document.getElementById('lojas-loading').style.display = 'none';
+    document.getElementById('lojas-table-wrap').style.display = 'block';
+  } catch(e) {
+    document.getElementById('lojas-loading').textContent = 'Erro ao carregar: ' + e.message;
+  }
+}
+
+async function carregarMotoboys() {
+  document.getElementById('motoboys-loading').style.display = 'block';
+  document.getElementById('motoboys-table-wrap').style.display = 'none';
+  try {
+    const res = await fetch(`${API}/financeiro/motoboys${getRange()}`);
+    const lista = await res.json();
+    const tbody = document.getElementById('motoboys-tbody');
+    tbody.innerHTML = lista.map(m => `
+      <tr>
+        <td>${m.name}</td>
+        <td>${fmtMoeda(m.saldo_atual)}</td>
+        <td>${fmtMoeda(m.ganho_corridas.total)} <span class="promo-tag">(${m.ganho_corridas.qtd})</span></td>
+        <td>${fmtMoeda(m.dinheiro_coletado.total)} <span class="promo-tag">(${m.dinheiro_coletado.qtd})</span></td>
+        <td>${fmtMoeda(m.cartao_aproximacao_coletado.total)} <span class="promo-tag">(${m.cartao_aproximacao_coletado.qtd})</span></td>
+        <td>${fmtMoeda(m.bonus_indicacao.total)} <span class="promo-tag">(${m.bonus_indicacao.qtd})</span></td>
+        <td>${fmtMoeda(m.bonus_promocao.total)} <span class="promo-tag">(${m.bonus_promocao.qtd})</span></td>
+        <td>${fmtMoeda(m.saque.total)} <span class="promo-tag">(${m.saque.qtd})</span></td>
+      </tr>
+    `).join('') || '<tr><td colspan="8" style="text-align:center;color:#888">Nenhum motoboy cadastrado</td></tr>';
+    document.getElementById('motoboys-loading').style.display = 'none';
+    document.getElementById('motoboys-table-wrap').style.display = 'block';
+  } catch(e) {
+    document.getElementById('motoboys-loading').textContent = 'Erro ao carregar: ' + e.message;
+  }
+}
+
+function badgeStatus(status) {
+  if (status === 'entregue') return `<span class="badge badge-entregue">Entregue</span>`;
+  if (status === 'cancelado') return `<span class="badge badge-cancelado">Cancelado</span>`;
+  return `<span class="badge badge-outro">${status}</span>`;
+}
+
+async function carregarPedidos() {
+  document.getElementById('pedidos-loading').style.display = 'block';
+  document.getElementById('pedidos-table-wrap').style.display = 'none';
+  try {
+    const res = await fetch(`${API}/financeiro/pedidos${getRange()}`);
+    const lista = await res.json();
+    const tbody = document.getElementById('pedidos-tbody');
+    tbody.innerHTML = lista.map(p => `
+      <tr>
+        <td>#${p.id}</td>
+        <td>${fmtData(p.created_at)}</td>
+        <td>${p.loja_name || p.loja_user || '-'}</td>
+        <td>${p.motoboy_name || '-'}</td>
+        <td>${p.tipo_pagamento || '-'}</td>
+        <td>${fmtMoeda(p.valor_pedido)}</td>
+        <td>${fmtMoeda(p.valor_total)}</td>
+        <td>${fmtMoeda(p.valor_motoboy)}</td>
+        <td>${fmtMoeda(p.comissao)}</td>
+        <td>${p.nome_promocao ? p.nome_promocao + ' (-' + fmtMoeda(p.desconto_promocao) + ')' : '-'}</td>
+        <td>${badgeStatus(p.status)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="11" style="text-align:center;color:#888">Nenhum pedido no período</td></tr>';
+    document.getElementById('pedidos-loading').style.display = 'none';
+    document.getElementById('pedidos-table-wrap').style.display = 'block';
+  } catch(e) {
+    document.getElementById('pedidos-loading').textContent = 'Erro ao carregar: ' + e.message;
+  }
+}
+
+function carregarTudo() {
+  carregarResumo();
+  carregarLojas();
+  carregarMotoboys();
+  carregarPedidos();
+}
+
+initDatas();
+carregarTudo();
+  </script>
+</body>
+</html>
