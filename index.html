@@ -233,6 +233,22 @@
       <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:16px">Salvar Todos os Ajustes</button>
       </div>
       <div class="card" style="margin-top:15px">
+        <h3 style="margin-bottom:15px;color:#ffcc00;">🔑 Perfil Financeiro</h3>
+        <div class="input-group">
+          <label>Usuário</label>
+          <input class="input" value="FlashDropFinanceiro" disabled style="opacity:0.6">
+        </div>
+        <div class="input-group">
+          <label>Nova Senha</label>
+          <div style="position:relative">
+            <input id="fin-nova-senha" class="input" type="password" placeholder="Digite a nova senha" autocomplete="new-password" style="padding-right:42px">
+            <button type="button" onclick="var i=document.getElementById('fin-nova-senha');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁️':'🙈';" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;color:#aaa">👁️</button>
+          </div>
+          <small style="color:#888;font-size:11px">Login usado para acessar o painel Financeiro (financeiro.html), com relatórios de caixa, lojas, motoboys e pedidos.</small>
+        </div>
+        <button class="btn btn-primary" onclick="salvarSenhaFinanceiro()">Salvar Nova Senha</button>
+      </div>
+      <div class="card" style="margin-top:15px">
         <h3 style="margin-bottom:15px;color:#ffcc00;">🗑️ Limpeza do Histórico</h3>
         <div class="input-group">
           <label>Excluir pedidos entregues/cancelados com mais de (dias)</label>
@@ -1010,6 +1026,26 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         loadData(txt.includes('Lojas') ? 'lojas' : txt.includes('Motoboys') ? 'motoboys' : 'pedidos');
       }
       tg.showAlert('Usuario salvo!');
+    }
+
+    async function salvarSenhaFinanceiro() {
+      var novaSenha = document.getElementById('fin-nova-senha').value.trim();
+      if (!novaSenha) { tg.showAlert('Digite a nova senha.'); return; }
+      try {
+        var r = await fetch(API + '/users');
+        var users = await r.json();
+        var u = users.find(function(x){ return x.role === 'financeiro'; });
+        if (!u) { tg.showAlert('Usuario Financeiro nao encontrado.'); return; }
+        await fetch(API + '/users/' + u.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: novaSenha })
+        });
+        document.getElementById('fin-nova-senha').value = '';
+        tg.showAlert('Senha do perfil Financeiro atualizada!');
+      } catch(e) {
+        tg.showAlert('Erro ao atualizar senha: ' + e.message);
+      }
     }
 
     function openEditOrder(id) {
