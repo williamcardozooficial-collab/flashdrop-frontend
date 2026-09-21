@@ -62,6 +62,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="resumo" onclick="switchTab('resumo')">Resumo</button>
     <button class="tab-btn" data-tab="caixa" onclick="switchTab('caixa')">Caixa (extrato)</button>
+    <button class="tab-btn" data-tab="saque" onclick="switchTab('saque')">Saque</button>
     <button class="tab-btn" data-tab="lojas" onclick="switchTab('lojas')">Lojas</button>
     <button class="tab-btn" data-tab="motoboys" onclick="switchTab('motoboys')">Motoboys</button>
     <button class="tab-btn" data-tab="pedidos" onclick="switchTab('pedidos')">Pedidos</button>
@@ -130,6 +131,32 @@
     <div class="section" id="tab-caixa">
       <div id="caixa-loading" class="loading">Carregando...</div>
       <div id="caixa-events" style="display:none"></div>
+    </div>
+
+    <!-- SAQUE -->
+    <div class="section" id="tab-saque">
+      <div class="section-title">🏧 Saque do sistema</div>
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="color:#aaa;font-size:12px">Saldo disponível no caixa da plataforma</span>
+          <strong id="saque-saldo-caixa" style="color:#4caf50;font-size:18px">-</strong>
+        </div>
+        <div id="saque-destino-preview" style="font-size:12px;color:#888;margin-bottom:14px;line-height:1.5">Carregando divisão configurada...</div>
+        <div class="input-group">
+          <label>Valor do saque (múltiplos de R$ 10)</label>
+          <input id="saque-sistema-valor" type="number" step="10" min="10" placeholder="Ex: 50" style="width:100%;padding:10px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:13px">
+        </div>
+        <div class="input-group" style="margin-top:10px">
+          <label>Motivo / Descrição</label>
+          <input id="saque-sistema-motivo" placeholder="Ex: Pagamento semanal" style="width:100%;padding:10px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:13px">
+        </div>
+        <button onclick="confirmarSaqueSistema()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px">🏧 Confirmar Saque do Sistema</button>
+        <div style="font-size:11px;color:#666;margin-top:8px">A divisão entre motoboys é definida no painel Admin e não pode ser alterada por aqui.</div>
+      </div>
+
+      <div class="section-title">💸 Solicitações de saque (motoboys e lojas)</div>
+      <div id="saque-solicitacoes-loading" class="loading">Carregando...</div>
+      <div id="saque-solicitacoes-list"></div>
     </div>
 
     <!-- LOJAS -->
@@ -416,9 +443,99 @@ async function carregarCaixa() {
   }
 }
 
+async function carregarSaquePreview() {
+  try {
+    const rw = await fetch(`${API}/platform/wallet`);
+    const wallet = await rw.json();
+    document.getElementById('saque-saldo-caixa').textContent = fmtMoeda(wallet.balance);
+  } catch(e) { console.error('Erro ao buscar saldo:', e); }
+  try {
+    const rc = await fetch(`${API}/platform/saque-config`);
+    const cfg = await rc.json();
+    const el = document.getElementById('saque-destino-preview');
+    if (!cfg || !cfg.length) {
+      el.textContent = 'Nenhuma divisão configurada no Admin — o saque do sistema sai do caixa sem ir para nenhum motoboy.';
+    } else {
+      const total = cfg.reduce((s, c) => s + parseFloat(c.percentual), 0);
+      const partes = cfg.map(c => `${c.name || ('#' + c.motoboy_id)} (${c.percentual}%)`).join(', ');
+      el.textContent = 'Divisão configurada no Admin: ' + partes + (total < 99.999 ? ` — o restante (${(100 - total).toFixed(0)}%) sai do caixa sem destino.` : '.');
+    }
+  } catch(e) { document.getElementById('saque-destino-preview').textContent = 'Erro ao carregar divisão configurada.'; }
+}
+
+async function confirmarSaqueSistema() {
+  const valor = parseFloat(document.getElementById('saque-sistema-valor').value);
+  const motivo = document.getElementById('saque-sistema-motivo').value.trim();
+  if (!valor || valor <= 0) { alert('Informe um valor válido.'); return; }
+  if (Math.round(valor * 100) % 1000 !== 0) { alert('O valor do saque precisa ser múltiplo de R$ 10 (ex: 10, 20, 50, 100).'); return; }
+  if (!motivo) { alert('Informe o motivo do saque.'); return; }
+  if (!confirm(`Confirmar saque do sistema de ${fmtMoeda(valor)}? Motivo: ${motivo}`)) return;
+  try {
+    const r = await fetch(`${API}/platform/withdraw`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor, motivo })
+    });
+    const data = await r.json();
+    if (!r.ok) { alert('Erro: ' + (data.error || 'Falha.')); return; }
+    alert('Saque de ' + fmtMoeda(valor) + ' registrado!');
+    document.getElementById('saque-sistema-valor').value = '';
+    document.getElementById('saque-sistema-motivo').value = '';
+    carregarSaquePreview();
+    carregarCaixa();
+  } catch(e) { alert('Erro de conexão.'); }
+}
+
+async function carregarSolicitacoesSaque() {
+  document.getElementById('saque-solicitacoes-loading').style.display = 'block';
+  try {
+    const r = await fetch(`${API}/withdrawals`);
+    const list = await r.json();
+    const container = document.getElementById('saque-solicitacoes-list');
+    document.getElementById('saque-solicitacoes-loading').style.display = 'none';
+    if (!list.length) { container.innerHTML = '<p style="color:#888;text-align:center;padding:20px 0">Nenhuma solicitação nos últimos 7 dias.</p>'; return; }
+    const statusColor = { pendente: '#ffa500', aprovado: '#4caf50', recusado: '#f44336' };
+    const statusLabel = { pendente: '⏳ Pendente', aprovado: '✅ Aprovado', recusado: '❌ Recusado' };
+    container.innerHTML = list.map(w => {
+      const dt = fmtData(w.created_at);
+      return `<div class="card" style="border-left:3px solid ${statusColor[w.status]||'#555'};margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="font-size:16px">${fmtMoeda(w.valor)}</strong>
+          <span style="color:${statusColor[w.status]||'#aaa'};font-weight:700">${statusLabel[w.status]||w.status}</span>
+        </div>
+        <div style="font-size:12px;color:#aaa;margin-bottom:4px">${w.loja_id ? 'Loja' : 'Motoboy'}: <span style="color:#ddd">${w.loja_name || w.motoboy_name || '—'}</span></div>
+        <div style="font-size:12px;color:#aaa;margin-bottom:4px">Chave PIX: <span style="color:#ddd;word-break:break-all">${w.pix_key || '-'}</span></div>
+        <div style="font-size:12px;color:#aaa">Data: <span style="color:#ddd">${dt}</span></div>
+        ${w.obs ? `<div style="font-size:12px;color:#aaa;margin-top:4px">Obs: <span style="color:#ddd">${w.obs}</span></div>` : ''}
+        ${w.status === 'pendente' ? `<div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="processarSolicitacaoSaque(${w.id},'aprovado')" style="background:#28a745;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">✅ Aprovar</button>
+          <button onclick="processarSolicitacaoSaque(${w.id},'recusado')" style="background:#dc3545;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">❌ Recusar</button>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) { document.getElementById('saque-solicitacoes-loading').textContent = 'Erro ao carregar: ' + e.message; }
+}
+
+async function processarSolicitacaoSaque(id, status) {
+  const conf = status === 'aprovado' ? confirm('Aprovar este saque?') : confirm('Recusar este saque?');
+  if (!conf) return;
+  const obs = status === 'aprovado' ? 'Aprovado pelo Financeiro' : 'Recusado pelo Financeiro';
+  try {
+    const r = await fetch(`${API}/withdrawals/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, obs })
+    });
+    const data = await r.json();
+    if (!r.ok) { alert('Erro: ' + (data.error || 'Tente novamente.')); return; }
+    alert(status === 'aprovado' ? '✅ Saque aprovado!' : '❌ Saque recusado!');
+    carregarSolicitacoesSaque();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
 function carregarTudo() {
   carregarResumo();
   carregarCaixa();
+  carregarSaquePreview();
+  carregarSolicitacoesSaque();
   carregarLojas();
   carregarMotoboys();
   carregarPedidos();
