@@ -36,6 +36,9 @@
     th { color: #ffcc00; font-size: 11px; text-transform: uppercase; }
     td { color: #ddd; }
     .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #333; }
+    .scroll-arrows { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 8px; position: sticky; top: 54px; z-index: 50; }
+    .scroll-arrow-btn { background: #ffcc00; color: #000; border: none; border-radius: 8px; width: 38px; height: 34px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .scroll-arrow-btn:active { transform: scale(0.95); }
     .badge { padding: 3px 8px; border-radius: 6px; font-size: 10px; text-transform: uppercase; font-weight: 700; }
     .badge-entregue { background: #4caf50; color: #fff; }
     .badge-cancelado { background: #f44336; color: #fff; }
@@ -132,39 +135,62 @@
     <!-- LOJAS -->
     <div class="section" id="tab-lojas">
       <div id="lojas-loading" class="loading">Carregando...</div>
-      <div class="table-wrap" style="display:none" id="lojas-table-wrap">
+      <div style="display:none" id="lojas-table-wrap">
+        <div class="scroll-arrows">
+          <button class="scroll-arrow-btn" onclick="scrollTableH('lojas-scroll',-1)" title="Rolar para esquerda">◀</button>
+          <button class="scroll-arrow-btn" onclick="scrollTableH('lojas-scroll',1)" title="Rolar para direita">▶</button>
+        </div>
+        <div class="table-wrap" id="lojas-scroll">
         <table>
           <thead><tr><th>Loja</th><th>Saldo atual</th><th>Depósitos</th><th>Saques</th><th>Pedidos entregues</th><th>Valor pedidos</th><th>Vendas c/ promoção</th></tr></thead>
           <tbody id="lojas-tbody"></tbody>
         </table>
+        </div>
       </div>
     </div>
 
     <!-- MOTOBOYS -->
     <div class="section" id="tab-motoboys">
       <div id="motoboys-loading" class="loading">Carregando...</div>
-      <div class="table-wrap" style="display:none" id="motoboys-table-wrap">
+      <div style="display:none" id="motoboys-table-wrap">
+        <div class="scroll-arrows">
+          <button class="scroll-arrow-btn" onclick="scrollTableH('motoboys-scroll',-1)" title="Rolar para esquerda">◀</button>
+          <button class="scroll-arrow-btn" onclick="scrollTableH('motoboys-scroll',1)" title="Rolar para direita">▶</button>
+        </div>
+        <div class="table-wrap" id="motoboys-scroll">
         <table>
           <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Saques</th></tr></thead>
           <tbody id="motoboys-tbody"></tbody>
         </table>
+        </div>
       </div>
     </div>
 
     <!-- PEDIDOS -->
     <div class="section" id="tab-pedidos">
       <div id="pedidos-loading" class="loading">Carregando...</div>
-      <div class="table-wrap" style="display:none" id="pedidos-table-wrap">
+      <div style="display:none" id="pedidos-table-wrap">
+        <div class="scroll-arrows">
+          <button class="scroll-arrow-btn" onclick="scrollTableH('pedidos-scroll',-1)" title="Rolar para esquerda">◀</button>
+          <button class="scroll-arrow-btn" onclick="scrollTableH('pedidos-scroll',1)" title="Rolar para direita">▶</button>
+        </div>
+        <div class="table-wrap" id="pedidos-scroll">
         <table>
           <thead><tr><th>#</th><th>Data</th><th>Loja</th><th>Motoboy</th><th>Pagamento</th><th>Valor produtos</th><th>Valor total</th><th>Valor motoboy</th><th>Comissão</th><th>Promoção</th><th>Status</th></tr></thead>
           <tbody id="pedidos-tbody"></tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
 const API='https://flashdrop-backend-production.up.railway.app';
+
+function scrollTableH(id, dir) {
+  var el = document.getElementById(id);
+  if (el) el.scrollBy({ left: dir * 260, behavior: 'smooth' });
+}
 
 // Guard: somente usuarios com role financeiro podem acessar esta pagina
 var _u = localStorage.getItem('flashdrop_user');
