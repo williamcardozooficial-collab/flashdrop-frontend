@@ -50,7 +50,11 @@
     .evento-desc { color: #ddd; font-size: 13px; }
     .evento-meta { color: #666; font-size: 11px; margin-top: 2px; }
     .evento-valor { font-size: 15px; white-space: nowrap; margin-left: 10px; font-weight: 700; }
+    .pdf-btn { background: #ffcc00; color: #000; border: none; border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .pdf-btn:disabled { opacity: 0.6; cursor: default; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <div class="header">
@@ -169,7 +173,7 @@
         </div>
         <div class="table-wrap" id="lojas-scroll">
         <table>
-          <thead><tr><th>Loja</th><th>Saldo atual</th><th>Depósitos</th><th>Saques</th><th>Pedidos entregues</th><th>Valor pedidos</th><th>Vendas c/ promoção</th></tr></thead>
+          <thead><tr><th>Loja</th><th>Saldo atual</th><th>Depósitos</th><th>Saques</th><th>Pedidos entregues</th><th>Valor pedidos</th><th>Vendas c/ promoção</th><th>Relatório</th></tr></thead>
           <tbody id="lojas-tbody"></tbody>
         </table>
         </div>
@@ -186,7 +190,7 @@
         </div>
         <div class="table-wrap" id="motoboys-scroll">
         <table>
-          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Lucro do sistema</th><th>Saques</th></tr></thead>
+          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Lucro do sistema</th><th>Saques</th><th>Relatório</th></tr></thead>
           <tbody id="motoboys-tbody"></tbody>
         </table>
         </div>
@@ -321,6 +325,7 @@ async function carregarLojas() {
   try {
     const res = await fetch(`${API}/financeiro/lojas${getRange()}`);
     const listaCompleta = await res.json();
+    _lojasCache = listaCompleta;
     const lista = listaCompleta.filter(l => Number(l.saldo_atual) !== 0 || Number(l.deposito.qtd) > 0 || Number(l.saque.qtd) > 0 || Number(l.pedidos.qtd) > 0 || Number(l.vendas_com_promocao.qtd) > 0);
     const tbody = document.getElementById('lojas-tbody');
     tbody.innerHTML = lista.map(l => `
@@ -332,8 +337,9 @@ async function carregarLojas() {
         <td>${l.pedidos.qtd}</td>
         <td>${fmtMoeda(l.pedidos.total)}</td>
         <td>${fmtMoeda(l.vendas_com_promocao.total_vendido)} <span class="promo-tag">(${l.vendas_com_promocao.qtd})</span></td>
+        <td><button class="pdf-btn" id="pdf-btn-loja-${l.id}" onclick="gerarPdfLoja(${l.id})">📄 PDF</button></td>
       </tr>
-    `).join('') || '<tr><td colspan="7" style="text-align:center;color:#888">Nenhuma loja com movimentação no período</td></tr>';
+    `).join('') || '<tr><td colspan="8" style="text-align:center;color:#888">Nenhuma loja com movimentação no período</td></tr>';
     document.getElementById('lojas-loading').style.display = 'none';
     document.getElementById('lojas-table-wrap').style.display = 'block';
   } catch(e) {
@@ -347,6 +353,7 @@ async function carregarMotoboys() {
   try {
     const res = await fetch(`${API}/financeiro/motoboys${getRange()}`);
     const listaCompleta = await res.json();
+    _motoboysCache = listaCompleta;
     const lista = listaCompleta.filter(m => Number(m.saldo_atual) !== 0 || Number(m.ganho_corridas.qtd) > 0 || Number(m.dinheiro_coletado.qtd) > 0 || Number(m.cartao_aproximacao_coletado.qtd) > 0 || Number(m.bonus_indicacao.qtd) > 0 || Number(m.bonus_promocao.qtd) > 0 || Number(m.bonus_por_entrega.qtd) > 0 || Number(m.lucro_sistema.qtd) > 0 || Number(m.saque.qtd) > 0);
     const tbody = document.getElementById('motoboys-tbody');
     tbody.innerHTML = lista.map(m => `
@@ -361,8 +368,9 @@ async function carregarMotoboys() {
         <td>${fmtMoeda(m.bonus_por_entrega.total)} <span class="promo-tag">(${m.bonus_por_entrega.qtd})</span></td>
         <td>${fmtMoeda(m.lucro_sistema.total)} <span class="promo-tag">(${m.lucro_sistema.qtd})</span></td>
         <td>${fmtMoeda(m.saque.total)} <span class="promo-tag">(${m.saque.qtd})</span></td>
+        <td><button class="pdf-btn" id="pdf-btn-motoboy-${m.id}" onclick="gerarPdfMotoboy(${m.id})">📄 PDF</button></td>
       </tr>
-    `).join('') || '<tr><td colspan="10" style="text-align:center;color:#888">Nenhum motoboy com movimentação no período</td></tr>';
+    `).join('') || '<tr><td colspan="11" style="text-align:center;color:#888">Nenhum motoboy com movimentação no período</td></tr>';
     document.getElementById('motoboys-loading').style.display = 'none';
     document.getElementById('motoboys-table-wrap').style.display = 'block';
   } catch(e) {
@@ -530,6 +538,162 @@ async function processarSolicitacaoSaque(id, status) {
     alert(status === 'aprovado' ? '✅ Saque aprovado!' : '❌ Saque recusado!');
     carregarSolicitacoesSaque();
   } catch(e) { alert('Erro: ' + e.message); }
+}
+
+let _lojasCache = [];
+let _motoboysCache = [];
+
+function buildQueryWithExtra(extra) {
+  const base = getRange();
+  if (!base) return '?' + extra;
+  return base + '&' + extra;
+}
+
+function periodoTexto() {
+  const ini = document.getElementById('f-inicio').value;
+  const fim = document.getElementById('f-fim').value;
+  function fmt(d) { if (!d) return '-'; const p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  return fmt(ini) + ' a ' + fmt(fim);
+}
+
+function statusTexto(status) {
+  if (status === 'entregue') return 'Entregue';
+  if (status === 'cancelado') return 'Cancelado';
+  return status || '-';
+}
+
+function nomeArquivoPdf(nome) {
+  const ini = document.getElementById('f-inicio').value;
+  const fim = document.getElementById('f-fim').value;
+  return 'flashdrop_' + String(nome).toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + ini + '_a_' + fim + '.pdf';
+}
+
+async function gerarPdfLoja(id) {
+  const l = _lojasCache.find(x => x.id === id);
+  if (!l) { alert('Loja não encontrada nos dados carregados. Aplique o filtro novamente.'); return; }
+  const btn = document.getElementById('pdf-btn-loja-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  try {
+    const res = await fetch(`${API}/financeiro/pedidos${buildQueryWithExtra('loja_user=' + encodeURIComponent(l.username))}`);
+    const pedidos = await res.json();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(16);
+    doc.text('FlashDrop — Relatório detalhado da loja', 14, 15);
+    doc.setFontSize(11);
+    doc.text('Loja: ' + l.name, 14, 23);
+    doc.text('Período: ' + periodoTexto(), 14, 29);
+
+    doc.autoTable({
+      startY: 35,
+      head: [['Resumo do período', '']],
+      body: [
+        ['Saldo atual', fmtMoeda(l.saldo_atual)],
+        ['Depósitos', fmtMoeda(l.deposito.total) + ' (' + l.deposito.qtd + ' depósito(s))'],
+        ['Saques', fmtMoeda(l.saque.total) + ' (' + l.saque.qtd + ' saque(s))'],
+        ['Pedidos entregues', String(l.pedidos.qtd)],
+        ['Valor total dos pedidos', fmtMoeda(l.pedidos.total)],
+        ['Valor dos produtos', fmtMoeda(l.pedidos.total_produtos)],
+        ['Vendas com promoção', l.vendas_com_promocao.qtd + ' pedido(s) — vendido ' + fmtMoeda(l.vendas_com_promocao.total_vendido) + ' — desconto ' + fmtMoeda(l.vendas_com_promocao.total_desconto)]
+      ],
+      theme: 'grid',
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [255, 204, 0], textColor: 20 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } }
+    });
+
+    const linhas = pedidos.map(p => [
+      '#' + p.id,
+      fmtData(p.created_at),
+      p.motoboy_name || '-',
+      p.tipo_pagamento || '-',
+      fmtMoeda(p.valor_pedido),
+      fmtMoeda(p.valor_total),
+      fmtMoeda(p.valor_motoboy),
+      p.nome_promocao ? (p.nome_promocao + ' (-' + fmtMoeda(p.desconto_promocao) + ')') : '-',
+      statusTexto(p.status)
+    ]);
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['#', 'Data/Hora', 'Motoboy', 'Pagamento', 'Valor produtos', 'Valor total', 'Valor motoboy', 'Promoção', 'Status']],
+      body: linhas.length ? linhas : [['Nenhum pedido no período', '', '', '', '', '', '', '', '']],
+      theme: 'striped',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 30, 30] }
+    });
+
+    doc.save(nomeArquivoPdf(l.name));
+  } catch(e) {
+    alert('Erro ao gerar PDF: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📄 PDF'; }
+  }
+}
+
+async function gerarPdfMotoboy(id) {
+  const m = _motoboysCache.find(x => x.id === id);
+  if (!m) { alert('Motoboy não encontrado nos dados carregados. Aplique o filtro novamente.'); return; }
+  const btn = document.getElementById('pdf-btn-motoboy-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  try {
+    const res = await fetch(`${API}/financeiro/pedidos${buildQueryWithExtra('motoboy_id=' + encodeURIComponent(m.id))}`);
+    const pedidos = await res.json();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(16);
+    doc.text('FlashDrop — Relatório detalhado do motoboy', 14, 15);
+    doc.setFontSize(11);
+    doc.text('Motoboy: ' + m.name, 14, 23);
+    doc.text('Período: ' + periodoTexto(), 14, 29);
+
+    doc.autoTable({
+      startY: 35,
+      head: [['Resumo do período', '']],
+      body: [
+        ['Saldo atual', fmtMoeda(m.saldo_atual)],
+        ['Ganho corridas', fmtMoeda(m.ganho_corridas.total) + ' (' + m.ganho_corridas.qtd + ')'],
+        ['Dinheiro coletado', fmtMoeda(m.dinheiro_coletado.total) + ' (' + m.dinheiro_coletado.qtd + ')'],
+        ['Cartão aprox. coletado', fmtMoeda(m.cartao_aproximacao_coletado.total) + ' (' + m.cartao_aproximacao_coletado.qtd + ')'],
+        ['Bônus indicação', fmtMoeda(m.bonus_indicacao.total) + ' (' + m.bonus_indicacao.qtd + ')'],
+        ['Bônus promoção', fmtMoeda(m.bonus_promocao.total) + ' (' + m.bonus_promocao.qtd + ')'],
+        ['Bônus por entrega', fmtMoeda(m.bonus_por_entrega.total) + ' (' + m.bonus_por_entrega.qtd + ')'],
+        ['Lucro do sistema', fmtMoeda(m.lucro_sistema.total) + ' (' + m.lucro_sistema.qtd + ')'],
+        ['Saques', fmtMoeda(m.saque.total) + ' (' + m.saque.qtd + ')']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [255, 204, 0], textColor: 20 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } }
+    });
+
+    const linhas = pedidos.map(p => [
+      '#' + p.id,
+      fmtData(p.created_at),
+      p.loja_name || p.loja_user || '-',
+      p.tipo_pagamento || '-',
+      fmtMoeda(p.valor_pedido),
+      fmtMoeda(p.valor_total),
+      fmtMoeda(p.valor_motoboy),
+      p.nome_promocao ? (p.nome_promocao + ' (-' + fmtMoeda(p.desconto_promocao) + ')') : '-',
+      statusTexto(p.status)
+    ]);
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['#', 'Data/Hora', 'Loja', 'Pagamento', 'Valor produtos', 'Valor total', 'Valor motoboy', 'Promoção', 'Status']],
+      body: linhas.length ? linhas : [['Nenhum pedido no período', '', '', '', '', '', '', '', '']],
+      theme: 'striped',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 30, 30] }
+    });
+
+    doc.save(nomeArquivoPdf(m.name));
+  } catch(e) {
+    alert('Erro ao gerar PDF: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📄 PDF'; }
+  }
 }
 
 function carregarTudo() {
