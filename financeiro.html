@@ -186,7 +186,7 @@
         </div>
         <div class="table-wrap" id="motoboys-scroll">
         <table>
-          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Saques</th></tr></thead>
+          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Lucro do sistema</th><th>Saques</th></tr></thead>
           <tbody id="motoboys-tbody"></tbody>
         </table>
         </div>
@@ -347,7 +347,7 @@ async function carregarMotoboys() {
   try {
     const res = await fetch(`${API}/financeiro/motoboys${getRange()}`);
     const listaCompleta = await res.json();
-    const lista = listaCompleta.filter(m => Number(m.saldo_atual) !== 0 || Number(m.ganho_corridas.qtd) > 0 || Number(m.dinheiro_coletado.qtd) > 0 || Number(m.cartao_aproximacao_coletado.qtd) > 0 || Number(m.bonus_indicacao.qtd) > 0 || Number(m.bonus_promocao.qtd) > 0 || Number(m.bonus_por_entrega.qtd) > 0 || Number(m.saque.qtd) > 0);
+    const lista = listaCompleta.filter(m => Number(m.saldo_atual) !== 0 || Number(m.ganho_corridas.qtd) > 0 || Number(m.dinheiro_coletado.qtd) > 0 || Number(m.cartao_aproximacao_coletado.qtd) > 0 || Number(m.bonus_indicacao.qtd) > 0 || Number(m.bonus_promocao.qtd) > 0 || Number(m.bonus_por_entrega.qtd) > 0 || Number(m.lucro_sistema.qtd) > 0 || Number(m.saque.qtd) > 0);
     const tbody = document.getElementById('motoboys-tbody');
     tbody.innerHTML = lista.map(m => `
       <tr>
@@ -359,9 +359,10 @@ async function carregarMotoboys() {
         <td>${fmtMoeda(m.bonus_indicacao.total)} <span class="promo-tag">(${m.bonus_indicacao.qtd})</span></td>
         <td>${fmtMoeda(m.bonus_promocao.total)} <span class="promo-tag">(${m.bonus_promocao.qtd})</span></td>
         <td>${fmtMoeda(m.bonus_por_entrega.total)} <span class="promo-tag">(${m.bonus_por_entrega.qtd})</span></td>
+        <td>${fmtMoeda(m.lucro_sistema.total)} <span class="promo-tag">(${m.lucro_sistema.qtd})</span></td>
         <td>${fmtMoeda(m.saque.total)} <span class="promo-tag">(${m.saque.qtd})</span></td>
       </tr>
-    `).join('') || '<tr><td colspan="9" style="text-align:center;color:#888">Nenhum motoboy com movimentação no período</td></tr>';
+    `).join('') || '<tr><td colspan="10" style="text-align:center;color:#888">Nenhum motoboy com movimentação no período</td></tr>';
     document.getElementById('motoboys-loading').style.display = 'none';
     document.getElementById('motoboys-table-wrap').style.display = 'block';
   } catch(e) {
