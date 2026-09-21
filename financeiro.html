@@ -267,7 +267,8 @@ async function carregarLojas() {
   document.getElementById('lojas-table-wrap').style.display = 'none';
   try {
     const res = await fetch(`${API}/financeiro/lojas${getRange()}`);
-    const lista = await res.json();
+    const listaCompleta = await res.json();
+    const lista = listaCompleta.filter(l => Number(l.saldo_atual) !== 0 || Number(l.deposito.qtd) > 0 || Number(l.saque.qtd) > 0 || Number(l.pedidos.qtd) > 0 || Number(l.vendas_com_promocao.qtd) > 0);
     const tbody = document.getElementById('lojas-tbody');
     tbody.innerHTML = lista.map(l => `
       <tr>
@@ -279,7 +280,7 @@ async function carregarLojas() {
         <td>${fmtMoeda(l.pedidos.total)}</td>
         <td>${fmtMoeda(l.vendas_com_promocao.total_vendido)} <span class="promo-tag">(${l.vendas_com_promocao.qtd})</span></td>
       </tr>
-    `).join('') || '<tr><td colspan="7" style="text-align:center;color:#888">Nenhuma loja cadastrada</td></tr>';
+    `).join('') || '<tr><td colspan="7" style="text-align:center;color:#888">Nenhuma loja com movimentação no período</td></tr>';
     document.getElementById('lojas-loading').style.display = 'none';
     document.getElementById('lojas-table-wrap').style.display = 'block';
   } catch(e) {
@@ -292,7 +293,8 @@ async function carregarMotoboys() {
   document.getElementById('motoboys-table-wrap').style.display = 'none';
   try {
     const res = await fetch(`${API}/financeiro/motoboys${getRange()}`);
-    const lista = await res.json();
+    const listaCompleta = await res.json();
+    const lista = listaCompleta.filter(m => Number(m.saldo_atual) !== 0 || Number(m.ganho_corridas.qtd) > 0 || Number(m.dinheiro_coletado.qtd) > 0 || Number(m.cartao_aproximacao_coletado.qtd) > 0 || Number(m.bonus_indicacao.qtd) > 0 || Number(m.bonus_promocao.qtd) > 0 || Number(m.bonus_por_entrega.qtd) > 0 || Number(m.saque.qtd) > 0);
     const tbody = document.getElementById('motoboys-tbody');
     tbody.innerHTML = lista.map(m => `
       <tr>
@@ -306,7 +308,7 @@ async function carregarMotoboys() {
         <td>${fmtMoeda(m.bonus_por_entrega.total)} <span class="promo-tag">(${m.bonus_por_entrega.qtd})</span></td>
         <td>${fmtMoeda(m.saque.total)} <span class="promo-tag">(${m.saque.qtd})</span></td>
       </tr>
-    `).join('') || '<tr><td colspan="9" style="text-align:center;color:#888">Nenhum motoboy cadastrado</td></tr>';
+    `).join('') || '<tr><td colspan="9" style="text-align:center;color:#888">Nenhum motoboy com movimentação no período</td></tr>';
     document.getElementById('motoboys-loading').style.display = 'none';
     document.getElementById('motoboys-table-wrap').style.display = 'block';
   } catch(e) {
