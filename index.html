@@ -326,6 +326,15 @@
         <label>Motivo / Descrição</label>
         <input id="caixa-saque-motivo" class="input" placeholder="Ex: Pagamento fornecedor, lucro mensal...">
       </div>
+      <div class="input-group">
+        <label>🛵 Dividir entre motoboys (opcional)</label>
+        <div id="caixa-saque-split-rows"></div>
+        <button type="button" onclick="addCaixaSaqueSplitRow()" style="background:#333;color:#ffcc00;border:none;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;margin-top:4px">+ Adicionar motoboy</button>
+        <div id="caixa-saque-split-total" style="font-size:12px;margin-top:8px;color:#888">Nenhum motoboy selecionado — a retirada só sai do caixa, sem destino.</div>
+      </div>
+      <div style="margin-top:8px">
+        <button type="button" onclick="salvarCaixaSaqueSplitPadrao()" style="width:100%;background:#222;color:#ffcc00;border:1px solid #444;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer">💾 Salvar essa divisão como padrão</button>
+      </div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button class="btn btn-primary" onclick="confirmCaixaSaque()" style="flex:1;background:#e53935;border-color:#e53935">&#10003; Confirmar</button>
         <button class="btn btn-outline" onclick="closeModal('modal-caixa-saque')" style="flex:1">Cancelar</button>
@@ -1586,7 +1595,7 @@ loadSaques();
           document.getElementById('caixa-events').innerHTML = '<p style="color:#666;text-align:center;padding:20px 0">Nenhum evento nas últimas 48h</p>';
           return;
         }
-        var icons = { comissao: '✅', saque: '💸', recebimento_dinheiro:'💵', estorno:'↩️', debito_pedido:'📤', debito_cardapio:'📤', recarga_mp:'💰', pagamento_motoboy:'🛵', pagamento_motoboy_recusado:'🚫', ajuste_admin_credito:'➕', ajuste_admin_debito:'➖', taxa_cancelamento:'⚠️', cobranca_cliente:'💵', corrida:'🛵', debito_cartao_aprox:'📤', taxa_extra:'🌧️', bonus_promo:'🎉', comissao_indicacao_loja:'🤝', bonus_indicacao:'🧲', pagamento_loja:'✅', bonus_entrega:'🎁', cartao_aproximacao:'💳', taxa_chuva_admin:'🌧️', taxa_noturna:'🌙', promocao:'🎉', indicacao_loja:'🤝' }; var origemLabel = { plataforma:'🏦 Plataforma', loja:'🏪 Loja', motoboy:'🛵 Motoboy' }; var creditTipos = ['comissao','recebimento_dinheiro','estorno','recarga_mp','ajuste_admin_credito','corrida','taxa_extra','bonus_promo','comissao_indicacao_loja','bonus_indicacao','pagamento_loja','cartao_aproximacao'];
+        var icons = { comissao: '✅', saque: '💸', recebimento_dinheiro:'💵', estorno:'↩️', debito_pedido:'📤', debito_cardapio:'📤', recarga_mp:'💰', pagamento_motoboy:'🛵', pagamento_motoboy_recusado:'🚫', ajuste_admin_credito:'➕', ajuste_admin_debito:'➖', taxa_cancelamento:'⚠️', cobranca_cliente:'💵', corrida:'🛵', debito_cartao_aprox:'📤', taxa_extra:'🌧️', bonus_promo:'🎉', comissao_indicacao_loja:'🤝', bonus_indicacao:'🧲', pagamento_loja:'✅', bonus_entrega:'🎁', cartao_aproximacao:'💳', taxa_chuva_admin:'🌧️', taxa_noturna:'🌙', promocao:'🎉', indicacao_loja:'🤝', saque_caixa_admin:'🏧' }; var origemLabel = { plataforma:'🏦 Plataforma', loja:'🏪 Loja', motoboy:'🛵 Motoboy' }; var creditTipos = ['comissao','recebimento_dinheiro','estorno','recarga_mp','ajuste_admin_credito','corrida','taxa_extra','bonus_promo','comissao_indicacao_loja','bonus_indicacao','pagamento_loja','cartao_aproximacao','saque_caixa_admin'];
         var colors = { comissao: '#4caf50', saque: '#e53935' };
         document.getElementById('caixa-events').innerHTML = events.map(function(ev) {
           var dt = new Date(ev.created_at);
@@ -1602,23 +1611,112 @@ loadSaques();
         }).join('');
       } catch(e) { document.getElementById('caixa-events').innerHTML = '<p style="color:#e53935">Erro ao carregar eventos</p>'; }
     }
-    function openCaixaSaque() {
+    var _caixaMotoboys = [];
+    var _caixaSaqueSplitRows = [];
+
+    async function ensureCaixaMotoboys() {
+      if (_caixaMotoboys.length) return;
+      try {
+        var r = await fetch(API + '/users');
+        var all = await r.json();
+        _caixaMotoboys = all.filter(function(u){ return u.role === 'motoboy'; }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+      } catch(e) { console.error('Erro ao buscar motoboys:', e); }
+    }
+
+    function renderCaixaSaqueSplitRows() {
+      var wrap = document.getElementById('caixa-saque-split-rows');
+      wrap.innerHTML = _caixaSaqueSplitRows.map(function(row, idx) {
+        var options = '<option value="">Selecione...</option>' + _caixaMotoboys.map(function(m){
+          return '<option value="' + m.id + '"' + (String(row.motoboy_id) === String(m.id) ? ' selected' : '') + '>' + esc(m.name) + '</option>';
+        }).join('');
+        return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">' +
+          '<select class="input" style="flex:2" onchange="_caixaSaqueSplitRows[' + idx + '].motoboy_id=this.value">' + options + '</select>' +
+          '<input class="input" type="number" min="1" max="100" step="1" placeholder="%" value="' + (row.percentual || '') + '" style="flex:1" oninput="_caixaSaqueSplitRows[' + idx + '].percentual=this.value;updateCaixaSaqueSplitTotal()">' +
+          '<button type="button" onclick="removeCaixaSaqueSplitRow(' + idx + ')" style="background:#333;color:#e53935;border:none;border-radius:8px;padding:8px 10px;cursor:pointer">✕</button>' +
+          '</div>';
+      }).join('') || '<p style="color:#666;font-size:12px;margin-bottom:6px">Nenhum motoboy adicionado.</p>';
+      updateCaixaSaqueSplitTotal();
+    }
+
+    function addCaixaSaqueSplitRow() {
+      _caixaSaqueSplitRows.push({ motoboy_id: '', percentual: '' });
+      renderCaixaSaqueSplitRows();
+    }
+
+    function removeCaixaSaqueSplitRow(idx) {
+      _caixaSaqueSplitRows.splice(idx, 1);
+      renderCaixaSaqueSplitRows();
+    }
+
+    function getCaixaSaqueSplitValidas() {
+      return _caixaSaqueSplitRows.filter(function(r){ return r.motoboy_id && parseFloat(r.percentual) > 0; }).map(function(r){ return { motoboy_id: parseInt(r.motoboy_id), percentual: parseFloat(r.percentual) }; });
+    }
+
+    function updateCaixaSaqueSplitTotal() {
+      var lista = getCaixaSaqueSplitValidas();
+      var total = lista.reduce(function(s, r){ return s + r.percentual; }, 0);
+      var el = document.getElementById('caixa-saque-split-total');
+      if (!el) return;
+      if (!lista.length) {
+        el.textContent = 'Nenhum motoboy selecionado — a retirada só sai do caixa, sem destino.';
+        el.style.color = '#888';
+      } else if (total > 100.001) {
+        el.textContent = 'Total: ' + total.toFixed(0) + '% — passou de 100%, ajuste os percentuais.';
+        el.style.color = '#e53935';
+      } else if (total < 99.999) {
+        el.textContent = 'Total: ' + total.toFixed(0) + '% — o restante (' + (100 - total).toFixed(0) + '%) sai do caixa sem destino.';
+        el.style.color = '#ff9500';
+      } else {
+        el.textContent = 'Total: 100% — toda a retirada vai para os motoboys selecionados.';
+        el.style.color = '#4caf50';
+      }
+    }
+
+    async function openCaixaSaque() {
       document.getElementById('caixa-saque-valor').value = '';
       document.getElementById('caixa-saque-motivo').value = '';
       document.getElementById('modal-caixa-saldo-val').textContent = 'R$ ' + _pwBalance.toFixed(2).replace('.', ',');
+      await ensureCaixaMotoboys();
+      _caixaSaqueSplitRows = [];
+      try {
+        var r = await fetch(API + '/platform/saque-config');
+        var cfg = await r.json();
+        _caixaSaqueSplitRows = (cfg || []).map(function(c){ return { motoboy_id: String(c.motoboy_id), percentual: c.percentual }; });
+      } catch(e) { console.error('Erro ao buscar config de saque:', e); }
+      renderCaixaSaqueSplitRows();
       openModal('modal-caixa-saque');
     }
+
+    async function salvarCaixaSaqueSplitPadrao() {
+      var lista = getCaixaSaqueSplitValidas();
+      var total = lista.reduce(function(s, r){ return s + r.percentual; }, 0);
+      if (total > 100.001) { tg.showAlert('A soma dos percentuais não pode passar de 100%.'); return; }
+      try {
+        var r = await fetch(API + '/platform/saque-config', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ split: lista })
+        });
+        var data = await r.json();
+        if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Falha.')); return; }
+        tg.showAlert('Divisão padrão salva! Vai vir pré-preenchida nas próximas retiradas.');
+      } catch(e) { tg.showAlert('Erro de conexão.'); }
+    }
+
     async function confirmCaixaSaque() {
       var valor = parseFloat(document.getElementById('caixa-saque-valor').value);
       var motivo = document.getElementById('caixa-saque-motivo').value.trim();
       if (!valor || valor <= 0) { tg.showAlert('Informe um valor válido.'); return; }
       if (!motivo) { tg.showAlert('Informe o motivo da retirada.'); return; }
       if (valor > _pwBalance) { tg.showAlert('Valor maior que o saldo (R$ ' + _pwBalance.toFixed(2) + ').'); return; }
-      if (!confirm('Confirmar retirada de R$ ' + valor.toFixed(2) + '? Motivo: ' + motivo)) return;
+      var lista = getCaixaSaqueSplitValidas();
+      var total = lista.reduce(function(s, r){ return s + r.percentual; }, 0);
+      if (total > 100.001) { tg.showAlert('A soma dos percentuais dos motoboys passou de 100%. Ajuste antes de confirmar.'); return; }
+      var destinoMsg = lista.length ? (' Dividido entre: ' + lista.map(function(r){ var m = _caixaMotoboys.find(function(x){ return String(x.id) === String(r.motoboy_id); }); return (m ? m.name : ('#' + r.motoboy_id)) + ' ' + r.percentual + '%'; }).join(', ') + '.') : '';
+      if (!confirm('Confirmar retirada de R$ ' + valor.toFixed(2) + '? Motivo: ' + motivo + destinoMsg)) return;
       try {
         var r = await fetch(API + '/platform/withdraw', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ valor: valor, motivo: motivo })
+          body: JSON.stringify({ valor: valor, motivo: motivo, split: lista })
         });
         var data = await r.json();
         if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Falha.')); return; }
