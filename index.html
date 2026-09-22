@@ -971,14 +971,14 @@ function renderRanking(){ var term = (document.getElementById('search-ranking') 
           '<div class="input-group"><label>🪪 CPF</label><input id="u-cpf" class="input" value="' + (esc(u.cpf) || '') + '"></div>' +
           '<div class="input-group"><label>💳 Limite de Crédito (R$)</label><input id="u-credit-limit" class="input" type="number" step="0.01" min="0" value="' + (u.custom_credit_limit !== null && u.custom_credit_limit !== undefined ? Number(u.custom_credit_limit).toFixed(2) : '0.00') + '"></div>' + '<div class="input-group"><label>🎁 Bônus por Entrega <span id="u-bonus-entrega-label-unit">(R$)</span></label><div style="display:flex;gap:8px;align-items:center"><input id="u-bonus-entrega" class="input" type="number" step="0.01" min="0" style="flex:1" value="' + (u.bonus_por_entrega !== null && u.bonus_por_entrega !== undefined ? Number(u.bonus_por_entrega).toFixed(2) : '0.00') + '"><button type="button" id="u-bonus-entrega-toggle" onclick="toggleBonusEntregaTipo()" style="padding:10px 14px;background:#333;border:1px solid #555;border-radius:8px;color:#ffcc00;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap">R$</button></div><div style="font-size:11px;color:#aaa;margin-top:4px">Valor extra pago automaticamente a este motoboy a cada pedido entregue (clique no botao para alternar entre R$ fixo e % sobre o valor do frete). Deixe 0,00 para nao aplicar.</div></div>' + '<div class="input-group"><label>🔢 Limite de Pedidos Simultâneos</label><input id="u-max-pedidos" class="input" type="number" step="1" min="0" placeholder="Padrao do sistema" value="' + (u.max_pedidos_individual !== null && u.max_pedidos_individual !== undefined ? u.max_pedidos_individual : '') + '"><div style="font-size:11px;color:#aaa;margin-top:4px">Quantos pedidos ativos este motoboy pode ter ao mesmo tempo. Deixe em branco para usar o padrao do sistema.</div></div>'
         : buildAddrFields(u.address, false, u.lat, u.lng) + (u.role === 'loja' ? '<div class="input-group"><label>💰 Limite Manual de Empréstimo (R$)</label><input id="u-limite-emprestimo" class="input" type="number" step="0.01" min="0" value="' + (u.limite_emprestimo_manual !== null && u.limite_emprestimo_manual !== undefined ? Number(u.limite_emprestimo_manual).toFixed(2) : '0.00') + '"><div style="font-size:11px;color:#aaa;margin-top:4px">Deixe 0,00 para usar o calculo automatico (R$ 0,05 por entrega realizada).</div></div>' : '');
-      var opcoesIndicador = '<option value="">— Nenhum —</option>' +
-        allUsers.filter(function(x){ return x.id !== u.id && (x.role === 'loja' || x.role === 'motoboy'); })
-          .sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); })
-          .map(function(x){
-            var sel = (u.referred_by === x.id) ? ' selected' : '';
-            return '<option value="' + x.id + '"' + sel + '>' + esc(x.name) + ' (' + (x.role==='loja'?'Loja':'Motoboy') + ')</option>';
-          }).join('');
-      var indicadorField = '<div class="input-group"><label>🔗 Indicado por</label><select id="u-referrer" class="input">' + opcoesIndicador + '</select><button type="button" class="btn btn-outline btn-sm" style="margin-top:6px" onclick="salvarIndicador(' + u.id + ')">💾 Salvar indicação</button><div style="font-size:11px;color:#aaa;margin-top:4px">Use isto quando a loja ou o motoboy esqueceu de colocar o código de quem indicou no cadastro.</div></div>';
+      window._indicadorCandidatos = allUsers.filter(function(x){ return x.id !== u.id && (x.role === 'loja' || x.role === 'motoboy'); })
+        .sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+      window._indicadorAtual = u.referred_by || null;
+      var indicadorField = '<div class="input-group"><label>🔗 Indicado por</label>' +
+        '<input id="u-referrer-busca" class="input" placeholder="🔍 Buscar por nome..." autocomplete="off" oninput="filtrarIndicador(this.value)" style="margin-bottom:6px">' +
+        '<select id="u-referrer" class="input" onchange="window._indicadorAtual = this.value ? parseInt(this.value) : null"></select>' +
+        '<button type="button" class="btn btn-outline btn-sm" style="margin-top:6px" onclick="salvarIndicador(' + u.id + ')">💾 Salvar indicação</button>' +
+        '<div style="font-size:11px;color:#aaa;margin-top:4px">Use isto quando a loja ou o motoboy esqueceu de colocar o código de quem indicou no cadastro.</div></div>';
       document.getElementById('user-fields').innerHTML =
         '<div class="input-group"><label>Login</label><input class="input" value="' + (esc(u.username) || '') + '" disabled style="opacity:0.5"></div>' +
         '<div class="input-group"><label>🪪 ID (' + (u.role==='motoboy'?'Motoboy: M+4 dígitos':'Loja: L+6 dígitos') + ')</label><input id="u-cid" class="input" value="' + (u.custom_id || '') + '" placeholder="Ex: M0001 ou L000001"></div>' +
@@ -987,11 +987,28 @@ function renderRanking(){ var term = (document.getElementById('search-ranking') 
         '<div class="input-group"><label>Telefone</label><input id="u-phone" class="input" value="' + (esc(u.phone) || '') + '"></div>' + '<div class="input-group"><label>💰 Saldo Atual: R$ ' + Number((u.role === 'loja' ? u.credit : u.balance) || 0).toFixed(2) + '</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-primary btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + (u.role === 'loja' ? 'credit' : 'balance') + '\',\'add\')">➕ Aumentar</button><button type="button" class="btn btn-danger btn-sm" onclick="openFinanceModal(' + u.id + ',\'' + (u.role === 'loja' ? 'credit' : 'balance') + '\',\'sub\')">➖ Diminuir</button></div></div>' +
         indicadorField +
         motoboyCampos; _bonusEntregaTipo = (u.bonus_por_entrega_tipo === 'percentual') ? 'percentual' : 'valor'; atualizarUnidadeBonusEntrega();
+      filtrarIndicador('');
       openModal('modal-user');
       setTimeout(function(){
           if (typeof window.acBind === 'function') window.acBind('u-addr-rua','u-addr-num','u-addr-bairro','u-addr-cidade','buildOrigin','');
           if (typeof initStoreMap === 'function') initStoreMap('', u.lat||'', u.lng||'');
         }, 300);
+    }
+
+    function filtrarIndicador(texto) {
+      var sel = document.getElementById('u-referrer');
+      if (!sel) return;
+      var candidatos = window._indicadorCandidatos || [];
+      var termo = (texto || '').trim().toLowerCase();
+      var filtrados = termo ? candidatos.filter(function(x){ return (x.name || '').toLowerCase().indexOf(termo) !== -1; }) : candidatos;
+      var atual = window._indicadorAtual;
+      var opcoes = '<option value="">— Nenhum —</option>' +
+        filtrados.map(function(x){
+          var sel2 = (atual === x.id) ? ' selected' : '';
+          return '<option value="' + x.id + '"' + sel2 + '>' + esc(x.name) + ' (' + (x.role==='loja'?'Loja':'Motoboy') + ')</option>';
+        }).join('');
+      sel.innerHTML = opcoes;
+      if (!atual) sel.value = '';
     }
 
     async function salvarIndicador(id) {
