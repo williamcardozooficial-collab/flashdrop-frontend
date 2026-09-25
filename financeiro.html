@@ -93,6 +93,9 @@
     <div class="section active" id="tab-resumo">
       <div id="resumo-loading" class="loading">Carregando...</div>
       <div id="resumo-content" style="display:none">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+          <button class="pdf-btn" id="pdf-btn-contador" onclick="gerarPdfContador()" style="padding:10px 16px;font-size:13px">📄 Relatório para Contador (PDF)</button>
+        </div>
         <div class="section-title">Caixa da Plataforma (saldo atual)</div>
         <div class="cards-grid">
           <div class="card"><h3>Saldo atual</h3><div class="valor" id="r-saldo-atual">-</div></div>
@@ -271,12 +274,15 @@ function initDatas() {
   document.getElementById('f-inicio').value = trintaDias.toISOString().slice(0, 10);
 }
 
+let _resumoCache = null;
+
 async function carregarResumo() {
   document.getElementById('resumo-loading').style.display = 'block';
   document.getElementById('resumo-content').style.display = 'none';
   try {
     const res = await fetch(`${API}/financeiro/resumo${getRange()}`);
     const d = await res.json();
+    _resumoCache = d;
 
     document.getElementById('r-saldo-atual').textContent = fmtMoeda(d.saldo_plataforma.balance);
     document.getElementById('r-saldo-ganho').textContent = fmtMoeda(d.saldo_plataforma.total_ganho);
@@ -693,6 +699,106 @@ async function gerarPdfMotoboy(id) {
     alert('Erro ao gerar PDF: ' + e.message);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '📄 PDF'; }
+  }
+}
+
+async function gerarPdfContador() {
+  if (!_resumoCache) { alert('Aguarde o carregamento do resumo e tente novamente.'); return; }
+  const d = _resumoCache;
+  const btn = document.getElementById('pdf-btn-contador');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  try {
+    const totalEntradas = parseFloat(d.depositos_lojas.total) || 0;
+    const totalPagoMotoboys = (parseFloat(d.saques_motoboys.total) || 0) + (parseFloat(d.bonus_indicacao_pago_motoboys.total) || 0) + (parseFloat(d.bonus_promocao_pago_motoboys.total) || 0) + (parseFloat(d.bonus_por_entrega_pago_motoboys.total) || 0);
+    const totalPagoLojas = parseFloat(d.saques_lojas.total) || 0;
+    const totalTaxas = parseFloat(d.custo_taxas_chuva_noturna_admin.total) || 0;
+    const totalSaidas = totalPagoMotoboys + totalPagoLojas + totalTaxas;
+    const saldoPeriodo = totalEntradas - totalSaidas;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait' });
+    doc.setFontSize(16);
+    doc.text('Flash Drop Entregas — Relatório Financeiro', 14, 16);
+    doc.setFontSize(11);
+    doc.text('Período: ' + periodoTexto(), 14, 24);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text('Emitido em: ' + new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }), 14, 30);
+    doc.setTextColor(0);
+
+    doc.autoTable({
+      startY: 38,
+      head: [['ENTRADAS — dinheiro depositado no caixa', 'Valor']],
+      body: [
+        ['Depósitos das lojas (recarga via Mercado Pago)', fmtMoeda(d.depositos_lojas.total) + '  (' + d.depositos_lojas.qtd + ' depósito(s))'],
+        ['TOTAL DE ENTRADAS', fmtMoeda(totalEntradas)]
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [76, 175, 80], textColor: 255 },
+      columnStyles: { 0: { cellWidth: 130 } },
+      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 1) data.cell.styles.fontStyle = 'bold'; }
+    });
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['SAÍDAS — pago a motoboys, lojas e taxas', 'Valor']],
+      body: [
+        ['Saques pagos aos motoboys', fmtMoeda(d.saques_motoboys.total) + '  (' + d.saques_motoboys.qtd + ' saque(s))'],
+        ['Bônus de indicação pago a motoboys', fmtMoeda(d.bonus_indicacao_pago_motoboys.total) + '  (' + d.bonus_indicacao_pago_motoboys.qtd + ')'],
+        ['Bônus de promoção pago a motoboys', fmtMoeda(d.bonus_promocao_pago_motoboys.total) + '  (' + d.bonus_promocao_pago_motoboys.qtd + ')'],
+        ['Bônus por entrega pago a motoboys', fmtMoeda(d.bonus_por_entrega_pago_motoboys.total) + '  (' + d.bonus_por_entrega_pago_motoboys.qtd + ')'],
+        ['Saques pagos às lojas', fmtMoeda(d.saques_lojas.total) + '  (' + d.saques_lojas.qtd + ' saque(s))'],
+        ['Taxa chuva/noturna repassada', fmtMoeda(d.custo_taxas_chuva_noturna_admin.total) + '  (' + d.custo_taxas_chuva_noturna_admin.qtd + ')'],
+        ['TOTAL DE SAÍDAS', fmtMoeda(totalSaidas)]
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [229, 57, 53], textColor: 255 },
+      columnStyles: { 0: { cellWidth: 130 } },
+      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 6) data.cell.styles.fontStyle = 'bold'; }
+    });
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['RESULTADO', 'Valor']],
+      body: [
+        ['Saldo do período (Entradas − Saídas)', fmtMoeda(saldoPeriodo)],
+        ['Saldo atual em caixa (acumulado)', fmtMoeda(d.saldo_plataforma.balance)],
+        ['Total já ganho (histórico, desde o início)', fmtMoeda(d.saldo_plataforma.total_ganho)],
+        ['Total já sacado/pago (histórico, desde o início)', fmtMoeda(d.saldo_plataforma.total_sacado)]
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10, fontStyle: 'bold' },
+      headStyles: { fillColor: [255, 204, 0], textColor: 20 },
+      columnStyles: { 0: { cellWidth: 130 } }
+    });
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['Informações complementares (contexto operacional)', 'Valor']],
+      body: [
+        ['Pedidos entregues no período', d.pedidos_entregues.qtd + ' pedido(s) — ' + fmtMoeda(d.pedidos_entregues.total) + ' em vendas'],
+        ['Comissão da plataforma sobre os pedidos', fmtMoeda(d.receita_comissao_admin.total) + '  (' + d.receita_comissao_admin.qtd + ')'],
+        ['Dinheiro coletado pelos motoboys (não passa pelo caixa)', fmtMoeda(d.dinheiro_coletado_motoboys.total) + '  (' + d.dinheiro_coletado_motoboys.qtd + ')'],
+        ['Cartão por aproximação coletado pelos motoboys', fmtMoeda(d.cartao_aproximacao_coletado_motoboys.total) + '  (' + d.cartao_aproximacao_coletado_motoboys.qtd + ')'],
+        ['Máquina própria da loja (vai direto p/ loja, não rastreável)', fmtMoeda(d.maquina_loja_nao_rastreavel.total) + '  (' + d.maquina_loja_nao_rastreavel.qtd + ')']
+      ],
+      theme: 'striped',
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [60, 60, 60] },
+      columnStyles: { 0: { cellWidth: 130 } }
+    });
+
+    doc.setFontSize(8);
+    doc.setTextColor(130);
+    doc.text('Relatório gerado automaticamente pelo sistema Flash Drop Entregas para fins de apuração contábil.', 14, doc.internal.pageSize.getHeight() - 10);
+
+    doc.save(nomeArquivoPdf('relatorio_contabilidade'));
+  } catch(e) {
+    alert('Erro ao gerar PDF: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📄 Relatório para Contador (PDF)'; }
   }
 }
 
