@@ -1378,11 +1378,14 @@ var payload={loja_online:novoStatus};
 if(!novoStatus)payload.loja_horario_offline=null;
 try{
 var r=await fetch(API+'/users/'+u.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+var data=await r.json().catch(function(){return{};});
 if(r.ok){
 u.loja_online=novoStatus;
 if(!novoStatus)u.loja_horario_offline=null;
 localStorage.setItem('flashdrop_user',JSON.stringify(u));
 atualizarUIStatusOnline(novoStatus,u.loja_horario_offline,u.loja_horario_automatico);
+}else{
+tg.showAlert(data.error||'Nao foi possivel abrir a loja.');
 }
 }catch(e){tg.showAlert('Erro ao atualizar status.');}
 }
