@@ -1432,7 +1432,8 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         '<span style="color:' + (statusColor[w.status]||'#aaa') + ';font-weight:700">' + (statusLabel[w.status]||w.status) + '</span>' +
         '</div>' +
         '<div class="row"><span class="val">' + (w.loja_id ? 'Loja:' : 'Motoboy:') + '</span><span>' + (w.loja_name || w.motoboy_name||'—') + '</span></div>' +
-        '<div class="row"><span class="val">Chave PIX:</span><span style="word-break:break-all">' + w.pix_key + '</span></div>' +
+        '<div class="row"><span class="val">Chave PIX:</span><button onclick="copiarPix(\'pix-key-' + w.id + '\')" style="background:#333;border:1px solid #555;border-radius:6px;padding:3px 10px;color:#ffcc00;font-size:11px;font-weight:700;cursor:pointer">📋 Copiar</button></div>' +
+        '<div id="pix-key-' + w.id + '" style="font-size:14px;word-break:break-all;margin:-3px 0 8px;color:#eee">' + w.pix_key + '</div>' +
         '<div class="row"><span class="val">Data:</span><span>' + dt + '</span></div>' +
         (w.obs ? '<div class="row"><span class="val">Obs:</span><span>' + w.obs + '</span></div>' : '') +
         (w.status === 'pendente' ?
@@ -1444,6 +1445,35 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         '</div>';
     }).join('');
   } catch(e) { console.error('Erro ao carregar saques:', e); }
+}
+
+function copiarPix(elId) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  var texto = el.textContent;
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function () {
+      alert('✅ Chave PIX copiada!');
+    }).catch(function () {
+      fallbackCopy(texto);
+      alert('✅ Chave PIX copiada!');
+    });
+  } else {
+    fallbackCopy(texto);
+    alert('✅ Chave PIX copiada!');
+  }
 }
 
 async function processWithdrawal(id, status, paymentMethod) {

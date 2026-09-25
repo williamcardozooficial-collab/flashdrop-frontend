@@ -518,7 +518,8 @@ async function carregarSolicitacoesSaque() {
           <span style="color:${statusColor[w.status]||'#aaa'};font-weight:700">${statusLabel[w.status]||w.status}</span>
         </div>
         <div style="font-size:12px;color:#aaa;margin-bottom:4px">${w.loja_id ? 'Loja' : 'Motoboy'}: <span style="color:#ddd">${w.loja_name || w.motoboy_name || '—'}</span></div>
-        <div style="font-size:12px;color:#aaa;margin-bottom:4px">Chave PIX: <span style="color:#ddd;word-break:break-all">${w.pix_key || '-'}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;color:#aaa">Chave PIX:</span>${w.pix_key ? `<button onclick="copiarPix('pix-key-${w.id}')" style="background:#333;border:1px solid #555;border-radius:6px;padding:3px 10px;color:#ffcc00;font-size:11px;font-weight:700;cursor:pointer">📋 Copiar</button>` : ''}</div>
+        <div id="pix-key-${w.id}" style="font-size:13px;color:#ddd;word-break:break-all;margin-bottom:8px">${w.pix_key || '-'}</div>
         <div style="font-size:12px;color:#aaa">Data: <span style="color:#ddd">${dt}</span></div>
         ${w.obs ? `<div style="font-size:12px;color:#aaa;margin-top:4px">Obs: <span style="color:#ddd">${w.obs}</span></div>` : ''}
         ${w.status === 'pendente' ? `<div style="display:flex;gap:8px;margin-top:10px">
@@ -528,6 +529,35 @@ async function carregarSolicitacoesSaque() {
       </div>`;
     }).join('');
   } catch(e) { document.getElementById('saque-solicitacoes-loading').textContent = 'Erro ao carregar: ' + e.message; }
+}
+
+function copiarPix(elId) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  var texto = el.textContent;
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function () {
+      alert('✅ Chave PIX copiada!');
+    }).catch(function () {
+      fallbackCopy(texto);
+      alert('✅ Chave PIX copiada!');
+    });
+  } else {
+    fallbackCopy(texto);
+    alert('✅ Chave PIX copiada!');
+  }
 }
 
 async function processarSolicitacaoSaque(id, status) {
