@@ -708,12 +708,16 @@ async function gerarPdfContador() {
   const btn = document.getElementById('pdf-btn-contador');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
   try {
-    const totalEntradas = parseFloat(d.depositos_lojas.total) || 0;
-    const totalPagoMotoboys = (parseFloat(d.saques_motoboys.total) || 0) + (parseFloat(d.bonus_indicacao_pago_motoboys.total) || 0) + (parseFloat(d.bonus_promocao_pago_motoboys.total) || 0) + (parseFloat(d.bonus_por_entrega_pago_motoboys.total) || 0);
-    const totalPagoLojas = parseFloat(d.saques_lojas.total) || 0;
-    const totalTaxas = parseFloat(d.custo_taxas_chuva_noturna_admin.total) || 0;
-    const totalSaidas = totalPagoMotoboys + totalPagoLojas + totalTaxas;
-    const saldoPeriodo = totalEntradas - totalSaidas;
+    // Receita real da plataforma no período: apenas a comissão sobre os pedidos.
+    const comissao = parseFloat(d.receita_comissao_admin.total) || 0;
+    // Tudo que sai da comissão da plataforma para motoboys (bônus/indicação/taxas) -
+    // NÃO inclui saques de lojas nem depósitos, que são dinheiro das próprias lojas.
+    const pagoIndicacao = parseFloat(d.bonus_indicacao_pago_motoboys.total) || 0;
+    const pagoPromocao = parseFloat(d.bonus_promocao_pago_motoboys.total) || 0;
+    const pagoPorEntrega = parseFloat(d.bonus_por_entrega_pago_motoboys.total) || 0;
+    const pagoTaxas = parseFloat(d.custo_taxas_chuva_noturna_admin.total) || 0;
+    const totalPagoExtra = pagoIndicacao + pagoPromocao + pagoPorEntrega + pagoTaxas;
+    const lucroPeriodo = comissao - totalPagoExtra;
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -726,47 +730,38 @@ async function gerarPdfContador() {
     doc.text('Emitido em: ' + new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }), 14, 30);
     doc.setTextColor(0);
 
+    // 1) RESULTADO DA PLATAFORMA — o que realmente sobrou (comissão menos o que foi pago a mais aos motoboys)
     doc.autoTable({
       startY: 38,
-      head: [['ENTRADAS — dinheiro depositado no caixa', 'Valor']],
+      head: [['RESULTADO DA PLATAFORMA NO PERÍODO', 'Valor']],
       body: [
-        ['Depósitos das lojas (recarga via Mercado Pago)', fmtMoeda(d.depositos_lojas.total) + '  (' + d.depositos_lojas.qtd + ' depósito(s))'],
-        ['TOTAL DE ENTRADAS', fmtMoeda(totalEntradas)]
+        ['Comissão recebida sobre os pedidos (receita)', fmtMoeda(comissao) + '  (' + d.receita_comissao_admin.qtd + ' pedido(s))'],
+        ['(−) Bônus de indicação pago a motoboys', '− ' + fmtMoeda(pagoIndicacao) + '  (' + d.bonus_indicacao_pago_motoboys.qtd + ')'],
+        ['(−) Bônus de promoção pago a motoboys', '− ' + fmtMoeda(pagoPromocao) + '  (' + d.bonus_promocao_pago_motoboys.qtd + ')'],
+        ['(−) Bônus por entrega pago a motoboys', '− ' + fmtMoeda(pagoPorEntrega) + '  (' + d.bonus_por_entrega_pago_motoboys.qtd + ')'],
+        ['(−) Taxa chuva/noturna repassada', '− ' + fmtMoeda(pagoTaxas) + '  (' + d.custo_taxas_chuva_noturna_admin.qtd + ')'],
+        ['LUCRO DO PERÍODO (o que sobrou p/ a plataforma)', fmtMoeda(lucroPeriodo)]
       ],
       theme: 'grid',
       styles: { fontSize: 10 },
       headStyles: { fillColor: [76, 175, 80], textColor: 255 },
       columnStyles: { 0: { cellWidth: 130 } },
-      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 1) data.cell.styles.fontStyle = 'bold'; }
+      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 5) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [255, 244, 200]; } }
     });
 
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 8,
-      head: [['SAÍDAS — pago a motoboys, lojas e taxas', 'Valor']],
-      body: [
-        ['Saques pagos aos motoboys', fmtMoeda(d.saques_motoboys.total) + '  (' + d.saques_motoboys.qtd + ' saque(s))'],
-        ['Bônus de indicação pago a motoboys', fmtMoeda(d.bonus_indicacao_pago_motoboys.total) + '  (' + d.bonus_indicacao_pago_motoboys.qtd + ')'],
-        ['Bônus de promoção pago a motoboys', fmtMoeda(d.bonus_promocao_pago_motoboys.total) + '  (' + d.bonus_promocao_pago_motoboys.qtd + ')'],
-        ['Bônus por entrega pago a motoboys', fmtMoeda(d.bonus_por_entrega_pago_motoboys.total) + '  (' + d.bonus_por_entrega_pago_motoboys.qtd + ')'],
-        ['Saques pagos às lojas', fmtMoeda(d.saques_lojas.total) + '  (' + d.saques_lojas.qtd + ' saque(s))'],
-        ['Taxa chuva/noturna repassada', fmtMoeda(d.custo_taxas_chuva_noturna_admin.total) + '  (' + d.custo_taxas_chuva_noturna_admin.qtd + ')'],
-        ['TOTAL DE SAÍDAS', fmtMoeda(totalSaidas)]
-      ],
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [229, 57, 53], textColor: 255 },
-      columnStyles: { 0: { cellWidth: 130 } },
-      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 6) data.cell.styles.fontStyle = 'bold'; }
-    });
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text('Não inclui depósitos/saques das próprias lojas nem saques de motoboys — isso é dinheiro que já era deles, não é lucro da plataforma (veja mais abaixo).', 14, doc.lastAutoTable.finalY + 5, { maxWidth: 182 });
+    doc.setTextColor(0);
 
+    // 2) CAIXA ACUMULADO DA PLATAFORMA (histórico, desde o início — não é só o período filtrado)
     doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 8,
-      head: [['RESULTADO', 'Valor']],
+      startY: doc.lastAutoTable.finalY + 14,
+      head: [['CAIXA DA PLATAFORMA (acumulado, desde o início)', 'Valor']],
       body: [
-        ['Saldo do período (Entradas − Saídas)', fmtMoeda(saldoPeriodo)],
-        ['Saldo atual em caixa (acumulado)', fmtMoeda(d.saldo_plataforma.balance)],
-        ['Total já ganho (histórico, desde o início)', fmtMoeda(d.saldo_plataforma.total_ganho)],
-        ['Total já sacado/pago (histórico, desde o início)', fmtMoeda(d.saldo_plataforma.total_sacado)]
+        ['Saldo atual em caixa', fmtMoeda(d.saldo_plataforma.balance)],
+        ['Total já ganho (histórico)', fmtMoeda(d.saldo_plataforma.total_ganho)],
+        ['Total já sacado/pago (histórico)', fmtMoeda(d.saldo_plataforma.total_sacado)]
       ],
       theme: 'grid',
       styles: { fontSize: 10, fontStyle: 'bold' },
@@ -774,12 +769,39 @@ async function gerarPdfContador() {
       columnStyles: { 0: { cellWidth: 130 } }
     });
 
+    // 3) Movimentação das próprias lojas (informativo — não é lucro da plataforma)
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['Movimentação das lojas no período (dinheiro das lojas)', 'Valor']],
+      body: [
+        ['Depósitos das lojas (recarga via Mercado Pago)', fmtMoeda(d.depositos_lojas.total) + '  (' + d.depositos_lojas.qtd + ' depósito(s))'],
+        ['Saques pagos às lojas', fmtMoeda(d.saques_lojas.total) + '  (' + d.saques_lojas.qtd + ' saque(s))']
+      ],
+      theme: 'striped',
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [60, 60, 60] },
+      columnStyles: { 0: { cellWidth: 130 } }
+    });
+
+    // 4) Retiradas dos motoboys do que já era deles (corridas + bônus já somados no saldo)
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['Saques dos motoboys no período (retirada do que já era deles)', 'Valor']],
+      body: [
+        ['Saques pagos aos motoboys', fmtMoeda(d.saques_motoboys.total) + '  (' + d.saques_motoboys.qtd + ' saque(s))']
+      ],
+      theme: 'striped',
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [60, 60, 60] },
+      columnStyles: { 0: { cellWidth: 130 } }
+    });
+
+    // 5) Informações complementares (contexto operacional)
     doc.autoTable({
       startY: doc.lastAutoTable.finalY + 8,
       head: [['Informações complementares (contexto operacional)', 'Valor']],
       body: [
         ['Pedidos entregues no período', d.pedidos_entregues.qtd + ' pedido(s) — ' + fmtMoeda(d.pedidos_entregues.total) + ' em vendas'],
-        ['Comissão da plataforma sobre os pedidos', fmtMoeda(d.receita_comissao_admin.total) + '  (' + d.receita_comissao_admin.qtd + ')'],
         ['Dinheiro coletado pelos motoboys (não passa pelo caixa)', fmtMoeda(d.dinheiro_coletado_motoboys.total) + '  (' + d.dinheiro_coletado_motoboys.qtd + ')'],
         ['Cartão por aproximação coletado pelos motoboys', fmtMoeda(d.cartao_aproximacao_coletado_motoboys.total) + '  (' + d.cartao_aproximacao_coletado_motoboys.qtd + ')'],
         ['Máquina própria da loja (vai direto p/ loja, não rastreável)', fmtMoeda(d.maquina_loja_nao_rastreavel.total) + '  (' + d.maquina_loja_nao_rastreavel.qtd + ')']
