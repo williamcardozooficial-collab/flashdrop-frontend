@@ -284,6 +284,21 @@ if (addrLng) body.lng = parseFloat(addrLng);
     document.getElementById('registerBtn').disabled=false;
   }
 
+// ── PRE-SELECIONAR TIPO VIA ?tipo=loja ou ?tipo=motoboy ──────────
+(function() {
+  var tipoParam = new URLSearchParams(window.location.search).get('tipo');
+  if (!tipoParam) return;
+  tipoParam = tipoParam.toLowerCase();
+  if (tipoParam === 'loja') {
+    document.getElementById('tipo-loja').checked = true;
+  } else if (tipoParam === 'motoboy') {
+    document.getElementById('tipo-motoboy').checked = true;
+  } else {
+    return;
+  }
+  onTipoChange();
+})();
+
 // ── AUTO-PREENCHER ?ref= DA URL ─────────────────────────────────
 (function() {
   var refCode = new URLSearchParams(window.location.search).get('ref');
