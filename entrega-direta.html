@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlashDrop - Entrega Direta</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
+header { background: #1a1a1a; border-bottom: 3px solid #f5a623; padding: 0 20px; display: flex; align-items: center; height: 70px; }
+.header-logo { display: flex; align-items: center; gap: 12px; }
+.header-logo .icon { width: 42px; height: 42px; background: #f5a623; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.header-logo h1 { font-size: 1.3rem; font-weight: 700; color: #fff; }
+.header-logo h1 span { color: #f5a623; }
+.header-subtitle { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
+main { max-width: 620px; margin: 0 auto; padding: 24px 16px 80px; }
+.intro { background: linear-gradient(135deg, #1a1a1a 0%, #111 60%, #1a1100 100%); border: 1px solid #2a2a2a; border-radius: 14px; padding: 18px; margin-bottom: 20px; font-size: 13px; color: #ccc; line-height: 1.6; }
+.intro b { color: #f5a623; }
+.secao { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+.secao h4 { color: #f5a623; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 12px; color: #aaa; margin-bottom: 4px; font-weight: 600; }
+.form-group label .req { color: #f5a623; }
+.form-group input, .form-group textarea { width: 100%; padding: 11px; background: #111; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 14px; }
+.form-group textarea { resize: none; height: 56px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row3 { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+@media (max-width: 480px) { .form-row, .form-row3 { grid-template-columns: 1fr; } }
+.btn-principal { width: 100%; padding: 15px; background: #f5a623; border: none; color: #000; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.btn-principal:hover { background: #e09400; }
+.btn-principal:disabled { opacity: 0.5; cursor: default; }
+.bloco-taxa { display: none; background: #0d1f0d; border: 1px solid #27ae60; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.taxa-row { display: flex; justify-content: space-between; font-size: 13px; color: #ccc; padding: 4px 0; }
+.taxa-row.total { font-size: 18px; font-weight: 800; color: #27ae60; border-top: 1px solid #1e3a1e; margin-top: 8px; padding-top: 10px; }
+.status-calc { font-size: 12px; color: #aaa; margin-top: 8px; min-height: 16px; }
+footer { text-align: center; padding: 20px; color: #555; font-size: 0.8rem; }
+footer span { color: #f5a623; }
+/* Modal */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; overflow-y: auto; padding: 10px 0 40px; }
+.modal-overlay.ativo { display: block; }
+.modal-box { background: #1a1a1a; border-radius: 16px; max-width: 420px; margin: 40px auto 0; padding: 24px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+<div class="header-logo">
+<div class="icon">&#128667;</div>
+<div>
+<h1>Flash<span>Drop</span></h1>
+<div class="header-subtitle">Entrega Direta &mdash; sem cadastro</div>
+</div>
+</div>
+</header>
+<main>
+
+<div id="tela-form">
+<div class="intro">
+&#128230; Precisa mandar algo de um lugar para outro? Preencha os dados abaixo, pague a entrega pelo <b>Pix</b> e pronto &mdash; um motoboy vai buscar e levar. Nao precisa criar conta.
+</div>
+
+<div class="secao">
+<h4>&#128230; Quem esta enviando (coleta)</h4>
+<div class="form-group">
+<label>Nome de quem vai entregar o pacote <span class="req">*</span></label>
+<input id="co-nome" type="text" placeholder="Ex: Joao da Silva">
+</div>
+<div class="form-group">
+<label>Telefone (whatsapp) <span class="req">*</span></label>
+<input id="co-tel" type="tel" placeholder="(54) 9 9999-9999">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Rua / Avenida <span class="req">*</span></label>
+<input id="co-rua" type="text" placeholder="Ex: Rua das Flores">
+</div>
+<div class="form-group">
+<label>Numero <span class="req">*</span></label>
+<input id="co-numero" type="text" placeholder="Ex: 123">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Bairro <span class="req">*</span></label>
+<input id="co-bairro" type="text" placeholder="Ex: Centro">
+</div>
+<div class="form-group">
+<label>Cidade <span class="req">*</span></label>
+<input id="co-cidade" type="text" value="Caxias do Sul">
+</div>
+</div>
+<div class="form-group">
+<label>Complemento / referencia</label>
+<input id="co-complemento" type="text" placeholder="Ex: Apto 302, interfone 302">
+</div>
+<div class="form-group">
+<label>Observacao para o motoboy na coleta</label>
+<textarea id="co-obs" placeholder="Ex: retirar com o porteiro, tocar campainha, etc."></textarea>
+</div>
+</div>
+
+<div class="secao">
+<h4>&#127968; Quem vai receber (entrega)</h4>
+<div class="form-group">
+<label>Nome de quem vai receber <span class="req">*</span></label>
+<input id="en-nome" type="text" placeholder="Ex: Maria Souza">
+</div>
+<div class="form-group">
+<label>Telefone (whatsapp) <span class="req">*</span></label>
+<input id="en-tel" type="tel" placeholder="(54) 9 9999-9999">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Rua / Avenida <span class="req">*</span></label>
+<input id="en-rua" type="text" placeholder="Ex: Av. Brasil">
+</div>
+<div class="form-group">
+<label>Numero <span class="req">*</span></label>
+<input id="en-numero" type="text" placeholder="Ex: 456">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Bairro <span class="req">*</span></label>
+<input id="en-bairro" type="text" placeholder="Ex: Sao Pelegrino">
+</div>
+<div class="form-group">
+<label>Cidade <span class="req">*</span></label>
+<input id="en-cidade" type="text" value="Caxias do Sul">
+</div>
+</div>
+<div class="form-group">
+<label>Complemento / referencia</label>
+<input id="en-complemento" type="text" placeholder="Ex: Casa 2, fundos">
+</div>
+<div class="form-group">
+<label>Observacao para o motoboy na entrega</label>
+<textarea id="en-obs" placeholder="Ex: deixar na portaria, ligar ao chegar, etc."></textarea>
+</div>
+</div>
+
+<div id="bloco-taxa" class="bloco-taxa">
+<div class="taxa-row"><span>Distancia</span><span id="taxa-distancia">-</span></div>
+<div class="taxa-row total"><span>Total a pagar</span><span id="taxa-valor">R$ 0,00</span></div>
+</div>
+<div id="status-calc" class="status-calc"></div>
+
+<button id="btn-calcular" class="btn-principal" onclick="calcularTaxaEntrega()">Calcular taxa de entrega</button>
+<div style="height:10px"></div>
+<button id="btn-finalizar" class="btn-principal" style="background:#27ae60;color:#fff;display:none" onclick="finalizarPedidoAvulso()">&#9889; Pagar com Pix e enviar pedido</button>
+</div>
+
+<div id="tela-sucesso" style="display:none">
+<div class="secao" style="text-align:center">
+<div style="font-size:52px;margin-bottom:10px">&#9989;</div>
+<div style="font-size:19px;font-weight:700;color:#fff;margin-bottom:6px">Pedido enviado com sucesso!</div>
+<div style="font-size:13px;color:#aaa;margin-bottom:18px">Pedido #<span id="suc-id"></span> &mdash; em breve um motoboy vai aceitar a corrida.</div>
+<div style="background:#3a2500;border-radius:10px;padding:14px;margin-bottom:10px">
+<div style="font-size:12px;color:#f5a623;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Codigo de entrega</div>
+<div id="suc-codigo" style="font-size:32px;font-weight:800;color:#f5a623;letter-spacing:4px"></div>
+</div>
+<div style="font-size:12px;color:#888;line-height:1.5">Guarde este codigo. Quem for receber o pacote precisa informar esse codigo ao motoboy na hora da entrega.</div>
+</div>
+</div>
+
+</main>
+<footer>Feito com &#128153; por <span>FlashDrop</span> Delivery</footer>
+
+<!-- Modal pagamento -->
+<div id="modal-pagamento-online" class="modal-overlay" onclick="if(event.target===this)fecharModalPagamento()">
+<div class="modal-box">
+<div style="font-size:52px;margin-bottom:10px">&#9889;</div>
+<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:6px">Pagamento Online</div>
+<div style="font-size:14px;color:#aaa;margin-bottom:18px;line-height:1.5">Pague a taxa de entrega pelo PIX abaixo.</div>
+<div style="background:#0d1f0d;border:1px solid #27ae60;border-radius:10px;padding:12px;margin-bottom:18px">
+<div style="font-size:12px;color:#888;margin-bottom:4px">Total a pagar</div>
+<div id="mp-checkout-total" style="font-size:26px;font-weight:800;color:#27ae60">R$ 0,00</div>
+</div>
+<div id="mp-pix-bloco" style="display:none;margin-bottom:16px;background:#0a1a0a;border:2px solid #27ae60;border-radius:12px;padding:14px">
+<div style="font-size:12px;font-weight:700;color:#27ae60;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">&#128273; PIX Copia e Cola</div>
+<img id="mp-pix-qrcode" src="" alt="QR Code PIX" style="display:none;width:160px;height:160px;margin:0 auto 12px;border-radius:8px;background:#fff;padding:4px" />
+<textarea id="mp-pix-copia-cola" readonly onclick="this.select()" style="width:100%;padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#ccc;font-size:11px;resize:none;height:60px;font-family:monospace;cursor:pointer"></textarea>
+<button onclick="copiarPixCopiaECola()" style="width:100%;margin-top:8px;padding:11px;background:#27ae60;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">&#128203; COPIAR CODIGO PIX</button>
+<div style="font-size:11px;color:#888;margin-top:8px">Abra seu banco, escolha PIX e cole o codigo acima</div>
+</div>
+<a id="mp-checkout-link" href="#" target="_blank" style="display:block;width:100%;padding:12px;background:#009ee3;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px;text-decoration:none;box-sizing:border-box">&#128179; Pagar pelo Mercado Pago</a>
+<button id="btn-mp-confirmar" onclick="confirmarPagamentoConcluido()" style="width:100%;padding:14px;background:#27ae60;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">&#x2705; Ja paguei &#8212; Enviar Pedido</button>
+<div style="font-size:11px;color:#888;margin-bottom:14px;line-height:1.4">Clique em "Ja paguei" somente apos concluir o pagamento.</div>
+<button onclick="fecharModalPagamento()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer">&#x274C; Cancelar</button>
+</div>
+</div>
+
+<script>
+var API = 'https://flashdrop-backend-production.up.railway.app';
+var _lojaEntregaDireta = null;
+var _settingsCache = null;
+var _taxaCalculada = 0;
+var _distanciaCalculada = 0;
+var _pedidoPendente = null;
+var _pollingInterval = null;
+var _pollingTentativas = 0;
+var _POLLING_MAX = 24;
+
+function fmtTel(v){ v=v.replace(/\D/g,'').slice(0,11); if(v.length>6){return '('+v.slice(0,2)+') '+v.slice(2,7)+'-'+v.slice(7);} if(v.length>2){return '('+v.slice(0,2)+') '+v.slice(2);} return v; }
+document.addEventListener('input', function(e){ if(e.target.id==='co-tel'||e.target.id==='en-tel'){ e.target.value = fmtTel(e.target.value); } });
+
+async function carregarSettings(){
+  if(_settingsCache) return _settingsCache;
+  var r = await fetch(API+'/settings');
+  _settingsCache = await r.json();
+  return _settingsCache;
+}
+
+async function carregarLojaEntregaDireta(){
+  if(_lojaEntregaDireta) return _lojaEntregaDireta;
+  var r = await fetch(API+'/orders/loja-entrega-direta');
+  if(!r.ok) throw new Error('Servico de entrega direta indisponivel no momento.');
+  _lojaEntregaDireta = await r.json();
+  return _lojaEntregaDireta;
+}
+
+function pegarDadosForm(){
+  return {
+    coNome: document.getElementById('co-nome').value.trim(),
+    coTel: document.getElementById('co-tel').value.trim(),
+    coRua: document.getElementById('co-rua').value.trim(),
+    coNumero: document.getElementById('co-numero').value.trim(),
+    coBairro: document.getElementById('co-bairro').value.trim(),
+    coCidade: document.getElementById('co-cidade').value.trim() || 'Caxias do Sul',
+    coComplemento: document.getElementById('co-complemento').value.trim(),
+    coObs: document.getElementById('co-obs').value.trim(),
+    enNome: document.getElementById('en-nome').value.trim(),
+    enTel: document.getElementById('en-tel').value.trim(),
+    enRua: document.getElementById('en-rua').value.trim(),
+    enNumero: document.getElementById('en-numero').value.trim(),
+    enBairro: document.getElementById('en-bairro').value.trim(),
+    enCidade: document.getElementById('en-cidade').value.trim() || 'Caxias do Sul',
+    enComplemento: document.getElementById('en-complemento').value.trim(),
+    enObs: document.getElementById('en-obs').value.trim()
+  };
+}
+
+function validarFormulario(d){
+  if(!d.coNome){ alert('Informe o nome de quem esta enviando.'); return false; }
+  if(!d.coTel || d.coTel.replace(/\D/g,'').length<10){ alert('Informe um telefone valido de quem esta enviando.'); return false; }
+  if(!d.coRua || !d.coNumero || !d.coBairro){ alert('Informe o endereco completo da coleta (rua, numero e bairro).'); return false; }
+  if(!d.enNome){ alert('Informe o nome de quem vai receber.'); return false; }
+  if(!d.enTel || d.enTel.replace(/\D/g,'').length<10){ alert('Informe um telefone valido de quem vai receber.'); return false; }
+  if(!d.enRua || !d.enNumero || !d.enBairro){ alert('Informe o endereco completo da entrega (rua, numero e bairro).'); return false; }
+  return true;
+}
+
+async function calcularTaxaEntrega(){
+  var d = pegarDadosForm();
+  if(!validarFormulario(d)) return;
+  var btn = document.getElementById('btn-calcular');
+  var statusEl = document.getElementById('status-calc');
+  btn.disabled = true; btn.textContent = 'Calculando...';
+  statusEl.innerHTML = '<span style="color:#aaa">&#8987; Calculando distancia...</span>';
+  try{
+    var origin = d.coRua+', '+d.coNumero+', '+d.coBairro+', '+d.coCidade+', RS, Brasil';
+    var destination = d.enRua+', '+d.enNumero+', '+d.enBairro+', '+d.enCidade+', RS, Brasil';
+    var r = await fetch(API+'/distance', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ origin: origin, destination: destination }) });
+    var data = await r.json();
+    if(!r.ok || !data.distance_km){
+      statusEl.innerHTML = '<span style="color:#ff6b6b">&#9888; '+(data.error||'Endereco nao encontrado. Verifique os enderecos.')+'</span>';
+      btn.disabled=false; btn.textContent='Calcular taxa de entrega';
+      return;
+    }
+    var km = parseFloat(data.distance_km);
+    var s = await carregarSettings();
+    var arrancada = parseFloat(s.arrancada)||3;
+    var pKm = parseFloat(s.price_per_km)||1.8;
+    var minFee = parseFloat(s.min_fee)||10;
+    var kmLimite = parseFloat(s.km_limite_faixa)||0;
+    var pKmAcima = parseFloat(s.price_per_km_acima)||0;
+    var pKmEfetivo = (kmLimite>0 && pKmAcima>0 && km>kmLimite) ? pKmAcima : pKm;
+    var taxa = Math.max(minFee, arrancada + km*pKmEfetivo);
+    taxa = Math.ceil(taxa);
+    if(s.taxa_noturna_ativa && parseFloat(s.taxa_noturna)>0){
+      var dataBR = new Date(Date.now()-3*60*60*1000);
+      var nowH = dataBR.toISOString().slice(11,16);
+      var diaSemana = dataBR.getUTCDay();
+      var schedNoturna = null;
+      try{ schedNoturna = s.taxa_noturna_horarios ? JSON.parse(s.taxa_noturna_horarios) : null; }catch(e){ schedNoturna=null; }
+      var diaCfg = (schedNoturna && schedNoturna[diaSemana]) ? schedNoturna[diaSemana] : null;
+      var ini = (diaCfg && diaCfg.inicio) || s.taxa_noturna_hora_inicio || '22:00';
+      var fim = (diaCfg && diaCfg.fim) || s.taxa_noturna_hora_fim || '06:00';
+      var noturno = ini>fim ? (nowH>=ini||nowH<fim) : (nowH>=ini&&nowH<fim);
+      if(noturno) taxa += parseFloat(s.taxa_noturna);
+    }
+    if(s.taxa_chuva_ativa && parseFloat(s.taxa_chuva)>0){ taxa += parseFloat(s.taxa_chuva); }
+    _taxaCalculada = taxa;
+    _distanciaCalculada = km;
+    document.getElementById('taxa-distancia').textContent = km.toFixed(1)+' km';
+    document.getElementById('taxa-valor').textContent = 'R$ '+taxa.toFixed(2);
+    document.getElementById('bloco-taxa').style.display = 'block';
+    document.getElementById('btn-finalizar').style.display = 'block';
+    statusEl.innerHTML = '';
+    btn.textContent = 'Recalcular';
+  }catch(e){
+    statusEl.innerHTML = '<span style="color:#ff6b6b">&#9888; Erro ao calcular. Verifique sua conexao.</span>';
+    btn.textContent = 'Calcular taxa de entrega';
+  }
+  btn.disabled = false;
+}
+
+async function finalizarPedidoAvulso(){
+  var d = pegarDadosForm();
+  if(!validarFormulario(d)) return;
+  if(_taxaCalculada<=0){ alert('Calcule a taxa de entrega antes de continuar.'); return; }
+  var btn = document.getElementById('btn-finalizar');
+  btn.disabled = true; btn.textContent = 'Gerando pagamento...';
+  try{
+    var loja = await carregarLojaEntregaDireta();
+    var enderecoColeta = d.coRua+', '+d.coNumero+', '+d.coBairro+', '+d.coCidade+(d.coComplemento?' - '+d.coComplemento:'');
+    var enderecoEntrega = d.enRua+', '+d.enNumero+', '+d.enBairro+', '+d.enCidade+(d.enComplemento?' - '+d.enComplemento:'');
+    var mpRes = await fetch(API+'/mercadopago/checkout-pedido', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        loja_id: loja.id,
+        itens: [{ nome: 'Taxa de entrega direta', preco: _taxaCalculada, qtd: 1 }],
+        totalItens: 0,
+        taxaEntrega: _taxaCalculada,
+        totalFinal: _taxaCalculada,
+        nomeCliente: d.coNome
+      })
+    });
+    var mpData = await mpRes.json();
+    btn.disabled = false; btn.textContent = '⚡ Pagar com Pix e enviar pedido';
+    if(!mpRes.ok || !mpData.checkout_url){
+      alert('Erro ao gerar pagamento: '+(mpData.error||'Tente novamente.'));
+      return;
+    }
+    _pedidoPendente = {
+      loja_user: loja.username, loja_name: loja.name,
+      endereco_coleta: enderecoColeta, complemento_coleta: d.coComplemento||null, obs_coleta: (d.coObs?('Retirar com: '+d.coNome+' - Tel: '+d.coTel+' | Obs: '+d.coObs):('Retirar com: '+d.coNome+' - Tel: '+d.coTel)),
+      nome_coleta: d.coNome, telefone_coleta: d.coTel,
+      endereco_entrega: enderecoEntrega, complemento_entrega: d.enComplemento||null, obs_entrega_loja: d.enObs||null,
+      nome_cliente: d.enNome, telefone_cliente: d.enTel,
+      cod_pedido: 'FD-'+Date.now().toString().slice(-6),
+      cobrar_cliente: 'nao',
+      valor_pedido: 0, valor_produtos: 0,
+      valor_taxa_entrega: _taxaCalculada,
+      distancia: Math.round(_distanciaCalculada*10)/10,
+      tipo_pagamento: 'pix',
+      valor_total: _taxaCalculada, valor_motoboy: 0, comissao: 0,
+      plataforma: 'entrega_direta',
+      status: 'pendente',
+      preference_id: mpData.preference_id
+    };
+    sessionStorage.setItem('flashdrop_pedido_avulso', JSON.stringify(_pedidoPendente));
+    mostrarModalPagamento(mpData.checkout_url, _taxaCalculada, mpData.pix_copia_cola||null, mpData.pix_qrcode_base64||null);
+  }catch(e){
+    btn.disabled = false; btn.textContent = '⚡ Pagar com Pix e enviar pedido';
+    alert('Erro ao conectar com o servidor. Tente novamente.');
+  }
+}
+
+function mostrarModalPagamento(checkoutUrl, totalFinal, pixCopiaCola, pixQrBase64){
+  var modal = document.getElementById('modal-pagamento-online');
+  document.getElementById('mp-checkout-total').textContent = 'R$ '+totalFinal.toFixed(2);
+  document.getElementById('mp-checkout-link').href = checkoutUrl;
+  var pixBloco = document.getElementById('mp-pix-bloco');
+  if(pixCopiaCola){
+    pixBloco.style.display = 'block';
+    document.getElementById('mp-pix-copia-cola').value = pixCopiaCola;
+    var img = document.getElementById('mp-pix-qrcode');
+    if(pixQrBase64){ img.src = 'data:image/png;base64,'+pixQrBase64; img.style.display='block'; } else { img.style.display='none'; }
+  } else {
+    pixBloco.style.display = 'none';
+  }
+  modal.classList.add('ativo');
+  iniciarPollingPagamento();
+}
+
+function fecharModalPagamento(){
+  document.getElementById('modal-pagamento-online').classList.remove('ativo');
+  pararPollingPagamento();
+}
+
+function copiarPixCopiaECola(){
+  var el = document.getElementById('mp-pix-copia-cola');
+  if(!el) return;
+  el.select();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(el.value).then(function(){
+      var btn = document.querySelector('#mp-pix-bloco button');
+      if(btn){ var orig=btn.innerHTML; btn.innerHTML='&#10003; Copiado!'; btn.style.background='#1a6b3a'; setTimeout(function(){ btn.innerHTML=orig; btn.style.background='#27ae60'; },2000); }
+    }).catch(function(){ document.execCommand('copy'); });
+  } else { document.execCommand('copy'); }
+}
+
+function iniciarPollingPagamento(){
+  pararPollingPagamento();
+  _pollingTentativas = 0;
+  _pollingInterval = setInterval(function(){
+    _pollingTentativas++;
+    if(_pollingTentativas>_POLLING_MAX){ pararPollingPagamento(); return; }
+    verificarPagamentoAutomatico();
+  }, 5000);
+}
+
+function pararPollingPagamento(){
+  if(_pollingInterval){ clearInterval(_pollingInterval); _pollingInterval=null; }
+  _pollingTentativas = 0;
+}
+
+async function verificarPagamentoAutomatico(){
+  var dados = sessionStorage.getItem('flashdrop_pedido_avulso');
+  if(!dados) return;
+  var pedido = JSON.parse(dados);
+  var prefId = pedido.preference_id;
+  var lojaId = _lojaEntregaDireta ? _lojaEntregaDireta.id : null;
+  if(!prefId || !lojaId) return;
+  var modal = document.getElementById('modal-pagamento-online');
+  if(!modal || !modal.classList.contains('ativo')) return;
+  try{
+    var vrRes = await fetch(API+'/mercadopago/verificar-pagamento-pedido?preference_id='+encodeURIComponent(prefId)+'&loja_id='+lojaId);
+    if(!vrRes.ok) return;
+    var vrData = await vrRes.json();
+    if(vrData.pago){
+      pararPollingPagamento();
+      var btn = document.getElementById('btn-mp-confirmar');
+      if(btn){ btn.disabled=true; btn.textContent='Pagamento confirmado! Enviando...'; }
+      await enviarPedidoFinal(pedido, btn);
+    }
+  }catch(e){}
+}
+
+async function confirmarPagamentoConcluido(){
+  var dados = sessionStorage.getItem('flashdrop_pedido_avulso');
+  if(!dados){ fecharModalPagamento(); alert('Pedido ja foi enviado!'); return; }
+  var pedido = JSON.parse(dados);
+  var btn = document.getElementById('btn-mp-confirmar');
+  btn.disabled = true; btn.textContent = 'Enviando pedido...';
+  await enviarPedidoFinal(pedido, btn);
+}
+
+async function enviarPedidoFinal(pedido, btn){
+  try{
+    var r = await fetch(API+'/orders', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(pedido) });
+    if(r.ok){
+      var pedidoCriado = await r.json();
+      sessionStorage.removeItem('flashdrop_pedido_avulso');
+      pararPollingPagamento();
+      document.getElementById('modal-pagamento-online').classList.remove('ativo');
+      document.getElementById('tela-form').style.display = 'none';
+      document.getElementById('tela-sucesso').style.display = 'block';
+      document.getElementById('suc-id').textContent = pedidoCriado.id;
+      document.getElementById('suc-codigo').textContent = pedidoCriado.delivery_code || '----';
+      window.scrollTo(0,0);
+    } else {
+      var err = await r.json().catch(function(){ return {}; });
+      alert('Erro ao enviar pedido: '+(err.error||r.status));
+      if(btn){ btn.disabled=false; btn.textContent='✅ Ja paguei — Enviar Pedido'; }
+    }
+  }catch(e){
+    alert('Erro de conexao. Tente novamente.');
+    if(btn){ btn.disabled=false; btn.textContent='✅ Ja paguei — Enviar Pedido'; }
+  }
+}
+
+carregarLojaEntregaDireta().catch(function(e){ console.error(e); });
+carregarSettings().catch(function(e){ console.error(e); });
+</script>
+</body>
+</html>
