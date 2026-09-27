@@ -838,11 +838,16 @@ function makeInfoRow(label, value, highlight) {
           return;
         }
         /* Para pedidos iFood: verificar via bot */
+        var orderCheckData = null;
         try {
           var orderCheckResp = await fetch(API + "/orders/" + orderId);
-          var orderCheckData = await orderCheckResp.json();
-          if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && orderCheckData.ifood_localizador) {
-            tg.showAlert("⏳ Confirmando entrega no iFood...");
+          orderCheckData = await orderCheckResp.json();
+        } catch (eOrderCheck) {
+          console.error("Erro ao verificar tipo de pedido antes de finalizar:", eOrderCheck);
+        }
+        if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && orderCheckData.ifood_localizador) {
+          tg.showAlert("⏳ Confirmando entrega no iFood...");
+          try {
             var botResp = await fetch(API + "/ifood/confirmar-entrega", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -850,11 +855,19 @@ function makeInfoRow(label, value, highlight) {
             });
             var botData = await botResp.json();
             if (!botData.ok) {
-              tg.showAlert("❌ " + (botData.error || "Erro ao confirmar entrega no iFood. Verifique o código."));
+              tg.showAlert("❌ " + (botData.erro || botData.error || "Erro ao confirmar entrega no iFood. Verifique o código."));
               return;
             }
+          } catch (eBotConf) {
+            /* Falha real ao falar com o robo do iFood (conexao, timeout, etc.):
+               NAO finaliza silenciosamente - avisa o motoboy e bloqueia,
+               para nao marcar como entregue algo que pode nao ter sido
+               confirmado de verdade no site do iFood. */
+            console.error("Erro ao confirmar entrega no iFood:", eBotConf);
+            tg.showAlert("❌ Não foi possível confirmar a entrega no iFood (falha de conexão). Tente novamente antes de finalizar.");
+            return;
           }
-        } catch(eBotConf) { /* se falhar bot, continua normalmente */ }
+        }
       }
 
       // === VERIFICAÇÃO DE GEOLOCALIZAÇÃO PARA CHEGADA NA LOJA ===
