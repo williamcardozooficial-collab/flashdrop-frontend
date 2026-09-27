@@ -1978,12 +1978,12 @@ async function gerarRelatorioPdfLoja() {
       columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } }
     });
     var linhas = (pedidos || []).map(function (p) {
-      return ['#' + p.id, fmtDataRel(p.created_at), p.motoboy_name || '-', p.tipo_pagamento || '-', fmtMoedaRel(p.valor_pedido), fmtMoedaRel(p.valor_total), fmtMoedaRel(p.valor_motoboy), p.nome_promocao ? (p.nome_promocao + ' (-' + fmtMoedaRel(p.desconto_promocao) + ')') : '-', statusTextoRel(p.status)];
+      return ['#' + p.id, fmtDataRel(p.created_at), p.motoboy_name || '-', p.tipo_pagamento || '-', fmtMoedaRel(p.valor_pedido), fmtMoedaRel(p.valor_total), p.nome_promocao ? (p.nome_promocao + ' (-' + fmtMoedaRel(p.desconto_promocao) + ')') : '-', statusTextoRel(p.status)];
     });
     doc.autoTable({
       startY: doc.lastAutoTable.finalY + 8,
-      head: [['#', 'Data/Hora', 'Motoboy', 'Pagamento', 'Valor produtos', 'Valor total', 'Valor motoboy', 'Promocao', 'Status']],
-      body: linhas.length ? linhas : [['Nenhum pedido no periodo', '', '', '', '', '', '', '', '']],
+      head: [['#', 'Data/Hora', 'Motoboy', 'Pagamento', 'Valor produtos', 'Valor entrega', 'Promocao', 'Status']],
+      body: linhas.length ? linhas : [['Nenhum pedido no periodo', '', '', '', '', '', '', '']],
       theme: 'striped',
       styles: { fontSize: 8 },
       headStyles: { fillColor: [30, 30, 30] }
