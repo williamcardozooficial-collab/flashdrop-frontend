@@ -96,6 +96,12 @@
       <button onclick="copiarLinkCadastroLoja()" style="padding:5px 12px;background:#a855f7;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">&#128203; Copiar</button>
       <button onclick="compartilharLinkCadastroLoja()" style="padding:5px 12px;background:#25d366;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">&#128228; Compartilhar</button>
     </div>
+    <div style="display:flex;align-items:center;margin-top:6px;gap:6px;">
+      <span style="font-size:11px;color:#f5a623;font-weight:700;white-space:nowrap;">&#128666; Entrega Direta:</span>
+      <input id="admin-link-entrega-direta" type="text" readonly value="https://flashdrop-frontend-six.vercel.app/entrega-direta.html" onclick="this.select()" style="flex:1;min-width:0;padding:5px 10px;border-radius:6px;border:1px solid #f5a623;background:#222;color:#fff;font-size:12px;">
+      <button onclick="copiarLinkEntregaDireta()" style="padding:5px 12px;background:#f5a623;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">&#128203; Copiar</button>
+      <button onclick="compartilharLinkEntregaDireta()" style="padding:5px 12px;background:#25d366;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;white-space:nowrap;">&#128228; Compartilhar</button>
+    </div>
   </div>
 
   <div class="tabs" id="tabs">
@@ -2013,6 +2019,26 @@ async function salvarLink() {
       var texto = 'Cadastre sua loja na FlashDrop! Acesse: ' + link;
       if (navigator.share) {
         navigator.share({ title: 'FlashDrop - Cadastro de Loja', text: texto, url: link }).catch(function(){});
+      } else {
+        window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+      }
+    }
+    function copiarLinkEntregaDireta() {
+      var el = document.getElementById('admin-link-entrega-direta');
+      el.select();
+      var link = el.value;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(link).then(function(){ alert('Link copiado!'); }).catch(function(){ document.execCommand('copy'); alert('Link copiado!'); });
+      } else {
+        document.execCommand('copy');
+        alert('Link copiado!');
+      }
+    }
+    function compartilharLinkEntregaDireta() {
+      var link = document.getElementById('admin-link-entrega-direta').value;
+      var texto = 'Precisa de uma entrega avulsa (sem cadastro)? Peça pela FlashDrop: ' + link;
+      if (navigator.share) {
+        navigator.share({ title: 'FlashDrop - Entrega Direta', text: texto, url: link }).catch(function(){});
       } else {
         window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
       }
