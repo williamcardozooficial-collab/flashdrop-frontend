@@ -845,13 +845,17 @@ function makeInfoRow(label, value, highlight) {
         } catch (eOrderCheck) {
           console.error("Erro ao verificar tipo de pedido antes de finalizar:", eOrderCheck);
         }
-        if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && orderCheckData.ifood_localizador) {
+        if (orderCheckData && orderCheckData.tipo_pagamento === "ifood") {
+          if (!orderCheckData.ifood_localizador) {
+            tg.showAlert("❌ Este pedido iFood está sem o código localizador cadastrado. Não é possível confirmar a entrega assim. Avise a loja/suporte antes de finalizar.");
+            return;
+          }
           tg.showAlert("⏳ Confirmando entrega no iFood...");
           try {
             var botResp = await fetch(API + "/ifood/confirmar-entrega", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ localizador: orderCheckData.ifood_localizador, codigoCliente: codigoDigitado })
+              body: JSON.stringify({ localizador: orderCheckData.ifood_localizador, codigoCliente: codigoDigitado, orderId: orderId })
             });
             var botData = await botResp.json();
             if (!botData.ok) {
@@ -935,7 +939,7 @@ if (!geoPassed) return;
       }
       if (orderResp.status === 400) {
         var errD4 = await orderResp.json();
-        tg.showAlert("❌ Código de entrega incorreto. Verifique com o cliente e tente novamente.");
+        tg.showAlert("❌ " + (errD4.error || "Código de entrega incorreto. Verifique com o cliente e tente novamente."));
         return;
       }
       if (!orderResp.ok) throw new Error("Erro ao atualizar pedido");

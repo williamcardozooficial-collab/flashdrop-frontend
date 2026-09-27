@@ -1157,11 +1157,21 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         valor_motoboy: parseFloat(document.getElementById('o-motoboy').value),
         obs: document.getElementById('o-obs').value, complemento_entrega: (document.getElementById('o-comp-entrega')||{}).value || null, obs_entrega_loja: (document.getElementById('o-obs-entrega')||{}).value || null
       };
-      await fetch(API + '/orders/' + currentOrderId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(update)
-      });
+      try {
+        var _saveOrderResp = await fetch(API + '/orders/' + currentOrderId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(update)
+        });
+        if (!_saveOrderResp.ok) {
+          var _saveOrderErr = await _saveOrderResp.json().catch(function(){ return {}; });
+          tg.showAlert('❌ ' + (_saveOrderErr.error || 'Não foi possível atualizar o pedido.'));
+          return;
+        }
+      } catch (eSaveOrder) {
+        tg.showAlert('❌ Erro ao atualizar pedido: ' + eSaveOrder.message);
+        return;
+      }
       closeModal('modal-order');
       loadData('pedidos');
       tg.showAlert('Pedido atualizado!');
