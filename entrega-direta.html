@@ -35,6 +35,10 @@ main { max-width: 620px; margin: 0 auto; padding: 24px 16px 80px; }
 .status-calc { font-size: 12px; color: #aaa; margin-top: 8px; min-height: 16px; }
 footer { text-align: center; padding: 20px; color: #555; font-size: 0.8rem; }
 footer span { color: #f5a623; }
+/* Mapa */
+.bloco-mapa { margin-top: 12px; display: none; }
+.mapa-caixa { width: 100%; height: 200px; border-radius: 12px; border: 2px solid #f5a623; overflow: hidden; }
+.btn-confirmar-pin { width: 100%; margin-top: 8px; background: #f5a623; color: #000; border: none; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
 /* Modal */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; overflow-y: auto; padding: 10px 0 40px; }
 .modal-overlay.ativo { display: block; }
@@ -68,10 +72,12 @@ footer span { color: #f5a623; }
 <label>Telefone (whatsapp) <span class="req">*</span></label>
 <input id="co-tel" type="tel" placeholder="(54) 9 9999-9999">
 </div>
+<button type="button" id="btn-usar-localizacao-col" onclick="usarLocalizacaoAtual('col')" style="width:100%;padding:10px;margin:4px 0 12px;background:#0d4f7a;border:1px solid #27ae60;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:bold">&#128205; Usar minha localizacao atual</button>
+<div id="col-loc-status" style="font-size:12px;color:#aaa;margin-bottom:10px;display:none"></div>
 <div class="form-row">
 <div class="form-group">
 <label>Rua / Avenida <span class="req">*</span></label>
-<input id="co-rua" type="text" placeholder="Ex: Rua das Flores">
+<input id="co-rua" type="text" placeholder="Comece a digitar o endereco...">
 </div>
 <div class="form-group">
 <label>Numero <span class="req">*</span></label>
@@ -92,9 +98,9 @@ footer span { color: #f5a623; }
 <label>Complemento / referencia</label>
 <input id="co-complemento" type="text" placeholder="Ex: Apto 302, interfone 302">
 </div>
-<div class="form-group">
-<label>Observacao para o motoboy na coleta</label>
-<textarea id="co-obs" placeholder="Ex: retirar com o porteiro, tocar campainha, etc."></textarea>
+<div id="bloco-mapa-col" class="bloco-mapa">
+<div id="mapa-col" class="mapa-caixa"></div>
+<button type="button" class="btn-confirmar-pin" id="btn-confirmar-pin-col" onclick="confirmarPinMapa('col')">&#10003; Confirmar local no mapa</button>
 </div>
 </div>
 
@@ -108,10 +114,12 @@ footer span { color: #f5a623; }
 <label>Telefone (whatsapp) <span class="req">*</span></label>
 <input id="en-tel" type="tel" placeholder="(54) 9 9999-9999">
 </div>
+<button type="button" id="btn-usar-localizacao-ent" onclick="usarLocalizacaoAtual('ent')" style="width:100%;padding:10px;margin:4px 0 12px;background:#0d4f7a;border:1px solid #27ae60;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:bold">&#128205; Usar minha localizacao atual</button>
+<div id="ent-loc-status" style="font-size:12px;color:#aaa;margin-bottom:10px;display:none"></div>
 <div class="form-row">
 <div class="form-group">
 <label>Rua / Avenida <span class="req">*</span></label>
-<input id="en-rua" type="text" placeholder="Ex: Av. Brasil">
+<input id="en-rua" type="text" placeholder="Comece a digitar o endereco...">
 </div>
 <div class="form-group">
 <label>Numero <span class="req">*</span></label>
@@ -132,9 +140,9 @@ footer span { color: #f5a623; }
 <label>Complemento / referencia</label>
 <input id="en-complemento" type="text" placeholder="Ex: Casa 2, fundos">
 </div>
-<div class="form-group">
-<label>Observacao para o motoboy na entrega</label>
-<textarea id="en-obs" placeholder="Ex: deixar na portaria, ligar ao chegar, etc."></textarea>
+<div id="bloco-mapa-ent" class="bloco-mapa">
+<div id="mapa-ent" class="mapa-caixa"></div>
+<button type="button" class="btn-confirmar-pin" id="btn-confirmar-pin-ent" onclick="confirmarPinMapa('ent')">&#10003; Confirmar local no mapa</button>
 </div>
 </div>
 
@@ -200,6 +208,15 @@ var _pollingInterval = null;
 var _pollingTentativas = 0;
 var _POLLING_MAX = 24;
 
+var MAPA_CFG = {
+  col: { ruaId:'co-rua', numeroId:'co-numero', bairroId:'co-bairro', cidadeId:'co-cidade', mapaDivId:'mapa-col', blocoMapaId:'bloco-mapa-col', confirmBtnId:'btn-confirmar-pin-col', locBtnId:'btn-usar-localizacao-col', locStatusId:'col-loc-status' },
+  ent: { ruaId:'en-rua', numeroId:'en-numero', bairroId:'en-bairro', cidadeId:'en-cidade', mapaDivId:'mapa-ent', blocoMapaId:'bloco-mapa-ent', confirmBtnId:'btn-confirmar-pin-ent', locBtnId:'btn-usar-localizacao-ent', locStatusId:'ent-loc-status' }
+};
+var _geoState = {
+  col: { map:null, pin:null, coordConfirmado:null, coordAutocomplete:null },
+  ent: { map:null, pin:null, coordConfirmado:null, coordAutocomplete:null }
+};
+
 function fmtTel(v){ v=v.replace(/\D/g,'').slice(0,11); if(v.length>6){return '('+v.slice(0,2)+') '+v.slice(2,7)+'-'+v.slice(7);} if(v.length>2){return '('+v.slice(0,2)+') '+v.slice(2);} return v; }
 document.addEventListener('input', function(e){ if(e.target.id==='co-tel'||e.target.id==='en-tel'){ e.target.value = fmtTel(e.target.value); } });
 
@@ -227,15 +244,13 @@ function pegarDadosForm(){
     coBairro: document.getElementById('co-bairro').value.trim(),
     coCidade: document.getElementById('co-cidade').value.trim() || 'Caxias do Sul',
     coComplemento: document.getElementById('co-complemento').value.trim(),
-    coObs: document.getElementById('co-obs').value.trim(),
     enNome: document.getElementById('en-nome').value.trim(),
     enTel: document.getElementById('en-tel').value.trim(),
     enRua: document.getElementById('en-rua').value.trim(),
     enNumero: document.getElementById('en-numero').value.trim(),
     enBairro: document.getElementById('en-bairro').value.trim(),
     enCidade: document.getElementById('en-cidade').value.trim() || 'Caxias do Sul',
-    enComplemento: document.getElementById('en-complemento').value.trim(),
-    enObs: document.getElementById('en-obs').value.trim()
+    enComplemento: document.getElementById('en-complemento').value.trim()
   };
 }
 
@@ -249,6 +264,227 @@ function validarFormulario(d){
   return true;
 }
 
+function invalidarTaxaEntrega(){
+  if(_taxaCalculada>0){
+    _taxaCalculada=0; _distanciaCalculada=0;
+    var bloco=document.getElementById('bloco-taxa'); if(bloco) bloco.style.display='none';
+    var btnFin=document.getElementById('btn-finalizar'); if(btnFin) btnFin.style.display='none';
+    var btnCalc=document.getElementById('btn-calcular'); if(btnCalc) btnCalc.textContent='Calcular taxa de entrega';
+    var statusEl=document.getElementById('status-calc'); if(statusEl) statusEl.innerHTML='<span style="color:#ff9500">&#9888; Endereco alterado. Calcule a taxa novamente antes de finalizar.</span>';
+  }
+}
+
+/* ---- MAPA COM PIN (coleta e entrega) ---- */
+function iniciarMapa(tipo, lat, lon, arrastavel) {
+  var cfg = MAPA_CFG[tipo];
+  var st = _geoState[tipo];
+  var blocoMapa = document.getElementById(cfg.blocoMapaId);
+  blocoMapa.style.display = 'block';
+  var mapaDiv = document.getElementById(cfg.mapaDivId);
+  if (!st.map) {
+    st.map = new google.maps.Map(mapaDiv, {
+      center: { lat: lat, lng: lon },
+      zoom: 16,
+      disableDefaultUI: true,
+      zoomControl: true,
+      styles: [
+        { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
+        { elementType: 'labels.text.fill', stylers: [{ color: '#aaaaaa' }] },
+        { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a1a' }] },
+        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2a2a' }] },
+        { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212121' }] },
+        { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a3a3a' }] },
+        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
+        { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+        { featureType: 'transit', stylers: [{ visibility: 'off' }] }
+      ]
+    });
+    st.pin = new google.maps.Marker({
+      position: { lat: lat, lng: lon },
+      map: st.map,
+      draggable: true,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 14,
+        fillColor: '#f5a623',
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 3
+      },
+      title: 'Arraste para ajustar'
+    });
+  } else {
+    var pos = { lat: lat, lng: lon };
+    st.map.setCenter(pos);
+    st.pin.setPosition(pos);
+    st.pin.setDraggable(arrastavel !== false);
+    google.maps.event.trigger(st.map, 'resize');
+  }
+  st.coordConfirmado = null;
+  if (st.pin && !st.pin.__dragendBound) {
+    st.pin.__dragendBound = true;
+    st.pin.addListener('dragend', function(e){
+      if (typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: e.latLng }, function(results, status){
+          if (status === 'OK' && results[0]) {
+            var comps = results[0].address_components;
+            function getComp(types){ for (var i=0;i<comps.length;i++){ for (var j=0;j<types.length;j++){ if (comps[i].types.indexOf(types[j])>-1) return comps[i].long_name; } } return ''; }
+            var rua = getComp(['route']);
+            var bairro = getComp(['sublocality_level_1','sublocality','neighborhood']);
+            var cidade = getComp(['locality','administrative_area_level_2']);
+            var ruaEl = document.getElementById(cfg.ruaId);
+            var bairroEl = document.getElementById(cfg.bairroId);
+            var cidadeEl = document.getElementById(cfg.cidadeId);
+            if (ruaEl && rua) { ruaEl.value = rua; ruaEl.style.borderColor = '#ff9500'; }
+            if (bairroEl && bairro) { bairroEl.value = bairro; bairroEl.style.borderColor = '#ff9500'; }
+            if (cidadeEl && cidade) { cidadeEl.value = cidade; cidadeEl.style.borderColor = '#ff9500'; }
+            st.coordConfirmado = { lat: e.latLng.lat(), lon: e.latLng.lng() };
+            invalidarTaxaEntrega();
+            var avisoId = cfg.mapaDivId + '-aviso';
+            var avisoEl = document.getElementById(avisoId);
+            if (!avisoEl && mapaDiv && mapaDiv.parentNode) {
+              avisoEl = document.createElement('div');
+              avisoEl.id = avisoId;
+              avisoEl.style.cssText = 'margin-top:8px;padding:8px 10px;background:#3a2a10;border:1px solid #ff9500;border-radius:8px;color:#ff9500;font-size:12px;font-weight:600';
+              mapaDiv.parentNode.insertBefore(avisoEl, mapaDiv.nextSibling);
+            }
+            if (avisoEl) avisoEl.textContent = 'Endereco atualizado automaticamente para a posicao do pino.';
+          }
+        });
+      }
+    });
+  }
+}
+
+function confirmarPinMapa(tipo) {
+  var cfg = MAPA_CFG[tipo];
+  var st = _geoState[tipo];
+  if (!st.pin) return;
+  var pos = st.pin.getPosition();
+  st.coordConfirmado = { lat: pos.lat(), lon: pos.lng() };
+  st.coordAutocomplete = st.coordConfirmado;
+  var btn = document.getElementById(cfg.confirmBtnId);
+  if (btn) { btn.textContent = '✅ Local confirmado!'; btn.style.background = '#27ae60'; btn.style.color = '#fff'; setTimeout(function(){ btn.textContent = '✓ Confirmar local no mapa'; btn.style.background = '#f5a623'; btn.style.color = '#000'; }, 2000); }
+}
+
+async function geocodificar(endereco){
+  var tentativas=[endereco, endereco.split(',').filter(function(p,i){return i!==2;}).join(',')];
+  for(var i=0;i<tentativas.length;i++){
+    var q=encodeURIComponent(tentativas[i]);
+    var r=await fetch('https://nominatim.openstreetmap.org/search?q='+q+'&format=json&limit=1',{headers:{'User-Agent':'FlashDropDelivery/1.0'}});
+    var d=await r.json();
+    if(d.length)return {lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)};
+    await new Promise(function(res){setTimeout(res,300);});
+  }
+  return null;
+}
+
+function usarLocalizacaoAtual(tipo){
+  var cfg = MAPA_CFG[tipo];
+  var st = _geoState[tipo];
+  var btn = document.getElementById(cfg.locBtnId);
+  var stEl = document.getElementById(cfg.locStatusId);
+  if(!navigator.geolocation){
+    if(stEl){ stEl.style.display='block'; stEl.innerHTML='<span style="color:#ff6b6b">Seu navegador nao suporta localizacao. Preencha o endereco manualmente.</span>'; }
+    return;
+  }
+  if(btn){ btn.disabled=true; btn.textContent='Obtendo localizacao...'; }
+  if(stEl){ stEl.style.display='block'; stEl.innerHTML='<span style="color:#aaa">Obtendo sua localizacao...</span>'; }
+  navigator.geolocation.getCurrentPosition(async function(pos){
+    try{
+      var lat=pos.coords.latitude, lon=pos.coords.longitude;
+      var r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json',{headers:{'User-Agent':'FlashDropDelivery/1.0'}});
+      var d=await r.json();
+      var a=d.address||{};
+      var rua=a.road||a.pedestrian||a.street||'';
+      var bairro=a.suburb||a.neighbourhood||a.city_district||a.quarter||'';
+      var cidade=a.city||a.town||a.village||a.municipality||'';
+      if(rua) document.getElementById(cfg.ruaId).value=rua;
+      if(bairro) document.getElementById(cfg.bairroId).value=bairro;
+      if(cidade) document.getElementById(cfg.cidadeId).value=cidade;
+      st.coordAutocomplete={lat:lat,lon:lon};
+      st.coordConfirmado=null;
+      iniciarMapa(tipo, lat, lon, true);
+      if(btn){ btn.disabled=false; btn.textContent='📍 Usar minha localizacao atual'; }
+      if(stEl){ stEl.innerHTML = rua ? '<span style="color:#5cb85c">Endereco preenchido! Confira e complete o numero da casa.</span>' : '<span style="color:#ff6b6b">Nao foi possivel identificar a rua automaticamente. Preencha manualmente.</span>'; }
+      var numEl=document.getElementById(cfg.numeroId);
+      if(numEl) numEl.focus();
+      invalidarTaxaEntrega();
+    }catch(e){
+      if(btn){ btn.disabled=false; btn.textContent='📍 Usar minha localizacao atual'; }
+      if(stEl){ stEl.innerHTML='<span style="color:#ff6b6b">Erro ao buscar endereco. Preencha manualmente.</span>'; }
+    }
+  }, function(err){
+    if(btn){ btn.disabled=false; btn.textContent='📍 Usar minha localizacao atual'; }
+    if(stEl){ stEl.style.display='block'; stEl.innerHTML='<span style="color:#ff6b6b">Nao foi possivel obter sua localizacao (permissao negada ou indisponivel). Preencha o endereco manualmente.</span>'; }
+  }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+}
+
+async function calcularDistanciaKm(latA,lonA,latB,lonB){
+  var url='https://router.project-osrm.org/route/v1/driving/'+lonA+','+latA+';'+lonB+','+latB+'?overview=false';
+  var r=await fetch(url);
+  var d=await r.json();
+  if(d.code!=='Ok'||!d.routes.length)return null;
+  return d.routes[0].distance/1000;
+}
+
+/* ---- GOOGLE PLACES AUTOCOMPLETE (coleta e entrega) ---- */
+function initAutocomplete(){
+  var caxiasBounds = new google.maps.LatLngBounds(new google.maps.LatLng(-29.28,-51.35), new google.maps.LatLng(-29.05,-50.95));
+  ['col','ent'].forEach(function(tipo){
+    var cfg = MAPA_CFG[tipo];
+    var ruaInput = document.getElementById(cfg.ruaId);
+    if(!ruaInput) return;
+    [cfg.ruaId,cfg.numeroId,cfg.bairroId,cfg.cidadeId].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('input', invalidarTaxaEntrega); });
+    var autocomplete = new google.maps.places.Autocomplete(ruaInput, {
+      componentRestrictions: { country: 'br' },
+      bounds: caxiasBounds,
+      fields: ['address_components', 'formatted_address', 'geometry']
+    });
+    ruaInput.addEventListener('keydown', function(e){ if(e.key==='Enter') e.preventDefault(); });
+    autocomplete.addListener('place_changed', function(){
+      var place = autocomplete.getPlace();
+      if(!place || !place.address_components) return;
+      var rua='', numero='', bairro='', cidade='';
+      place.address_components.forEach(function(comp){
+        var types=comp.types;
+        if(types.indexOf('route')!==-1) rua=comp.long_name;
+        if(types.indexOf('street_number')!==-1) numero=comp.long_name;
+        if(types.indexOf('sublocality_level_1')!==-1 || types.indexOf('neighborhood')!==-1 || types.indexOf('sublocality')!==-1){ if(!bairro) bairro=comp.long_name; }
+        if(types.indexOf('administrative_area_level_2')!==-1) cidade=comp.long_name;
+      });
+      var st = _geoState[tipo];
+      if(!rua){
+        document.getElementById(cfg.ruaId).value='';
+        if(bairro) document.getElementById(cfg.bairroId).value=bairro;
+        if(cidade) document.getElementById(cfg.cidadeId).value=cidade;
+        var stEl=document.getElementById(cfg.locStatusId);
+        if(stEl){ stEl.style.display='block'; stEl.innerHTML='<span style="color:#ff9500">&#9888; Isso e um estabelecimento, nao um endereco. Digite o nome da rua e o numero da casa.</span>'; }
+        st.coordAutocomplete=null; st.coordConfirmado=null;
+        invalidarTaxaEntrega();
+        return;
+      }
+      document.getElementById(cfg.ruaId).value=rua;
+      if(numero) document.getElementById(cfg.numeroId).value=numero;
+      if(bairro) document.getElementById(cfg.bairroId).value=bairro;
+      if(cidade) document.getElementById(cfg.cidadeId).value=cidade;
+      invalidarTaxaEntrega();
+      if(place.geometry && place.geometry.location){
+        var latP=place.geometry.location.lat(), lonP=place.geometry.location.lng();
+        st.coordAutocomplete={lat:latP,lon:lonP};
+        st.coordConfirmado=null;
+        setTimeout(function(){ iniciarMapa(tipo, latP, lonP, true); }, 300);
+      } else {
+        st.coordAutocomplete=null;
+      }
+      if(!numero) document.getElementById(cfg.numeroId).focus();
+      else if(!bairro) document.getElementById(cfg.bairroId).focus();
+      else if(!cidade) document.getElementById(cfg.cidadeId).focus();
+    });
+  });
+}
+
 async function calcularTaxaEntrega(){
   var d = pegarDadosForm();
   if(!validarFormulario(d)) return;
@@ -257,16 +493,36 @@ async function calcularTaxaEntrega(){
   btn.disabled = true; btn.textContent = 'Calculando...';
   statusEl.innerHTML = '<span style="color:#aaa">&#8987; Calculando distancia...</span>';
   try{
-    var origin = d.coRua+', '+d.coNumero+', '+d.coBairro+', '+d.coCidade+', RS, Brasil';
-    var destination = d.enRua+', '+d.enNumero+', '+d.enBairro+', '+d.enCidade+', RS, Brasil';
-    var r = await fetch(API+'/distance', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ origin: origin, destination: destination }) });
-    var data = await r.json();
-    if(!r.ok || !data.distance_km){
-      statusEl.innerHTML = '<span style="color:#ff6b6b">&#9888; '+(data.error||'Endereco nao encontrado. Verifique os enderecos.')+'</span>';
+    var endColeta = d.coRua+', '+d.coNumero+', '+d.coCidade+', RS, Brasil';
+    var endEntrega = d.enRua+', '+d.enNumero+', '+d.enCidade+', RS, Brasil';
+    var stCol = _geoState.col, stEnt = _geoState.ent;
+    var coordColPre = stCol.coordConfirmado || stCol.coordAutocomplete || null;
+    var coordEntPre = stEnt.coordConfirmado || stEnt.coordAutocomplete || null;
+    var coordsRes = await Promise.all([
+      coordColPre ? Promise.resolve(coordColPre) : geocodificar(endColeta),
+      coordEntPre ? Promise.resolve(coordEntPre) : geocodificar(endEntrega)
+    ]);
+    var coordColeta = coordsRes[0], coordEntrega = coordsRes[1];
+    if(!coordColeta){
+      statusEl.innerHTML = '<span style="color:#ff6b6b">&#9888; Endereco de coleta nao encontrado automaticamente. Marque o local no mapa abaixo e clique em Confirmar.</span>';
+      btn.disabled=false; btn.textContent='Recalcular com pin do mapa';
+      iniciarMapa('col', -29.168, -51.179, true);
+      return;
+    }
+    if(!coordEntrega){
+      statusEl.innerHTML = '<span style="color:#ff6b6b">&#9888; Endereco de entrega nao encontrado automaticamente. Marque o local no mapa abaixo e clique em Confirmar.</span>';
+      btn.disabled=false; btn.textContent='Recalcular com pin do mapa';
+      iniciarMapa('ent', coordColeta.lat, coordColeta.lon, true);
+      return;
+    }
+    iniciarMapa('col', coordColeta.lat, coordColeta.lon, true);
+    iniciarMapa('ent', coordEntrega.lat, coordEntrega.lon, true);
+    var km = await calcularDistanciaKm(coordColeta.lat, coordColeta.lon, coordEntrega.lat, coordEntrega.lon);
+    if(km===null){
+      statusEl.innerHTML = '<span style="color:#ff6b6b">&#9888; Erro ao calcular rota. Tente novamente.</span>';
       btn.disabled=false; btn.textContent='Calcular taxa de entrega';
       return;
     }
-    var km = parseFloat(data.distance_km);
     var s = await carregarSettings();
     var arrancada = parseFloat(s.arrancada)||3;
     var pKm = parseFloat(s.price_per_km)||1.8;
@@ -333,9 +589,9 @@ async function finalizarPedidoAvulso(){
     }
     _pedidoPendente = {
       loja_user: loja.username, loja_name: loja.name,
-      endereco_coleta: enderecoColeta, complemento_coleta: d.coComplemento||null, obs_coleta: (d.coObs?('Retirar com: '+d.coNome+' - Tel: '+d.coTel+' | Obs: '+d.coObs):('Retirar com: '+d.coNome+' - Tel: '+d.coTel)),
+      endereco_coleta: enderecoColeta, complemento_coleta: d.coComplemento||null, obs_coleta: 'Retirar com: '+d.coNome+' - Tel: '+d.coTel,
       nome_coleta: d.coNome, telefone_coleta: d.coTel,
-      endereco_entrega: enderecoEntrega, complemento_entrega: d.enComplemento||null, obs_entrega_loja: d.enObs||null,
+      endereco_entrega: enderecoEntrega, complemento_entrega: d.enComplemento||null,
       nome_cliente: d.enNome, telefone_cliente: d.enTel,
       cod_pedido: 'FD-'+Date.now().toString().slice(-6),
       cobrar_cliente: 'nao',
@@ -463,5 +719,8 @@ async function enviarPedidoFinal(pedido, btn){
 carregarLojaEntregaDireta().catch(function(e){ console.error(e); });
 carregarSettings().catch(function(e){ console.error(e); });
 </script>
+
+<!-- Google Places Autocomplete API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places,maps&callback=initAutocomplete" async defer></script>
 </body>
 </html>
