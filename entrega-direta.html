@@ -207,6 +207,8 @@ var _lojaEntregaDireta = null;
 var _settingsCache = null;
 var _taxaCalculada = 0;
 var _distanciaCalculada = 0;
+var _coordColetaFinal = null;
+var _coordEntregaFinal = null;
 var _pedidoPendente = null;
 var _pollingInterval = null;
 var _pollingTentativas = 0;
@@ -270,7 +272,7 @@ function validarFormulario(d){
 
 function invalidarTaxaEntrega(){
   if(_taxaCalculada>0){
-    _taxaCalculada=0; _distanciaCalculada=0;
+    _taxaCalculada=0; _distanciaCalculada=0; _coordColetaFinal=null; _coordEntregaFinal=null;
     var bloco=document.getElementById('bloco-taxa'); if(bloco) bloco.style.display='none';
     var btnFin=document.getElementById('btn-finalizar'); if(btnFin) btnFin.style.display='none';
     var btnCalc=document.getElementById('btn-calcular'); if(btnCalc) btnCalc.textContent='Calcular taxa de entrega';
@@ -551,6 +553,8 @@ async function calcularTaxaEntrega(){
     if(s.taxa_chuva_ativa && parseFloat(s.taxa_chuva)>0){ taxa += parseFloat(s.taxa_chuva); }
     _taxaCalculada = taxa;
     _distanciaCalculada = km;
+    _coordColetaFinal = coordColeta;
+    _coordEntregaFinal = coordEntrega;
     document.getElementById('taxa-distancia').textContent = km.toFixed(1)+' km';
     document.getElementById('taxa-valor').textContent = 'R$ '+taxa.toFixed(2);
     document.getElementById('bloco-taxa').style.display = 'block';
@@ -597,8 +601,12 @@ async function finalizarPedidoAvulso(){
       loja_user: loja.username, loja_name: loja.name,
       endereco_coleta: enderecoColeta, complemento_coleta: d.coComplemento||null, obs_coleta: 'Retirar com: '+d.coNome+' - Tel: '+d.coTel,
       nome_coleta: d.coNome, telefone_coleta: d.coTel,
+      coleta_lat: _coordColetaFinal ? _coordColetaFinal.lat : null,
+      coleta_lng: _coordColetaFinal ? _coordColetaFinal.lon : null,
       endereco_entrega: enderecoEntrega, complemento_entrega: d.enComplemento||null,
       nome_cliente: d.enNome, telefone_cliente: d.enTel,
+      entrega_lat: _coordEntregaFinal ? _coordEntregaFinal.lat : null,
+      entrega_lng: _coordEntregaFinal ? _coordEntregaFinal.lon : null,
       cod_pedido: 'FD-'+Date.now().toString().slice(-6),
       cobrar_cliente: 'nao',
       valor_pedido: 0, valor_produtos: 0,
