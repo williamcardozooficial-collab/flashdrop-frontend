@@ -693,7 +693,27 @@ async function confirmarPagamentoConcluido(){
   if(!dados){ fecharModalPagamento(); alert('Pedido ja foi enviado!'); return; }
   var pedido = JSON.parse(dados);
   var btn = document.getElementById('btn-mp-confirmar');
-  btn.disabled = true; btn.textContent = 'Enviando pedido...';
+  var prefId = pedido.preference_id;
+  var lojaId = _lojaEntregaDireta ? _lojaEntregaDireta.id : null;
+  if(!prefId || !lojaId){
+    alert('Nao foi possivel verificar o pagamento agora. Aguarde alguns segundos e tente novamente.');
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Verificando pagamento...';
+  try{
+    var vrRes = await fetch(API+'/mercadopago/verificar-pagamento-pedido?preference_id='+encodeURIComponent(prefId)+'&loja_id='+lojaId);
+    var vrData = await vrRes.json().catch(function(){ return {}; });
+    if(!vrRes.ok || !vrData.pago){
+      alert('Ainda nao identificamos o seu pagamento no Mercado Pago. Se voce ja pagou o Pix, aguarde alguns segundos (a confirmacao costuma ser automatica) e clique novamente. Se ainda nao pagou, finalize o Pix antes de continuar.');
+      btn.disabled = false; btn.textContent = '✅ Ja paguei — Enviar Pedido';
+      return;
+    }
+  }catch(e){
+    alert('Erro ao verificar o pagamento. Tente novamente.');
+    btn.disabled = false; btn.textContent = '✅ Ja paguei — Enviar Pedido';
+    return;
+  }
+  btn.textContent = 'Pagamento confirmado! Enviando...';
   await enviarPedidoFinal(pedido, btn);
 }
 
