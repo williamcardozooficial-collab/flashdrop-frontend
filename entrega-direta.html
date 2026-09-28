@@ -574,20 +574,22 @@ async function finalizarPedidoAvulso(){
     var loja = await carregarLojaEntregaDireta();
     var enderecoColeta = d.coRua+', '+d.coNumero+', '+d.coBairro+', '+d.coCidade+(d.coComplemento?' - '+d.coComplemento:'');
     var enderecoEntrega = d.enRua+', '+d.enNumero+', '+d.enBairro+', '+d.enCidade+(d.enComplemento?' - '+d.enComplemento:'');
-    var mpRes = await fetch(API+'/mercadopago/checkout-pedido', {
+    // Gera o Pix pelo MESMO mecanismo confiavel do "Adicionar Saldo" da loja
+    // (POST /mercadopago/gerar-pix + GET /mercadopago/status/:paymentId - busca
+    // direta pelo payment_id), em vez do checkout-pedido/verificar-pagamento-pedido
+    // que nao estava detectando pagamentos pix reais.
+    var mpRes = await fetch(API+'/mercadopago/gerar-pix', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        loja_id: loja.id,
-        itens: [{ nome: 'Taxa de entrega direta', preco: _taxaCalculada, qtd: 1 }],
-        totalItens: 0,
-        taxaEntrega: _taxaCalculada,
-        totalFinal: _taxaCalculada,
-        nomeCliente: d.coNome
+        valor: _taxaCalculada,
+        userId: loja.id,
+        userName: d.coNome,
+        userEmail: (d.coTel||('cliente'+Date.now())) + '@flashdrop.app'
       })
     });
     var mpData = await mpRes.json();
     btn.disabled = false; btn.textContent = '⚡ Pagar com Pix e enviar pedido';
-    if(!mpRes.ok || !mpData.checkout_url){
+    if(!mpRes.ok || !mpData.pix_code){
       alert('Erro ao gerar pagamento: '+(mpData.error||'Tente novamente.'));
       return;
     }
@@ -606,11 +608,10 @@ async function finalizarPedidoAvulso(){
       valor_total: _taxaCalculada, valor_motoboy: 0, comissao: 0,
       plataforma: 'entrega_direta',
       status: 'pendente',
-      preference_id: mpData.preference_id,
-      pix_payment_id: mpData.pix_payment_id || null
+      pix_payment_id: mpData.payment_id
     };
     sessionStorage.setItem('flashdrop_pedido_avulso', JSON.stringify(_pedidoPendente));
-    mostrarModalPagamento(mpData.checkout_url, _taxaCalculada, mpData.pix_copia_cola||null, mpData.pix_qrcode_base64||null);
+    mostrarModalPagamento(null, _taxaCalculada, mpData.pix_code||null, mpData.qr_code_base64||null);
   }catch(e){
     btn.disabled = false; btn.textContent = '⚡ Pagar com Pix e enviar pedido';
     alert('Erro ao conectar com o servidor. Tente novamente.');
@@ -669,19 +670,16 @@ async function verificarPagamentoAutomatico(){
   var dados = sessionStorage.getItem('flashdrop_pedido_avulso');
   if(!dados) return;
   var pedido = JSON.parse(dados);
-  var prefId = pedido.preference_id;
   var paymentId = pedido.pix_payment_id;
-  var lojaId = _lojaEntregaDireta ? _lojaEntregaDireta.id : null;
-  if((!prefId && !paymentId) || !lojaId) return;
+  if(!paymentId) return;
   var modal = document.getElementById('modal-pagamento-online');
   if(!modal || !modal.classList.contains('ativo')) return;
   try{
-    var vUrl = API+'/mercadopago/verificar-pagamento-pedido?loja_id='+lojaId;
-    vUrl += paymentId ? ('&payment_id='+encodeURIComponent(paymentId)) : ('&preference_id='+encodeURIComponent(prefId));
-    var vrRes = await fetch(vUrl);
+    // Mesma verificacao direta por payment_id usada no "Adicionar Saldo" da loja
+    var vrRes = await fetch(API+'/mercadopago/status/'+encodeURIComponent(paymentId));
     if(!vrRes.ok) return;
     var vrData = await vrRes.json();
-    if(vrData.pago){
+    if(vrData.status === 'approved'){
       pararPollingPagamento();
       var btn = document.getElementById('btn-mp-confirmar');
       if(btn){ btn.disabled=true; btn.textContent='Pagamento confirmado! Enviando...'; }
@@ -695,20 +693,17 @@ async function confirmarPagamentoConcluido(){
   if(!dados){ fecharModalPagamento(); alert('Pedido ja foi enviado!'); return; }
   var pedido = JSON.parse(dados);
   var btn = document.getElementById('btn-mp-confirmar');
-  var prefId = pedido.preference_id;
   var paymentId = pedido.pix_payment_id;
-  var lojaId = _lojaEntregaDireta ? _lojaEntregaDireta.id : null;
-  if((!prefId && !paymentId) || !lojaId){
+  if(!paymentId){
     alert('Nao foi possivel verificar o pagamento agora. Aguarde alguns segundos e tente novamente.');
     return;
   }
   btn.disabled = true; btn.textContent = 'Verificando pagamento...';
   try{
-    var vUrl2 = API+'/mercadopago/verificar-pagamento-pedido?loja_id='+lojaId;
-    vUrl2 += paymentId ? ('&payment_id='+encodeURIComponent(paymentId)) : ('&preference_id='+encodeURIComponent(prefId));
-    var vrRes = await fetch(vUrl2);
+    // Mesma verificacao direta por payment_id usada no "Adicionar Saldo" da loja
+    var vrRes = await fetch(API+'/mercadopago/status/'+encodeURIComponent(paymentId));
     var vrData = await vrRes.json().catch(function(){ return {}; });
-    if(!vrRes.ok || !vrData.pago){
+    if(!vrRes.ok || vrData.status !== 'approved'){
       alert('Ainda nao identificamos o seu pagamento no Mercado Pago. Se voce ja pagou o Pix, aguarde alguns segundos (a confirmacao costuma ser automatica) e clique novamente. Se ainda nao pagou, finalize o Pix antes de continuar.');
       btn.disabled = false; btn.textContent = '✅ Ja paguei — Enviar Pedido';
       return;
