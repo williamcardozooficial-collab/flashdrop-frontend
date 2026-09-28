@@ -195,7 +195,6 @@ footer span { color: #f5a623; }
 <button onclick="copiarPixCopiaECola()" style="width:100%;margin-top:8px;padding:11px;background:#27ae60;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">&#128203; COPIAR CODIGO PIX</button>
 <div style="font-size:11px;color:#888;margin-top:8px">Abra seu banco, escolha PIX e cole o codigo acima</div>
 </div>
-<a id="mp-checkout-link" href="#" target="_blank" style="display:block;width:100%;padding:12px;background:#009ee3;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px;text-decoration:none;box-sizing:border-box">&#128179; Pagar pelo Mercado Pago</a>
 <button id="btn-mp-confirmar" onclick="confirmarPagamentoConcluido()" style="width:100%;padding:14px;background:#27ae60;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">&#x2705; Ja paguei &#8212; Enviar Pedido</button>
 <div style="font-size:11px;color:#888;margin-bottom:14px;line-height:1.4">Clique em "Ja paguei" somente apos concluir o pagamento.</div>
 <button onclick="fecharModalPagamento()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer">&#x274C; Cancelar</button>
@@ -620,7 +619,6 @@ async function finalizarPedidoAvulso(){
 function mostrarModalPagamento(checkoutUrl, totalFinal, pixCopiaCola, pixQrBase64){
   var modal = document.getElementById('modal-pagamento-online');
   document.getElementById('mp-checkout-total').textContent = 'R$ '+totalFinal.toFixed(2);
-  document.getElementById('mp-checkout-link').href = checkoutUrl;
   var pixBloco = document.getElementById('mp-pix-bloco');
   if(pixCopiaCola){
     pixBloco.style.display = 'block';
