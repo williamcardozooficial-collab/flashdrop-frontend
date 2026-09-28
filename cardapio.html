@@ -314,8 +314,10 @@ var _coordPinConfirmado = null;
 var taxaSettings = null;
 var taxaCalculada = 0;
 var distanciaCalculada = 0;
+var _coordLojaFinal = null;
+var _coordClienteFinal = null;
 var descontoFreteAtual = 0;
-function invalidarTaxaEntrega(){if(taxaCalculada>0){taxaCalculada=0;distanciaCalculada=0;var bloco=document.getElementById('bloco-taxa-resultado');if(bloco)bloco.style.display='none';var btnCalc=document.getElementById('btn-calcular-taxa');if(btnCalc)btnCalc.textContent='Calcular taxa de entrega';var statusEl=document.getElementById('taxa-status');if(statusEl)statusEl.innerHTML='<span style="color:#ff9500">&#9888; Endereco alterado. Calcule a taxa novamente antes de finalizar.</span>';}}
+function invalidarTaxaEntrega(){if(taxaCalculada>0){taxaCalculada=0;distanciaCalculada=0;_coordLojaFinal=null;_coordClienteFinal=null;var bloco=document.getElementById('bloco-taxa-resultado');if(bloco)bloco.style.display='none';var btnCalc=document.getElementById('btn-calcular-taxa');if(btnCalc)btnCalc.textContent='Calcular taxa de entrega';var statusEl=document.getElementById('taxa-status');if(statusEl)statusEl.innerHTML='<span style="color:#ff9500">&#9888; Endereco alterado. Calcule a taxa novamente antes de finalizar.</span>';}}
 
 
 /* ---- MAPA ENTREGA ---- */
@@ -484,6 +486,8 @@ var taxa=Math.max(minFee,arrancada+km*pKmEfetivo);
 taxa=Math.ceil(taxa);var _extra=0;var _labels=[];if(s.taxa_noturna_ativa&&parseFloat(s.taxa_noturna)>0){var _dataBR=new Date(Date.now()-3*60*60*1000);var _nowH=_dataBR.toISOString().slice(11,16);var _diaSemana=_dataBR.getUTCDay();var _schedNoturna=null;try{_schedNoturna=s.taxa_noturna_horarios?JSON.parse(s.taxa_noturna_horarios):null;}catch(e){_schedNoturna=null;}var _diaCfgNoturna=(_schedNoturna&&_schedNoturna[_diaSemana])?_schedNoturna[_diaSemana]:null;var _ini=(_diaCfgNoturna&&_diaCfgNoturna.inicio)||s.taxa_noturna_hora_inicio||'22:00';var _fim=(_diaCfgNoturna&&_diaCfgNoturna.fim)||s.taxa_noturna_hora_fim||'06:00';var _not=false;if(_ini>_fim){_not=_nowH>=_ini||_nowH<_fim;}else{_not=_nowH>=_ini&&_nowH<_fim;}if(_not){_extra+=parseFloat(s.taxa_noturna);_labels.push('\ud83c\udf19 taxa noturna');}}if(s.taxa_chuva_ativa&&parseFloat(s.taxa_chuva)>0){_extra+=parseFloat(s.taxa_chuva);_labels.push('\ud83c\udf27\ufe0f taxa chuva');}taxa+=_extra;var _erEl=document.getElementById('taxa-extra-row');var _elEl=document.getElementById('taxa-extra-label');var _evEl=document.getElementById('taxa-extra-val');if(_erEl){_erEl.style.display='none';}
 taxaCalculada=taxa;
 distanciaCalculada=km;
+_coordLojaFinal=coordLoja;
+_coordClienteFinal=coordCliente;
 var pag=document.getElementById('ch-pag').value;
 var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
 var taxaFinal=isCartao?taxa*2:taxa;
@@ -594,6 +598,10 @@ plataforma:'cardapio',
 status:'pendente',
 complemento_coleta:null,
 complemento_entrega:complemento||null,
+coleta_lat:_coordLojaFinal?_coordLojaFinal.lat:null,
+coleta_lng:_coordLojaFinal?_coordLojaFinal.lon:null,
+entrega_lat:_coordClienteFinal?_coordClienteFinal.lat:null,
+entrega_lng:_coordClienteFinal?_coordClienteFinal.lon:null,
 preference_id:mpData.preference_id,
 pix_payment_id:mpData.pix_payment_id||null
 };
@@ -632,7 +640,11 @@ obs_entrega_loja:obs_entrega||null,
 plataforma:'cardapio',
 status:'pendente',
 complemento_coleta:null,
-complemento_entrega:complemento||null
+complemento_entrega:complemento||null,
+coleta_lat:_coordLojaFinal?_coordLojaFinal.lat:null,
+coleta_lng:_coordLojaFinal?_coordLojaFinal.lon:null,
+entrega_lat:_coordClienteFinal?_coordClienteFinal.lat:null,
+entrega_lng:_coordClienteFinal?_coordClienteFinal.lon:null
 })
 });
 if(r.ok){
