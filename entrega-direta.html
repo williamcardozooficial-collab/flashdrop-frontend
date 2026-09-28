@@ -606,7 +606,8 @@ async function finalizarPedidoAvulso(){
       valor_total: _taxaCalculada, valor_motoboy: 0, comissao: 0,
       plataforma: 'entrega_direta',
       status: 'pendente',
-      preference_id: mpData.preference_id
+      preference_id: mpData.preference_id,
+      pix_payment_id: mpData.pix_payment_id || null
     };
     sessionStorage.setItem('flashdrop_pedido_avulso', JSON.stringify(_pedidoPendente));
     mostrarModalPagamento(mpData.checkout_url, _taxaCalculada, mpData.pix_copia_cola||null, mpData.pix_qrcode_base64||null);
@@ -669,12 +670,15 @@ async function verificarPagamentoAutomatico(){
   if(!dados) return;
   var pedido = JSON.parse(dados);
   var prefId = pedido.preference_id;
+  var paymentId = pedido.pix_payment_id;
   var lojaId = _lojaEntregaDireta ? _lojaEntregaDireta.id : null;
-  if(!prefId || !lojaId) return;
+  if((!prefId && !paymentId) || !lojaId) return;
   var modal = document.getElementById('modal-pagamento-online');
   if(!modal || !modal.classList.contains('ativo')) return;
   try{
-    var vrRes = await fetch(API+'/mercadopago/verificar-pagamento-pedido?preference_id='+encodeURIComponent(prefId)+'&loja_id='+lojaId);
+    var vUrl = API+'/mercadopago/verificar-pagamento-pedido?loja_id='+lojaId;
+    vUrl += paymentId ? ('&payment_id='+encodeURIComponent(paymentId)) : ('&preference_id='+encodeURIComponent(prefId));
+    var vrRes = await fetch(vUrl);
     if(!vrRes.ok) return;
     var vrData = await vrRes.json();
     if(vrData.pago){
@@ -692,14 +696,17 @@ async function confirmarPagamentoConcluido(){
   var pedido = JSON.parse(dados);
   var btn = document.getElementById('btn-mp-confirmar');
   var prefId = pedido.preference_id;
+  var paymentId = pedido.pix_payment_id;
   var lojaId = _lojaEntregaDireta ? _lojaEntregaDireta.id : null;
-  if(!prefId || !lojaId){
+  if((!prefId && !paymentId) || !lojaId){
     alert('Nao foi possivel verificar o pagamento agora. Aguarde alguns segundos e tente novamente.');
     return;
   }
   btn.disabled = true; btn.textContent = 'Verificando pagamento...';
   try{
-    var vrRes = await fetch(API+'/mercadopago/verificar-pagamento-pedido?preference_id='+encodeURIComponent(prefId)+'&loja_id='+lojaId);
+    var vUrl2 = API+'/mercadopago/verificar-pagamento-pedido?loja_id='+lojaId;
+    vUrl2 += paymentId ? ('&payment_id='+encodeURIComponent(paymentId)) : ('&preference_id='+encodeURIComponent(prefId));
+    var vrRes = await fetch(vUrl2);
     var vrData = await vrRes.json().catch(function(){ return {}; });
     if(!vrRes.ok || !vrData.pago){
       alert('Ainda nao identificamos o seu pagamento no Mercado Pago. Se voce ja pagou o Pix, aguarde alguns segundos (a confirmacao costuma ser automatica) e clique novamente. Se ainda nao pagou, finalize o Pix antes de continuar.');
