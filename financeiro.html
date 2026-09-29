@@ -102,6 +102,14 @@
           <div class="card positivo"><h3>Total já ganho</h3><div class="valor" id="r-saldo-ganho">-</div></div>
           <div class="card negativo"><h3>Total já sacado/pago</h3><div class="valor" id="r-saldo-sacado">-</div></div>
         </div>
+        <div class="card" style="margin-top:12px">
+          <div style="color:#aaa;font-size:12px;margin-bottom:10px">➖ Registrar despesa — desconta direto do saldo do caixa acima, mesmo que fique negativo (assim dá pra ver se está tendo prejuízo)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="despesa-valor" type="number" step="0.01" min="0" placeholder="Valor (R$)" style="flex:1;min-width:110px;padding:10px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:13px">
+            <input id="despesa-nome" type="text" placeholder="Nome da despesa" style="flex:2;min-width:160px;padding:10px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:13px">
+            <button onclick="confirmarDespesa()" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">➖ Registrar Despesa</button>
+          </div>
+        </div>
 
         <div class="section-title">Depósitos e Saques (no período)</div>
         <div class="cards-grid">
@@ -496,6 +504,27 @@ async function confirmarSaqueSistema() {
     document.getElementById('saque-sistema-valor').value = '';
     document.getElementById('saque-sistema-motivo').value = '';
     carregarSaquePreview();
+    carregarCaixa();
+  } catch(e) { alert('Erro de conexão.'); }
+}
+
+async function confirmarDespesa() {
+  const valor = parseFloat(document.getElementById('despesa-valor').value);
+  const nome = document.getElementById('despesa-nome').value.trim();
+  if (!valor || valor <= 0) { alert('Informe um valor válido.'); return; }
+  if (!nome) { alert('Informe o nome da despesa.'); return; }
+  if (!confirm(`Registrar despesa de ${fmtMoeda(valor)}: ${nome}?\nIsso vai descontar do saldo do caixa agora, mesmo que fique negativo.`)) return;
+  try {
+    const r = await fetch(`${API}/platform/despesa`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor, descricao: nome })
+    });
+    const data = await r.json();
+    if (!r.ok) { alert('Erro: ' + (data.error || 'Falha.')); return; }
+    alert('Despesa de ' + fmtMoeda(valor) + ' registrada!');
+    document.getElementById('despesa-valor').value = '';
+    document.getElementById('despesa-nome').value = '';
+    carregarResumo();
     carregarCaixa();
   } catch(e) { alert('Erro de conexão.'); }
 }
