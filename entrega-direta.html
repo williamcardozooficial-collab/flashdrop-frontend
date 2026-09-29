@@ -499,8 +499,8 @@ async function calcularTaxaEntrega(){
   btn.disabled = true; btn.textContent = 'Calculando...';
   statusEl.innerHTML = '<span style="color:#aaa">&#8987; Calculando distancia...</span>';
   try{
-    var endColeta = d.coRua+', '+d.coNumero+', '+d.coCidade+', RS, Brasil';
-    var endEntrega = d.enRua+', '+d.enNumero+', '+d.enCidade+', RS, Brasil';
+    var endColeta = d.coRua+', '+d.coNumero+', '+d.coBairro+', '+d.coCidade+', RS, Brasil';
+    var endEntrega = d.enRua+', '+d.enNumero+', '+d.enBairro+', '+d.enCidade+', RS, Brasil';
     var stCol = _geoState.col, stEnt = _geoState.ent;
     var coordColPre = stCol.coordConfirmado || stCol.coordAutocomplete || null;
     var coordEntPre = stEnt.coordConfirmado || stEnt.coordAutocomplete || null;

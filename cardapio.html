@@ -456,7 +456,7 @@ if(!lojaGlobal||!lojaGlobal.address){statusEl.innerHTML='<span style="color:#ff6
 btn.disabled=true;btn.textContent='Calculando...';
 statusEl.innerHTML='<span style="color:#aaa">&#8987; Calculando distancia...</span>';
 try{
-var endCliente=rua+', '+numero+', '+cidade+', RS, Brasil';
+var endCliente=rua+', '+numero+', '+bairro+', '+cidade+', RS, Brasil';
 var _lra=lojaGlobal.address||'';var _lro={};try{_lro=JSON.parse(_lra);}catch(e){_lro=null;}var _lraf=_lro&&_lro.rua?[_lro.rua+(_lro.num?' '+_lro.num:''),_lro.bairro,_lro.cidade].filter(Boolean).join(', '):_lra;var endLoja=_lraf+', Brasil';
 var coordLojaSalvo=(lojaGlobal.lat&&lojaGlobal.lng)?{lat:parseFloat(lojaGlobal.lat),lon:parseFloat(lojaGlobal.lng)}:null;
 var coordClientePre=_coordPinConfirmado||window.coordClienteAutocomplete||null;
