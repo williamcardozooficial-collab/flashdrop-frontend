@@ -131,6 +131,7 @@
           <div class="card negativo"><h3>Bônus indicação pago a motoboys</h3><div class="valor" id="r-bonus-indicacao">-</div><div class="sub" id="r-bonus-indicacao-qtd"></div></div>
           <div class="card negativo"><h3>Bônus promoção pago a motoboys</h3><div class="valor" id="r-bonus-promo">-</div><div class="sub" id="r-bonus-promo-qtd"></div></div>
           <div class="card negativo"><h3>Bônus por entrega pago a motoboys</h3><div class="valor" id="r-bonus-entrega">-</div><div class="sub" id="r-bonus-entrega-qtd"></div></div>
+          <div class="card negativo"><h3>Despesas registradas</h3><div class="valor" id="r-despesas">-</div><div class="sub" id="r-despesas-qtd"></div></div>
         </div>
 
         <div class="section-title">Coleta dos motoboys (no período)</div>
@@ -318,6 +319,9 @@ async function carregarResumo() {
     document.getElementById('r-bonus-promo-qtd').textContent = d.bonus_promocao_pago_motoboys.qtd + ' pagamento(s)';
     document.getElementById('r-bonus-entrega').textContent = fmtMoeda(d.bonus_por_entrega_pago_motoboys.total);
     document.getElementById('r-bonus-entrega-qtd').textContent = d.bonus_por_entrega_pago_motoboys.qtd + ' pagamento(s)';
+
+    document.getElementById('r-despesas').textContent = fmtMoeda(d.despesas.total);
+    document.getElementById('r-despesas-qtd').textContent = d.despesas.qtd + ' despesa(s)';
 
     document.getElementById('r-dinheiro').textContent = fmtMoeda(d.dinheiro_coletado_motoboys.total);
     document.getElementById('r-dinheiro-qtd').textContent = d.dinheiro_coletado_motoboys.qtd + ' pedido(s)';
@@ -775,7 +779,8 @@ async function gerarPdfContador() {
     const pagoPromocao = parseFloat(d.bonus_promocao_pago_motoboys.total) || 0;
     const pagoPorEntrega = parseFloat(d.bonus_por_entrega_pago_motoboys.total) || 0;
     const pagoTaxas = parseFloat(d.custo_taxas_chuva_noturna_admin.total) || 0;
-    const totalPagoExtra = pagoIndicacao + pagoPromocao + pagoPorEntrega + pagoTaxas;
+    const despesas = parseFloat(d.despesas.total) || 0;
+    const totalPagoExtra = pagoIndicacao + pagoPromocao + pagoPorEntrega + pagoTaxas + despesas;
     const lucroPeriodo = comissao - totalPagoExtra;
 
     const { jsPDF } = window.jspdf;
@@ -799,13 +804,14 @@ async function gerarPdfContador() {
         ['(−) Bônus de promoção pago a motoboys', '− ' + fmtMoeda(pagoPromocao) + '  (' + d.bonus_promocao_pago_motoboys.qtd + ')'],
         ['(−) Bônus por entrega pago a motoboys', '− ' + fmtMoeda(pagoPorEntrega) + '  (' + d.bonus_por_entrega_pago_motoboys.qtd + ')'],
         ['(−) Taxa chuva/noturna repassada', '− ' + fmtMoeda(pagoTaxas) + '  (' + d.custo_taxas_chuva_noturna_admin.qtd + ')'],
+        ['(−) Despesas registradas manualmente', '− ' + fmtMoeda(despesas) + '  (' + d.despesas.qtd + ')'],
         ['LUCRO DO PERÍODO (o que sobrou p/ a plataforma)', fmtMoeda(lucroPeriodo)]
       ],
       theme: 'grid',
       styles: { fontSize: 10 },
       headStyles: { fillColor: [76, 175, 80], textColor: 255 },
       columnStyles: { 0: { cellWidth: 130 } },
-      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 5) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [255, 244, 200]; } }
+      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 6) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [255, 244, 200]; } }
     });
 
     doc.setFontSize(8);
