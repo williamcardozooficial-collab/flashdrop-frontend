@@ -164,6 +164,11 @@
         <div class="input-group">
                     <label>Comissao da Plataforma <span id="cfg-com-label-unit">(R$)</span></label><div style="display:flex;gap:8px;align-items:center"><input id="cfg-com" class="input" type="number" step="0.50" style="flex:1"><button type="button" id="cfg-com-toggle" onclick="toggleComissaoTipo()" style="padding:10px 14px;background:#333;border:1px solid #555;border-radius:8px;color:#ffcc00;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap">R$</button></div><small style="color:#888;font-size:11px">Clique no botao para alternar entre valor fixo (R$) e porcentagem (%) sobre o valor do frete.</small>
         </div>
+        <div class="input-group" id="cfg-com-min-wrap" style="display:none">
+          <label>Comissao Minima da Plataforma (R$)</label>
+          <input id="cfg-com-min" class="input" type="number" step="0.50" min="0" placeholder="Ex: 1.50">
+          <small style="color:#888;font-size:11px">So se aplica quando a comissao acima esta em porcentagem (%). Se o valor calculado ficar abaixo desse minimo, cobra este valor minimo em vez do percentual.</small>
+        </div>
         <div class="input-group">
           <label>Max pedidos por motoboy</label>
           <input id="cfg-max" class="input" type="number">
@@ -658,7 +663,7 @@ function esc(v) {
         document.getElementById('cfg-km-limite').value = data.km_limite_faixa || '';
         document.getElementById('cfg-km-acima').value = data.price_per_km_acima || '';
         document.getElementById('cfg-arr').value = data.arrancada;
-        document.getElementById('cfg-com').value = data.commission; _comissaoTipo = data.commission_type === 'percentual' ? 'percentual' : 'valor'; atualizarUnidadeComissao();
+        document.getElementById('cfg-com').value = data.commission; _comissaoTipo = data.commission_type === 'percentual' ? 'percentual' : 'valor'; atualizarUnidadeComissao(); document.getElementById('cfg-com-min').value = data.commission_min || 0;
         document.getElementById('cfg-max').value = data.max_per_motoboy; document.getElementById('cfg-delay').value = data.launch_delay_minutes || 60;
         // ── Taxas ──
         document.getElementById('cfg-chuva-valor').value = data.taxa_chuva || 0;
@@ -1215,7 +1220,7 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
       loadData('pedidos');
     }
 
-    var _comissaoTipo = 'valor'; function toggleComissaoTipo() { _comissaoTipo = _comissaoTipo === 'valor' ? 'percentual' : 'valor'; atualizarUnidadeComissao(); } function atualizarUnidadeComissao() { var btn = document.getElementById('cfg-com-toggle'); var unitLabel = document.getElementById('cfg-com-label-unit'); var input = document.getElementById('cfg-com'); if (!btn || !unitLabel || !input) return; if (_comissaoTipo === 'percentual') { btn.textContent = '%'; unitLabel.textContent = '(%)'; input.step = '0.1'; input.max = '100'; } else { btn.textContent = 'R$'; unitLabel.textContent = '(R$)'; input.step = '0.50'; input.removeAttribute('max'); } } async function saveSettings() {
+    var _comissaoTipo = 'valor'; function toggleComissaoTipo() { _comissaoTipo = _comissaoTipo === 'valor' ? 'percentual' : 'valor'; atualizarUnidadeComissao(); } function atualizarUnidadeComissao() { var btn = document.getElementById('cfg-com-toggle'); var unitLabel = document.getElementById('cfg-com-label-unit'); var input = document.getElementById('cfg-com'); if (!btn || !unitLabel || !input) return; if (_comissaoTipo === 'percentual') { btn.textContent = '%'; unitLabel.textContent = '(%)'; input.step = '0.1'; input.max = '100'; } else { btn.textContent = 'R$'; unitLabel.textContent = '(R$)'; input.step = '0.50'; input.removeAttribute('max'); } var minWrap = document.getElementById('cfg-com-min-wrap'); if (minWrap) minWrap.style.display = (_comissaoTipo === 'percentual') ? 'block' : 'none'; } async function saveSettings() {
       const taxaChuvaAtiva = document.getElementById('cfg-chuva-ativa').checked;
       const taxaNoturnaAtiva = document.getElementById('cfg-noturna-ativa').checked;
       await fetch(API + '/settings', {
@@ -1227,7 +1232,7 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
           km_limite_faixa: parseFloat(document.getElementById('cfg-km-limite').value) || 0,
           price_per_km_acima: parseFloat(document.getElementById('cfg-km-acima').value) || 0,
           arrancada: document.getElementById('cfg-arr').value,
-          commission: document.getElementById('cfg-com').value, commission_type: _comissaoTipo,
+          commission: document.getElementById('cfg-com').value, commission_type: _comissaoTipo, commission_min: document.getElementById('cfg-com-min').value || 0,
           max_per_motoboy: document.getElementById('cfg-max').value,
           launch_delay_minutes: document.getElementById('cfg-delay').value,
           taxa_chuva: parseFloat(document.getElementById('cfg-chuva-valor').value) || 0,
@@ -2202,7 +2207,7 @@ function admNpRecalc(){
     var hi=parseInt(ini[0])*60+parseInt(ini[1]),hf=parseInt(fim2[0])*60+parseInt(fim2[1]);
     if(hi>hf?(hora>=hi||hora<hf):(hora>=hi&&hora<hf))taxaNoturna=parseFloat(s.taxa_noturna);
   }
-  var commission=(s.commission_type==='percentual')?((taxaBase+taxaChuva+taxaNoturna)*commissionRaw/100):commissionRaw; _admNpComissaoValor=commission; var totalLoja=Math.round(taxaBase+taxaChuva+taxaNoturna+commission);
+  var commission=(s.commission_type==='percentual')?Math.max((taxaBase+taxaChuva+taxaNoturna)*commissionRaw/100, parseFloat(s.commission_min)||0):commissionRaw; _admNpComissaoValor=commission; var totalLoja=Math.round(taxaBase+taxaChuva+taxaNoturna+commission);
   _admNpTaxaCalc=Math.round(totalLoja);
   var el=document.getElementById('adm-np-taxa-result');
   el.innerHTML='<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Distancia:</span><strong>'+_admNpDistKm.toFixed(2)+' km</strong></div>'+(tipo==='maquina'?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Km (ida+volta):</span><strong>'+km.toFixed(2)+' km</strong></div>':'')+'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Taxa base:</span><strong>R$ '+taxaBase.toFixed(2)+'</strong></div>'+(taxaChuva>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Chuva:</span><strong>R$ '+taxaChuva.toFixed(2)+'</strong></div>':'')+(taxaNoturna>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#aaa">Noturna:</span><strong>R$ '+taxaNoturna.toFixed(2)+'</strong></div>':'')+'<div style="display:flex;justify-content:space-between;border-top:1px solid #333;padding-top:6px;margin-top:4px"><span style="color:#ffcc00;font-weight:700">Total Loja:</span><strong style="color:#ffcc00;font-size:16px">R$ '+totalLoja.toFixed(2)+'</strong></div>';
