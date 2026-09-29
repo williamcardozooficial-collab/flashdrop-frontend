@@ -374,6 +374,12 @@
         </div>
       </div>
       <button onclick="openCaixaSaque()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">&#128184; Retirar do Caixa</button>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #2e2e2e">
+        <div style="color:#aaa;font-size:11px;margin-bottom:8px">&#10134; Registrar despesa &mdash; desconta na hora do saldo acima, mesmo que fique negativo (assim da pra ver se esta tendo prejuizo)</div>
+        <input id="despesa-valor-adm" class="input" type="number" step="0.01" min="0.01" placeholder="Valor da despesa (R$)" style="margin-bottom:8px">
+        <input id="despesa-nome-adm" class="input" placeholder="Nome da despesa" style="margin-bottom:8px">
+        <button onclick="confirmarDespesaAdmin()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">&#10134; Registrar Despesa</button>
+      </div>
     </div>
     <div class="card">
       <h3 style="color:#ffcc00;margin:0 0 12px;font-size:14px">&#128203; Eventos das ultimas 48h</h3>
@@ -1858,6 +1864,26 @@ loadSaques();
         if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Falha.')); return; }
         closeModal('modal-caixa-saque');
         tg.showAlert('Retirada de R$ ' + valor.toFixed(2) + ' registrada!');
+        loadCaixa();
+      } catch(e) { tg.showAlert('Erro de conexão.'); }
+    }
+
+    async function confirmarDespesaAdmin() {
+      var valor = parseFloat(document.getElementById('despesa-valor-adm').value);
+      var nome = document.getElementById('despesa-nome-adm').value.trim();
+      if (!valor || valor <= 0) { tg.showAlert('Informe um valor válido.'); return; }
+      if (!nome) { tg.showAlert('Informe o nome da despesa.'); return; }
+      if (!confirm('Registrar despesa de R$ ' + valor.toFixed(2) + ': ' + nome + '?\nIsso desconta do saldo do caixa agora, mesmo que fique negativo.')) return;
+      try {
+        var r = await fetch(API + '/platform/despesa', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ valor: valor, descricao: nome })
+        });
+        var data = await r.json();
+        if (!r.ok) { tg.showAlert('Erro: ' + (data.error || 'Falha.')); return; }
+        tg.showAlert('Despesa de R$ ' + valor.toFixed(2) + ' registrada!');
+        document.getElementById('despesa-valor-adm').value = '';
+        document.getElementById('despesa-nome-adm').value = '';
         loadCaixa();
       } catch(e) { tg.showAlert('Erro de conexão.'); }
     }
