@@ -357,7 +357,7 @@ async function toggleOnline() {
           _onlineAt = Date.now();
           localStorage.setItem('_fd_onlineAt', _onlineAt);
           if (_autoOfflineTimer) clearTimeout(_autoOfflineTimer);
-          _autoOfflineTimer = setTimeout(autoOfflineCheck, AUTO_OFFLINE_MS); if (!_gpsInterval) iniciarGPS(activeOrders && activeOrders.length ? activeOrders[0].id : null);
+          _autoOfflineTimer = setTimeout(autoOfflineCheck, AUTO_OFFLINE_MS); if (!_gpsInterval) iniciarGPS(activeOrders ? activeOrders.map(function(o){return o.id;}) : []);
         } else {
           _onlineAt = null;
           localStorage.removeItem('_fd_onlineAt');
@@ -763,8 +763,8 @@ function makeInfoRow(label, value, highlight) {
         } else {
           active.forEach(function(o) { myDiv.appendChild(makeOrderCard(o, "mine")); });
           /* GPS: reiniciar se ha pedido ativo e GPS parado */
-          var pedidoGps = active.find(function(o){ return ['aceito','na_loja','coletado','no_cliente'].indexOf(o.status) > -1; });
-          if (user.online) { if (!_gpsInterval) { iniciarGPS(pedidoGps ? pedidoGps.id : null); } else { _gpsOrderId = pedidoGps ? pedidoGps.id : null; } }
+          var pedidosGps = active.filter(function(o){ return ['aceito','na_loja','coletado','no_cliente'].indexOf(o.status) > -1; }).map(function(o){ return o.id; });
+          if (user.online) { if (!_gpsInterval) { iniciarGPS(pedidosGps); } else { _gpsOrderIds = pedidosGps; } }
           if (!user.online && _gpsInterval) pararGPS();
           Object.keys(activeTimers).forEach(function(tid) {
             var still = active.find(function(o) { return String(o.id) === tid && o.status === "aceito"; });
@@ -946,7 +946,7 @@ if (!geoPassed) return;
 
         if (action.startTimer) startTimer(orderId, 0);
         if (action.stopTimer)  stopTimer(orderId);
-        if (action.next === 'aceito') iniciarGPS(orderId);
+        if (action.next === 'aceito') adicionarPedidoGPS(orderId);
         if (action.next === 'entregue' || action.next === 'retornado') pararGPS();
 
         tg.showAlert(action.msg);
@@ -1240,32 +1240,57 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
   </div>
 </div>
 <script>
-var _gpsInterval=null,_gpsOrderId=null;
+var _gpsInterval=null,_gpsOrderIds=[];
 var API_GPS='https://flashdrop-backend-production.up.railway.app';
-function enviarLocalizacao(orderId){
+// Envia a MESMA leitura de GPS separadamente para cada pedido ativo passado em
+// orderIds. Antes so existia um _gpsOrderId (um unico pedido por vez), entao
+// quando o motoboy tinha mais de uma entrega em aberto ao mesmo tempo, a
+// localizacao so era marcada com o id do pedido mais antigo - o backend nunca
+// chegava a verificar a chegada automatica (nem na loja nem no cliente) dos
+// outros pedidos em aberto. Agora cada pedido relevante recebe seu proprio
+// envio, entao cada um e checado de forma independente.
+function enviarLocalizacao(orderIds){
   if(!navigator.geolocation)return;
+  var ids=(orderIds===null||orderIds===undefined)?[]:(Array.isArray(orderIds)?orderIds:[orderIds]);
+  ids=ids.filter(function(id){return id!==null&&id!==undefined;});
   navigator.geolocation.getCurrentPosition(function(pos){
     var u=JSON.parse(localStorage.getItem('flashdrop_user')||'{}');
     var token=u.token;
     if(!token)return;
     var motoboyId=u.id;
-    fetch(API_GPS+'/motoboys/'+motoboyId+'/localizacao',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude,order_id:orderId})
-    }).catch(function(){});
+    var lat=pos.coords.latitude,lng=pos.coords.longitude;
+    function enviarPing(oid){
+      fetch(API_GPS+'/motoboys/'+motoboyId+'/localizacao',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body:JSON.stringify({lat:lat,lng:lng,order_id:oid})
+      }).catch(function(){});
+    }
+    if(ids.length===0){enviarPing(null);}
+    else{ids.forEach(enviarPing);}
   },function(){},{enableHighAccuracy:true,timeout:5000});
 }
-function iniciarGPS(orderId){
+function iniciarGPS(orderIds){
   pararGPS();
-  _gpsOrderId=orderId;
-  enviarLocalizacao(orderId);
-  _gpsInterval=setInterval(function(){enviarLocalizacao(_gpsOrderId);},30000);
-  console.log('[GPS] Iniciado para pedido #'+orderId);
+  _gpsOrderIds=(orderIds===null||orderIds===undefined)?[]:(Array.isArray(orderIds)?orderIds:[orderIds]);
+  enviarLocalizacao(_gpsOrderIds);
+  _gpsInterval=setInterval(function(){enviarLocalizacao(_gpsOrderIds);},30000);
+  console.log('[GPS] Iniciado para pedido(s) #'+JSON.stringify(_gpsOrderIds));
+}
+// Adiciona um pedido a lista de rastreamento SEM derrubar o rastreamento dos
+// pedidos que ja estavam ativos (usado ao aceitar um novo pedido enquanto
+// outro ainda esta em andamento).
+function adicionarPedidoGPS(orderId){
+  if(orderId===null||orderId===undefined)return;
+  if(_gpsInterval){
+    if(_gpsOrderIds.indexOf(orderId)===-1)_gpsOrderIds.push(orderId);
+  }else{
+    iniciarGPS([orderId]);
+  }
 }
 function pararGPS(){
   if(_gpsInterval){clearInterval(_gpsInterval);_gpsInterval=null;}
-  _gpsOrderId=null;
+  _gpsOrderIds=[];
   console.log('[GPS] Parado');
 }
 </script>
