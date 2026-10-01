@@ -599,11 +599,11 @@ async function finalizarPedidoAvulso(){
     }
     _pedidoPendente = {
       loja_user: loja.username, loja_name: loja.name,
-      endereco_coleta: enderecoColeta, complemento_coleta: d.coComplemento||null, obs_coleta: 'Retirar com: '+d.coNome+' - Tel: '+d.coTel,
+      endereco_coleta: enderecoColeta, bairro_coleta: d.coBairro||null, complemento_coleta: d.coComplemento||null, obs_coleta: 'Retirar com: '+d.coNome+' - Tel: '+d.coTel,
       nome_coleta: d.coNome, telefone_coleta: d.coTel,
       coleta_lat: _coordColetaFinal ? _coordColetaFinal.lat : null,
       coleta_lng: _coordColetaFinal ? _coordColetaFinal.lon : null,
-      endereco_entrega: enderecoEntrega, complemento_entrega: d.enComplemento||null,
+      endereco_entrega: enderecoEntrega, bairro_destino: d.enBairro||null, complemento_entrega: d.enComplemento||null,
       nome_cliente: d.enNome, telefone_cliente: d.enTel,
       entrega_lat: _coordEntregaFinal ? _coordEntregaFinal.lat : null,
       entrega_lng: _coordEntregaFinal ? _coordEntregaFinal.lon : null,

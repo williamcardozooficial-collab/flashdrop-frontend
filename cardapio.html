@@ -580,7 +580,9 @@ return;
 var pedidoPendente={
 loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
 endereco_coleta:fmtLojaAddress(lojaGlobal.address),
+bairro_coleta:(function(){try{return JSON.parse(lojaGlobal.address||'{}').bairro||null;}catch(e){return null;}})(),
 endereco_entrega:endCompleto,
+bairro_destino:bairro||null,
 nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
 cod_pedido:'FD-'+Date.now().toString().slice(-6),
 cobrar_cliente:'nao',
@@ -623,7 +625,9 @@ var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'applicat
 body:JSON.stringify({
 loja_user:lojaGlobal.username,loja_name:lojaGlobal.name,
 endereco_coleta:fmtLojaAddress(lojaGlobal.address),
+bairro_coleta:(function(){try{return JSON.parse(lojaGlobal.address||'{}').bairro||null;}catch(e){return null;}})(),
 endereco_entrega:endCompleto,
+bairro_destino:bairro||null,
 nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf,
 cod_pedido:'FD-'+Date.now().toString().slice(-6),
 cobrar_cliente:'sim',
