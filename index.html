@@ -1361,7 +1361,10 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
           '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Status</label>' +
           '<select id="ind-status" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff"><option value="ativo"' + (ref.status_ref==="ativo"?" selected":"") + '>Ativo</option><option value="concluido"' + (ref.status_ref==="concluido"?" selected":"") + '>Concluído</option><option value="expirado"' + (ref.status_ref==="expirado"?" selected":"") + '>Expirado</option><option value="cancelado"' + (ref.status_ref==="cancelado"?" selected":"") + '>Cancelado</option></select></div>' +
           '<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">Data fim</label>' +
-          '<input type="date" id="ind-data-fim" value="' + dataFimVal + '" style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>';
+          '<input type="date" id="ind-data-fim" value="' + dataFimVal + '" ' + (dataFimVal ? '' : 'disabled') + ' style="width:100%;padding:7px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#fff;box-sizing:border-box"></div>' +
+          '<div style="grid-column:1/-1;display:flex;align-items:center;gap:6px;margin-top:-4px">' +
+          '<input type="checkbox" id="ind-permanente" onchange="atualizarPermanenteIndicacao()" ' + (dataFimVal ? '' : 'checked') + ' style="width:16px;height:16px"> ' +
+          '<label for="ind-permanente" style="font-size:12px;color:#aaa;cursor:pointer">📌 Permanente (sem validade, nunca expira)</label></div>';
         if (ref.referred_role === 'loja') {
           // Indicação de LOJA: não usa meta/bônus (isso é só do motoboy). Por padrão
           // a comissão por pedido vem da regra geral "Indicação de Loja" lá em cima,
@@ -1413,11 +1416,19 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
       document.getElementById('ind-com-percentual-wrap').style.display = tipo === 'percentual' ? 'block' : 'none';
     }
 
+    function atualizarPermanenteIndicacao() {
+      var permanente = document.getElementById('ind-permanente').checked;
+      var elData = document.getElementById('ind-data-fim');
+      elData.disabled = permanente;
+      if (permanente) elData.value = '';
+    }
+
     async function saveIndicacao() {
       var id = window._editingIndicacaoId;
+      var permanente = document.getElementById('ind-permanente').checked;
       var body = {
         status_ref: document.getElementById('ind-status').value,
-        data_fim: document.getElementById('ind-data-fim').value || null,
+        data_fim: permanente ? null : (document.getElementById('ind-data-fim').value || null),
         total_pedidos_validos: parseInt(document.getElementById('ind-ped-validos').value) || 0
       };
       // Meta/bônus só existem no formulário para indicação de motoboy; numa
