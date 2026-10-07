@@ -55,6 +55,7 @@
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="header">
@@ -93,9 +94,11 @@
     <div class="section active" id="tab-resumo">
       <div id="resumo-loading" class="loading">Carregando...</div>
       <div id="resumo-content" style="display:none">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-          <button class="pdf-btn" id="pdf-btn-contador" onclick="gerarPdfContador()" style="padding:10px 16px;font-size:13px">📄 Relatório para Contador (PDF)</button>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="pdf-btn" id="pdf-btn-contador" onclick="gerarPdfContador()" style="padding:10px 16px;font-size:13px">📄 Emitir relatório para contador (PDF)</button>
         </div>
+        <div class="section-title" style="margin-top:6px">Relatórios emitidos (arquivo — baixe de novo em PDF ou Excel)</div>
+        <div id="relatorios-emitidos" style="margin-bottom:16px"><p style="color:#666;font-size:12px;margin:6px 0">Carregando...</p></div>
         <div class="section-title">Caixa da Plataforma (saldo atual)</div>
         <div class="cards-grid">
           <div class="card"><h3>Saldo atual</h3><div class="valor" id="r-saldo-atual">-</div></div>
@@ -106,7 +109,7 @@
           <div style="color:#aaa;font-size:12px;margin-bottom:10px">➖ Registrar despesa — desconta direto do saldo do caixa acima, mesmo que fique negativo (assim dá pra ver se está tendo prejuízo)</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input id="despesa-valor" type="number" step="0.01" min="0" placeholder="Valor (R$)" style="flex:1;min-width:110px;padding:10px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:13px">
-            <input id="despesa-nome" type="text" placeholder="Nome da despesa" style="flex:2;min-width:160px;padding:10px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:13px">
+            <input id="despesa-nome" type="text" placeholder="Nome/descrição da despesa (obrigatório)" style="flex:2;min-width:160px;padding:10px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;font-size:13px">
             <button onclick="confirmarDespesa()" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">➖ Registrar Despesa</button>
           </div>
         </div>
@@ -446,7 +449,8 @@ async function carregarCaixa() {
       container.innerHTML = '<p style="color:#666;text-align:center;padding:20px 0">Nenhum evento no período selecionado</p>';
     } else {
       container.innerHTML = eventos.map(ev => {
-        const isCredito = EVENTO_CREDITO.indexOf(ev.tipo) !== -1;
+        const isEstornoCaixa = ev.origem === 'plataforma' && ev.tipo === 'estorno';
+        const isCredito = isEstornoCaixa ? parseFloat(ev.valor) >= 0 : EVENTO_CREDITO.indexOf(ev.tipo) !== -1;
         const cor = isCredito ? '#4caf50' : '#e53935';
         const sinal = isCredito ? '+ ' : '− ';
         const icone = EVENTO_ICONS[ev.tipo] || '📌';
@@ -458,7 +462,10 @@ async function carregarCaixa() {
               <span class="evento-desc">${icone} ${ev.descricao || ev.tipo}</span>
               <div class="evento-meta">${origemTag}${nomeTag} • ${fmtData(ev.created_at)}</div>
             </div>
-            <div class="evento-valor" style="color:${cor}">${sinal}${fmtMoeda(ev.valor)}</div>
+            <div style="text-align:right">
+              <div class="evento-valor" style="color:${cor}">${sinal}${fmtMoeda(isEstornoCaixa ? Math.abs(ev.valor) : ev.valor)}</div>
+              ${ev.origem === 'plataforma' && ev.tipo !== 'estorno' && ev.id ? (ev.estornado ? '<div style="font-size:11px;color:#888;margin-top:4px">estornado</div>' : `<button class="pdf-btn" style="margin-top:4px;background:#333;color:#ffcc00" onclick="estornarLancamento(${ev.id}, ${_escHtml(JSON.stringify(ev.descricao || ev.tipo))}, ${parseFloat(ev.valor) || 0})">↩️ Estornar</button>`) : ''}
+            </div>
           </div>
         `;
       }).join('');
@@ -765,132 +772,376 @@ async function gerarPdfMotoboy(id) {
   }
 }
 
+// ===== RELATORIO PARA CONTADOR (inicio) =====
+// O relatorio e emitido no backend (POST /financeiro/relatorios), que monta todos os dados do periodo
+// (fuso America/Sao_Paulo) e arquiva no banco. PDF e planilha sao gerados a partir desses dados, por isso
+// "baixar de novo" um relatorio emitido gera exatamente o mesmo conteudo.
+const PAGAMENTO_LABEL = { dinheiro: 'Dinheiro', cartao_aproximacao: 'Cartão aprox.', pix: 'PIX', pix_direto: 'PIX', maquina: 'Máquina da loja', ifood: 'iFood' };
+const TIPO_CAIXA_LABEL = { comissao: 'Comissão', despesa: 'Despesa', saque: 'Retirada do caixa', promocao: 'Bônus promoção', bonus_entrega: 'Bônus por entrega', taxa_noturna: 'Taxa noturna', taxa_chuva_admin: 'Taxa chuva', indicacao_comissao_pedido_loja: 'Indicação (pedido de loja)', indicacao_bonus_meta_motoboy: 'Indicação (meta motoboy)', estorno: 'Estorno' };
+const TIPO_INDICACAO_LABEL = { comissao_pedido_loja: 'Comissão por pedido da loja indicada', bonus_meta_motoboy: 'Bônus por meta do motoboy indicado' };
+const PAPEL_LABEL = { loja: 'loja', motoboy: 'motoboy', admin: 'admin', financeiro: 'financeiro' };
+
+// As fontes padrao do PDF so tem caracteres "Latin-1/WinAnsi": troca o sinal de menos por hifen e remove
+// emojis/simbolos que o gerador nao suporta (eram eles que deixavam as letras espacadas).
+function pdfTxt(s) {
+  return String(s == null ? '' : s)
+    .replace(/[−‒]/g, '-')
+    .replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+    .replace(/[^\x20-\x7E -ÿ–—•…]/g, '')
+    .trim();
+}
+function rs(v) {
+  const n = Math.round((parseFloat(v) || 0) * 100) / 100;
+  const abs = Math.abs(n).toFixed(2).split('.');
+  const inteiro = abs[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (n < 0 ? '-' : '') + 'R$ ' + inteiro + ',' + abs[1];
+}
+function dataBR(iso) { if (!iso) return '-'; const p = String(iso).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function somaCampo(lista, campo) { return Math.round((lista || []).reduce(function(s, x) { return s + (parseFloat(x[campo]) || 0); }, 0) * 100) / 100; }
+function nomeArquivoRelatorio(dados, ext) {
+  return 'flashdrop_relatorio_contabilidade_' + dados.periodo.inicio + '_a_' + dados.periodo.fim + '_n' + dados.relatorio_id + '.' + ext;
+}
+
+function montarPdfRelatorio(dados, jsPDF) {
+  const d = dados;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = 12;
+  let y = 16;
+  const verdeEscuro = [46, 125, 50], cinza = [60, 60, 60], amarelo = [255, 204, 0];
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text(pdfTxt('Flash Drop Entregas — Relatório Financeiro'), M, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); y += 7;
+  doc.text(pdfTxt('Relatório nº ' + d.relatorio_id + '   |   Período: ' + dataBR(d.periodo.inicio) + ' a ' + dataBR(d.periodo.fim) + ' (horário de Brasília)'), M, y);
+  doc.setFontSize(8.5); doc.setTextColor(110); y += 5;
+  doc.text(pdfTxt('Emitido em: ' + d.emitido_em + (d.emitido_por ? '   |   Emitido por: ' + d.emitido_por : '')), M, y);
+  doc.setTextColor(0);
+  // Identificacao da empresa (variaveis EMPRESA_RAZAO_SOCIAL / EMPRESA_CNPJ no backend)
+  const emp = d.empresa || {};
+  doc.setFontSize(9); y += 5;
+  doc.text(pdfTxt((emp.razao_social || emp.cnpj) ? ('Razão social: ' + (emp.razao_social || 'não informado') + '   |   CNPJ: ' + (emp.cnpj || 'não informado')) : 'Razão social/CNPJ: não informado'), M, y);
+  // Como ler este relatorio
+  const comoLer = 'Como ler este relatório: a loja paga a tele (valor da entrega) com saldo pré-pago, carregado por recarga via Mercado Pago. Na entrega, o motoboy recebe na carteira o valor dele e a plataforma fica com a comissão (receita). ' +
+    'Pedido em dinheiro: a tele não sai do saldo da loja; o motoboy recebe do cliente em dinheiro e o sistema debita da carteira dele o valor do produto (creditado à loja) e a comissão da plataforma. ' +
+    'Cartão por aproximação: o motoboy cobra produto + tele do cliente; a loja recebe na carteira esse valor menos o percentual configurado, que é debitado da carteira do motoboy. ' +
+    'Dinheiro e cartão por aproximação movimentam as carteiras de lojas e motoboys (saldos de terceiros), não o caixa da plataforma. Máquina própria da loja: o valor do produto vai direto para a loja.';
+  doc.setFontSize(7.5); doc.setTextColor(70);
+  const linhasComoLer = doc.splitTextToSize(pdfTxt(comoLer), W - 2 * M - 4);
+  y += 3;
+  doc.setFillColor(245, 245, 245); doc.rect(M, y, W - 2 * M, linhasComoLer.length * 3.3 + 3, 'F');
+  doc.text(linhasComoLer, M + 2, y + 3.6);
+  doc.setTextColor(0);
+  y += linhasComoLer.length * 3.3 + 4;
+
+  const base = { theme: 'grid', margin: { left: M, right: M, bottom: 16 }, styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.4, overflow: 'linebreak' }, headStyles: { fillColor: cinza, textColor: 255, fontStyle: 'bold' }, footStyles: { fillColor: [235, 235, 235], textColor: 20, fontStyle: 'bold' }, showHead: 'everyPage', showFoot: 'lastPage' };
+  function titulo(t, sub) {
+    let ny = (doc.lastAutoTable ? doc.lastAutoTable.finalY : y) + 8;
+    if (ny > H - 40) { doc.addPage(); ny = 16; }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(pdfTxt(t), M, ny);
+    doc.setFont('helvetica', 'normal');
+    if (sub) { doc.setFontSize(7.5); doc.setTextColor(110); const linhasSub = doc.splitTextToSize(pdfTxt(sub), W - 2 * M); doc.text(linhasSub, M, ny + 4); doc.setTextColor(0); ny += 4 + (linhasSub.length - 1) * 3.2; }
+    return ny + 2;
+  }
+  function tabela(startY, head, body, opts) {
+    opts = Object.assign({}, opts || {});
+    const linhas = body.length ? body : [[{ content: 'Nenhum registro no período', colSpan: head.length, styles: { textColor: 120, halign: 'center' } }]];
+    // Rodape: o rotulo ocupa as celulas vazias que vem logo depois dele; os valores ficam alinhados a direita
+    if (opts.foot) {
+      opts.foot = opts.foot.map(function(row) {
+        let span = 1;
+        while (span < row.length && row[span] === '') span++;
+        return [{ content: pdfTxt(row[0]), colSpan: span, styles: { halign: 'left' } }].concat(row.slice(span).map(function(v) { return { content: pdfTxt(v), styles: { halign: 'right' } }; }));
+      });
+    }
+    // Cabecalho das colunas de valor alinhado como os valores
+    const cs = opts.columnStyles || {};
+    opts.didParseCell = function(data) { const c = cs[data.column.index]; if (data.section === 'head' && c && c.halign) data.cell.styles.halign = c.halign; };
+    doc.autoTable(Object.assign({}, base, { startY: startY, head: [head.map(pdfTxt)], body: linhas.map(function(l) { return l.map(function(c) { return (c && typeof c === 'object') ? Object.assign({}, c, { content: pdfTxt(c.content) }) : pdfTxt(c); }); }) }, opts));
+  }
+  const dir = { halign: 'right' };
+
+  // 1) Resultado do periodo
+  const r = d.resumo;
+  let ty = titulo('1. Resultado da plataforma no período');
+  tabela(ty, ['Item', 'Qtd', 'Valor'], [
+    ['Comissão recebida sobre os pedidos (receita)', r.comissao.qtd, rs(r.comissao.total)],
+    ['(-) Bônus de indicação pago', r.bonus_indicacao.qtd, rs(-r.bonus_indicacao.total)],
+    ['(-) Bônus de promoção pago a motoboys', r.bonus_promocao.qtd, rs(-r.bonus_promocao.total)],
+    ['(-) Bônus por entrega pago a motoboys', r.bonus_entrega.qtd, rs(-r.bonus_entrega.total)],
+    ['(-) Taxa chuva/noturna paga pelo caixa', r.taxa_chuva_noturna.qtd, rs(-r.taxa_chuva_noturna.total)],
+    ['(-) Despesas registradas', r.despesas.qtd, rs(-r.despesas.total)],
+    ['(+/-) Estornos lançados no período', r.estornos.qtd, rs(r.estornos.total)]
+  ], { headStyles: Object.assign({}, base.headStyles, { fillColor: verdeEscuro }), styles: Object.assign({}, base.styles, { fontSize: 9 }), columnStyles: { 1: { halign: 'center', cellWidth: 16 }, 2: Object.assign({ cellWidth: 38 }, dir) },
+    foot: [['LUCRO DO PERÍODO (o que sobrou para a plataforma)', '', rs(r.lucro)].map(pdfTxt)], footStyles: Object.assign({}, base.footStyles, { fillColor: [255, 244, 200] }) });
+  doc.setFontSize(7.5); doc.setTextColor(110);
+  const notaResumo = doc.splitTextToSize(pdfTxt('Comissão, bônus e taxas vêm dos lançamentos do caixa da plataforma (mesma fonte das seções 2 e 3c). A taxa chuva/noturna atual já vem embutida na tele cobrada da loja e no valor da corrida do motoboy, sem sair do caixa; aqui só aparece o que foi pago pelo caixa (lançamentos antigos). Não inclui depósitos/saques das lojas nem saques de motoboys: é dinheiro de terceiros (ver seção 4).'), W - 2 * M);
+  doc.text(notaResumo, M, doc.lastAutoTable.finalY + 4);
+  doc.setTextColor(0);
+  doc.lastAutoTable.finalY += notaResumo.length * 3.2;
+
+  // 2) Caixa do periodo
+  const cx = d.caixa;
+  const cp = cx.composicao;
+  ty = titulo('2. Caixa da plataforma no período', 'Saldo do caixa derivado dos lançamentos. Lançamento a lançamento no Anexo.');
+  tabela(ty, ['Item', 'Valor'], [['Saldo no início do período (' + dataBR(d.periodo.inicio) + ' 00:00)', rs(cx.saldo_inicio)]].concat(cp ? [
+    ['(+) Comissões recebidas', rs(cp.comissao)],
+    ['(-) Bônus de indicação', rs(-cp.bonus_indicacao)],
+    ['(-) Bônus de promoção', rs(-cp.bonus_promocao)],
+    ['(-) Bônus por entrega', rs(-cp.bonus_entrega)],
+    ['(-) Taxa chuva/noturna paga pelo caixa', rs(-cp.taxa_chuva_noturna)],
+    ['(-) Despesas', rs(-cp.despesas)],
+    ['(+/-) Estornos', rs(cp.estornos)],
+    ['(-) Retiradas do caixa da plataforma', rs(-cp.retiradas)]
+  ].concat(cp.outros ? [['(+/-) Outros lançamentos', rs(cp.outros)]] : []) : [
+    ['(+) Entradas no período', rs(cx.entradas)],
+    ['(-) Saídas no período', rs(-cx.saidas)]
+  ]), { headStyles: Object.assign({}, base.headStyles, { fillColor: amarelo, textColor: 20 }), styles: Object.assign({}, base.styles, { fontSize: 9 }), columnStyles: { 1: Object.assign({ cellWidth: 38 }, dir) },
+    foot: [[pdfTxt('Saldo no fim do período (' + dataBR(d.periodo.fim) + ' 23:59)'), rs(cx.saldo_fim)]] });
+
+  // Retiradas do caixa da plataforma (distribuicao do saldo, nao e despesa)
+  const ret = d.retiradas || [];
+  ty = titulo('Retiradas do caixa da plataforma', 'Saídas do saldo do caixa (ex.: retirada de lucro). Não são despesas; já estão no caixa acima.');
+  tabela(ty, ['Data/hora', 'Descrição', 'Valor'], ret.map(function(x) { return [x.data_hora, x.descricao, rs(x.valor)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 2: Object.assign({ cellWidth: 30 }, dir) }, foot: [['Total (' + ret.length + ')', '', rs(somaCampo(ret, 'valor'))]] });
+
+  // 3a) Pedidos entregues
+  const ped = d.pedidos || [];
+  ty = titulo('3a. Pedidos entregues', 'Tele = valor cobrado da loja; Motoboy = valor pago ao motoboy; Comissão = parte da plataforma.');
+  tabela(ty, ['Data/hora', 'Nº', 'Loja', 'Motoboy', 'Pagamento', 'Tele', 'Motoboy', 'Comissão'],
+    ped.map(function(o) { return [o.data_hora, '#' + o.id, o.loja, o.motoboy, PAGAMENTO_LABEL[o.pagamento] || o.pagamento, rs(o.tele), rs(o.motoboy_valor), rs(o.comissao)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 12 }, 5: dir, 6: dir, 7: dir },
+      foot: [['Total (' + ped.length + ' pedidos)', '', '', '', '', rs(somaCampo(ped, 'tele')), rs(somaCampo(ped, 'motoboy_valor')), rs(somaCampo(ped, 'comissao'))].map(pdfTxt)] });
+
+  // 3b) Valores coletados pelos motoboys (por motoboy, com subtotal)
+  const col = d.coletas || [];
+  ty = titulo('3b. Valores coletados pelos motoboys (dinheiro e cartão por aproximação)', 'Valor do pedido recebido do cliente pelo motoboy. Não passa pelo caixa da plataforma.');
+  const grupos = {};
+  col.forEach(function(c) { (grupos[c.motoboy || '-'] = grupos[c.motoboy || '-'] || []).push(c); });
+  const corpoCol = [];
+  Object.keys(grupos).sort().forEach(function(mb) {
+    grupos[mb].forEach(function(c) { corpoCol.push([c.data_hora, '#' + c.id, c.loja, mb, PAGAMENTO_LABEL[c.pagamento] || c.pagamento, rs(c.valor)]); });
+    const din = somaCampo(grupos[mb].filter(function(c) { return c.pagamento === 'dinheiro'; }), 'valor');
+    const car = somaCampo(grupos[mb].filter(function(c) { return c.pagamento === 'cartao_aproximacao'; }), 'valor');
+    corpoCol.push([{ content: 'Subtotal ' + mb + ' — dinheiro ' + rs(din) + ' | cartão aprox. ' + rs(car), colSpan: 5, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }, { content: rs(din + car), styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } }]);
+  });
+  tabela(ty, ['Data/hora', 'Nº', 'Loja', 'Motoboy', 'Forma', 'Valor'], corpoCol,
+    { columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 12 }, 5: dir },
+      foot: [['Total coletado — dinheiro ' + rs(somaCampo(col.filter(function(c) { return c.pagamento === 'dinheiro'; }), 'valor')) + ' | cartão aprox. ' + rs(somaCampo(col.filter(function(c) { return c.pagamento === 'cartao_aproximacao'; }), 'valor')), '', '', '', '', rs(somaCampo(col, 'valor'))].map(pdfTxt)] });
+  const maq = d.maquina_loja || [];
+  if (maq.length) {
+    ty = titulo('Informativo: pagos na máquina própria da loja', 'O valor vai direto para a loja; não entra na soma acima nem no caixa da plataforma.');
+    tabela(ty, ['Data/hora', 'Nº', 'Loja', 'Motoboy', 'Valor (informativo)'], maq.map(function(m) { return [m.data_hora, '#' + m.id, m.loja, m.motoboy, rs(m.valor)]; }), { columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 12 }, 4: dir } });
+  }
+
+  // 3c) Pagamentos por motoboy
+  const pag = d.pagamentos_motoboys || [];
+  ty = titulo('3c. Pagamentos por motoboy', 'Corridas = valor do motoboy nos pedidos entregues no período. Bônus e taxa vêm dos mesmos lançamentos do caixa usados no resumo (seção 1), por isso os totais batem.');
+  tabela(ty, ['Motoboy', 'Corridas', 'Valor corridas', 'Bônus entrega', 'Bônus promoção', 'Bônus indicação', 'Taxa chuva/not.', 'Total'],
+    pag.map(function(p) { return [p.motoboy, p.corridas_qtd, rs(p.corridas), rs(p.bonus_entrega), rs(p.bonus_promocao), rs(p.bonus_indicacao), rs(p.taxa_chuva_noturna), rs(p.total)]; }),
+    { columnStyles: { 1: { halign: 'center' }, 2: dir, 3: dir, 4: dir, 5: dir, 6: dir, 7: Object.assign({ fontStyle: 'bold' }, dir) },
+      foot: [['Total', String(somaCampo(pag, 'corridas_qtd')), rs(somaCampo(pag, 'corridas')), rs(somaCampo(pag, 'bonus_entrega')), rs(somaCampo(pag, 'bonus_promocao')), rs(somaCampo(pag, 'bonus_indicacao')), rs(somaCampo(pag, 'taxa_chuva_noturna')), rs(somaCampo(pag, 'total'))]] });
+
+  // 3d) Indicacoes
+  const ind = d.indicacoes || [];
+  ty = titulo('3d. Indicações (bônus pagos)');
+  tabela(ty, ['Data/hora', 'Quem ganhou', 'Por indicar', 'Tipo', 'Pedido', 'Valor'],
+    ind.map(function(i) { return [i.data_hora, i.ganhou + (i.ganhou_tipo ? ' (' + (PAPEL_LABEL[i.ganhou_tipo] || i.ganhou_tipo) + ')' : ''), i.indicado + (i.indicado_tipo ? ' (' + (PAPEL_LABEL[i.indicado_tipo] || i.indicado_tipo) + ')' : ''), TIPO_INDICACAO_LABEL[i.tipo] || i.tipo, i.order_id ? '#' + i.order_id : '-', rs(i.valor)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 4: { cellWidth: 14 }, 5: dir }, foot: [['Total (' + ind.length + ')', '', '', '', '', rs(somaCampo(ind, 'valor'))]] });
+
+  // 3e) Saques dos motoboys
+  const sm = d.saques_motoboys || [];
+  const smAprov = sm.filter(function(s) { return s.status === 'aprovado'; });
+  ty = titulo('3e. Saques dos motoboys', 'Aprovados pela data do pagamento; pendentes/recusados pela data do pedido de saque (não somam no total).');
+  tabela(ty, ['Data/hora', 'Motoboy', 'Status', 'Valor'], sm.map(function(s) { return [s.data_hora, s.motoboy, s.status, rs(s.valor)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 2: { cellWidth: 24 }, 3: dir }, foot: [['Total pago (' + smAprov.length + ' aprovados)', '', '', rs(somaCampo(smAprov, 'valor'))]] });
+
+  // 3f) Lojas
+  const dep = d.depositos_lojas || [];
+  ty = titulo('3f. Lojas — depósitos (recargas)');
+  tabela(ty, ['Data/hora', 'Loja', 'Meio', 'Valor'], dep.map(function(x) { return [x.data_hora, x.loja, x.meio, rs(x.valor)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 3: dir }, foot: [['Total (' + dep.length + ')', '', '', rs(somaCampo(dep, 'valor'))]] });
+  const sl = d.saques_lojas || [];
+  ty = titulo('3f. Lojas — saques pagos');
+  tabela(ty, ['Data/hora', 'Loja', 'Valor'], sl.map(function(x) { return [x.data_hora, x.loja, rs(x.valor)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 2: dir }, foot: [['Total (' + sl.length + ')', '', rs(somaCampo(sl, 'valor'))]] });
+
+  // 3g) Despesas
+  const dsp = d.despesas || [];
+  ty = titulo('3g. Despesas');
+  tabela(ty, ['Data/hora', 'Despesa', 'Valor'], dsp.map(function(x) { return [x.data_hora, x.descricao + (x.estornada ? ' (estornada — ver Estornos)' : ''), rs(x.valor)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 2: dir }, foot: [[(function() {
+      const lancado = somaCampo(dsp, 'valor');
+      const estornado = somaCampo(dsp.filter(function(x) { return x.estornada; }), 'valor');
+      return 'Total lançado ' + rs(lancado) + '  |  (-) estornado ' + rs(estornado) + '  |  Despesa líquida ' + rs(Math.round((lancado - estornado) * 100) / 100);
+    })(), '', '']] });
+
+  // Estornos
+  const est = d.estornos || [];
+  if (est.length) {
+    ty = titulo('Estornos lançados no período', 'Correções: o lançamento original não é apagado; o estorno aparece aqui com referência e motivo.');
+    tabela(ty, ['Data/hora', 'Referência', 'Motivo', 'Por', 'Efeito no caixa'], est.map(function(x) { return [x.data_hora, TIPO_CAIXA_LABEL[x.referencia.split(' ')[0]] ? TIPO_CAIXA_LABEL[x.referencia.split(' ')[0]] + ' ' + x.referencia.split(' ').slice(1).join(' ') : x.referencia, x.motivo, x.criado_por, rs(x.efeito_caixa)]; }),
+      { columnStyles: { 0: { cellWidth: 25 }, 4: dir }, foot: [['Total', '', '', '', rs(somaCampo(est, 'efeito_caixa'))]] });
+  }
+
+  // 4) Saldos de terceiros sob guarda da plataforma
+  const st = d.saldos_terceiros;
+  if (st) {
+    ty = titulo('4. Saldos de terceiros sob guarda da plataforma', 'Posição na data de emissão (' + d.emitido_em + '): o sistema não guarda histórico completo das carteiras para calcular o saldo no início e no fim do período. É dinheiro de lojas e motoboys, não receita da plataforma.');
+    tabela(ty, ['Carteiras', 'Qtd', 'Valor'], [
+      ['Lojas — saldo pré-pago (positivo)', st.lojas.qtd, rs(st.lojas.positivo)],
+      ['Lojas — saldo negativo (devem à plataforma)', '', rs(st.lojas.negativo)],
+      [{ content: 'Lojas — saldo líquido', styles: { fontStyle: 'bold' } }, '', { content: rs(st.lojas.total), styles: { fontStyle: 'bold' } }],
+      ['Motoboys — saldo a receber (positivo)', st.motoboys.qtd, rs(st.motoboys.positivo)],
+      ['Motoboys — saldo negativo (devem à plataforma)', '', rs(st.motoboys.negativo)],
+      [{ content: 'Motoboys — saldo líquido', styles: { fontStyle: 'bold' } }, '', { content: rs(st.motoboys.total), styles: { fontStyle: 'bold' } }]
+    ], { columnStyles: { 1: { halign: 'center', cellWidth: 16 }, 2: Object.assign({ cellWidth: 38 }, dir) },
+      foot: [['Total líquido sob guarda (lojas + motoboys)', '', rs(Math.round((st.lojas.total + st.motoboys.total) * 100) / 100)]] });
+  }
+
+  // Anexo: lancamentos do caixa
+  const mov = cx.movimentos || [];
+  ty = titulo('Anexo — lançamentos do caixa da plataforma no período');
+  tabela(ty, ['Data/hora', 'Tipo', 'Descrição', 'Pedido', 'Valor'],
+    mov.map(function(m) { return [m.data_hora, TIPO_CAIXA_LABEL[m.tipo] || m.tipo, m.descricao, m.order_id ? '#' + m.order_id : '-', rs(m.valor)]; }),
+    { columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 34 }, 3: { cellWidth: 14 }, 4: dir }, foot: [['Entradas ' + rs(cx.entradas) + ' | Saídas ' + rs(-cx.saidas), '', '', '', rs(Math.round((cx.entradas - cx.saidas) * 100) / 100)].map(pdfTxt)] });
+
+  // Rodape com numero de pagina em todas as paginas
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(130);
+    doc.text(pdfTxt('Flash Drop Entregas — Relatório nº ' + d.relatorio_id + ' — período ' + dataBR(d.periodo.inicio) + ' a ' + dataBR(d.periodo.fim) + ' — gerado automaticamente para apuração contábil'), M, H - 7);
+    doc.text(pdfTxt('Página ' + i + ' de ' + total), W - M, H - 7, { align: 'right' });
+    doc.setTextColor(0);
+  }
+  return doc;
+}
+
+// Planilha .xlsx (SheetJS), uma aba por tabela, com valores numericos
+function montarPlanilhaRelatorio(dados, XLSX) {
+  const d = dados;
+  const wb = XLSX.utils.book_new();
+  function aba(nome, linhas) { const ws = XLSX.utils.aoa_to_sheet(linhas); XLSX.utils.book_append_sheet(wb, ws, nome.slice(0, 31)); }
+  const r = d.resumo, cx = d.caixa;
+  aba('Resumo', [
+    ['Flash Drop Entregas - Relatório Financeiro nº ' + d.relatorio_id],
+    ['Período', dataBR(d.periodo.inicio) + ' a ' + dataBR(d.periodo.fim) + ' (horário de Brasília)'],
+    ['Emitido em', d.emitido_em], ['Emitido por', d.emitido_por || ''],
+    ['Razão social', (d.empresa && d.empresa.razao_social) || 'não informado'], ['CNPJ', (d.empresa && d.empresa.cnpj) || 'não informado'], [],
+    ['Item', 'Qtd', 'Valor (R$)'],
+    ['Comissão recebida sobre os pedidos', r.comissao.qtd, r.comissao.total],
+    ['(-) Bônus de indicação', r.bonus_indicacao.qtd, -r.bonus_indicacao.total],
+    ['(-) Bônus de promoção', r.bonus_promocao.qtd, -r.bonus_promocao.total],
+    ['(-) Bônus por entrega', r.bonus_entrega.qtd, -r.bonus_entrega.total],
+    ['(-) Taxa chuva/noturna paga pelo caixa', r.taxa_chuva_noturna.qtd, -r.taxa_chuva_noturna.total],
+    ['(-) Despesas', r.despesas.qtd, -r.despesas.total],
+    ['(+/-) Estornos', r.estornos.qtd, r.estornos.total],
+    ['LUCRO DO PERÍODO', '', r.lucro]
+  ]);
+  const cpx = cx.composicao;
+  aba('Caixa', [['Item', 'Valor (R$)'], ['Saldo no início do período', cx.saldo_inicio]].concat(cpx ? [
+    ['(+) Comissões recebidas', cpx.comissao], ['(-) Bônus de indicação', -cpx.bonus_indicacao], ['(-) Bônus de promoção', -cpx.bonus_promocao],
+    ['(-) Bônus por entrega', -cpx.bonus_entrega], ['(-) Taxa chuva/noturna paga pelo caixa', -cpx.taxa_chuva_noturna], ['(-) Despesas', -cpx.despesas],
+    ['(+/-) Estornos', cpx.estornos], ['(-) Retiradas do caixa da plataforma', -cpx.retiradas]
+  ].concat(cpx.outros ? [['(+/-) Outros lançamentos', cpx.outros]] : []) : [['Entradas', cx.entradas], ['Saídas', -cx.saidas]]).concat([['Saldo no fim do período', cx.saldo_fim]]));
+  aba('Retiradas caixa', [['Data/hora', 'Descrição', 'Valor (R$)']].concat((d.retiradas || []).map(function(x) { return [x.data_hora, x.descricao, x.valor]; })));
+  aba('Lançamentos caixa', [['Data/hora', 'Tipo', 'Descrição', 'Pedido', 'Valor (R$)']].concat((cx.movimentos || []).map(function(m) { return [m.data_hora, TIPO_CAIXA_LABEL[m.tipo] || m.tipo, m.descricao, m.order_id || '', m.valor]; })));
+  aba('Pedidos entregues', [['Data/hora', 'Nº', 'Loja', 'Motoboy', 'Pagamento', 'Tele (R$)', 'Motoboy (R$)', 'Comissão (R$)']].concat((d.pedidos || []).map(function(o) { return [o.data_hora, o.id, o.loja, o.motoboy, PAGAMENTO_LABEL[o.pagamento] || o.pagamento, o.tele, o.motoboy_valor, o.comissao]; })));
+  aba('Coletas motoboys', [['Data/hora', 'Nº', 'Loja', 'Motoboy', 'Forma', 'Valor (R$)']].concat((d.coletas || []).map(function(c) { return [c.data_hora, c.id, c.loja, c.motoboy, PAGAMENTO_LABEL[c.pagamento] || c.pagamento, c.valor]; })));
+  aba('Máquina loja (info)', [['Data/hora', 'Nº', 'Loja', 'Motoboy', 'Valor informativo (R$)']].concat((d.maquina_loja || []).map(function(m) { return [m.data_hora, m.id, m.loja, m.motoboy, m.valor]; })));
+  aba('Pagamentos motoboys', [['Motoboy', 'Corridas', 'Valor corridas', 'Bônus entrega', 'Bônus promoção', 'Bônus indicação', 'Taxa chuva/noturna', 'Total']].concat((d.pagamentos_motoboys || []).map(function(p) { return [p.motoboy, p.corridas_qtd, p.corridas, p.bonus_entrega, p.bonus_promocao, p.bonus_indicacao, p.taxa_chuva_noturna, p.total]; })));
+  aba('Indicações', [['Data/hora', 'Quem ganhou', 'Tipo (quem ganhou)', 'Por indicar', 'Tipo (indicado)', 'Bônus', 'Pedido', 'Valor (R$)']].concat((d.indicacoes || []).map(function(i) { return [i.data_hora, i.ganhou, i.ganhou_tipo, i.indicado, i.indicado_tipo, TIPO_INDICACAO_LABEL[i.tipo] || i.tipo, i.order_id || '', i.valor]; })));
+  aba('Saques motoboys', [['Data/hora', 'Motoboy', 'Status', 'Valor (R$)']].concat((d.saques_motoboys || []).map(function(s) { return [s.data_hora, s.motoboy, s.status, s.valor]; })));
+  aba('Depósitos lojas', [['Data/hora', 'Loja', 'Meio', 'Valor (R$)']].concat((d.depositos_lojas || []).map(function(x) { return [x.data_hora, x.loja, x.meio, x.valor]; })));
+  aba('Saques lojas', [['Data/hora', 'Loja', 'Valor (R$)']].concat((d.saques_lojas || []).map(function(x) { return [x.data_hora, x.loja, x.valor]; })));
+  aba('Despesas', [['Data/hora', 'Despesa', 'Estornada', 'Valor (R$)']].concat((d.despesas || []).map(function(x) { return [x.data_hora, x.descricao, x.estornada ? 'sim' : '', x.valor]; })));
+  aba('Estornos', [['Data/hora', 'Referência', 'Motivo', 'Por', 'Efeito no caixa (R$)']].concat((d.estornos || []).map(function(x) { return [x.data_hora, x.referencia, x.motivo, x.criado_por, x.efeito_caixa]; })));
+  const stx = d.saldos_terceiros;
+  if (stx) {
+    aba('Saldos terceiros', [
+      ['Posição na data de emissão', d.emitido_em], [],
+      ['Carteiras', 'Qtd', 'Valor (R$)'],
+      ['Lojas - saldo pré-pago (positivo)', stx.lojas.qtd, stx.lojas.positivo], ['Lojas - saldo negativo', '', stx.lojas.negativo], ['Lojas - saldo líquido', '', stx.lojas.total],
+      ['Motoboys - saldo a receber (positivo)', stx.motoboys.qtd, stx.motoboys.positivo], ['Motoboys - saldo negativo', '', stx.motoboys.negativo], ['Motoboys - saldo líquido', '', stx.motoboys.total],
+      ['Total líquido sob guarda', '', Math.round((stx.lojas.total + stx.motoboys.total) * 100) / 100]
+    ]);
+  }
+  return wb;
+}
+
+function _escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function _usuarioFinanceiro() { try { const u = JSON.parse(localStorage.getItem('flashdrop_user') || '{}'); return u.name || u.username || ''; } catch (e) { return ''; } }
+
 async function gerarPdfContador() {
-  if (!_resumoCache) { alert('Aguarde o carregamento do resumo e tente novamente.'); return; }
-  const d = _resumoCache;
+  const ini = document.getElementById('f-inicio').value;
+  const fim = document.getElementById('f-fim').value;
+  if (!ini || !fim) { alert('Informe a data inicial e a final do período.'); return; }
+  if (!confirm('Emitir o relatório de ' + periodoTexto() + '?\nEle fica arquivado em "Relatórios emitidos" e pode ser baixado de novo depois.')) return;
   const btn = document.getElementById('pdf-btn-contador');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Emitindo...'; }
   try {
-    // Receita real da plataforma no período: apenas a comissão sobre os pedidos.
-    const comissao = parseFloat(d.receita_comissao_admin.total) || 0;
-    // Tudo que sai da comissão da plataforma para motoboys (bônus/indicação/taxas) -
-    // NÃO inclui saques de lojas nem depósitos, que são dinheiro das próprias lojas.
-    const pagoIndicacao = parseFloat(d.bonus_indicacao_pago_motoboys.total) || 0;
-    const pagoPromocao = parseFloat(d.bonus_promocao_pago_motoboys.total) || 0;
-    const pagoPorEntrega = parseFloat(d.bonus_por_entrega_pago_motoboys.total) || 0;
-    const pagoTaxas = parseFloat(d.custo_taxas_chuva_noturna_admin.total) || 0;
-    const despesas = parseFloat(d.despesas.total) || 0;
-    const totalPagoExtra = pagoIndicacao + pagoPromocao + pagoPorEntrega + pagoTaxas + despesas;
-    const lucroPeriodo = comissao - totalPagoExtra;
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait' });
-    doc.setFontSize(16);
-    doc.text('Flash Drop Entregas — Relatório Financeiro', 14, 16);
-    doc.setFontSize(11);
-    doc.text('Período: ' + periodoTexto(), 14, 24);
-    doc.setFontSize(9);
-    doc.setTextColor(120);
-    doc.text('Emitido em: ' + new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }), 14, 30);
-    doc.setTextColor(0);
-
-    // 1) RESULTADO DA PLATAFORMA — o que realmente sobrou (comissão menos o que foi pago a mais aos motoboys)
-    doc.autoTable({
-      startY: 38,
-      head: [['RESULTADO DA PLATAFORMA NO PERÍODO', 'Valor']],
-      body: [
-        ['Comissão recebida sobre os pedidos (receita)', fmtMoeda(comissao) + '  (' + d.receita_comissao_admin.qtd + ' pedido(s))'],
-        ['(−) Bônus de indicação pago a motoboys', '− ' + fmtMoeda(pagoIndicacao) + '  (' + d.bonus_indicacao_pago_motoboys.qtd + ')'],
-        ['(−) Bônus de promoção pago a motoboys', '− ' + fmtMoeda(pagoPromocao) + '  (' + d.bonus_promocao_pago_motoboys.qtd + ')'],
-        ['(−) Bônus por entrega pago a motoboys', '− ' + fmtMoeda(pagoPorEntrega) + '  (' + d.bonus_por_entrega_pago_motoboys.qtd + ')'],
-        ['(−) Taxa chuva/noturna repassada', '− ' + fmtMoeda(pagoTaxas) + '  (' + d.custo_taxas_chuva_noturna_admin.qtd + ')'],
-        ['(−) Despesas registradas manualmente', '− ' + fmtMoeda(despesas) + '  (' + d.despesas.qtd + ')'],
-        ['LUCRO DO PERÍODO (o que sobrou p/ a plataforma)', fmtMoeda(lucroPeriodo)]
-      ],
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [76, 175, 80], textColor: 255 },
-      columnStyles: { 0: { cellWidth: 130 } },
-      didParseCell: function(data) { if (data.section === 'body' && data.row.index === 6) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [255, 244, 200]; } }
-    });
-
-    doc.setFontSize(8);
-    doc.setTextColor(120);
-    doc.text('Não inclui depósitos/saques das próprias lojas nem saques de motoboys — isso é dinheiro que já era deles, não é lucro da plataforma (veja mais abaixo).', 14, doc.lastAutoTable.finalY + 5, { maxWidth: 182 });
-    doc.setTextColor(0);
-
-    // 2) CAIXA ACUMULADO DA PLATAFORMA (histórico, desde o início — não é só o período filtrado)
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 14,
-      head: [['CAIXA DA PLATAFORMA (acumulado, desde o início)', 'Valor']],
-      body: [
-        ['Saldo atual em caixa', fmtMoeda(d.saldo_plataforma.balance)],
-        ['Total já ganho (histórico)', fmtMoeda(d.saldo_plataforma.total_ganho)],
-        ['Total já sacado/pago (histórico)', fmtMoeda(d.saldo_plataforma.total_sacado)]
-      ],
-      theme: 'grid',
-      styles: { fontSize: 10, fontStyle: 'bold' },
-      headStyles: { fillColor: [255, 204, 0], textColor: 20 },
-      columnStyles: { 0: { cellWidth: 130 } }
-    });
-
-    // 3) Movimentação das próprias lojas (informativo — não é lucro da plataforma)
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 8,
-      head: [['Movimentação das lojas no período (dinheiro das lojas)', 'Valor']],
-      body: [
-        ['Depósitos das lojas (recarga via Mercado Pago)', fmtMoeda(d.depositos_lojas.total) + '  (' + d.depositos_lojas.qtd + ' depósito(s))'],
-        ['Saques pagos às lojas', fmtMoeda(d.saques_lojas.total) + '  (' + d.saques_lojas.qtd + ' saque(s))']
-      ],
-      theme: 'striped',
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [60, 60, 60] },
-      columnStyles: { 0: { cellWidth: 130 } }
-    });
-
-    // 4) Retiradas dos motoboys do que já era deles (corridas + bônus já somados no saldo)
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 8,
-      head: [['Saques dos motoboys no período (retirada do que já era deles)', 'Valor']],
-      body: [
-        ['Saques pagos aos motoboys', fmtMoeda(d.saques_motoboys.total) + '  (' + d.saques_motoboys.qtd + ' saque(s))']
-      ],
-      theme: 'striped',
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [60, 60, 60] },
-      columnStyles: { 0: { cellWidth: 130 } }
-    });
-
-    // 5) Informações complementares (contexto operacional)
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 8,
-      head: [['Informações complementares (contexto operacional)', 'Valor']],
-      body: [
-        ['Pedidos entregues no período', d.pedidos_entregues.qtd + ' pedido(s) — ' + fmtMoeda(d.pedidos_entregues.total) + ' em vendas'],
-        ['Dinheiro coletado pelos motoboys (não passa pelo caixa)', fmtMoeda(d.dinheiro_coletado_motoboys.total) + '  (' + d.dinheiro_coletado_motoboys.qtd + ')'],
-        ['Cartão por aproximação coletado pelos motoboys', fmtMoeda(d.cartao_aproximacao_coletado_motoboys.total) + '  (' + d.cartao_aproximacao_coletado_motoboys.qtd + ')'],
-        ['Máquina própria da loja (vai direto p/ loja, não rastreável)', fmtMoeda(d.maquina_loja_nao_rastreavel.total) + '  (' + d.maquina_loja_nao_rastreavel.qtd + ')']
-      ],
-      theme: 'striped',
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [60, 60, 60] },
-      columnStyles: { 0: { cellWidth: 130 } }
-    });
-
-    doc.setFontSize(8);
-    doc.setTextColor(130);
-    doc.text('Relatório gerado automaticamente pelo sistema Flash Drop Entregas para fins de apuração contábil.', 14, doc.internal.pageSize.getHeight() - 10);
-
-    doc.save(nomeArquivoPdf('relatorio_contabilidade'));
-  } catch(e) {
-    alert('Erro ao gerar PDF: ' + e.message);
+    const r = await fetch(`${API}/financeiro/relatorios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inicio: ini, fim: fim, emitido_por: _usuarioFinanceiro() }) });
+    const data = await r.json();
+    if (!r.ok) { alert('Erro ao emitir: ' + (data.error || 'falha')); return; }
+    montarPdfRelatorio(data.dados, window.jspdf.jsPDF).save(nomeArquivoRelatorio(data.dados, 'pdf'));
+    carregarRelatoriosEmitidos();
+  } catch (e) {
+    alert('Erro ao gerar relatório: ' + e.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '📄 Relatório para Contador (PDF)'; }
+    if (btn) { btn.disabled = false; btn.textContent = '📄 Emitir relatório para contador (PDF)'; }
   }
 }
 
+async function baixarRelatorioEmitido(id, formato) {
+  try {
+    const r = await fetch(`${API}/financeiro/relatorios/${id}`);
+    const data = await r.json();
+    if (!r.ok) { alert('Erro: ' + (data.error || 'falha')); return; }
+    if (formato === 'xlsx') {
+      if (!window.XLSX) { alert('Biblioteca de planilha não carregou. Verifique a conexão e recarregue a página.'); return; }
+      XLSX.writeFile(montarPlanilhaRelatorio(data.dados, XLSX), nomeArquivoRelatorio(data.dados, 'xlsx'));
+    } else {
+      montarPdfRelatorio(data.dados, window.jspdf.jsPDF).save(nomeArquivoRelatorio(data.dados, 'pdf'));
+    }
+  } catch (e) { alert('Erro ao baixar: ' + e.message); }
+}
+
+async function carregarRelatoriosEmitidos() {
+  const box = document.getElementById('relatorios-emitidos');
+  if (!box) return;
+  try {
+    const r = await fetch(`${API}/financeiro/relatorios`);
+    const lista = await r.json();
+    if (!Array.isArray(lista) || !lista.length) { box.innerHTML = '<p style="color:#666;font-size:12px;margin:6px 0">Nenhum relatório emitido ainda.</p>'; return; }
+    box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Nº</th><th>Emitido em</th><th>Período</th><th>Por</th><th>Lucro</th><th></th></tr></thead><tbody>' +
+      lista.map(function(x) {
+        const t = x.totais || {};
+        return '<tr><td>' + x.id + '</td><td>' + x.emitido_em + '</td><td>' + x.periodo_inicio + ' a ' + x.periodo_fim + '</td><td>' + _escHtml(x.emitido_por || '-') + '</td><td>' + fmtMoeda(t.lucro) + '</td>' +
+          '<td style="white-space:nowrap"><button class="pdf-btn" onclick="baixarRelatorioEmitido(' + x.id + ',\'pdf\')">PDF</button> <button class="pdf-btn" style="background:#2e7d32;color:#fff" onclick="baixarRelatorioEmitido(' + x.id + ',\'xlsx\')">Excel</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  } catch (e) { box.innerHTML = '<p style="color:#e53935;font-size:12px">Erro ao carregar relatórios emitidos.</p>'; }
+}
+
+async function estornarLancamento(id, descricao, valor) {
+  const motivo = prompt('Estornar o lançamento "' + descricao + '" (' + fmtMoeda(valor) + ')?\nO lançamento original continua registrado; o estorno aparece no extrato e no relatório.\n\nInforme o motivo do estorno:');
+  if (motivo === null) return;
+  if (!motivo.trim()) { alert('O motivo é obrigatório.'); return; }
+  try {
+    const r = await fetch(`${API}/financeiro/estornos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ evento_id: id, motivo: motivo.trim(), criado_por: _usuarioFinanceiro() }) });
+    const data = await r.json();
+    if (!r.ok) { alert('Erro: ' + (data.error || 'falha')); return; }
+    alert('Estorno registrado.');
+    carregarResumo();
+    carregarCaixa();
+  } catch (e) { alert('Erro de conexão.'); }
+}
+// ===== RELATORIO PARA CONTADOR (fim) =====
+
 function carregarTudo() {
   carregarResumo();
+  carregarRelatoriosEmitidos();
   carregarCaixa();
   carregarSaquePreview();
   carregarSolicitacoesSaque();

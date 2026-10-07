@@ -262,7 +262,7 @@
       <div class="card" style="margin-top:15px">
         <h3 style="margin-bottom:15px;color:#ffcc00;">🗑️ Limpeza do Histórico</h3>
         <div class="input-group">
-          <label>Excluir pedidos entregues/cancelados com mais de (dias)</label>
+          <label>Excluir pedidos cancelados com mais de (dias) — pedidos entregues são registros financeiros e não são apagados</label>
           <input id="cfg-days" class="input" type="number" min="1" max="365" value="30" placeholder="Ex: 30">
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -804,7 +804,9 @@ function esc(v) {
             (status !== 'entregue' && status !== 'cancelado'
               ? '<button class="btn btn-danger btn-sm" onclick="cancelOrder(' + o.id + ')">Cancelar</button>'
               : '') +
-            '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteOrder(' + o.id + ')">Excluir</button>' +
+            (status !== 'entregue'
+              ? '<button class="btn btn-sm" style="background:#1a1a1a;color:#f44336;border:1px solid #f44336" onclick="deleteOrder(' + o.id + ')">Excluir</button>'
+              : '') +
           '</div>' +
         '</div>';
       }).join('');
@@ -1485,7 +1487,8 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
 
     async function deleteOrder(id) {
       if (!confirm('Excluir pedido #' + id + '? Esta acao nao pode ser desfeita.')) return;
-      await fetch(API + '/orders/' + id, { method: 'DELETE' });
+      var rDel = await fetch(API + '/orders/' + id, { method: 'DELETE' });
+      if (!rDel.ok) { var eDel = {}; try { eDel = await rDel.json(); } catch (e) {} tg.showAlert(eDel.error || 'Nao foi possivel excluir o pedido.'); return; }
       loadData('pedidos');
       tg.showAlert('Pedido excluido!');
     }
@@ -1499,13 +1502,13 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
 
     async function cleanupOrders() {
       var days = parseInt(localStorage.getItem('flashdrop_cleanup_days') || document.getElementById('cfg-days').value || 30);
-      if (!confirm('Isso vai excluir todos os pedidos entregues ou cancelados com mais de ' + days + ' dias. Continuar?')) return;
+      if (!confirm('Isso vai excluir os pedidos cancelados com mais de ' + days + ' dias (pedidos entregues nao sao apagados). Continuar?')) return;
       var cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
       var r = await fetch(API + '/orders');
       var orders = await r.json();
       var toDelete = orders.filter(function(o) {
-        return (o.status === 'entregue' || o.status === 'cancelado') && new Date(o.created_at) < cutoff;
+        return o.status === 'cancelado' && new Date(o.created_at) < cutoff;
       });
       if (toDelete.length === 0) { document.getElementById('cleanup-msg').textContent = '\u2705 Nenhum pedido para excluir.'; return; }
       await Promise.all(toDelete.map(function(o) {
