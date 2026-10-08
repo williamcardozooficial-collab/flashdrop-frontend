@@ -83,7 +83,9 @@
         <label>Data final</label>
         <input type="date" id="f-fim">
       </div>
-      <button onclick="carregarTudo()">Aplicar filtro</button>
+      <button onclick="aplicarFiltro()">Aplicar filtro</button>
+      <button id="btn-limpar-filtro" onclick="limparFiltro()" style="display:none;background:#333;color:#ffcc00">Limpar filtro</button>
+      <div id="filtro-status" style="flex-basis:100%;font-size:12px;color:#999"></div>
     </div>
 
     <div class="note-box">
@@ -97,13 +99,15 @@
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <button class="pdf-btn" id="pdf-btn-contador" onclick="gerarPdfContador()" style="padding:10px 16px;font-size:13px">📄 Emitir relatório para contador (PDF)</button>
         </div>
-        <div class="section-title" style="margin-top:6px">Relatórios emitidos (arquivo — baixe de novo em PDF ou Excel)</div>
+        <div class="section-title" style="margin-top:6px" id="relatorios-emitidos-titulo">Relatórios emitidos (arquivo — baixe de novo em PDF ou Excel)</div>
         <div id="relatorios-emitidos" style="margin-bottom:16px"><p style="color:#666;font-size:12px;margin:6px 0">Carregando...</p></div>
-        <div class="section-title">Caixa da Plataforma (saldo atual)</div>
+        <div class="section-title">Caixa da Plataforma</div>
         <div class="cards-grid">
-          <div class="card"><h3>Saldo atual</h3><div class="valor" id="r-saldo-atual">-</div></div>
-          <div class="card positivo"><h3>Total já ganho</h3><div class="valor" id="r-saldo-ganho">-</div></div>
-          <div class="card negativo"><h3>Total já sacado/pago</h3><div class="valor" id="r-saldo-sacado">-</div></div>
+          <div class="card"><h3>Saldo atual (hoje)</h3><div class="valor" id="r-saldo-atual">-</div><div class="sub">posição de agora, não depende do filtro</div></div>
+          <div class="card"><h3>Saldo no início do período</h3><div class="valor" id="r-saldo-inicio">-</div><div class="sub" id="r-saldo-inicio-sub"></div></div>
+          <div class="card"><h3>Saldo no fim do período</h3><div class="valor" id="r-saldo-fim">-</div><div class="sub" id="r-saldo-fim-sub"></div></div>
+          <div class="card positivo"><h3>Entradas no caixa (no período)</h3><div class="valor" id="r-saldo-ganho">-</div></div>
+          <div class="card negativo"><h3>Saídas do caixa (no período)</h3><div class="valor" id="r-saldo-sacado">-</div><div class="sub" id="r-retiradas-sub"></div></div>
         </div>
         <div class="card" style="margin-top:12px">
           <div style="color:#aaa;font-size:12px;margin-bottom:10px">➖ Registrar despesa — desconta direto do saldo do caixa acima, mesmo que fique negativo (assim dá pra ver se está tendo prejuízo)</div>
@@ -135,6 +139,8 @@
           <div class="card negativo"><h3>Bônus promoção pago a motoboys</h3><div class="valor" id="r-bonus-promo">-</div><div class="sub" id="r-bonus-promo-qtd"></div></div>
           <div class="card negativo"><h3>Bônus por entrega pago a motoboys</h3><div class="valor" id="r-bonus-entrega">-</div><div class="sub" id="r-bonus-entrega-qtd"></div></div>
           <div class="card negativo"><h3>Despesas registradas</h3><div class="valor" id="r-despesas">-</div><div class="sub" id="r-despesas-qtd"></div></div>
+          <div class="card"><h3>Estornos lançados</h3><div class="valor" id="r-estornos">-</div><div class="sub" id="r-estornos-qtd"></div></div>
+          <div class="card positivo"><h3>Lucro do período</h3><div class="valor" id="r-lucro">-</div><div class="sub">igual ao relatório para contador</div></div>
         </div>
 
         <div class="section-title">Coleta dos motoboys (no período)</div>
@@ -157,8 +163,12 @@
       <div class="section-title">🏧 Saque do sistema</div>
       <div class="card" style="margin-bottom:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="color:#aaa;font-size:12px">Saldo disponível no caixa da plataforma</span>
+          <span style="color:#aaa;font-size:12px">Saldo disponível no caixa da plataforma — saldo atual (hoje)</span>
           <strong id="saque-saldo-caixa" style="color:#4caf50;font-size:18px">-</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:-4px 0 10px">
+          <span style="color:#777;font-size:12px" id="saque-saldo-fim-label">Saldo no fim do período</span>
+          <span id="saque-saldo-fim" style="color:#aaa;font-size:13px">-</span>
         </div>
         <div id="saque-destino-preview" style="font-size:12px;color:#888;margin-bottom:14px;line-height:1.5">Carregando divisão configurada...</div>
         <div class="input-group">
@@ -173,7 +183,7 @@
         <div style="font-size:11px;color:#666;margin-top:8px">A divisão entre motoboys é definida no painel Admin e não pode ser alterada por aqui.</div>
       </div>
 
-      <div class="section-title">💸 Solicitações de saque (motoboys e lojas)</div>
+      <div class="section-title" id="saque-solicitacoes-titulo">💸 Solicitações de saque (motoboys e lojas)</div>
       <div id="saque-solicitacoes-loading" class="loading">Carregando...</div>
       <div id="saque-solicitacoes-list"></div>
     </div>
@@ -182,13 +192,14 @@
     <div class="section" id="tab-lojas">
       <div id="lojas-loading" class="loading">Carregando...</div>
       <div style="display:none" id="lojas-table-wrap">
+        <div style="font-size:11px;color:#777;margin-bottom:6px">Saldo atual (hoje) = posição de agora das carteiras; o sistema não guarda histórico para calcular o saldo no fim do período (igual ao relatório para contador). As demais colunas são do período.</div>
         <div class="scroll-arrows">
           <button class="scroll-arrow-btn" onclick="scrollTableH('lojas-scroll',-1)" title="Rolar para esquerda">◀</button>
           <button class="scroll-arrow-btn" onclick="scrollTableH('lojas-scroll',1)" title="Rolar para direita">▶</button>
         </div>
         <div class="table-wrap" id="lojas-scroll">
         <table>
-          <thead><tr><th>Loja</th><th>Saldo atual</th><th>Depósitos</th><th>Saques</th><th>Pedidos entregues</th><th>Valor pedidos</th><th>Vendas c/ promoção</th><th>Relatório</th></tr></thead>
+          <thead><tr><th>Loja</th><th>Saldo atual (hoje)</th><th>Depósitos</th><th>Saques</th><th>Pedidos entregues</th><th>Valor pedidos</th><th>Vendas c/ promoção</th><th>Relatório</th></tr></thead>
           <tbody id="lojas-tbody"></tbody>
         </table>
         </div>
@@ -199,13 +210,14 @@
     <div class="section" id="tab-motoboys">
       <div id="motoboys-loading" class="loading">Carregando...</div>
       <div style="display:none" id="motoboys-table-wrap">
+        <div style="font-size:11px;color:#777;margin-bottom:6px">Saldo atual (hoje) = posição de agora das carteiras; o sistema não guarda histórico para calcular o saldo no fim do período (igual ao relatório para contador). As demais colunas são do período.</div>
         <div class="scroll-arrows">
           <button class="scroll-arrow-btn" onclick="scrollTableH('motoboys-scroll',-1)" title="Rolar para esquerda">◀</button>
           <button class="scroll-arrow-btn" onclick="scrollTableH('motoboys-scroll',1)" title="Rolar para direita">▶</button>
         </div>
         <div class="table-wrap" id="motoboys-scroll">
         <table>
-          <thead><tr><th>Motoboy</th><th>Saldo atual</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Lucro do sistema</th><th>Saques</th><th>Relatório</th></tr></thead>
+          <thead><tr><th>Motoboy</th><th>Saldo atual (hoje)</th><th>Ganho corridas</th><th>Dinheiro coletado</th><th>Cartão aprox. coletado</th><th>Bônus indicação</th><th>Bônus promoção</th><th>Bônus por entrega</th><th>Lucro do sistema</th><th>Saques</th><th>Relatório</th></tr></thead>
           <tbody id="motoboys-tbody"></tbody>
         </table>
         </div>
@@ -222,7 +234,7 @@
         </div>
         <div class="table-wrap" id="pedidos-scroll">
         <table>
-          <thead><tr><th>#</th><th>Data</th><th>Loja</th><th>Motoboy</th><th>Pagamento</th><th>Valor produtos</th><th>Valor total</th><th>Valor motoboy</th><th>Comissão</th><th>Promoção</th><th>Status</th></tr></thead>
+          <thead><tr><th>#</th><th>Data (entrega, se entregue)</th><th>Loja</th><th>Motoboy</th><th>Pagamento</th><th>Valor produtos</th><th>Valor total</th><th>Valor motoboy</th><th>Comissão</th><th>Promoção</th><th>Status</th></tr></thead>
           <tbody id="pedidos-tbody"></tbody>
         </table>
         </div>
@@ -279,11 +291,40 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
 }
 
+// Data (aaaa-mm-dd) no horario de Brasilia, igual ao padrao do backend
+function dataSP(ms) { return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); }
+
 function initDatas() {
-  const hoje = new Date();
-  const trintaDias = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
-  document.getElementById('f-fim').value = hoje.toISOString().slice(0, 10);
-  document.getElementById('f-inicio').value = trintaDias.toISOString().slice(0, 10);
+  document.getElementById('f-fim').value = dataSP(Date.now());
+  document.getElementById('f-inicio').value = dataSP(Date.now() - 30 * 24 * 60 * 60 * 1000);
+}
+
+// Sem filtro aplicado: ultimos 30 dias nas secoes do periodo, solicitacoes de saque dos ultimos 7 dias e todos os relatorios emitidos.
+// Com filtro aplicado: tudo segue o periodo escolhido.
+let _filtroAplicado = false;
+
+function atualizarStatusFiltro() {
+  document.getElementById('btn-limpar-filtro').style.display = _filtroAplicado ? 'inline-block' : 'none';
+  document.getElementById('filtro-status').innerHTML = _filtroAplicado
+    ? '<span style="color:#ffcc00;font-weight:700">Filtro aplicado: ' + periodoTexto() + '</span> — vale para todas as abas (horário de Brasília, mesmo critério do relatório para contador).'
+    : 'Padrão: últimos 30 dias (' + periodoTexto() + '). Solicitações de saque: últimos 7 dias. Relatórios emitidos: todos.';
+  document.getElementById('saque-solicitacoes-titulo').textContent = '💸 Solicitações de saque (motoboys e lojas)' + (_filtroAplicado ? ' — no período + pendentes' : ' — últimos 7 dias');
+  document.getElementById('relatorios-emitidos-titulo').textContent = _filtroAplicado ? 'Relatórios emitidos que cobrem o período (baixe de novo em PDF ou Excel)' : 'Relatórios emitidos (arquivo — baixe de novo em PDF ou Excel)';
+}
+
+function aplicarFiltro() {
+  const ini = document.getElementById('f-inicio').value;
+  const fim = document.getElementById('f-fim').value;
+  if (!ini || !fim) { alert('Informe a data inicial e a final.'); return; }
+  if (ini > fim) { alert('A data inicial é depois da data final.'); return; }
+  _filtroAplicado = true;
+  carregarTudo();
+}
+
+function limparFiltro() {
+  _filtroAplicado = false;
+  initDatas();
+  carregarTudo();
 }
 
 let _resumoCache = null;
@@ -297,8 +338,19 @@ async function carregarResumo() {
     _resumoCache = d;
 
     document.getElementById('r-saldo-atual').textContent = fmtMoeda(d.saldo_plataforma.balance);
-    document.getElementById('r-saldo-ganho').textContent = fmtMoeda(d.saldo_plataforma.total_ganho);
-    document.getElementById('r-saldo-sacado').textContent = fmtMoeda(d.saldo_plataforma.total_sacado);
+    const cxp = d.caixa_periodo || {};
+    document.getElementById('r-saldo-inicio').textContent = fmtMoeda(cxp.saldo_inicio);
+    document.getElementById('r-saldo-inicio-sub').textContent = dataBR(d.periodo.inicio) + ' 00:00';
+    document.getElementById('r-saldo-fim').textContent = fmtMoeda(cxp.saldo_fim);
+    document.getElementById('r-saldo-fim-sub').textContent = dataBR(d.periodo.fim) + ' 23:59 — como no relatório';
+    document.getElementById('r-saldo-ganho').textContent = fmtMoeda(cxp.entradas);
+    document.getElementById('r-saldo-sacado').textContent = fmtMoeda(cxp.saidas);
+    document.getElementById('r-retiradas-sub').textContent = cxp.retiradas ? 'inclui ' + fmtMoeda(cxp.retiradas.total) + ' em retiradas do caixa (' + cxp.retiradas.qtd + ')' : '';
+    document.getElementById('saque-saldo-fim-label').textContent = 'Saldo no fim do período (' + dataBR(d.periodo.fim) + ' 23:59)';
+    document.getElementById('saque-saldo-fim').textContent = fmtMoeda(cxp.saldo_fim);
+    document.getElementById('r-estornos').textContent = fmtMoeda(d.estornos.total);
+    document.getElementById('r-estornos-qtd').textContent = d.estornos.qtd + ' estorno(s) — efeito no caixa';
+    document.getElementById('r-lucro').textContent = fmtMoeda(d.lucro);
 
     document.getElementById('r-deposito-loja').textContent = fmtMoeda(d.depositos_lojas.total);
     document.getElementById('r-deposito-loja-qtd').textContent = d.depositos_lojas.qtd + ' depósito(s)';
@@ -409,13 +461,13 @@ async function carregarPedidos() {
   document.getElementById('pedidos-loading').style.display = 'block';
   document.getElementById('pedidos-table-wrap').style.display = 'none';
   try {
-    const res = await fetch(`${API}/financeiro/pedidos${getRange()}`);
+    const res = await fetch(`${API}/financeiro/pedidos${buildQueryWithExtra('criterio=relatorio')}`);
     const lista = await res.json();
     const tbody = document.getElementById('pedidos-tbody');
     tbody.innerHTML = lista.map(p => `
       <tr>
         <td>#${p.id}</td>
-        <td>${fmtData(p.created_at)}</td>
+        <td>${fmtData(p.data_ref || p.created_at)}</td>
         <td>${p.loja_name || p.loja_user || '-'}</td>
         <td>${p.motoboy_name || '-'}</td>
         <td>${p.tipo_pagamento || '-'}</td>
@@ -515,6 +567,7 @@ async function confirmarSaqueSistema() {
     document.getElementById('saque-sistema-valor').value = '';
     document.getElementById('saque-sistema-motivo').value = '';
     carregarSaquePreview();
+    carregarResumo();
     carregarCaixa();
   } catch(e) { alert('Erro de conexão.'); }
 }
@@ -543,11 +596,11 @@ async function confirmarDespesa() {
 async function carregarSolicitacoesSaque() {
   document.getElementById('saque-solicitacoes-loading').style.display = 'block';
   try {
-    const r = await fetch(`${API}/withdrawals`);
+    const r = await fetch(`${API}/withdrawals${_filtroAplicado ? getRange() : ''}`);
     const list = await r.json();
     const container = document.getElementById('saque-solicitacoes-list');
     document.getElementById('saque-solicitacoes-loading').style.display = 'none';
-    if (!list.length) { container.innerHTML = '<p style="color:#888;text-align:center;padding:20px 0">Nenhuma solicitação nos últimos 7 dias.</p>'; return; }
+    if (!list.length) { container.innerHTML = '<p style="color:#888;text-align:center;padding:20px 0">' + (_filtroAplicado ? 'Nenhuma solicitação no período (e nenhuma pendente).' : 'Nenhuma solicitação nos últimos 7 dias.') + '</p>'; return; }
     const statusColor = { pendente: '#ffa500', aprovado: '#4caf50', recusado: '#f44336' };
     const statusLabel = { pendente: '⏳ Pendente', aprovado: '✅ Aprovado', recusado: '❌ Recusado' };
     container.innerHTML = list.map(w => {
@@ -613,6 +666,7 @@ async function processarSolicitacaoSaque(id, status) {
     if (!r.ok) { alert('Erro: ' + (data.error || 'Tente novamente.')); return; }
     alert(status === 'aprovado' ? '✅ Saque aprovado!' : '❌ Saque recusado!');
     carregarSolicitacoesSaque();
+    carregarResumo();
   } catch(e) { alert('Erro: ' + e.message); }
 }
 
@@ -650,7 +704,7 @@ async function gerarPdfLoja(id) {
   const btn = document.getElementById('pdf-btn-loja-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
   try {
-    const res = await fetch(`${API}/financeiro/pedidos${buildQueryWithExtra('loja_user=' + encodeURIComponent(l.username))}`);
+    const res = await fetch(`${API}/financeiro/pedidos${buildQueryWithExtra('criterio=relatorio&loja_user=' + encodeURIComponent(l.username))}`);
     const pedidos = await res.json();
 
     const { jsPDF } = window.jspdf;
@@ -665,7 +719,7 @@ async function gerarPdfLoja(id) {
       startY: 35,
       head: [['Resumo do período', '']],
       body: [
-        ['Saldo atual', fmtMoeda(l.saldo_atual)],
+        ['Saldo atual (hoje)', fmtMoeda(l.saldo_atual)],
         ['Depósitos', fmtMoeda(l.deposito.total) + ' (' + l.deposito.qtd + ' depósito(s))'],
         ['Saques', fmtMoeda(l.saque.total) + ' (' + l.saque.qtd + ' saque(s))'],
         ['Pedidos entregues', String(l.pedidos.qtd)],
@@ -681,7 +735,7 @@ async function gerarPdfLoja(id) {
 
     const linhas = pedidos.map(p => [
       '#' + p.id,
-      fmtData(p.created_at),
+      fmtData(p.data_ref || p.created_at),
       p.motoboy_name || '-',
       p.tipo_pagamento || '-',
       fmtMoeda(p.valor_pedido),
@@ -713,7 +767,7 @@ async function gerarPdfMotoboy(id) {
   const btn = document.getElementById('pdf-btn-motoboy-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
   try {
-    const res = await fetch(`${API}/financeiro/pedidos${buildQueryWithExtra('motoboy_id=' + encodeURIComponent(m.id))}`);
+    const res = await fetch(`${API}/financeiro/pedidos${buildQueryWithExtra('criterio=relatorio&motoboy_id=' + encodeURIComponent(m.id))}`);
     const pedidos = await res.json();
 
     const { jsPDF } = window.jspdf;
@@ -728,7 +782,7 @@ async function gerarPdfMotoboy(id) {
       startY: 35,
       head: [['Resumo do período', '']],
       body: [
-        ['Saldo atual', fmtMoeda(m.saldo_atual)],
+        ['Saldo atual (hoje)', fmtMoeda(m.saldo_atual)],
         ['Ganho corridas', fmtMoeda(m.ganho_corridas.total) + ' (' + m.ganho_corridas.qtd + ')'],
         ['Dinheiro coletado', fmtMoeda(m.dinheiro_coletado.total) + ' (' + m.dinheiro_coletado.qtd + ')'],
         ['Cartão aprox. coletado', fmtMoeda(m.cartao_aproximacao_coletado.total) + ' (' + m.cartao_aproximacao_coletado.qtd + ')'],
@@ -746,7 +800,7 @@ async function gerarPdfMotoboy(id) {
 
     const linhas = pedidos.map(p => [
       '#' + p.id,
-      fmtData(p.created_at),
+      fmtData(p.data_ref || p.created_at),
       p.loja_name || p.loja_user || '-',
       p.tipo_pagamento || '-',
       fmtMoeda(p.valor_pedido),
@@ -1112,9 +1166,9 @@ async function carregarRelatoriosEmitidos() {
   const box = document.getElementById('relatorios-emitidos');
   if (!box) return;
   try {
-    const r = await fetch(`${API}/financeiro/relatorios`);
+    const r = await fetch(`${API}/financeiro/relatorios${_filtroAplicado ? getRange() : ''}`);
     const lista = await r.json();
-    if (!Array.isArray(lista) || !lista.length) { box.innerHTML = '<p style="color:#666;font-size:12px;margin:6px 0">Nenhum relatório emitido ainda.</p>'; return; }
+    if (!Array.isArray(lista) || !lista.length) { box.innerHTML = '<p style="color:#666;font-size:12px;margin:6px 0">' + (_filtroAplicado ? 'Nenhum relatório emitido cobre este período.' : 'Nenhum relatório emitido ainda.') + '</p>'; return; }
     box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Nº</th><th>Emitido em</th><th>Período</th><th>Por</th><th>Lucro</th><th></th></tr></thead><tbody>' +
       lista.map(function(x) {
         const t = x.totais || {};
@@ -1140,6 +1194,7 @@ async function estornarLancamento(id, descricao, valor) {
 // ===== RELATORIO PARA CONTADOR (fim) =====
 
 function carregarTudo() {
+  atualizarStatusFiltro();
   carregarResumo();
   carregarRelatoriosEmitidos();
   carregarCaixa();
