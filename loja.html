@@ -2138,6 +2138,7 @@ window.getIfoodDados=function(){return{localizador:document.getElementById("ifoo
       <p style="color:#555;font-size:11px;margin-top:14px;">As notificações serão enviadas pelo número conectado</p>
     </div>
   </div>
+<script>document.addEventListener('click',function(e){var el=e.target;if(el&&el.tagName==='INPUT'&&el.type==='date'&&!el.disabled&&!el.readOnly&&typeof el.showPicker==='function'){try{el.showPicker();}catch(err){}}});</script>
 </body></html>
 <script>
 function initAutocomplete(){
