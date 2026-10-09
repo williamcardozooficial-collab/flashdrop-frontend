@@ -2139,6 +2139,79 @@ window.getIfoodDados=function(){return{localizador:document.getElementById("ifoo
     </div>
   </div>
 <script>document.addEventListener('click',function(e){var el=e.target;if(el&&el.tagName==='INPUT'&&el.type==='date'&&!el.disabled&&!el.readOnly&&typeof el.showPicker==='function'){try{el.showPicker();}catch(err){}}});</script>
+<script>
+// Robo de pagamentos: esconde Dinheiro / Cartao por aproximacao quando nenhum motoboy online cobre o pedido
+(function(){
+  var ROBO_API = 'https://flashdrop-backend-production.up.railway.app';
+  var ROBO_TIPOS = ['dinheiro', 'cartao_aproximacao'];
+  var ROBO_MSG = { dinheiro: 'No momento não há motoboy disponível para Dinheiro. Escolha outra forma de pagamento.', cartao_aproximacao: 'No momento não há motoboy disponível para Cartão por aproximação. Escolha outra forma de pagamento.' };
+  var disp = { robo_ligado: false, dinheiro: true, cartao_aproximacao: true };
+  var seq = 0, ultimoTotal = null, timer = null;
+  function num(id){ var el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
+  function taxa(){ try { return (typeof calculatedFee !== 'undefined' && calculatedFee > 0) ? calculatedFee : 0; } catch(e) { return 0; } }
+  function totalAtual(){
+    var sel = document.getElementById('tipoPagamento'); var tipo = sel ? sel.value : '';
+    var produto = tipo === 'cartao_aproximacao' ? num('valorCartaoAprox') : tipo === 'dinheiro' ? num('valorPedido') : Math.max(num('valorPedido'), num('valorCartaoAprox'));
+    return Math.round((produto + taxa()) * 100) / 100;
+  }
+  function lojaRef(){ try { return (typeof user !== 'undefined' && user && user.username) || ''; } catch(e) { return ''; } }
+  function aviso(txt){
+    var a = document.getElementById('robo-pag-aviso');
+    if (!a) { var dd = document.getElementById('customPagDropdown'); if (!dd) return; a = document.createElement('div'); a.id = 'robo-pag-aviso'; a.style.cssText = 'display:none;margin-top:8px;background:#2a1a10;border:1px solid #ff9500;border-radius:8px;padding:8px 10px;color:#ffb74d;font-size:12px;font-weight:600'; dd.parentNode.insertBefore(a, dd.nextSibling); }
+    a.textContent = txt || ''; a.style.display = txt ? 'block' : 'none';
+  }
+  function aplicar(){
+    var sel = document.getElementById('tipoPagamento');
+    ROBO_TIPOS.forEach(function(v){
+      var on = disp[v] !== false;
+      var els = [];
+      if (sel) Array.prototype.forEach.call(sel.options, function(o){ if (o.value === v) els.push(o); });
+      document.querySelectorAll('#customPagOptions .pag-opt[data-value="' + v + '"]').forEach(function(e){ els.push(e); });
+      els.forEach(function(e){
+        if (!on && e.style.display !== 'none') { e.style.display = 'none'; e.setAttribute('data-robo-oculto', '1'); }
+        else if (on && e.getAttribute('data-robo-oculto') === '1') { e.style.display = ''; e.removeAttribute('data-robo-oculto'); }
+      });
+    });
+    if (sel && ROBO_TIPOS.indexOf(sel.value) !== -1 && disp[sel.value] === false) {
+      var era = sel.value; sel.value = '';
+      var lbl = document.getElementById('customPagLabel'); if (lbl) lbl.textContent = '-- Selecione --';
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      aviso(ROBO_MSG[era]);
+    }
+  }
+  async function consultar(){
+    var meu = ++seq; var total = totalAtual(); ultimoTotal = total;
+    try {
+      var r = await fetch(ROBO_API + '/disponibilidade-pagamento?loja=' + encodeURIComponent(lojaRef()) + '&valor=' + total.toFixed(2));
+      var j = await r.json();
+      if (meu !== seq || !r.ok) return null;
+      disp = { robo_ligado: j.robo_ligado === true, dinheiro: j.dinheiro_disponivel !== false, cartao_aproximacao: j.cartao_aproximacao_disponivel !== false };
+      aplicar(); return disp;
+    } catch(e) { return null; }
+  }
+  function agendar(){ if (timer) clearTimeout(timer); timer = setTimeout(consultar, 600); }
+  function modalAberto(){ var m = document.getElementById('modal-order'); return !!(m && m.style.display !== 'none' && m.style.display !== ''); }
+  // Ao abrir o modal
+  if (typeof window.openModal === 'function') { var _open = window.openModal; window.openModal = function(){ var r = _open.apply(this, arguments); aviso(''); ultimoTotal = null; consultar(); return r; }; }
+  // As formas configuradas pela plataforma reexibem as opcoes: reaplica o robo depois
+  if (typeof window.aplicarFormasPagamentoNovoPedido === 'function') { var _apl = window.aplicarFormasPagamentoNovoPedido; window.aplicarFormasPagamentoNovoPedido = function(){ document.querySelectorAll('[data-robo-oculto]').forEach(function(e){ e.removeAttribute('data-robo-oculto'); }); var r = _apl.apply(this, arguments); aplicar(); return r; }; }
+  // Nova escolha de forma de pagamento apaga o aviso
+  document.addEventListener('click', function(e){ if (e.target && e.target.closest && e.target.closest('#customPagOptions .pag-opt')) aviso(''); }, true);
+  // Valor do pedido mudou (digitado, pelos itens ou pela taxa): reconsulta com debounce
+  setInterval(function(){ if (!modalAberto()) return; var t = totalAtual(); if (ultimoTotal !== null && t !== ultimoTotal) { ultimoTotal = t; agendar(); } }, 700);
+  // Antes de finalizar: confere de novo (o servidor tambem recusa)
+  document.addEventListener('submit', async function(e){
+    var form = e.target; if (!form || form.id !== 'orderForm' || form._roboOk) return;
+    var sel = document.getElementById('tipoPagamento'); var tipo = sel ? sel.value : '';
+    if (ROBO_TIPOS.indexOf(tipo) === -1) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var d = await consultar();
+    if (d && d[tipo] === false) { try { tg.showAlert(ROBO_MSG[tipo]); } catch(eA) { alert(ROBO_MSG[tipo]); } return; }
+    form._roboOk = true; try { if (typeof form.onsubmit === 'function') await form.onsubmit.call(form, { preventDefault: function(){}, target: form }); } finally { form._roboOk = false; }
+  }, true);
+  window._roboPagamento = { consultar: consultar, aplicar: aplicar, totalAtual: totalAtual, estado: function(){ return disp; } };
+})();
+</script>
 </body></html>
 <script>
 function initAutocomplete(){

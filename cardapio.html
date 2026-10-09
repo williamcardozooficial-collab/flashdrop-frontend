@@ -888,7 +888,7 @@ if(!formas.length)formas=['pix','dinheiro','cartao_credito'];
 sel.innerHTML='<option value="">-- Selecione --</option>';
 if(formas.includes('pix'))sel.innerHTML+='<option value="pix">Pix / Pagamento Online</option>';
 if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">&#128181; Dinheiro</option>';
-if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">&#128179; Maquina de Cartao (cobra ida+volta)</option>';
+if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">&#128179; Máquina de Cartão</option>';
 if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">&#128179; Cartao por aproximacao</option>';if(formas.includes('pix_direto'))sel.innerHTML+='<option value="pix_direto">&#x1F4B8; PIX</option>';
 }
 function renderLojaFechada(loja){
@@ -1456,5 +1456,64 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
 <button onclick="fecharModalPagamentoOnline()" style="width:100%;padding:12px;background:#2a1a00;border:2px solid #f5a623;border-radius:10px;color:#f5a623;font-size:14px;font-weight:600;cursor:pointer;">&#x274C; Cancelar</button>
 </div>
 </div>
+<script>
+// Robo de pagamentos: tira Dinheiro / Cartao por aproximacao do select quando nenhum motoboy online cobre o pedido
+(function(){
+  var ROBO_API = 'https://flashdrop-backend-production.up.railway.app';
+  var ROBO_TIPOS = ['dinheiro', 'cartao_aproximacao'];
+  var ROBO_MSG = { dinheiro: 'No momento não há motoboy disponível para Dinheiro. Escolha outra forma de pagamento.', cartao_aproximacao: 'No momento não há motoboy disponível para Cartão por aproximação. Escolha outra forma de pagamento.' };
+  var disp = { robo_ligado: false, dinheiro: true, cartao_aproximacao: true };
+  var seq = 0, ultimoTotal = null, timer = null;
+  function loja(){ try { return (typeof lojaGlobal !== 'undefined' && lojaGlobal) ? lojaGlobal : null; } catch(e) { return null; } }
+  function totalAtual(){
+    var l = loja(); if (!l) return 0;
+    var itens = 0; try { itens = totalCarrinho(l.id) || 0; } catch(e) {}
+    var tx = 0; try { tx = (typeof taxaCalculada !== 'undefined' && taxaCalculada > 0) ? taxaCalculada : 0; } catch(e) {}
+    return Math.round((itens + tx) * 100) / 100;
+  }
+  function aviso(txt){
+    var a = document.getElementById('robo-pag-aviso');
+    if (!a) { var s = document.getElementById('ch-pag'); if (!s) return; a = document.createElement('div'); a.id = 'robo-pag-aviso'; a.style.cssText = 'display:none;margin-top:8px;background:#2a1a10;border:1px solid #f5a623;border-radius:8px;padding:8px 10px;color:#f5a623;font-size:13px;font-weight:600'; s.parentNode.insertBefore(a, s.nextSibling); }
+    a.textContent = txt || ''; a.style.display = txt ? 'block' : 'none';
+  }
+  // Opcoes sao removidas do select (iPhone ignora display:none em <option>); voltam ao reconstruir pelas formas da loja
+  var _preencher = window.preencherFormasPagamento;
+  function aplicar(){
+    var sel = document.getElementById('ch-pag'); if (!sel) return;
+    var atual = sel.value;
+    if (typeof _preencher === 'function' && loja()) _preencher(loja());
+    ROBO_TIPOS.forEach(function(v){ if (disp[v] === false) Array.prototype.slice.call(sel.options).forEach(function(o){ if (o.value === v) o.remove(); }); });
+    var aindaTem = Array.prototype.some.call(sel.options, function(o){ return o.value === atual; });
+    if (aindaTem) { sel.value = atual; }
+    else if (atual) { sel.value = ''; aviso(ROBO_MSG[atual] || ''); try { sel.dispatchEvent(new Event('change', { bubbles: true })); } catch(e) {} }
+  }
+  if (typeof _preencher === 'function') { window.preencherFormasPagamento = function(){ var r = _preencher.apply(this, arguments); ROBO_TIPOS.forEach(function(v){ var sel = document.getElementById('ch-pag'); if (sel && disp[v] === false) Array.prototype.slice.call(sel.options).forEach(function(o){ if (o.value === v) o.remove(); }); }); return r; }; }
+  async function consultar(){
+    var l = loja(); if (!l) return null;
+    var meu = ++seq; var total = totalAtual(); ultimoTotal = total;
+    try {
+      var r = await fetch(ROBO_API + '/disponibilidade-pagamento?loja=' + encodeURIComponent(l.username || l.id) + '&valor=' + total.toFixed(2));
+      var j = await r.json();
+      if (meu !== seq || !r.ok) return null;
+      disp = { robo_ligado: j.robo_ligado === true, dinheiro: j.dinheiro_disponivel !== false, cartao_aproximacao: j.cartao_aproximacao_disponivel !== false };
+      aplicar(); return disp;
+    } catch(e) { return null; }
+  }
+  function agendar(){ if (timer) clearTimeout(timer); timer = setTimeout(consultar, 600); }
+  function carrinhoAberto(){ var m = document.getElementById('modal-carrinho'); return !!(m && m.classList.contains('ativo')); }
+  if (typeof window.abrirCarrinho === 'function') { var _abrir = window.abrirCarrinho; window.abrirCarrinho = function(){ var r = _abrir.apply(this, arguments); aviso(''); ultimoTotal = null; consultar(); return r; }; }
+  document.addEventListener('change', function(e){ if (e.target && e.target.id === 'ch-pag' && e.target.value) aviso(''); });
+  setInterval(function(){ if (!carrinhoAberto()) return; var t = totalAtual(); if (ultimoTotal !== null && t !== ultimoTotal) { ultimoTotal = t; agendar(); } }, 700);
+  if (typeof window.finalizarPedido === 'function') {
+    var _fin = window.finalizarPedido;
+    window.finalizarPedido = async function(){
+      var sel = document.getElementById('ch-pag'); var tipo = sel ? sel.value : '';
+      if (ROBO_TIPOS.indexOf(tipo) !== -1) { var d = await consultar(); if (d && d[tipo] === false) { alert(ROBO_MSG[tipo]); return; } }
+      return _fin.apply(this, arguments);
+    };
+  }
+  window._roboPagamento = { consultar: consultar, aplicar: aplicar, totalAtual: totalAtual, estado: function(){ return disp; } };
+})();
+</script>
 </body>
 </html>

@@ -72,7 +72,15 @@
 
   <div class="header" style="padding:12px 20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <h1>FlashDrop Admin</h1>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <h1>FlashDrop Admin</h1>
+        <label id="robo-wrap" title="Robô de pagamentos: quando ligado, Dinheiro e Cartão por aproximação só aparecem para loja e cliente se houver motoboy online com saldo para cobrir o pedido" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:#2a2a2a;border:1px solid #444;border-radius:20px;padding:4px 10px;font-size:12px;color:#ccc;user-select:none">
+          <span style="font-size:18px">🤖</span>
+          <input type="checkbox" id="robo-toggle" onchange="alternarRoboPagamentos(this)" disabled style="display:none">
+          <span id="robo-switch" style="position:relative;width:34px;height:18px;border-radius:9px;background:#555;transition:background .2s"><span id="robo-knob" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s"></span></span>
+          <span id="robo-status">...</span>
+        </label>
+      </div>
       <div>
         <button onclick="(function(btn){btn.disabled=true;btn.style.background='#4caf50';btn.style.color='#fff';btn.textContent='✓ Atualizando...';var bc=new BroadcastChannel('flashdrop_reload');bc.postMessage('reload_lojas');setTimeout(function(){bc.close();},500);var activeTab=document.querySelector('.tab-btn.active');var tabId=activeTab?activeTab.getAttribute('onclick').match(/'([^']+)'/):null;loadData(tabId?tabId[1]:'pedidos').then(function(){btn.disabled=false;btn.style.background='#ffcc00';btn.style.color='#000';btn.textContent='🔄 Atualizar';});})(this)" style="background:#ffcc00;color:#000;border:none;border-radius:8px;padding:6px 14px;font-weight:bold;cursor:pointer;font-size:13px;">🔄 Atualizar</button>
         <button onclick="logout()" style="background:#f44336;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:bold;cursor:pointer;font-size:13px;margin-left:6px;">Sair</button>
@@ -2362,6 +2370,36 @@ function toggleSeguirMotoboyMapa(id){if(_mapaSeguindoId==id){_mapaSeguindoId=nul
 document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;window.showTab=function(tab,el){orig(tab,el);if(tab==='mapa'){if(!_mapaMap)initMapaMotoboys();if(!_mapaInterval){atualizarMapaMotoboys();atualizarPedidosMapa();_mapaInterval=setInterval(function(){atualizarMapaMotoboys();atualizarPedidosMapa();},15000);}}else{if(_mapaInterval){clearInterval(_mapaInterval);_mapaInterval=null;}}};});
 </script>
 <div id="print-area" style="display:none;padding:10px;background:#fff;color:#000;font-family:monospace;font-size:12px"></div><script>document.addEventListener('click',function(e){var el=e.target;if(el&&el.tagName==='INPUT'&&el.type==='date'&&!el.disabled&&!el.readOnly&&typeof el.showPicker==='function'){try{el.showPicker();}catch(err){}}});</script>
+<script>
+// Robo de pagamentos: chave liga/desliga (estado salvo no servidor; so o admin altera)
+(function(){
+  var ROBO_API = 'https://flashdrop-backend-production.up.railway.app';
+  function pintar(ligado){
+    var t = document.getElementById('robo-toggle'); if (!t) return;
+    t.checked = !!ligado;
+    document.getElementById('robo-switch').style.background = ligado ? '#4caf50' : '#555';
+    document.getElementById('robo-knob').style.left = ligado ? '18px' : '2px';
+    document.getElementById('robo-status').textContent = ligado ? 'Robô ligado' : 'Robô desligado';
+    document.getElementById('robo-status').style.color = ligado ? '#4caf50' : '#ccc';
+  }
+  function carregar(){
+    fetch(ROBO_API + '/settings/robo-pagamentos').then(function(r){ return r.json(); }).then(function(d){
+      pintar(d && d.robo_pagamentos === true); document.getElementById('robo-toggle').disabled = false;
+    }).catch(function(){ document.getElementById('robo-status').textContent = 'Robô: erro ao carregar'; });
+  }
+  window.alternarRoboPagamentos = function(el){
+    var ligar = el.checked; var tok = ''; try { tok = (JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token) || ''; } catch(e) {}
+    if (ligar && !confirm('Ligar o robô?\nDinheiro e Cartão por aproximação só vão aparecer para lojas e clientes quando houver motoboy online com saldo para cobrir o pedido.')) { pintar(false); return; }
+    el.disabled = true; document.getElementById('robo-status').textContent = 'Salvando...';
+    fetch(ROBO_API + '/settings/robo-pagamentos', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok }, body: JSON.stringify({ ligado: ligar }) })
+      .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(x){ if (!x.ok) { alert('Não foi possível alterar o robô: ' + ((x.d && x.d.error) || 'erro') + (x.d && /Token/i.test(x.d.error || '') ? '\nSaia e entre de novo no admin.' : '')); pintar(!ligar); } else { pintar(x.d.robo_pagamentos === true); } })
+      .catch(function(){ alert('Erro de conexão ao alterar o robô.'); pintar(!ligar); })
+      .then(function(){ el.disabled = false; });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', carregar); else carregar();
+})();
+</script>
 </body>
 </html>
 <script>
