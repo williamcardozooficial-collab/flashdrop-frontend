@@ -221,16 +221,21 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     tg.expand();
 
     var user = JSON.parse(localStorage.getItem("flashdrop_user") || "{}");
+    /* Token de login nas ações (o servidor confere que o pedido é deste motoboy). Sem token, segue como antes. */
+    function _hdrAuth(h) { h = h || {}; var t = user && user.token; if (!t) { try { t = (JSON.parse(localStorage.getItem("flashdrop_user") || "{}")).token; } catch (eTk) {} } if (t) h["Authorization"] = "Bearer " + t; return h; }
+    /* Aviso na tela enquanto espera uma operação demorada (não bloqueia como o alert) */
+    function _mostrarAguarde(msg) { var d = document.getElementById("fd-aguarde"); if (!d) { d = document.createElement("div"); d.id = "fd-aguarde"; d.setAttribute("role", "status"); d.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:24px"; var b = document.createElement("div"); b.className = "fd-aguarde-txt"; b.style.cssText = "background:#1e1e1e;border:1px solid #ffcc00;border-radius:12px;padding:20px;color:#fff;font-size:15px;line-height:1.5;text-align:center;max-width:340px;white-space:pre-line"; d.appendChild(b); document.body.appendChild(d); } d.querySelector(".fd-aguarde-txt").textContent = msg; d.style.display = "flex"; }
+    function _esconderAguarde() { var d = document.getElementById("fd-aguarde"); if (d) d.remove(); }
     if (!user.id || user.role !== "motoboy") { window.location.href = "login.html"; }
 
     var activeOrders = [];
     var allOrdersCache = [];   /* cache de todos os pedidos, usado no calcBalance */
     var allUsersCache = []; var settingsCache = {};
     var activeTimers = {};
-  /* ── AUTO-OFFLINE 180min ── */
+  /* ── AUTO-OFFLINE 6 h (igual ao app e à regra do servidor) ── */
   var _autoOfflineTimer = null;
   var _onlineAt = null;
-  var AUTO_OFFLINE_MS = 180 * 60 * 1000;
+  var AUTO_OFFLINE_MS = 360 * 60 * 1000;
     var TIMER_DURATION = 15 * 60;
 
     var STATUS_LABELS = {
@@ -248,19 +253,40 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     };
 
     /* ── TIMER ── */
+    /* Prazo absoluto: o contador é calculado pelo relógio, não por contagem de segundos.
+       Assim, se o navegador ficar em segundo plano (mapa, tela apagada), o valor volta certo ao reabrir. */
+    function timerRemaining(orderId) {
+      var t = activeTimers[orderId];
+      if (!t) return 0;
+      return Math.ceil((t.deadline - Date.now()) / 1000);
+    }
+    function timerDeadlineLabel(deadlineMs) {
+      var d = new Date(deadlineMs);
+      var hh = d.getHours(); var mm = d.getMinutes();
+      return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+    }
+    function timerTextFor(rem, deadlineMs) {
+      if (rem <= 0) return "Tempo esgotado! Chegue logo na loja.";
+      var mins = Math.floor(rem / 60); var secs = rem % 60;
+      return "Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs + " (até " + timerDeadlineLabel(deadlineMs) + ")";
+    }
     function startTimer(orderId, elapsedSeconds) {
       if (activeTimers[orderId]) clearInterval(activeTimers[orderId].interval);
-      var remaining = TIMER_DURATION - (elapsedSeconds || 0);
-      activeTimers[orderId] = { remaining: remaining };
+      var remainingAtStart = TIMER_DURATION - (elapsedSeconds || 0);
+      activeTimers[orderId] = { deadline: Date.now() + remainingAtStart * 1000, alerted: remainingAtStart <= 0 };
       activeTimers[orderId].interval = setInterval(function() {
-        activeTimers[orderId].remaining -= 1;
+        var t = activeTimers[orderId];
+        if (!t) return;
         updateTimerEl(orderId);
-        if (activeTimers[orderId].remaining <= 0) {
-          clearInterval(activeTimers[orderId].interval);
+        if (timerRemaining(orderId) <= 0 && !t.alerted) {
+          t.alerted = true; clearInterval(t.interval);
           tg.showAlert("Atencao! Tempo de 15 min atingido para o pedido #" + orderId + ". Chegue logo!");
         }
       }, 1000);
     }
+    function refreshAllTimers() { Object.keys(activeTimers).forEach(function(id) { updateTimerEl(id); }); }
+    document.addEventListener("visibilitychange", function() { if (!document.hidden) refreshAllTimers(); });
+    window.addEventListener("focus", refreshAllTimers);
 
     function stopTimer(orderId) {
       if (activeTimers[orderId]) { clearInterval(activeTimers[orderId].interval); delete activeTimers[orderId]; }
@@ -269,12 +295,9 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     function updateTimerEl(orderId) {
       var el = document.getElementById("timer-" + orderId);
       if (!el) return;
-      var rem = activeTimers[orderId] ? activeTimers[orderId].remaining : 0;
-      var mins = Math.floor(Math.max(rem, 0) / 60);
-      var secs = Math.max(rem, 0) % 60;
-      el.querySelector(".timer-text").textContent = rem <= 0
-        ? "Tempo esgotado! Chegue logo na loja."
-        : ("Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs);
+      var rem = activeTimers[orderId] ? timerRemaining(orderId) : 0;
+      var dl = activeTimers[orderId] ? activeTimers[orderId].deadline : Date.now();
+      el.querySelector(".timer-text").textContent = timerTextFor(rem, dl);
       el.className = "timer-box " + (rem <= 120 ? "urgent" : rem <= 300 ? "" : "ok");
     }
 
@@ -326,7 +349,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
     try {
       var resp2 = await fetch(API + "/users/" + user.id, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: _hdrAuth({ "Content-Type": "application/json" }),
         body: JSON.stringify({ online: false })
       });
       if (resp2.ok) {
@@ -335,7 +358,7 @@ var API = "https://flashdrop-backend-production.up.railway.app";
         localStorage.removeItem('_fd_onlineAt');
         _autoOfflineTimer = null;
         syncUser();
-        tg.showAlert("\u23F0 Voc\u00EA foi colocado Offline automaticamente ap\u00F3s 3 horas.");
+        tg.showAlert("\u23F0 Voc\u00EA foi colocado Offline automaticamente ap\u00F3s 6 horas online.");
       }
     } catch(e2) { console.error("auto-offline:", e2); }
   }
@@ -348,7 +371,7 @@ async function toggleOnline() {
       var newOnline = !user.online;
       try {
         var resp = await fetch(API + "/users/" + user.id, {
-          method: "PUT", headers: { "Content-Type": "application/json" },
+          method: "PUT", headers: _hdrAuth({ "Content-Type": "application/json" }),
           body: JSON.stringify({ online: newOnline })
         });
         if (resp.ok) {
@@ -364,6 +387,9 @@ async function toggleOnline() {
           if (_autoOfflineTimer) { clearTimeout(_autoOfflineTimer); _autoOfflineTimer = null; } pararGPS();
         }
         syncUser();
+      } else {
+        var _errOn = {}; try { _errOn = await resp.json(); } catch (eOnJ) {}
+        tg.showAlert("🚫 " + (_errOn.error || "Não foi possível mudar seu status. Tente novamente."));
       }
       } catch(e) { tg.showAlert("Erro ao atualizar status."); }
     };
@@ -433,9 +459,7 @@ function makeInfoRow(label, value, highlight) {
       var rem = Math.max(remaining, 0);
       var mins = Math.floor(rem / 60); var secs = rem % 60;
       var cls = remaining <= 120 ? "urgent" : remaining <= 300 ? "" : "ok";
-      var txt = remaining <= 0
-        ? "Tempo esgotado! Chegue logo na loja."
-        : ("Chegue na loja em " + mins + ":" + (secs < 10 ? "0" : "") + secs);
+      var txt = timerTextFor(remaining, Date.now() + remaining * 1000);
       var box = document.createElement("div");
       box.className = "timer-box " + cls;
       box.id = "timer-" + orderId;
@@ -691,7 +715,7 @@ function makeInfoRow(label, value, highlight) {
           if (_totalCobrar > _saldoDisp) {
             var _aviso = document.createElement("div");
             _aviso.style.cssText = "background:#3a1a1a;border:1px solid #c0392b;border-radius:8px;padding:10px;font-size:12px;color:#e74c3c;text-align:center;margin-top:4px";
-            _aviso.innerHTML = "🚫 Saldo insuficiente para aceitar.<br>Valor a cobrar: <strong>R\$ " + _totalCobrar.toFixed(2) + "</strong> &gt; Saldo disponível: <strong>R\$ " + _saldoDisp.toFixed(2) + "</strong>";
+            _aviso.innerHTML = "🚫 Saldo insuficiente para aceitar.<br>Valor a cobrar: <strong>R\$ " + _totalCobrar.toFixed(2).replace(".", ",") + "</strong> &gt; Saldo disponível: <strong>R\$ " + _saldoDisp.toFixed(2).replace(".", ",") + "</strong>";
             card.appendChild(_aviso);
           } else {
             card.appendChild(btn);
@@ -764,15 +788,16 @@ function makeInfoRow(label, value, highlight) {
           myDiv.innerHTML = "<div class=\"empty\">Nenhuma entrega ativa</div>";
         } else {
           active.forEach(function(o) { myDiv.appendChild(makeOrderCard(o, "mine")); });
-          /* GPS: reiniciar se ha pedido ativo e GPS parado */
-          var pedidosGps = active.filter(function(o){ return ['aceito','na_loja','coletado','no_cliente'].indexOf(o.status) > -1; }).map(function(o){ return o.id; });
-          if (user.online) { if (!_gpsInterval) { iniciarGPS(pedidosGps); } else { _gpsOrderIds = pedidosGps; } }
-          if (!user.online && _gpsInterval) pararGPS();
-          Object.keys(activeTimers).forEach(function(tid) {
-            var still = active.find(function(o) { return String(o.id) === tid && o.status === "aceito"; });
-            if (!still) stopTimer(tid);
-          });
         }
+        /* GPS: online envia a localização (com os pedidos ativos, ou sem pedido); sem pedidos, a lista fica vazia */
+        var pedidosGps = active.filter(function(o){ return ['aceito','na_loja','coletado','no_cliente'].indexOf(o.status) > -1; }).map(function(o){ return o.id; });
+        if (user.online) { if (!_gpsInterval) { iniciarGPS(pedidosGps); } else { _gpsOrderIds = pedidosGps; } }
+        else if (_gpsInterval) pararGPS();
+        /* Cronômetros: para os de pedidos que não estão mais "aceito" por este motoboy (inclusive quando não sobra nenhum) */
+        Object.keys(activeTimers).forEach(function(tid) {
+          var still = active.find(function(o) { return String(o.id) === tid && o.status === "aceito"; });
+          if (!still) stopTimer(tid);
+        });
         if (done.length === 0) {
           doneDiv.innerHTML = "<div class=\"empty\">Nenhuma entrega concluída hoje</div>";
         } else {
@@ -841,38 +866,41 @@ function makeInfoRow(label, value, highlight) {
           tg.showAlert("⚠️ O código de entrega é obrigatório para finalizar.");
           return;
         }
-        /* Para pedidos iFood: verificar via bot */
-        var orderCheckData = null;
-        try {
-          var orderCheckResp = await fetch(API + "/orders/" + orderId);
-          orderCheckData = await orderCheckResp.json();
-        } catch (eOrderCheck) {
-          console.error("Erro ao verificar tipo de pedido antes de finalizar:", eOrderCheck);
+        /* Pedido iFood: confirma a entrega no site do iFood pelo robô do servidor (POST /ifood/confirmar-entrega,
+           localizador do pedido + código do cliente). O servidor só deixa finalizar pedido iFood depois dessa confirmação.
+           Usa o pedido já carregado na lista (não existe rota GET /orders/:id). */
+        var orderCheckData = (allOrdersCache || []).find(function(x){ return String(x.id) === String(orderId); }) || null;
+        if (!orderCheckData) {
+          try { var _rLista = await fetch(API + "/orders"); if (_rLista.ok) { var _lista = await _rLista.json(); orderCheckData = (_lista || []).find(function(x){ return String(x.id) === String(orderId); }) || null; } } catch (eOrderCheck) { console.error("Erro ao buscar o pedido antes de finalizar:", eOrderCheck); }
         }
-        if (orderCheckData && orderCheckData.tipo_pagamento === "ifood") {
-          if (!orderCheckData.ifood_localizador) {
-            tg.showAlert("❌ Este pedido iFood está sem o código localizador cadastrado. Não é possível confirmar a entrega assim. Avise a loja/suporte antes de finalizar.");
+        if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && !orderCheckData.ifood_confirmado_em) {
+          var _locIfood = String(orderCheckData.ifood_localizador || "").replace(/\D/g, "");
+          if (_locIfood.length !== 8) {
+            tg.showAlert("❌ Este pedido iFood está sem o localizador (8 números) cadastrado, então não dá para confirmar a entrega no iFood. Avise a loja ou o suporte. O pedido NÃO foi finalizado.");
             return;
           }
-          tg.showAlert("⏳ Confirmando entrega no iFood...");
+          if (!/^\d{4}$/.test(codigoDigitado)) {
+            tg.showAlert("❌ Em pedido iFood, o código do cliente tem 4 números (o cliente vê no app do iFood). Confira e tente de novo.");
+            return;
+          }
+          _mostrarAguarde("⏳ Confirmando a entrega no site do iFood...\nIsso pode levar até 1 minuto. Não feche esta página.");
           try {
             var botResp = await fetch(API + "/ifood/confirmar-entrega", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ localizador: orderCheckData.ifood_localizador, codigoCliente: codigoDigitado, orderId: orderId })
+              headers: _hdrAuth({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ localizador: _locIfood, codigoCliente: codigoDigitado, orderId: orderId })
             });
-            var botData = await botResp.json();
-            if (!botData.ok) {
-              tg.showAlert("❌ " + (botData.erro || botData.error || "Erro ao confirmar entrega no iFood. Verifique o código."));
+            var botData = {}; try { botData = await botResp.json(); } catch (eBotJson) {}
+            _esconderAguarde();
+            if (!botResp.ok || !botData.ok) {
+              tg.showAlert("❌ O iFood não confirmou a entrega.\n" + (botData.erro || botData.error || "Confira o código do cliente e tente de novo.") + "\nO pedido NÃO foi finalizado.");
               return;
             }
           } catch (eBotConf) {
-            /* Falha real ao falar com o robo do iFood (conexao, timeout, etc.):
-               NAO finaliza silenciosamente - avisa o motoboy e bloqueia,
-               para nao marcar como entregue algo que pode nao ter sido
-               confirmado de verdade no site do iFood. */
+            /* Falha ao falar com o robô do iFood: não finaliza (o servidor também recusaria sem a confirmação) */
+            _esconderAguarde();
             console.error("Erro ao confirmar entrega no iFood:", eBotConf);
-            tg.showAlert("❌ Não foi possível confirmar a entrega no iFood (falha de conexão). Tente novamente antes de finalizar.");
+            tg.showAlert("❌ Não foi possível falar com o iFood agora (falha de conexão). O pedido NÃO foi finalizado. Tente de novo em instantes.");
             return;
           }
         }
@@ -890,7 +918,7 @@ navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, enabl
 });
 const verResp = await fetch(API + "/orders/" + orderId + "/verificar-na-loja", {
 method: "POST",
-headers: { "Content-Type": "application/json" },
+headers: _hdrAuth({ "Content-Type": "application/json" }),
 body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
 });
 const verData = await verResp.json();
@@ -933,20 +961,18 @@ if (!geoPassed) return;
 
         /* Atualiza o pedido */
         var orderResp = await fetch(API + "/orders/" + orderId, {
-          method: "PUT", headers: { "Content-Type": "application/json" },
+          method: "PUT", headers: _hdrAuth({ "Content-Type": "application/json" }),
           body: JSON.stringify(update)
         });
-        if (orderResp.status === 403) {
-        var errData = await orderResp.json();
-        tg.showAlert("🚫 " + (errData.error || "Ação não permitida."));
-        return;
-      }
-      if (orderResp.status === 400) {
-        var errD4 = await orderResp.json();
-        tg.showAlert("❌ " + (errD4.error || "Código de entrega incorreto. Verifique com o cliente e tente novamente."));
-        return;
-      }
-      if (!orderResp.ok) throw new Error("Erro ao atualizar pedido");
+        if (!orderResp.ok) {
+          var errData = {}; try { errData = await orderResp.json(); } catch (eErrJson) {}
+          var _msgPadrao = orderResp.status === 400 ? "Código de entrega incorreto. Verifique com o cliente e tente novamente."
+            : orderResp.status === 403 ? "Ação não permitida."
+            : "Não foi possível atualizar o pedido (erro " + orderResp.status + "). Tente novamente.";
+          tg.showAlert((orderResp.status === 403 ? "🚫 " : "❌ ") + (errData.error || errData.erro || _msgPadrao));
+          if (orderResp.status === 403 || orderResp.status === 409) { try { await loadOrders(); } catch (eRl) {} }
+          return;
+        }
 
         if (action.startTimer) startTimer(orderId, 0);
         if (action.stopTimer)  stopTimer(orderId);
@@ -968,10 +994,10 @@ if (!geoPassed) return;
     try {
       var resp = await fetch(API + "/orders/" + orderId, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: _hdrAuth({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "retornado" })
       });
-      if (!resp.ok) { var err = await resp.json(); tg.showAlert(err.error || "Erro."); return; }
+      if (!resp.ok) { var err = {}; try { err = await resp.json(); } catch (eErrJ) {} tg.showAlert(err.error || "Erro."); return; }
       tg.showAlert("✅ Retorno finalizado! Entrega concluída.");
       await loadOrders();
       await syncUser();
@@ -982,23 +1008,29 @@ if (!geoPassed) return;
   function cancelOrder(orderId) {
     showConfirm(
       "⚠️ ATENÇÃO — PENALIDADE",
-      "Se cancelar você ficará BLOQUEADO por 10 minutos e não poderá aceitar novos pedidos. Deseja continuar?",
+      "Se desistir, você recebe uma penalidade e fica um tempo sem poder aceitar pedidos. A penalidade aumenta a cada desistência no dia: 10 min, 30 min, 1 h, 6 h e 24 h. Deseja continuar?",
       async function() {
         try {
           var resp = await fetch(API + "/orders/" + orderId, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: _hdrAuth({ "Content-Type": "application/json" }),
             body: JSON.stringify({ status: "pendente", motoboy_id: null, motoboy_name: null, t_aceito: null })
           });
           if (!resp.ok) {
-            var err = await resp.json();
+            var err = {}; try { err = await resp.json(); } catch (eErrJ) {}
             tg.showAlert(err.error || "Erro ao cancelar.");
             return;
           }
           stopTimer(orderId);
-          tg.showAlert("Entrega cancelada. Você está bloqueado por 10 minutos.");
           await loadOrders();
           await syncUser();
+          var _buPen = parseInt(user.blocked_until) || 0;
+          if (_buPen > Date.now()) {
+            var _quando = new Date(_buPen).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+            tg.showAlert("Entrega cancelada. Você só pode aceitar novos pedidos a partir de " + _quando + " (horário de Brasília).");
+          } else {
+            tg.showAlert("Entrega cancelada.");
+          }
         } catch(e) {
           tg.showAlert("Erro ao cancelar: " + e.message);
         }
