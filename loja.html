@@ -2213,32 +2213,59 @@ window.getIfoodDados=function(){return{localizador:document.getElementById("ifoo
 })();
 </script>
 <script>
-// Horario de funcionamento: bloqueia "Novo Pedido" e a finalizacao com a Flash Drop fechada
+// Horario de funcionamento: com a Flash Drop fechada a loja abre o "Novo Pedido" e calcula o valor da entrega normalmente;
+// so o botao de criar o pedido fica desativado (o servidor tambem recusa a criacao).
 (function(){
   var FUNC_API = 'https://flashdrop-backend-production.up.railway.app';
   async function consultarFuncionamento(){ try { var r = await fetch(FUNC_API + '/funcionamento', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; } }
-  function msgFechado(f){ return (f && f.mensagem) || 'A Flash Drop está fechada agora.'; }
+  function fechado(f){ return !!(f && f.aberto_agora === false); }
+  var estado = null, htmlOriginal = null;
+  function msgLoja(f){
+    var p = f && f.proxima_abertura;
+    return 'A Flash Drop está fechada agora.' + (p ? ' Abrimos ' + p : '') + ' — você pode consultar o valor, mas só vai conseguir criar o pedido ' + (p ? 'nesse horário.' : 'quando abrirmos.');
+  }
   function avisar(m){ try { tg.showAlert(m); } catch (e) { alert(m); } }
+  function modalAberto(){ var m = document.getElementById('modal-order'); return !!(m && m.style.display === 'block'); }
+  function aplicar(){
+    var btn = document.getElementById('submitBtn'); if (!btn) return;
+    var av = document.getElementById('func-aviso-loja');
+    if (!av) { av = document.createElement('div'); av.id = 'func-aviso-loja'; av.style.cssText = 'display:none;margin:0 0 12px;background:#3a1a1a;border:1.5px solid #e53935;border-radius:10px;padding:12px 14px;color:#ffcdd2;font-size:13px;font-weight:700;line-height:1.5'; btn.parentNode.insertBefore(av, btn); }
+    if (fechado(estado)) {
+      av.textContent = '🔒 ' + msgLoja(estado); av.style.display = 'block';
+      if (htmlOriginal === null) htmlOriginal = btn.innerHTML;
+      btn.disabled = true; btn.style.opacity = '0.4'; btn.textContent = '🔒 Criar pedido só no horário de funcionamento';
+      btn.setAttribute('data-func-travado', '1');
+    } else {
+      av.style.display = 'none';
+      if (btn.getAttribute('data-func-travado') === '1') {
+        btn.removeAttribute('data-func-travado');
+        var temTaxa = false; try { temTaxa = typeof calculatedFee !== 'undefined' && calculatedFee > 0; } catch (e) {}
+        btn.innerHTML = temTaxa ? 'Finalizar Pedido' : (htmlOriginal || btn.innerHTML);
+        btn.disabled = !temTaxa; btn.style.opacity = temTaxa ? '1' : '0.4';
+      }
+    }
+  }
+  async function atualizar(){ var f = await consultarFuncionamento(); if (f) estado = f; aplicar(); return f; }
+  // Abre o formulario normalmente e so depois confere o horario
   if (typeof window.openModal === 'function') {
     var _abrir = window.openModal;
-    window.openModal = async function(){
-      var args = arguments, self = this;
-      var f = await consultarFuncionamento();
-      if (f && f.aberto_agora === false) { avisar(msgFechado(f)); return; }
-      return _abrir.apply(self, args);
-    };
+    window.openModal = function(){ var r = _abrir.apply(this, arguments); atualizar(); return r; };
   }
+  // O calculo da taxa reativa o botao: enquanto fechado, o botao volta a ficar travado
+  setInterval(function(){ if (modalAberto() && fechado(estado)) aplicar(); }, 400);
+  setInterval(function(){ if (modalAberto()) atualizar(); }, 60000);
+  // Criar o pedido: confere de novo na hora
   var form = document.getElementById('orderForm');
   if (form && typeof form.onsubmit === 'function') {
     var _enviar = form.onsubmit;
     form.onsubmit = async function(e){
       if (e && e.preventDefault) e.preventDefault();
-      var f = await consultarFuncionamento();
-      if (f && f.aberto_agora === false) { avisar(msgFechado(f)); return; }
+      var f = await atualizar();
+      if (fechado(f)) { avisar(msgLoja(f)); return; }
       return _enviar.call(this, e);
     };
   }
-  window._funcionamento = { consultar: consultarFuncionamento };
+  window._funcionamento = { consultar: consultarFuncionamento, atualizar: atualizar, mensagem: msgLoja };
 })();
 </script>
 </body></html>
