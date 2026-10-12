@@ -2430,7 +2430,21 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
   var DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
   var cfgAtual = null;
   function campo(id){ return document.getElementById(id); }
-  function inputHora(id, v){ return '<input type="time" id="' + id + '" value="' + (v || '') + '" style="padding:6px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;width:96px">'; }
+  // Campo de horario: texto com teclado numerico e mascara HH:MM (o <input type="time"> nao abria no celular).
+  // Digitar 1100 vira 11:00; ao sair do campo, 930 vira 09:30 e 9 vira 09:00. Aceita 00:00 a 23:59.
+  function inputHora(id, v){ return '<input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" class="func-hora" id="' + id + '" value="' + (v || '') + '" style="padding:8px 6px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;width:72px;font-size:16px;text-align:center">'; }
+  function mascaraHora(v){ var d = String(v || '').replace(/\D/g, '').slice(0, 4); return d.length > 2 ? d.slice(0, 2) + ':' + d.slice(2) : d; }
+  function normalizarHora(v){
+    var d = String(v || '').replace(/\D/g, '').slice(0, 4);
+    if (!d) return '';
+    if (d.length <= 2) d = ('0' + d).slice(-2) + '00'; else if (d.length === 3) d = '0' + d;
+    var h = parseInt(d.slice(0, 2), 10), m = parseInt(d.slice(2), 10);
+    if (h > 23 || m > 59) return null;
+    return d.slice(0, 2) + ':' + d.slice(2);
+  }
+  function marcarHora(el){ var n = normalizarHora(el.value); if (n === null) { el.style.borderColor = '#e53935'; return false; } el.value = n; el.style.borderColor = '#444'; return true; }
+  document.addEventListener('input', function(e){ var el = e.target; if (el && el.classList && el.classList.contains('func-hora')) { var p = mascaraHora(el.value); if (p !== el.value) el.value = p; el.style.borderColor = '#444'; } });
+  document.addEventListener('blur', function(e){ var el = e.target; if (el && el.classList && el.classList.contains('func-hora')) marcarHora(el); }, true);
   function montar(cfg){
     cfgAtual = cfg || { ativo: false, dias: {}, manual: null };
     campo('func-ativo').checked = !!cfgAtual.ativo;
@@ -2459,7 +2473,11 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
     var cfg = { ativo: campo('func-ativo').checked, dias: {}, manual: cfgAtual ? cfgAtual.manual || null : null };
     for (var d = 0; d < 7; d++) {
       var turnos = [];
-      [1, 2].forEach(function(n){ var i = campo('func-' + d + '-' + n + 'i').value, f = campo('func-' + d + '-' + n + 'f').value; if (i || f) turnos.push({ ini: i, fim: f }); });
+      [1, 2].forEach(function(n){
+        var ei = campo('func-' + d + '-' + n + 'i'), ef = campo('func-' + d + '-' + n + 'f');
+        if (!marcarHora(ei) || !marcarHora(ef)) throw new Error(DIAS[d] + ', ' + n + 'º turno: horário inválido (use 00:00 a 23:59).');
+        var i = ei.value, f = ef.value; if (i || f) turnos.push({ ini: i, fim: f });
+      });
       cfg.dias[String(d)] = { aberto: campo('func-ab-' + d).checked, turnos: turnos };
     }
     return cfg;
@@ -2477,9 +2495,9 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
     try { var r = await fetch(FUNC_API + '/funcionamento/config', { cache: 'no-store' }); var d = await r.json(); montar(d.config); pintarEstado(d.estado); }
     catch (e) { campo('func-estado').textContent = 'Erro ao carregar o horário de funcionamento.'; }
   };
-  window.salvarFuncionamentoAdmin = async function(){ if (await enviar(lerForm())) alert('Horário salvo.'); };
+  window.salvarFuncionamentoAdmin = async function(){ var cfg; try { cfg = lerForm(); } catch (e) { alert(e.message); return; } if (await enviar(cfg)) alert('Horário salvo.'); };
   window.manualFuncionamentoAdmin = async function(modo){
-    var cfg = lerForm();
+    var cfg; try { cfg = lerForm(); } catch (e) { alert(e.message); return; }
     if (!cfg.ativo && modo) { alert('Ligue "Usar horário de funcionamento" para usar Fechar/Abrir agora.'); return; }
     if (modo === 'fechado' && !confirm('Fechar a Flash Drop agora?\nLojas e clientes não vão conseguir criar pedidos até você clicar "Abrir agora" ou "Seguir horário".')) return;
     cfg.manual = modo; await enviar(cfg);

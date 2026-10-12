@@ -2,7 +2,63 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" /><script>
+/* Avisos da propria pagina: substituem alert/confirm/prompt do navegador (que mostram "<dominio> diz" no celular).
+   fdAlert(msg) -> Promise; fdConfirm(msg, {ok, cancelar}) -> Promise<boolean>; fdPrompt(msg, valor) -> Promise<string|null>.
+   Varios avisos seguidos aparecem um de cada vez, na ordem. */
+(function(){
+  var fila = [], aberto = false;
+  function estilo(){
+    if (document.getElementById('fd-dlg-css')) return;
+    var s = document.createElement('style'); s.id = 'fd-dlg-css';
+    s.textContent = '.fd-dlg-fundo{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;animation:fdDlgIn .15s ease}' +
+      '.fd-dlg{background:#1e1e1e;border:1px solid #333;border-radius:16px;max-width:420px;width:100%;max-height:85vh;overflow:auto;padding:22px 18px 16px;color:#eee;box-shadow:0 12px 40px rgba(0,0,0,.55);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;box-sizing:border-box}' +
+      '.fd-dlg-msg{font-size:15px;line-height:1.55;white-space:pre-wrap;word-break:break-word;margin:0 0 18px}' +
+      '.fd-dlg-in{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1.5px solid #444;background:#111;color:#fff;font-size:16px;margin:-6px 0 18px;outline:none}' +
+      '.fd-dlg-in:focus{border-color:#f5a623}' +
+      '.fd-dlg-bts{display:flex;gap:10px;justify-content:flex-end}' +
+      '.fd-dlg-bts button{flex:1;max-width:180px;padding:12px 16px;border-radius:10px;border:0;font-size:15px;font-weight:700;cursor:pointer}' +
+      '.fd-dlg-ok{background:#f5a623;color:#000}.fd-dlg-cancelar{background:#333;color:#ddd}' +
+      '@keyframes fdDlgIn{from{opacity:0}to{opacity:1}}';
+    document.head.appendChild(s);
+  }
+  function proximo(){
+    if (aberto || !fila.length || !document.body) return;
+    aberto = true; estilo();
+    var it = fila.shift();
+    var fundo = document.createElement('div'); fundo.className = 'fd-dlg-fundo'; fundo.setAttribute('role', 'dialog'); fundo.setAttribute('aria-modal', 'true');
+    var caixa = document.createElement('div'); caixa.className = 'fd-dlg';
+    var msg = document.createElement('div'); msg.className = 'fd-dlg-msg'; msg.textContent = it.msg; caixa.appendChild(msg);
+    var campo = null;
+    if (it.tipo === 'prompt') { campo = document.createElement('input'); campo.className = 'fd-dlg-in'; campo.value = (it.extra.valor === undefined || it.extra.valor === null) ? '' : String(it.extra.valor); caixa.appendChild(campo); }
+    var bts = document.createElement('div'); bts.className = 'fd-dlg-bts';
+    var cancelar = null;
+    if (it.tipo !== 'alert') { cancelar = document.createElement('button'); cancelar.type = 'button'; cancelar.className = 'fd-dlg-cancelar'; cancelar.textContent = (it.extra && it.extra.cancelar) || 'Cancelar'; bts.appendChild(cancelar); }
+    var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'fd-dlg-ok'; ok.textContent = (it.extra && it.extra.ok) || (it.tipo === 'confirm' ? 'Confirmar' : 'OK'); bts.appendChild(ok);
+    caixa.appendChild(bts); fundo.appendChild(caixa); document.body.appendChild(fundo);
+    function fechar(resultado){
+      document.removeEventListener('keydown', tecla, true);
+      if (fundo.parentNode) fundo.parentNode.removeChild(fundo);
+      aberto = false; it.res(resultado); setTimeout(proximo, 0);
+    }
+    function respOk(){ fechar(it.tipo === 'confirm' ? true : it.tipo === 'prompt' ? campo.value : undefined); }
+    function respCancelar(){ fechar(it.tipo === 'confirm' ? false : it.tipo === 'prompt' ? null : undefined); }
+    function tecla(e){ if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); respOk(); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); respCancelar(); } }
+    ok.onclick = respOk; if (cancelar) cancelar.onclick = respCancelar;
+    document.addEventListener('keydown', tecla, true);
+    setTimeout(function(){ try { (campo || ok).focus(); } catch (e) {} }, 0);
+  }
+  function enfileirar(tipo, msg, extra){
+    return new Promise(function(res){
+      fila.push({ tipo: tipo, msg: String(msg === undefined || msg === null ? '' : msg), extra: extra || {}, res: res });
+      if (document.body) proximo(); else document.addEventListener('DOMContentLoaded', proximo);
+    });
+  }
+  window.fdAlert = function(m){ return enfileirar('alert', m); };
+  window.fdConfirm = function(m, o){ return enfileirar('confirm', m, o); };
+  window.fdPrompt = function(m, v){ return enfileirar('prompt', m, { valor: v }); };
+})();
+</script>
 <title>FlashDrop - Cardapio</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -451,7 +507,7 @@ var rua=document.getElementById('ch-rua').value.trim();
 var numero=document.getElementById('ch-numero').value.trim();
 var bairro=document.getElementById('ch-bairro').value.trim();
 var cidade=document.getElementById('ch-cidade').value.trim();
-if(!rua||!numero||!bairro||!cidade){alert('Preencha o endereco completo antes de calcular.');return;}
+if(!rua||!numero||!bairro||!cidade){fdAlert('Preencha o endereco completo antes de calcular.');return;}
 if(!lojaGlobal||!lojaGlobal.address){statusEl.innerHTML='<span style="color:#ff6b6b">&#9888; A loja ainda nao cadastrou o endereco. Fale com a loja para saber a taxa.</span>';return;}
 btn.disabled=true;btn.textContent='Calculando...';
 statusEl.innerHTML='<span style="color:#aaa">&#8987; Calculando distancia...</span>';
@@ -513,7 +569,7 @@ btn.disabled=false;
 /* ---- FINALIZAR ---- */
 async function finalizarPedido(){
 var lid=lojaGlobal?lojaGlobal.id:null;if(!lid)return;
-var c=getCarrinho(lid);if(!c.length){alert('Carrinho vazio!');return;}
+var c=getCarrinho(lid);if(!c.length){fdAlert('Carrinho vazio!');return;}
 var nome=document.getElementById('ch-nome').value.trim();
 var cel=document.getElementById('ch-cel').value.trim();
 var cpf=document.getElementById('ch-cpf').value.trim();
@@ -524,14 +580,14 @@ var cidade=document.getElementById('ch-cidade').value.trim();
 var complemento=document.getElementById('ch-complemento').value.trim();
 var obs_entrega=document.getElementById('ch-obs-entrega').value.trim();
 var pag=document.getElementById('ch-pag').value;
-if(!nome){alert('Informe seu nome completo.');return;}
-if(!cel||cel.replace(/\D/g,'').length<10){alert('Informe um celular valido.');return;}
-if(!cpf||cpf.replace(/\D/g,'').length<11){alert('Informe um CPF valido.');return;}
-if(!rua){alert('Informe a rua de entrega.');return;}
-if(!numero){alert('Informe o numero.');return;}
-if(!bairro){alert('Informe o bairro.');return;}
-if(!cidade){alert('Informe a cidade.');return;}
-if(taxaCalculada===0){alert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
+if(!nome){fdAlert('Informe seu nome completo.');return;}
+if(!cel||cel.replace(/\D/g,'').length<10){fdAlert('Informe um celular valido.');return;}
+if(!cpf||cpf.replace(/\D/g,'').length<11){fdAlert('Informe um CPF valido.');return;}
+if(!rua){fdAlert('Informe a rua de entrega.');return;}
+if(!numero){fdAlert('Informe o numero.');return;}
+if(!bairro){fdAlert('Informe o bairro.');return;}
+if(!cidade){fdAlert('Informe a cidade.');return;}
+if(taxaCalculada===0){fdAlert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
 var endCompleto=rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
 /* Montar string de itens */
 var itens=c.map(function(i){
@@ -573,7 +629,7 @@ nomeCliente:nome
 var mpData=await mpRes.json();
 btn.disabled=false;btn.textContent='Finalizar Pedido';
 if(!mpRes.ok||!mpData.checkout_url){
-alert('Erro ao gerar pagamento: '+(mpData.error||'Tente novamente.'));
+fdAlert('Erro ao gerar pagamento: '+(mpData.error||'Tente novamente.'));
 return;
 }
 /* Salvar dados do pedido pendente no sessionStorage para enviar apos confirmacao */
@@ -613,7 +669,7 @@ sessionStorage.setItem('flashdrop_loja_lid', String(lid));
 try{var rEnvioImediato=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pedidoPendente)});if(rEnvioImediato.ok){sessionStorage.removeItem('flashdrop_pedido_mp');sessionStorage.removeItem('flashdrop_loja_lid');var lidNumImediato=lid?parseInt(lid):null;if(lidNumImediato&&carrinho[lidNumImediato]){carrinho[lidNumImediato]=[];}taxaCalculada=0;distanciaCalculada=0;atualizarBarra(lidNumImediato);var blocoImediato=document.getElementById('bloco-taxa-resultado');if(blocoImediato)blocoImediato.style.display='none';}}catch(eEnvioImediato){} mostrarModalPagamentoOnline(mpData.checkout_url, totalFinal, mpData.pix_copia_cola||null, mpData.pix_qrcode_base64||null);
 }catch(e){
 btn.disabled=false;btn.textContent='Finalizar Pedido';
-alert('Erro ao conectar com o servidor. Tente novamente.');
+fdAlert('Erro ao conectar com o servidor. Tente novamente.');
 }
 return;
 }
@@ -655,12 +711,12 @@ if(r.ok){
 carrinho[lid]=[];taxaCalculada=0;distanciaCalculada=0;
 atualizarBarra(lid);fecharCarrinho();
 document.getElementById('bloco-taxa-resultado').style.display='none';
-alert('Pedido enviado! Em breve a loja confirmara.');
+fdAlert('Pedido enviado! Em breve a loja confirmara.');
 }else{
 var err=await r.json().catch(function(){return{};});
-alert('Erro: '+(err.error||r.status));
+fdAlert('Erro: '+(err.error||r.status));
 }
-}catch(e){alert('Erro de conexao. Tente novamente.');}
+}catch(e){fdAlert('Erro de conexao. Tente novamente.');}
 btn.disabled=false;btn.textContent='Finalizar Pedido';
 }
 
@@ -704,14 +760,14 @@ if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';btn.style.backg
 async function confirmarPagamentoConcluido(){
 var dados=sessionStorage.getItem('flashdrop_pedido_mp');
 var lid=sessionStorage.getItem('flashdrop_loja_lid');
-if(!dados){fecharModalPagamentoOnline();alert('Pedido ja foi enviado para a loja! Aguarde a confirmacao.');return;}
+if(!dados){fecharModalPagamentoOnline();fdAlert('Pedido ja foi enviado para a loja! Aguarde a confirmacao.');return;}
 var pedido=JSON.parse(dados);
 var btn=document.getElementById('btn-mp-confirmar');
 var prefId=pedido.preference_id;
 var paymentId=pedido.pix_payment_id;
 var lojaId=lojaGlobal?lojaGlobal.id:null;
 if((!prefId&&!paymentId)||!lojaId){
-alert('Nao foi possivel verificar o pagamento agora. Aguarde alguns segundos e tente novamente.');
+fdAlert('Nao foi possivel verificar o pagamento agora. Aguarde alguns segundos e tente novamente.');
 return;
 }
 if(btn){btn.disabled=true;btn.textContent='Verificando pagamento...';}
@@ -721,12 +777,12 @@ vUrl2+=paymentId?('&payment_id='+encodeURIComponent(paymentId)):('&preference_id
 var vrRes=await fetch(vUrl2);
 var vrData=await vrRes.json().catch(function(){return{};});
 if(!vrRes.ok||!vrData.pago){
-alert('Ainda nao identificamos o seu pagamento no Mercado Pago. Se voce ja pagou o Pix, aguarde alguns segundos (a confirmacao costuma ser automatica) e clique novamente. Se ainda nao pagou, finalize o Pix antes de continuar.');
+fdAlert('Ainda nao identificamos o seu pagamento no Mercado Pago. Se voce ja pagou o Pix, aguarde alguns segundos (a confirmacao costuma ser automatica) e clique novamente. Se ainda nao pagou, finalize o Pix antes de continuar.');
 if(btn){btn.disabled=false;btn.textContent='✅ Ja paguei — Enviar Pedido';}
 return;
 }
 }catch(e){
-alert('Erro ao verificar o pagamento. Tente novamente.');
+fdAlert('Erro ao verificar o pagamento. Tente novamente.');
 if(btn){btn.disabled=false;btn.textContent='✅ Ja paguei — Enviar Pedido';}
 return;
 }
@@ -742,14 +798,14 @@ taxaCalculada=0;distanciaCalculada=0;
 atualizarBarra(lidNum);fecharCarrinho();fecharModalPagamentoOnline();pararPollingPagamento();
 var bloco=document.getElementById('bloco-taxa-resultado');
 if(bloco)bloco.style.display='none';
-alert('\u2705 Pedido enviado com sucesso! Em breve a loja confirmara e iniciara o preparo.');
+fdAlert('\u2705 Pedido enviado com sucesso! Em breve a loja confirmara e iniciara o preparo.');
 }else{
 var err=await r.json().catch(function(){return{};});
-alert('Erro ao enviar pedido: '+(err.error||r.status));
+fdAlert('Erro ao enviar pedido: '+(err.error||r.status));
 if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedido';}
 }
 }catch(e){
-alert('Erro de conexao. Tente novamente.');
+fdAlert('Erro de conexao. Tente novamente.');
 if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedido';}
 }
 }
@@ -809,7 +865,7 @@ fecharCarrinho();
 fecharModalPagamentoOnline();
 var bloco=document.getElementById('bloco-taxa-resultado');
 if(bloco)bloco.style.display='none';
-alert('\u2705 Pagamento confirmado automaticamente! Pedido enviado com sucesso. Em breve a loja confirmara e iniciara o preparo.');
+fdAlert('\u2705 Pagamento confirmado automaticamente! Pedido enviado com sucesso. Em breve a loja confirmara e iniciara o preparo.');
 }else{
 if(btn){btn.disabled=false;btn.textContent='\u2705 Ja paguei \u2014 Enviar Pedido';}
 }
@@ -945,7 +1001,7 @@ var gi=parseInt(inp.dataset.gi);
 var grupo=_varProd.prod.variacoes[gi];
 var maxQtd=grupo&&grupo.qtd>0?grupo.qtd:999;
 var checked=document.getElementById('modal-var-body').querySelectorAll('input[type=checkbox][data-gi="'+gi+'"]:checked');
-if(checked.length>maxQtd){inp.checked=false;alert('Escolha apenas '+maxQtd+' opcao(oes) para: '+grupo.nome);return;}
+if(checked.length>maxQtd){inp.checked=false;fdAlert('Escolha apenas '+maxQtd+' opcao(oes) para: '+grupo.nome);return;}
 }
 recalcVarTotal();
 });
@@ -977,7 +1033,7 @@ for(var gi=0;gi<variacoes.length;gi++){
 var grupo = variacoes[gi];
 if(!grupo.obrigatorio)continue;
 var checked = document.getElementById('modal-var-body').querySelectorAll('input[data-gi="'+gi+'"]:checked');
-if(checked.length===0){alert('Selecione uma opcao para: '+grupo.nome);return;}
+if(checked.length===0){fdAlert('Selecione uma opcao para: '+grupo.nome);return;}
 }
 var extra = 0;
 var adicionais = [];
@@ -1030,7 +1086,7 @@ if(navigator.clipboard){
 navigator.clipboard.writeText(loja.pix_key).then(function(){
 var btn=document.querySelector('#bloco-pix-loja button');
 if(btn){var orig=btn.innerHTML;btn.innerHTML='&#10003; Copiado!';setTimeout(function(){btn.innerHTML=orig;},2000);}
-}).catch(function(){alert('Chave PIX: '+loja.pix_key);});
+}).catch(function(){fdAlert('Chave PIX: '+loja.pix_key);});
 }else{
 var ta=document.createElement('textarea');ta.value=loja.pix_key;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
 var btn=document.querySelector('#bloco-pix-loja button');
@@ -1508,7 +1564,7 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
     var _fin = window.finalizarPedido;
     window.finalizarPedido = async function(){
       var sel = document.getElementById('ch-pag'); var tipo = sel ? sel.value : '';
-      if (ROBO_TIPOS.indexOf(tipo) !== -1) { var d = await consultar(); if (d && d[tipo] === false) { alert(ROBO_MSG[tipo]); return; } }
+      if (ROBO_TIPOS.indexOf(tipo) !== -1) { var d = await consultar(); if (d && d[tipo] === false) { fdAlert(ROBO_MSG[tipo]); return; } }
       return _fin.apply(this, arguments);
     };
   }
@@ -1550,7 +1606,7 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
     var _fin = window.finalizarPedido;
     window.finalizarPedido = async function(){
       var f = await atualizar();
-      if (fechado(f)) { alert(msgCliente(f)); return; }
+      if (fechado(f)) { fdAlert(msgCliente(f)); return; }
       return _fin.apply(this, arguments);
     };
   }
