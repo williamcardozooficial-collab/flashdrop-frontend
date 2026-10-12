@@ -403,10 +403,12 @@ async function toggleOnline() {
 
     /* ── DOM HELPERS ── */
     function fmtEndereco(v){if(!v)return '';try{var o=JSON.parse(v);var parts=[o.rua,o.num,o.comp,o.bairro,o.cidade].filter(Boolean);return parts.join(', ');}catch(e){return v;}}
+/* Decodifica entidades HTML gravadas pelo servidor (ex.: &#x27; vira apostrofo) para exibir com textContent: nada vira HTML */
+function _decEnt(t){ if (t === null || t === undefined) return t; var x = document.createElement("textarea"); x.innerHTML = String(t); return x.value; }
 function makeInfoRow(label, value, highlight) {
       var row = document.createElement("div"); row.className = "info-row";
       var l = document.createElement("span"); l.className = "info-label"; l.textContent = label;
-      var v = document.createElement("span"); v.className = "info-value"; v.textContent = value;
+      var v = document.createElement("span"); v.className = "info-value"; v.textContent = _decEnt(value);
       if (highlight) v.style.color = "#ffcc00";
       row.appendChild(l); row.appendChild(v);
       return row;
@@ -804,27 +806,29 @@ function makeInfoRow(label, value, highlight) {
         return;
       }
 
-      /* ── VERIFICAÇÃO DE SALDO PARA DINHEIRO / CARTÃO POR APROXIMAÇÃO ── */
+      /* ── VERIFICAÇÃO DE SALDO (só DINHEIRO / CARTÃO POR APROXIMAÇÃO) ──
+         Usa o pedido já carregado na lista (não existe rota GET /orders/:id). PIX e pagamento online não verificam saldo.
+         Mesma conta do servidor: saldo + limite do admin + crédito da loja (limite - devido, mínimo 0).
+         Se a verificação falhar por erro técnico, segue: o servidor confere o crédito no aceite e responde com a mensagem. */
       if (currentStatus === "pendente") {
-        try {
-          var _orderResp = await fetch(API + "/orders/" + orderId);
-          var orderData = await _orderResp.json();
-          if (orderData && (orderData.tipo_pagamento === "dinheiro" || orderData.tipo_pagamento === "cartao_aproximacao")) {
-            var _vPed = parseFloat(orderData.valor_pedido || 0);
-            var _vEnt = parseFloat(orderData.valor_total || 0);
-            var _totalCob = _vPed + _vEnt;
+        var orderData = (allOrdersCache || []).find(function(x){ return String(x.id) === String(orderId); });
+        if (orderData && (orderData.tipo_pagamento === "dinheiro" || orderData.tipo_pagamento === "cartao_aproximacao")) {
+          try {
+            var _totalCob = parseFloat(orderData.valor_pedido || 0) + parseFloat(orderData.valor_total || 0);
             var _userResp = await fetch(API + "/users/" + user.id);
-            var _userData = await _userResp.json();
-            var _saldo = parseFloat(_userData.balance || 0);
-            var _credito = parseFloat(_userData.credit_limit || 0);
-            var _saldoDisp = _saldo + _credito;
-            if (_totalCob > _saldoDisp) {
-              var _modoPag = orderData.tipo_pagamento === "dinheiro" ? "dinheiro" : "cartão por aproximação";
-              tg.showAlert("❌ Saldo insuficiente!\nEsta entrega é em " + _modoPag + ".\nValor a cobrar: R$ " + _totalCob.toFixed(2) + "\nSeu saldo disponível: R$ " + _saldoDisp.toFixed(2));
-              return;
+            if (_userResp.ok) {
+              var _userData = await _userResp.json();
+              var _lojaCred = 0;
+              try { var _lc = ((window._lojaCreditoCache || {})[orderData.loja_user] || []).find(function(c){ return String(c.motoboy_id) === String(user.id); }); if (_lc) _lojaCred = Math.max(0, (parseFloat(_lc.limite) || 0) - (parseFloat(_lc.devido) || 0)); } catch(_eLc) {}
+              var _saldoDisp = parseFloat(_userData.balance || 0) + parseFloat(_userData.custom_credit_limit || 0) + _lojaCred;
+              if (Math.round(_totalCob * 100) > Math.round(_saldoDisp * 100)) {
+                var _modoPag = orderData.tipo_pagamento === "dinheiro" ? "dinheiro" : "cartão por aproximação";
+                tg.showAlert("❌ Saldo insuficiente!\nEsta entrega é em " + _modoPag + ".\nValor a cobrar: R$ " + _totalCob.toFixed(2).replace(".", ",") + "\nSeu saldo disponível: R$ " + _saldoDisp.toFixed(2).replace(".", ","));
+                return;
+              }
             }
-          }
-        } catch(_e) { /* se falhar a verificação, bloqueia por segurança */ tg.showAlert("❌ Não foi possível verificar seu saldo. Tente novamente."); return; }
+          } catch(_e) { /* erro técnico: o servidor decide no aceite */ }
+        }
       }
 
       /* Codigo de entrega ao finalizar */
