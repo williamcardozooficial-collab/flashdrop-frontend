@@ -2335,7 +2335,7 @@ window.getIfoodDados=function(){return{localizador:document.getElementById("ifoo
    Contraste minimo 4,5:1 em todo texto e alvos de toque de 44px. So aparencia. ===== */
 :root{--fd-bg:#12131f;--fd-sup:#1c1d2e;--fd-sup2:#26283d;--fd-sup3:#2f3150;--fd-borda:#3a3d63;--fd-texto:#f1f2f8;--fd-suave:#c3c6da;--fd-suave2:#a9adc6;--fd-marca-texto:#9aa5ff;--fd-laranja:#ffb547;--fd-verde:#4ade80;--fd-vermelho:#ff7b7b;--fd-roxo:#c4a5ff;--fd-grad:linear-gradient(135deg,#5b5fd6 0%,#6d28d9 100%)}
 html,body{background:var(--fd-bg)!important;color:var(--fd-texto)!important}
-body{-webkit-text-size-adjust:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 /* Cabecalho */
 .header{background:linear-gradient(160deg,#2f338a 0%,#4a2a86 100%)!important;padding:14px 16px 20px!important;border-radius:0 0 24px 24px!important}
 .header h1{font-size:24px!important;line-height:1.25!important;margin-top:4px}
@@ -2395,7 +2395,7 @@ body{-webkit-text-size-adjust:100%;font-family:-apple-system,BlinkMacSystemFont,
 [style*="background:#25d366"],[style*="background: rgb(37, 211, 102)"]{background:#0f7a3f!important;color:#fff!important}
 .btn-edit{background:#5b5fd6!important;color:#fff!important}
 /* Area de toque minima de 44px (botoes, links de acao e caixas de selecao com o rotulo inteiro clicavel) */
-button{min-height:44px!important;min-width:44px!important}
+button{min-height:44px!important}
 a[href*="wa.me"],a[onclick]{min-height:44px!important;display:inline-flex!important;align-items:center;justify-content:center;padding-left:12px!important;padding-right:12px!important;font-size:13px!important}
 .header button[onclick="abrirModalFoto()"]{width:44px!important;height:44px!important}
 label:has(> input[type=checkbox]),label:has(> input[type=radio]){min-height:44px!important;display:inline-flex!important;align-items:center}
@@ -2418,6 +2418,12 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
 
 .order-card [style*="solid rgb(238, 238, 238)"],.order-card [style*="solid #eee"],.order-card [style*="solid #f0f0f0"],.order-card [style*="solid rgb(240, 240, 240)"]{border-color:var(--fd-borda)!important}
 .order-card button{margin-right:6px!important;margin-bottom:6px!important}
+/* Abas (Pedidos, Solicitações, Cardápio...): chips com o texto inteiro que quebram em linhas, em vez de espremer */
+.fd-abas-wrap{border-bottom:none!important;background:transparent!important;padding:8px 0 4px!important;gap:8px}
+.fd-abas{display:flex!important;flex-wrap:wrap!important;overflow:visible!important;gap:6px!important}
+.fd-abas > button{flex:1 1 auto!important;min-width:max-content!important;white-space:nowrap!important;margin:0!important;padding:10px 12px!important;border:1px solid var(--fd-borda)!important;border-radius:12px!important;background:var(--fd-sup2)!important;font-size:13px!important;line-height:1.3!important}
+.fd-abas > button[style*="187, 134, 252"],.fd-abas > button[style*="color:#bb86fc"]{background:var(--fd-grad)!important;color:#fff!important;border-color:transparent!important}
+#tab-solicitar-saldo{height:auto!important;margin:2px 0 0!important;padding:12px 14px!important;border:1px solid rgba(74,222,128,.45)!important;border-radius:12px!important;background:rgba(74,222,128,.10)!important;color:var(--fd-verde)!important;white-space:normal!important;line-height:1.3!important;font-size:14px!important}
 #fd-audio-unlock-banner{min-height:48px!important;line-height:24px!important;box-sizing:border-box}
 /* Computador: conteudo com largura limitada e centralizado (no celular nada muda) */
 @media (min-width:900px){
@@ -2440,6 +2446,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     if (instr) instr.classList.add('fd-destaque'); if (rec) { rec.classList.add('fd-icone'); rec.setAttribute('aria-label', 'Atualizar'); }
     [instr, card, bot, sup, rec].forEach(function(b){ if (b) barra.appendChild(b); });
     h.insertBefore(barra, h.firstChild);
+    var aba = document.getElementById('tab-pedidos'); if (aba && aba.parentElement) { aba.parentElement.classList.add('fd-abas'); if (aba.parentElement.parentElement) aba.parentElement.parentElement.classList.add('fd-abas-wrap'); }
     var cards = document.querySelectorAll('.stat-card[onclick*="abrirHistoricoCredito"] > div');
     Array.prototype.forEach.call(cards, function(d){ if (/Ver extrato/.test(d.textContent)) d.classList.add('fd-ver-extrato'); });
   }
