@@ -2514,6 +2514,64 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar); else montar();
 })();
 </script>
+<style id="fd-avisos-img-css">
+.fd-avimg{position:fixed;inset:0;z-index:2147482000;background:rgba(10,11,22,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+.fd-avimg-caixa{width:100%;max-width:560px;max-height:100%;display:flex;flex-direction:column;gap:12px;background:var(--fd-sup,#1c1d2e);border:1px solid var(--fd-borda,#3a3d63);border-radius:18px;padding:16px;box-sizing:border-box}
+.fd-avimg-topo{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fd-avimg-titulo{font-size:17px;font-weight:800;color:var(--fd-texto,#f1f2f8);line-height:1.3;overflow-wrap:anywhere}
+.fd-avimg-cont{font-size:13px;font-weight:700;color:var(--fd-suave,#c3c6da);white-space:nowrap;background:var(--fd-sup2,#26283d);border-radius:20px;padding:4px 10px}
+.fd-avimg-img-wrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto;border-radius:12px;background:#0d0e18}
+.fd-avimg-img{display:block;max-width:100%;max-height:calc(100vh - 230px);width:auto;height:auto;object-fit:contain;cursor:zoom-in}
+.fd-avimg.fd-ampliado .fd-avimg-img-wrap{align-items:flex-start;justify-content:flex-start}
+.fd-avimg.fd-ampliado .fd-avimg-img{max-width:none;max-height:none;width:200%;cursor:zoom-out}
+.fd-avimg-dica{font-size:12px;color:var(--fd-suave2,#a9adc6);text-align:center}
+.fd-avimg-ok{min-height:52px;border:0;border-radius:14px;background:var(--fd-grad,linear-gradient(135deg,#5b5fd6,#6d28d9));color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+</style>
+<script>
+/* Avisos com imagem: ao abrir a pagina, mostra os avisos pendentes desta loja (um por vez, "Entendi" marca como visto).
+   Rotas /avisos-loja com o token da loja. Se a consulta falhar, nao atrapalha o uso da pagina. */
+(function(){
+  var API_AV = 'https://flashdrop-backend-production.up.railway.app';
+  var fila = [], pos = 0, aberto = false, ultimaBusca = 0;
+  function tok(){ try { return (JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token) || ''; } catch (e) { return ''; } }
+  function fechar(){ var m = document.getElementById('fd-avimg'); if (m) m.remove(); aberto = false; document.documentElement.style.overflow = ''; }
+  function mostrar(){
+    var a = fila[pos]; if (!a) return fechar();
+    var m = document.getElementById('fd-avimg');
+    if (!m) {
+      m = document.createElement('div'); m.id = 'fd-avimg'; m.className = 'fd-avimg'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+      m.innerHTML = '<div class="fd-avimg-caixa"><div class="fd-avimg-topo"><div class="fd-avimg-titulo"></div><div class="fd-avimg-cont"></div></div><div class="fd-avimg-img-wrap"><img class="fd-avimg-img" alt=""></div><div class="fd-avimg-dica">Toque na imagem para ampliar</div><button type="button" class="fd-avimg-ok">Entendi</button></div>';
+      document.body.appendChild(m); document.documentElement.style.overflow = 'hidden';
+      m.querySelector('.fd-avimg-img').addEventListener('click', function(){ m.classList.toggle('fd-ampliado'); m.querySelector('.fd-avimg-dica').textContent = m.classList.contains('fd-ampliado') ? 'Toque na imagem para voltar ao tamanho normal' : 'Toque na imagem para ampliar'; });
+      m.querySelector('.fd-avimg-ok').addEventListener('click', entendi);
+    }
+    m.classList.remove('fd-ampliado'); m.querySelector('.fd-avimg-dica').textContent = 'Toque na imagem para ampliar';
+    var t = m.querySelector('.fd-avimg-titulo'); t.textContent = a.titulo || 'Aviso da Flash Drop';
+    m.querySelector('.fd-avimg-cont').textContent = (pos + 1) + ' de ' + fila.length;
+    var img = m.querySelector('.fd-avimg-img'); img.src = a.imagem; img.alt = a.titulo || 'Aviso da Flash Drop';
+    m.querySelector('.fd-avimg-ok').textContent = pos < fila.length - 1 ? 'Entendi — próximo' : 'Entendi';
+    aberto = true;
+  }
+  async function entendi(){
+    var a = fila[pos]; var b = document.querySelector('#fd-avimg .fd-avimg-ok'); if (b) b.disabled = true;
+    try { await fetch(API_AV + '/avisos-loja/' + a.id + '/visto', { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok() } }); } catch (e) {}
+    if (b) b.disabled = false;
+    pos++; if (pos < fila.length) mostrar(); else fechar();
+  }
+  async function buscar(){
+    if (aberto || !tok()) return; ultimaBusca = Date.now();
+    try {
+      var r = await fetch(API_AV + '/avisos-loja/pendentes', { headers: { 'Authorization': 'Bearer ' + tok() }, cache: 'no-store' });
+      if (!r.ok) return; var lista = await r.json();
+      if (Array.isArray(lista) && lista.length && !aberto) { fila = lista; pos = 0; mostrar(); }
+    } catch (e) {}
+  }
+  window._fdAvisosImg = { buscar: buscar };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(buscar, 800); }); else setTimeout(buscar, 800);
+  // ao voltar para a pagina (app em segundo plano), procura de novo no maximo a cada 5 minutos
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden && Date.now() - ultimaBusca > 5 * 60 * 1000) buscar(); });
+})();
+</script>
 </body></html>
 <script>
 function initAutocomplete(){

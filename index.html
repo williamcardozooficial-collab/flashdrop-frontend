@@ -327,6 +327,28 @@
     <button class="btn btn-primary" onclick="postAviso()">📤 Publicar Aviso</button>
   </div>
   <div id="avisos-list"></div>
+  <div class="card" id="avisos-img-card" style="margin-top:16px">
+    <h3 style="margin-bottom:6px;color:#ffcc00;">🖼️ Avisos com imagem para as lojas</h3>
+    <div style="font-size:12px;color:#aaa;margin-bottom:12px;line-height:1.5">A loja vê a imagem em tela cheia quando abre a página, até tocar em "Entendi". Pode haver vários avisos ativos ao mesmo tempo.</div>
+    <div class="input-group"><label>Imagem (JPG, PNG ou WEBP)</label>
+      <input id="avimg-arquivo" type="file" accept="image/jpeg,image/png,image/webp" class="input" style="padding:8px">
+      <div id="avimg-prev-box" style="display:none;margin-top:10px;text-align:center"><img id="avimg-prev" alt="Pré-visualização" style="max-width:100%;max-height:320px;border-radius:10px;border:1px solid #444"><div id="avimg-info" style="font-size:12px;color:#aaa;margin-top:6px"></div></div>
+    </div>
+    <div class="input-group"><label>Título (opcional)</label><input id="avimg-titulo" class="input" maxlength="200" placeholder="Ex: Novidade na Flash Drop"></div>
+    <div class="input-group"><label>Para quem</label>
+      <label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer"><input type="radio" name="avimg-destino" value="todas" checked style="width:20px;height:20px"> Todas as lojas</label>
+      <label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer"><input type="radio" name="avimg-destino" value="escolher" style="width:20px;height:20px"> Escolher lojas</label>
+      <div id="avimg-lojas-box" style="display:none;margin-top:6px">
+        <input id="avimg-busca" class="input" placeholder="Buscar loja por nome ou código">
+        <div id="avimg-lojas" style="max-height:240px;overflow-y:auto;border:1px solid #444;border-radius:8px;margin-top:6px;padding:4px 8px"></div>
+        <div id="avimg-selecionadas" style="font-size:12px;color:#aaa;margin-top:6px">Nenhuma loja selecionada</div>
+      </div>
+    </div>
+    <div class="input-group"><label>Expira em (opcional) — some sozinho no fim desse dia</label><input id="avimg-expira" class="input" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></div>
+    <div id="avimg-msg" style="display:none;margin:4px 0 10px;font-size:13px;padding:8px 10px;border-radius:8px"></div>
+    <button class="btn btn-primary" id="avimg-publicar" onclick="publicarAvisoImagem()">📤 Publicar aviso com imagem</button>
+    <div id="avimg-lista" style="margin-top:16px"></div>
+  </div>
 </div>
   <!-- CAIXA DA PLATAFORMA -->
 
@@ -2502,6 +2524,138 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
     if (modo === 'fechado' && !confirm('Fechar a Flash Drop agora?\nLojas e clientes não vão conseguir criar pedidos até você clicar "Abrir agora" ou "Seguir horário".')) return;
     cfg.manual = modo; await enviar(cfg);
   };
+})();
+</script>
+<script>
+/* Avisos com imagem para as lojas (admin). Rotas /admin/avisos-loja com o token do admin. */
+(function(){
+  var API_AV = 'https://flashdrop-backend-production.up.railway.app';
+  var imagemPronta = null, lojasCache = [], selecionadas = {};
+  function tok(){ try { return (JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token) || ''; } catch (e) { return ''; } }
+  function $(id){ return document.getElementById(id); }
+  function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function msg(t, erro){ var m = $('avimg-msg'); if (!m) return; m.textContent = t || ''; m.style.display = t ? 'block' : 'none'; m.style.background = erro ? '#3a1a1a' : '#12301a'; m.style.color = erro ? '#ff9a9a' : '#7ee2a0'; }
+  function dataBR(v){ if (!v) return '—'; try { return new Date(v).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return '—'; } }
+  // Reduz a imagem no navegador: lado maior ate 1080 px, JPEG ~0,8, alvo abaixo de 300 KB
+  function reduzir(arquivo){
+    return new Promise(function(ok, falha){
+      var leitor = new FileReader();
+      leitor.onerror = function(){ falha(new Error('Não foi possível ler o arquivo.')); };
+      leitor.onload = function(){
+        var img = new Image();
+        img.onerror = function(){ falha(new Error('Arquivo de imagem inválido.')); };
+        img.onload = function(){
+          var lado = 1080, q = 0.8, url = '', tentativas = 0;
+          do {
+            var esc2 = Math.min(1, lado / Math.max(img.naturalWidth, img.naturalHeight));
+            var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * esc2)); c.height = Math.max(1, Math.round(img.naturalHeight * esc2));
+            var ctx = c.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+            url = c.toDataURL('image/jpeg', q);
+            if (url.length * 3 / 4 <= 300 * 1024) break;
+            if (q > 0.55) q -= 0.1; else lado = Math.round(lado * 0.85);
+          } while (++tentativas < 12);
+          ok({ url: url, w: c.width, h: c.height, kb: Math.round(url.length * 3 / 4 / 1024) });
+        };
+        img.src = leitor.result;
+      };
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+  function desenharLojas(){
+    var box = $('avimg-lojas'); if (!box) return;
+    var q = ($('avimg-busca').value || '').toLowerCase().trim();
+    var lista = lojasCache.filter(function(l){ return !q || (l.name || '').toLowerCase().indexOf(q) !== -1 || (l.custom_id || '').toLowerCase().indexOf(q) !== -1; });
+    box.innerHTML = lista.length ? lista.map(function(l){ return '<label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;border-bottom:1px solid #333"><input type="checkbox" data-id="' + l.id + '"' + (selecionadas[l.id] ? ' checked' : '') + ' style="width:20px;height:20px"> <span><b>' + esc(l.custom_id || '') + '</b> ' + esc(l.name || l.username || '') + '</span></label>'; }).join('') : '<div style="color:#aaa;padding:10px 0">Nenhuma loja encontrada.</div>';
+    var n = Object.keys(selecionadas).length; $('avimg-selecionadas').textContent = n ? n + ' loja(s) selecionada(s)' : 'Nenhuma loja selecionada';
+  }
+  async function carregarLojas(){
+    if (lojasCache.length) return desenharLojas();
+    try { var r = await fetch(API_AV + '/users'); var u = await r.json(); lojasCache = (u || []).filter(function(x){ return x.role === 'loja'; }).sort(function(a, b){ return String(a.custom_id || '').localeCompare(String(b.custom_id || '')); }); } catch (e) { lojasCache = []; }
+    desenharLojas();
+  }
+  function lerExpira(){
+    var v = ($('avimg-expira').value || '').trim(); if (!v) return { ok: true, iso: null };
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v); if (!m) return { ok: false, erro: 'Data de expiração inválida (use dd/mm/aaaa).' };
+    var d = new Date(m[3] + '-' + m[2] + '-' + m[1] + 'T23:59:59-03:00'); var chk = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])); if (isNaN(d.getTime()) || chk.getUTCDate() !== +m[1] || chk.getUTCMonth() !== +m[2] - 1) return { ok: false, erro: 'Data de expiração inválida.' };
+    if (d.getTime() <= Date.now()) return { ok: false, erro: 'A data de expiração já passou.' };
+    return { ok: true, iso: d.toISOString() };
+  }
+  window.publicarAvisoImagem = async function(){
+    msg('');
+    if (!imagemPronta) return msg('Escolha uma imagem.', true);
+    var destino = (document.querySelector('input[name="avimg-destino"]:checked') || {}).value;
+    var alvo = null; if (destino === 'escolher') { alvo = Object.keys(selecionadas).map(Number); if (!alvo.length) return msg('Escolha pelo menos uma loja (ou marque "Todas as lojas").', true); }
+    var ex = lerExpira(); if (!ex.ok) return msg(ex.erro, true);
+    var b = $('avimg-publicar'); b.disabled = true; b.textContent = 'Publicando...';
+    try {
+      var r = await fetch(API_AV + '/admin/avisos-loja', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ imagem: imagemPronta.url, titulo: $('avimg-titulo').value, lojas_alvo: alvo, expira_em: ex.iso }) });
+      var d = {}; try { d = await r.json(); } catch (e) {}
+      if (!r.ok) { msg('Não foi possível publicar: ' + (d.error || ('erro ' + r.status)) + (r.status === 401 || r.status === 403 ? ' Saia e entre de novo no admin.' : ''), true); return; }
+      msg('Aviso publicado' + (alvo ? ' para ' + alvo.length + ' loja(s).' : ' para todas as lojas.'));
+      imagemPronta = null; $('avimg-arquivo').value = ''; $('avimg-prev-box').style.display = 'none'; $('avimg-titulo').value = ''; $('avimg-expira').value = '';
+      carregarAvisosImg();
+    } catch (e) { msg('Erro de conexão ao publicar.', true); }
+    finally { b.disabled = false; b.textContent = '📤 Publicar aviso com imagem'; }
+  };
+  async function acao(id, metodo, corpo){
+    var r = await fetch(API_AV + '/admin/avisos-loja/' + id, { method: metodo, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: corpo ? JSON.stringify(corpo) : undefined });
+    if (!r.ok) { var d = {}; try { d = await r.json(); } catch (e) {} msg('Não foi possível: ' + (d.error || ('erro ' + r.status)), true); }
+    carregarAvisosImg();
+  }
+  window.carregarAvisosImg = async function(){
+    var box = $('avimg-lista'); if (!box) return;
+    box.innerHTML = '<div style="color:#aaa">Carregando avisos com imagem...</div>';
+    try {
+      var r = await fetch(API_AV + '/admin/avisos-loja', { headers: { 'Authorization': 'Bearer ' + tok() } });
+      var lista = await r.json();
+      if (!r.ok) { box.innerHTML = '<div style="color:#ff9a9a">' + esc(lista.error || 'Erro ao carregar.') + '</div>'; return; }
+      if (!lista.length) { box.innerHTML = '<div style="color:#aaa">Nenhum aviso com imagem ainda.</div>'; return; }
+      box.innerHTML = lista.map(function(a){
+        var status = a.expirado ? '<span style="color:#aaa">Expirado</span>' : (a.ativo ? '<span style="color:#7ee2a0">Ativo</span>' : '<span style="color:#ffcc66">Pausado</span>');
+        var destino = a.lojas_alvo_nomes ? esc(a.lojas_alvo_nomes.join(', ')) : 'Todas as lojas';
+        return '<div class="avimg-item" data-id="' + a.id + '" style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid #333">' +
+          '<img src="' + a.imagem + '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:8px;flex:0 0 72px;border:1px solid #444">' +
+          '<div style="flex:1;min-width:0;font-size:13px;line-height:1.5">' +
+            '<div style="font-weight:700;color:#fff">' + esc(a.titulo || '(sem título)') + ' · ' + status + '</div>' +
+            '<div style="color:#ccc">Para: ' + destino + '</div>' +
+            '<div style="color:#aaa">Criado em ' + dataBR(a.criado_em) + ' · Expira: ' + (a.expira_em ? dataBR(a.expira_em) : 'não expira') + '</div>' +
+            '<div style="color:#ccc">Vistos: <b>' + a.vistos + '</b> de ' + a.total_alvo + ' loja(s)</div>' +
+            '<div class="avimg-botoes" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
+              (a.expirado ? '' : '<button class="btn" style="min-height:40px;padding:0 12px" data-acao="' + (a.ativo ? 'pausar' : 'reativar') + '">' + (a.ativo ? '⏸ Pausar' : '▶ Reativar') + '</button>') +
+              '<button class="btn" style="min-height:40px;padding:0 12px;background:#5a1e1e;color:#fff" data-acao="apagar">🗑 Apagar</button>' +
+            '</div>' +
+          '</div></div>';
+      }).join('');
+    } catch (e) { box.innerHTML = '<div style="color:#ff9a9a">Erro de conexão ao carregar.</div>'; }
+  };
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('#avimg-lista button[data-acao]'); if (!b) return;
+    var item = b.closest('.avimg-item'); var id = item.getAttribute('data-id'); var a = b.getAttribute('data-acao');
+    if (a === 'pausar') return acao(id, 'PUT', { ativo: false });
+    if (a === 'reativar') return acao(id, 'PUT', { ativo: true });
+    if (a === 'apagar') { // confirmacao na propria pagina
+      item.querySelector('.avimg-botoes').innerHTML = '<span style="color:#ff9a9a;font-weight:700;align-self:center">Apagar este aviso?</span><button class="btn" style="min-height:40px;padding:0 12px" data-acao="cancelar">Cancelar</button><button class="btn" style="min-height:40px;padding:0 12px;background:#c62828;color:#fff" data-acao="confirmar-apagar">Apagar</button>';
+      return;
+    }
+    if (a === 'cancelar') return carregarAvisosImg();
+    if (a === 'confirmar-apagar') return acao(id, 'DELETE');
+  });
+  document.addEventListener('change', function(e){
+    if (e.target && e.target.id === 'avimg-arquivo') {
+      var f = e.target.files && e.target.files[0]; imagemPronta = null; $('avimg-prev-box').style.display = 'none'; msg('');
+      if (!f) return;
+      if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { msg('Use uma imagem JPG, PNG ou WEBP.', true); e.target.value = ''; return; }
+      reduzir(f).then(function(r){ imagemPronta = r; $('avimg-prev').src = r.url; $('avimg-info').textContent = r.w + ' × ' + r.h + ' px · ' + r.kb + ' KB'; $('avimg-prev-box').style.display = 'block'; }).catch(function(err){ msg(err.message, true); });
+    }
+    if (e.target && e.target.name === 'avimg-destino') { var escolher = e.target.value === 'escolher' && e.target.checked; $('avimg-lojas-box').style.display = escolher ? 'block' : 'none'; if (escolher) carregarLojas(); }
+    if (e.target && e.target.closest && e.target.closest('#avimg-lojas') && e.target.type === 'checkbox') { var id = e.target.getAttribute('data-id'); if (e.target.checked) selecionadas[id] = true; else delete selecionadas[id]; desenharLojas(); }
+  });
+  document.addEventListener('input', function(e){
+    if (e.target && e.target.id === 'avimg-busca') desenharLojas();
+    if (e.target && e.target.id === 'avimg-expira') { var d = e.target.value.replace(/\D/g, '').slice(0, 8); e.target.value = d.length > 4 ? d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4) : d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; }
+  });
+  // carrega a lista quando a aba Avisos e aberta
+  if (typeof window.showTab === 'function') { var _st = window.showTab; window.showTab = function(id){ var r = _st.apply(this, arguments); if (id === 'avisos') window.carregarAvisosImg(); return r; }; }
 })();
 </script>
 </body>
