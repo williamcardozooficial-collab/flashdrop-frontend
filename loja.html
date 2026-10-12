@@ -2449,6 +2449,11 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
 .stats [id="stat-rating-total"],.stats [id="stat-emprestimo-status"],.stats .fd-ver-extrato{display:none!important}
 /* Se alguma palavra dos cartoes nao couber (fonte do celular grande), passam para 2x2 (classe posta pelo script) */
 .stats.fd-cards-2col{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+/* Cartoes clicaveis (Credito abre o extrato, Avaliacao e Emprestimo abrem os detalhes): cursor, faixa na base e reacao ao toque */
+.stats > .stat-card[onclick],.fd-cards-duplo > div[onclick]{cursor:pointer;position:relative;transition:transform .08s,border-color .15s}
+.stats > .stat-card[onclick],.fd-cards-duplo > div[onclick]{box-shadow:inset 0 -3px 0 var(--fd-marca-texto)!important}
+.stats > .stat-card[onclick]:hover,.fd-cards-duplo > div[onclick]:hover{border-color:var(--fd-marca-texto)!important}
+.stats > .stat-card[onclick]:active,.fd-cards-duplo > div[onclick]:active{transform:scale(.97)}
 .fd-acoes-cards{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px;box-sizing:border-box}
 .fd-acoes-cards > button{flex:1 1 0;min-width:max-content;min-height:40px!important;margin:0!important;padding:0 10px!important;border-radius:12px!important;background:var(--fd-sup2)!important;border:1px solid var(--fd-borda)!important;color:var(--fd-texto)!important;font-size:13px!important;font-weight:700!important;white-space:nowrap;width:auto!important;display:inline-flex!important;align-items:center;justify-content:center}
 @media (min-width:900px){.fd-acoes-cards{max-width:1200px;width:calc(100% - 48px);margin:0 auto;padding:0 0 10px}.stats{gap:10px!important}.stat-card,.fd-cards-duplo > div[onclick]{padding:14px 8px!important}}
@@ -2477,7 +2482,6 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var stats = document.querySelector('.stats');
     if (stats && !document.querySelector('.fd-acoes-cards')) {
       var linha = document.createElement('div'); linha.className = 'fd-acoes-cards';
-      var ext = document.createElement('button'); ext.type = 'button'; ext.textContent = '📋 Extrato'; ext.onclick = function(){ abrirHistoricoCredito(); }; linha.appendChild(ext);
       var saque = stats.querySelector('.stat-card[onclick*="abrirHistoricoCredito"] .loja-saque-solicitar-btn'); if (saque) linha.appendChild(saque);
       var emp = document.getElementById('btn-emprestimo-solicitar'); if (emp) linha.appendChild(emp);
       stats.parentNode.insertBefore(linha, stats.nextSibling);
