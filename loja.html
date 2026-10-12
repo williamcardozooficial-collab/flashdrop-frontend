@@ -2212,6 +2212,35 @@ window.getIfoodDados=function(){return{localizador:document.getElementById("ifoo
   window._roboPagamento = { consultar: consultar, aplicar: aplicar, totalAtual: totalAtual, estado: function(){ return disp; } };
 })();
 </script>
+<script>
+// Horario de funcionamento: bloqueia "Novo Pedido" e a finalizacao com a Flash Drop fechada
+(function(){
+  var FUNC_API = 'https://flashdrop-backend-production.up.railway.app';
+  async function consultarFuncionamento(){ try { var r = await fetch(FUNC_API + '/funcionamento', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; } }
+  function msgFechado(f){ return (f && f.mensagem) || 'A Flash Drop está fechada agora.'; }
+  function avisar(m){ try { tg.showAlert(m); } catch (e) { alert(m); } }
+  if (typeof window.openModal === 'function') {
+    var _abrir = window.openModal;
+    window.openModal = async function(){
+      var args = arguments, self = this;
+      var f = await consultarFuncionamento();
+      if (f && f.aberto_agora === false) { avisar(msgFechado(f)); return; }
+      return _abrir.apply(self, args);
+    };
+  }
+  var form = document.getElementById('orderForm');
+  if (form && typeof form.onsubmit === 'function') {
+    var _enviar = form.onsubmit;
+    form.onsubmit = async function(e){
+      if (e && e.preventDefault) e.preventDefault();
+      var f = await consultarFuncionamento();
+      if (f && f.aberto_agora === false) { avisar(msgFechado(f)); return; }
+      return _enviar.call(this, e);
+    };
+  }
+  window._funcionamento = { consultar: consultarFuncionamento };
+})();
+</script>
 </body></html>
 <script>
 function initAutocomplete(){

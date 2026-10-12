@@ -755,5 +755,21 @@ carregarSettings().catch(function(e){ console.error(e); });
 
 <!-- Google Places Autocomplete API -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI&libraries=places,maps&callback=initAutocomplete" async defer></script>
+<script>
+// Horario de funcionamento: confere ANTES de gerar o PIX (o cliente nao paga com a Flash Drop fechada)
+(function(){
+  var FUNC_API = 'https://flashdrop-backend-production.up.railway.app';
+  async function consultarFuncionamento(){ try { var r = await fetch(FUNC_API + '/funcionamento', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; } }
+  function msgFechado(f){ return (f && f.mensagem) || 'A Flash Drop está fechada agora.'; }
+  if (typeof window.finalizarPedidoAvulso === 'function') {
+    var _fin = window.finalizarPedidoAvulso;
+    window.finalizarPedidoAvulso = async function(){
+      var f = await consultarFuncionamento();
+      if (f && f.aberto_agora === false) { alert(msgFechado(f)); return; }
+      return _fin.apply(this, arguments);
+    };
+  }
+})();
+</script>
 </body>
 </html>

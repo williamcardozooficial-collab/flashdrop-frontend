@@ -118,6 +118,7 @@
       <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
     <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
     <button class="tab-btn" onclick="showTab('promocoes', this)">🎯 Promoções</button>
+    <button class="tab-btn" onclick="showTab('funcionamento', this); carregarFuncionamentoAdmin();">🕒 Horário de funcionamento</button>
   </div>
 
   <div class="content">
@@ -395,6 +396,26 @@
     </div>
   </div>
   <!-- PROMOCOES -->
+  <div id="funcionamento" class="section">
+    <div class="card">
+      <h3 style="margin:0 0 6px;color:#ffcc00">🕒 Horário de funcionamento da Flash Drop</h3>
+      <div style="font-size:12px;color:#aaa;margin-bottom:12px;line-height:1.5">Horário de Brasília. Fora do horário, lojas e clientes não conseguem criar pedidos (o admin consegue). Pedidos já existentes seguem normalmente. Turno que passa da meia-noite (ex.: 18:00 às 01:00) funciona. O 2º turno é opcional.</div>
+      <div id="func-estado" style="padding:10px 12px;border-radius:8px;background:#222;margin-bottom:12px;font-size:13px">Carregando...</div>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="func-ativo" style="width:18px;height:18px"> Usar horário de funcionamento</label>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="color:#aaa;text-align:left"><th style="padding:6px">Dia</th><th style="padding:6px">Aberto</th><th style="padding:6px">1º turno</th><th style="padding:6px">2º turno (opcional)</th></tr></thead>
+        <tbody id="func-dias"></tbody>
+      </table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <button class="btn btn-primary" onclick="salvarFuncionamentoAdmin()" style="padding:9px 16px">💾 Salvar horário</button>
+        <button class="btn" id="func-btn-fechar" onclick="manualFuncionamentoAdmin('fechado')" style="padding:9px 16px;background:#e53935;color:#fff">🔒 Fechar agora</button>
+        <button class="btn" id="func-btn-abrir" onclick="manualFuncionamentoAdmin('aberto')" style="padding:9px 16px;background:#2e7d32;color:#fff">🔓 Abrir agora</button>
+        <button class="btn" id="func-btn-seguir" onclick="manualFuncionamentoAdmin(null)" style="padding:9px 16px;background:#444;color:#fff">🕒 Seguir horário</button>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.5">"Fechar agora" deixa fechado até você clicar "Abrir agora" ou "Seguir horário". "Abrir agora" deixa aberto até você clicar "Fechar agora" ou "Seguir horário". Só valem com a chave "Usar horário de funcionamento" ligada.</div>
+    </div>
+  </div>
+
   <div id="promocoes" class="section">
     <div class="card" style="background:#1a2a1a;border:1px solid #2e7d32;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -2351,7 +2372,7 @@ async function admNpFinalizarPedido(){
   var colEndereco=colRua+(colNum?', '+colNum:'')+(colBairro?', '+colBairro:'')+', '+colCidade;
   var body={cod_pedido:codPedido,loja_id:_admNpLojaId,loja_user:lojaUsername,loja_name:lojaName,nome_cliente:nome,telefone_cliente:cel,cpf_cliente:cpf||null,endereco_coleta:colEndereco,bairro_coleta:colBairro||null,complemento_coleta:(document.getElementById('adm-np-col-comp')||{value:''}).value.trim()||null,obs_coleta:colObs||null,endereco_entrega:entEndereco,bairro_destino:entBairro||null,complemento_entrega:entComp||null,obs_entrega_loja:entObs||null,tipo_pagamento:tipoPag,valor_pedido:valorProduto,valor_taxa:_admNpTaxaCalc,valor_total:_admNpTaxaCalc,valor_motoboy:Math.round(_admNpTaxaCalc-_admNpComissaoValor),distancia_km:_admNpDistKm,status:'em_preparo',plataforma:'admin'};
   try{
-    var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var _admTok='';try{_admTok=(JSON.parse(localStorage.getItem('flashdrop_user')||'{}').token)||'';}catch(eTok){}var r=await fetch(API+'/orders',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_admTok},body:JSON.stringify(body)});
     var data=await r.json();
     if(!r.ok){tg.showAlert('Erro ao criar pedido: '+(data.error||'Falha.'));return;}
         if(tipoPag!=='dinheiro'){var newCredit=lojaCredit-_admNpTaxaCalc;
@@ -2398,6 +2419,71 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
       .then(function(){ el.disabled = false; });
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', carregar); else carregar();
+})();
+</script>
+<script>
+// Horario de funcionamento (admin): carrega, edita e salva no servidor (so admin, com o token do login)
+(function(){
+  var FUNC_API = 'https://flashdrop-backend-production.up.railway.app';
+  async function consultarFuncionamento(){ try { var r = await fetch(FUNC_API + '/funcionamento', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; } }
+  function msgFechado(f){ return (f && f.mensagem) || 'A Flash Drop está fechada agora.'; }
+  var DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  var cfgAtual = null;
+  function campo(id){ return document.getElementById(id); }
+  function inputHora(id, v){ return '<input type="time" id="' + id + '" value="' + (v || '') + '" style="padding:6px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;width:96px">'; }
+  function montar(cfg){
+    cfgAtual = cfg || { ativo: false, dias: {}, manual: null };
+    campo('func-ativo').checked = !!cfgAtual.ativo;
+    var html = '';
+    for (var d = 0; d < 7; d++) {
+      var x = (cfgAtual.dias && cfgAtual.dias[String(d)]) || { aberto: false, turnos: [] };
+      var t1 = (x.turnos && x.turnos[0]) || {}, t2 = (x.turnos && x.turnos[1]) || {};
+      html += '<tr style="border-top:1px solid #333"><td style="padding:6px;font-weight:600">' + DIAS[d] + '</td>' +
+        '<td style="padding:6px"><input type="checkbox" id="func-ab-' + d + '"' + (x.aberto ? ' checked' : '') + ' style="width:18px;height:18px"></td>' +
+        '<td style="padding:6px;white-space:nowrap">' + inputHora('func-' + d + '-1i', t1.ini) + ' às ' + inputHora('func-' + d + '-1f', t1.fim) + '</td>' +
+        '<td style="padding:6px;white-space:nowrap">' + inputHora('func-' + d + '-2i', t2.ini) + ' às ' + inputHora('func-' + d + '-2f', t2.fim) + '</td></tr>';
+    }
+    campo('func-dias').innerHTML = html;
+  }
+  function pintarEstado(e){
+    var el = campo('func-estado'); if (!el || !e) return;
+    var txt;
+    if (!e.usando_horario) txt = '⚪ Horário de funcionamento desligado: a Flash Drop aceita pedidos a qualquer hora.';
+    else if (e.aberto_agora) txt = '🟢 Aberta agora' + (e.motivo === 'aberto_manual' ? ' (aberta manualmente com "Abrir agora")' : ' (dentro do horário)') + '.';
+    else txt = '🔴 Fechada agora' + (e.motivo === 'fechado_manual' ? ' (fechada manualmente com "Fechar agora")' : '') + '.' + (e.proxima_abertura ? ' Abre ' + e.proxima_abertura + '.' : '');
+    el.textContent = txt;
+    el.style.background = !e.usando_horario ? '#222' : (e.aberto_agora ? '#12301a' : '#3a1a1a');
+    campo('func-btn-seguir').style.display = e.manual ? '' : 'none';
+  }
+  function lerForm(){
+    var cfg = { ativo: campo('func-ativo').checked, dias: {}, manual: cfgAtual ? cfgAtual.manual || null : null };
+    for (var d = 0; d < 7; d++) {
+      var turnos = [];
+      [1, 2].forEach(function(n){ var i = campo('func-' + d + '-' + n + 'i').value, f = campo('func-' + d + '-' + n + 'f').value; if (i || f) turnos.push({ ini: i, fim: f }); });
+      cfg.dias[String(d)] = { aberto: campo('func-ab-' + d).checked, turnos: turnos };
+    }
+    return cfg;
+  }
+  async function enviar(cfg){
+    var tok = ''; try { tok = (JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token) || ''; } catch (e) {}
+    try {
+      var r = await fetch(FUNC_API + '/funcionamento/config', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok }, body: JSON.stringify(cfg) });
+      var d = await r.json();
+      if (!r.ok) { alert('Não foi possível salvar: ' + (d.error || 'erro') + (/Token/i.test(d.error || '') ? '\nSaia e entre de novo no admin.' : '')); return false; }
+      montar(d.config); pintarEstado(d.estado); return true;
+    } catch (e) { alert('Erro de conexão ao salvar o horário.'); return false; }
+  }
+  window.carregarFuncionamentoAdmin = async function(){
+    try { var r = await fetch(FUNC_API + '/funcionamento/config', { cache: 'no-store' }); var d = await r.json(); montar(d.config); pintarEstado(d.estado); }
+    catch (e) { campo('func-estado').textContent = 'Erro ao carregar o horário de funcionamento.'; }
+  };
+  window.salvarFuncionamentoAdmin = async function(){ if (await enviar(lerForm())) alert('Horário salvo.'); };
+  window.manualFuncionamentoAdmin = async function(modo){
+    var cfg = lerForm();
+    if (!cfg.ativo && modo) { alert('Ligue "Usar horário de funcionamento" para usar Fechar/Abrir agora.'); return; }
+    if (modo === 'fechado' && !confirm('Fechar a Flash Drop agora?\nLojas e clientes não vão conseguir criar pedidos até você clicar "Abrir agora" ou "Seguir horário".')) return;
+    cfg.manual = modo; await enviar(cfg);
+  };
 })();
 </script>
 </body>

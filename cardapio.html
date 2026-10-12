@@ -1515,5 +1515,38 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
   window._roboPagamento = { consultar: consultar, aplicar: aplicar, totalAtual: totalAtual, estado: function(){ return disp; } };
 })();
 </script>
+<script>
+// Horario de funcionamento: aviso no topo e bloqueio do checkout com a Flash Drop fechada
+(function(){
+  var FUNC_API = 'https://flashdrop-backend-production.up.railway.app';
+  async function consultarFuncionamento(){ try { var r = await fetch(FUNC_API + '/funcionamento', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; } }
+  function msgFechado(f){ return (f && f.mensagem) || 'A Flash Drop está fechada agora.'; }
+  var ultimo = null;
+  function faixa(f){
+    var el = document.getElementById('func-faixa-fechado');
+    if (!el) { el = document.createElement('div'); el.id = 'func-faixa-fechado'; el.style.cssText = 'display:none;position:sticky;top:0;z-index:9998;background:#3a1a1a;border-bottom:2px solid #e53935;color:#ffcdd2;text-align:center;padding:10px 14px;font-size:14px;font-weight:700'; document.body.insertBefore(el, document.body.firstChild); }
+    var fechado = !!(f && f.aberto_agora === false);
+    el.textContent = fechado ? '🔒 ' + msgFechado(f) : ''; el.style.display = fechado ? 'block' : 'none';
+    var av = document.getElementById('func-aviso-checkout');
+    if (!av) { var sel = document.getElementById('ch-pag'); var box = document.getElementById('modal-carrinho'); var alvo = box ? (box.querySelector('.modal-conteudo, .modal-content') || box.firstElementChild || box) : null; if (alvo) { av = document.createElement('div'); av.id = 'func-aviso-checkout'; av.style.cssText = 'display:none;margin:10px 0;background:#3a1a1a;border:1px solid #e53935;border-radius:8px;padding:10px 12px;color:#ffcdd2;font-size:13px;font-weight:700'; alvo.insertBefore(av, alvo.firstChild); } }
+    if (av) { av.textContent = fechado ? '🔒 ' + msgFechado(f) + ' Não é possível finalizar o pedido agora.' : ''; av.style.display = fechado ? 'block' : 'none'; }
+  }
+  async function atualizar(){ var f = await consultarFuncionamento(); if (f) { ultimo = f; faixa(f); } return f; }
+  if (typeof window.abrirCarrinho === 'function') {
+    var _abrir = window.abrirCarrinho;
+    window.abrirCarrinho = function(){ var r = _abrir.apply(this, arguments); atualizar().then(function(f){ if (f && f.aberto_agora === false) alert(msgFechado(f)); }); return r; };
+  }
+  if (typeof window.finalizarPedido === 'function') {
+    var _fin = window.finalizarPedido;
+    window.finalizarPedido = async function(){
+      var f = await atualizar();
+      if (f && f.aberto_agora === false) { alert(msgFechado(f)); return; }
+      return _fin.apply(this, arguments);
+    };
+  }
+  atualizar(); setInterval(atualizar, 60000);
+  window._funcionamento = { consultar: consultarFuncionamento, atualizar: atualizar };
+})();
+</script>
 </body>
 </html>
