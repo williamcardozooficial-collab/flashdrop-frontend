@@ -1871,7 +1871,20 @@ Ativar horário automático (abre e fecha sozinha)
 </div>
 
 <script>
+/* Conteúdo original do quadro do PIX: a mensagem "Pagamento confirmado" substitui esse quadro inteiro.
+   Antes de gerar outro PIX (ou ao fechar), ele é restaurado; sem isso, a recarga seguinte (sem recarregar a página,
+   ex.: depois de pagar durante um pedido) dava "Cannot set properties of null (setting 'textContent')". */
+var _mpPixContainerOriginal = (function(){ var c = document.getElementById('mp-pix-container'); return c ? c.innerHTML : ''; })();
+function _mpRestaurarPixContainer() {
+  var c = document.getElementById('mp-pix-container');
+  if (c && _mpPixContainerOriginal && !document.getElementById('mp-pix-code')) c.innerHTML = _mpPixContainerOriginal;
+  var qr = document.getElementById('mp-qr-img'); if (qr) { qr.removeAttribute('src'); qr.style.display = 'none'; }
+  var cod = document.getElementById('mp-pix-code'); if (cod) cod.textContent = '';
+  var ex = document.getElementById('mp-pix-expiry'); if (ex) ex.textContent = '';
+}
+function _mpEl(id) { return document.getElementById(id) || { style: {}, textContent: '', value: '' }; }
 function abrirModalSaldo() {
+  _mpRestaurarPixContainer();
   window._aguardandoSaldoParaPedido = false;
   var _avisoOld = document.getElementById('mp-aviso-pedido');
   if (_avisoOld) _avisoOld.style.display = 'none';
@@ -1936,12 +1949,14 @@ async function carregarHistoricoRecargas() {
   }
 }
 function fecharModalSaldo() {
-  document.getElementById('modal-solicitar-saldo').style.display = 'none';
-  document.getElementById('mp-pix-container').style.display = 'none';
-  document.getElementById('mp-erro').style.display = 'none';
-  document.getElementById('mp-loading').style.display = 'none';
-  document.getElementById('mp-gerar-btn').style.display = 'block';
-  document.getElementById('mp-valor-input').value = '';
+  if (_mpPollInterval) { clearInterval(_mpPollInterval); _mpPollInterval = null; }
+  _mpEl('modal-solicitar-saldo').style.display = 'none';
+  _mpRestaurarPixContainer();
+  _mpEl('mp-pix-container').style.display = 'none';
+  _mpEl('mp-erro').style.display = 'none';
+  _mpEl('mp-loading').style.display = 'none';
+  _mpEl('mp-gerar-btn').style.display = 'block';
+  _mpEl('mp-valor-input').value = '';
   var aviso = document.getElementById('mp-aviso-pedido');
   if (aviso) aviso.style.display = 'none';
 }
@@ -1953,15 +1968,16 @@ function selecionarValorSaldo(valor, btn) {
   if (btn) { btn.style.background = '#1a5c2e'; btn.style.borderColor = '#27ae60'; btn.style.color = '#2ecc71'; }
 }
 async function gerarPixSaldo() {
-  const valor = parseFloat(document.getElementById('mp-valor-input').value);
+  _mpRestaurarPixContainer();
+  const valor = parseFloat(_mpEl('mp-valor-input').value);
   if (!valor || valor < 10) {
-    const e = document.getElementById('mp-erro');
+    const e = _mpEl('mp-erro');
     e.style.display = 'block'; e.textContent = '⚠️ Valor mínimo é R$ 10,00'; return;
   }
-  document.getElementById('mp-erro').style.display = 'none';
-  document.getElementById('mp-loading').style.display = 'block';
-  document.getElementById('mp-gerar-btn').style.display = 'none';
-  document.getElementById('mp-pix-container').style.display = 'none';
+  _mpEl('mp-erro').style.display = 'none';
+  _mpEl('mp-loading').style.display = 'block';
+  _mpEl('mp-gerar-btn').style.display = 'none';
+  _mpEl('mp-pix-container').style.display = 'none';
   try {
     const userData = JSON.parse(localStorage.getItem('flashdrop_user') || '{}');
     // O campo "username" da loja normalmente e o proprio email de cadastro
@@ -1981,31 +1997,33 @@ async function gerarPixSaldo() {
       body: JSON.stringify({ valor, userId: userData.id, userName: userData.name || userData.username, userEmail: userEmail })
     });
     const data = await resp.json();
-    document.getElementById('mp-loading').style.display = 'none';
+    _mpEl('mp-loading').style.display = 'none';
     if (resp.ok && data.pix_code) {
-      document.getElementById('mp-pix-code').textContent = data.pix_code;
-        if (data.qr_code_base64) { const qrImg = document.getElementById('mp-qr-img'); qrImg.src = 'data:image/png;base64,' + data.qr_code_base64; qrImg.style.display = 'block'; }
-      document.getElementById('mp-pix-container').style.display = 'block';
+      _mpEl('mp-pix-code').textContent = data.pix_code;
+        if (data.qr_code_base64) { const qrImg = _mpEl('mp-qr-img'); qrImg.src = 'data:image/png;base64,' + data.qr_code_base64; qrImg.style.display = 'block'; }
+      _mpEl('mp-pix-container').style.display = 'block';
       if (data.expiry) {
         const exp = new Date(data.expiry);
-        document.getElementById('mp-pix-expiry').textContent = 'Expira às: ' + exp.toLocaleTimeString('pt-BR');
+        _mpEl('mp-pix-expiry').textContent = 'Expira às: ' + exp.toLocaleTimeString('pt-BR');
       }
       if (data.payment_id) pollPagamentoSaldo(data.payment_id, valor, userData.token);
     } else {
-      const e = document.getElementById('mp-erro');
+      const e = _mpEl('mp-erro');
       e.style.display = 'block'; e.textContent = '❌ ' + (data.error || 'Erro ao gerar PIX');
-      document.getElementById('mp-gerar-btn').style.display = 'block';
+      _mpEl('mp-gerar-btn').style.display = 'block';
     }
   } catch(err) {
-    document.getElementById('mp-loading').style.display = 'none';
-    const e = document.getElementById('mp-erro');
+    _mpEl('mp-loading').style.display = 'none';
+    const e = _mpEl('mp-erro');
     e.style.display = 'block'; e.textContent = '❌ Erro: ' + err.message;
-    document.getElementById('mp-gerar-btn').style.display = 'block';
+    _mpEl('mp-gerar-btn').style.display = 'block';
   }
 }
 function copiarPixSaldo() {
-  const code = document.getElementById('mp-pix-code').textContent;
-  navigator.clipboard.writeText(code).then(() => {
+  const code = _mpEl('mp-pix-code').textContent;
+  if (!code) return;
+  if (!navigator.clipboard) { fdAlert('Código PIX:\n' + code); return; }
+  navigator.clipboard.writeText(code).catch(() => { fdAlert('Não foi possível copiar automaticamente. Código PIX:\n' + code); return 'falhou'; }).then((r) => { if (r === 'falhou') return;
     const msg = document.getElementById('mp-copiado-msg');
     const btn = document.getElementById('mp-copiar-btn');
     if (msg) { msg.style.display = 'inline-block'; }
