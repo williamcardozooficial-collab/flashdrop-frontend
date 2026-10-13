@@ -1389,13 +1389,9 @@ async function loadPromoBanner(){try{if(!user||!user.id)return;var r=await fetch
 <script>
 var _gpsInterval=null,_gpsOrderIds=[];
 var API_GPS='https://flashdrop-backend-production.up.railway.app';
-// Envia a MESMA leitura de GPS separadamente para cada pedido ativo passado em
-// orderIds. Antes so existia um _gpsOrderId (um unico pedido por vez), entao
-// quando o motoboy tinha mais de uma entrega em aberto ao mesmo tempo, a
-// localizacao so era marcada com o id do pedido mais antigo - o backend nunca
-// chegava a verificar a chegada automatica (nem na loja nem no cliente) dos
-// outros pedidos em aberto. Agora cada pedido relevante recebe seu proprio
-// envio, entao cada um e checado de forma independente.
+// Envia UMA leitura de GPS por vez. O servidor confere a chegada automatica (na loja e no cliente)
+// de TODOS os pedidos ativos deste motoboy a cada localizacao, entao nao precisa mais de um envio
+// por pedido (o order_id vai so como referencia, igual ao app).
 function enviarLocalizacao(orderIds){
   if(!navigator.geolocation)return;
   var ids=(orderIds===null||orderIds===undefined)?[]:(Array.isArray(orderIds)?orderIds:[orderIds]);
@@ -1413,8 +1409,7 @@ function enviarLocalizacao(orderIds){
         body:JSON.stringify({lat:lat,lng:lng,order_id:oid})
       }).catch(function(){});
     }
-    if(ids.length===0){enviarPing(null);}
-    else{ids.forEach(enviarPing);}
+    enviarPing(ids.length ? ids[0] : null);
     try { if (typeof fdAvisoLocalizacao === 'function') fdAvisoLocalizacao(false); } catch(eAv) {}
   },function(err){ try { if (err && err.code === 1 && typeof fdAvisoLocalizacao === 'function') fdAvisoLocalizacao(true); } catch(eAv) {} },{enableHighAccuracy:true,timeout:10000,maximumAge:15000});
 }
