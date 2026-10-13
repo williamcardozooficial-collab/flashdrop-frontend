@@ -2723,14 +2723,78 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
         campo(uid, 'rua', 'Rua / Avenida *', 'Ex: Rua das Flores') +
         '<div class="fd-rota-linha"><div>' + campo(uid, 'num', 'Número *', 'Ex: 123', ' inputmode="numeric"') + '</div><div>' + campo(uid, 'comp', 'Complemento', 'Ex: Apto 12') + '</div></div>' +
         '<div class="fd-rota-linha"><div>' + campo(uid, 'bairro', 'Bairro *', 'Ex: Centro') + '</div><div>' + campo(uid, 'cidade', 'Cidade *', '', ' value="Caxias do Sul"') + '</div></div>' +
+        '<div class="novo-pedido-map-wrap"><div class="novo-pedido-map-label">&#128205; Local de Entrega</div><div id="fd-rota-mapa-' + uid + '" class="novo-pedido-map-div"></div><div id="fd-rota-aviso-' + uid + '" style="display:none;margin-top:8px;padding:8px 10px;background:#3a2a10;border:1px solid #ff9500;border-radius:8px;color:#ff9500;font-size:12px;font-weight:600"></div></div>' +
       '</div>';
     document.getElementById('fd-rota-lista').appendChild(el);
     el.querySelector('.fd-rota-rem').addEventListener('click', function(){ remover(uid); });
     el.querySelector('.fd-rota-ver').addEventListener('click', function(){ verificar(uid); });
-    ['rua', 'num', 'bairro', 'cidade'].forEach(function(n){ var i = document.getElementById('fd-rota-' + n + '-' + uid); i.addEventListener('blur', agendarCotacao); i.addEventListener('change', agendarCotacao); });
+    ['rua', 'num', 'bairro', 'cidade'].forEach(function(n){ var i = document.getElementById('fd-rota-' + n + '-' + uid);
+      i.addEventListener('input', function(){ var x = acharExtra(uid); if (x) { x.lat = null; x.lng = null; } });
+      i.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') ev.preventDefault(); });
+      i.addEventListener('blur', function(){ localizarExtra(uid); }); });
+    document.getElementById('fd-rota-rua-' + uid).addEventListener('focus', function(){ autocompletarExtra(uid); });
+    autocompletarExtra(uid);
     renumerar(); atualizar(); agendarCotacao();
     try { document.getElementById('fd-rota-loc-' + uid).focus(); } catch (e2) {}
   }
+  // ---------- endereco de cada quadro: o mesmo do endereco normal (sugestoes do Google, mapa com pino que da para arrastar) ----------
+  function acharExtra(uid){ return extras.find(function(y){ return y.uid === uid; }); }
+  function gmapsOk(){ return typeof google !== 'undefined' && google.maps && google.maps.places && google.maps.Geocoder; }
+  function autocompletarExtra(uid){
+    var x = acharExtra(uid), el = document.getElementById('fd-rota-rua-' + uid); if (!x || !el || x.ac || !gmapsOk()) return;
+    var caxiasBounds = new google.maps.LatLngBounds(new google.maps.LatLng(-29.28, -51.35), new google.maps.LatLng(-29.05, -50.95));
+    var a = new google.maps.places.Autocomplete(el, { componentRestrictions: { country: 'br' }, bounds: caxiasBounds, fields: ['address_components', 'formatted_address'] }); x.ac = a;
+    a.addListener('place_changed', function(){
+      var p = a.getPlace(); if (!p || !p.address_components) return;
+      var r = '', n = '', b = '', c = '';
+      p.address_components.forEach(function(k){ var t = k.types;
+        if (t.indexOf('route') !== -1) r = k.long_name;
+        if (t.indexOf('street_number') !== -1) n = k.long_name;
+        if ((t.indexOf('sublocality_level_1') !== -1 || t.indexOf('neighborhood') !== -1) && !b) b = k.long_name;
+        if (t.indexOf('administrative_area_level_2') !== -1) c = k.long_name; });
+      el.value = r || p.formatted_address || '';
+      if (n) document.getElementById('fd-rota-num-' + uid).value = n;
+      if (b) document.getElementById('fd-rota-bairro-' + uid).value = b;
+      if (c) document.getElementById('fd-rota-cidade-' + uid).value = c;
+      x.lat = null; x.lng = null; localizarExtra(uid);
+      if (!n) document.getElementById('fd-rota-num-' + uid).focus();
+    });
+  }
+  // Acha o ponto no mapa pelo endereco digitado (como o geocodeAndShowMap do endereco normal); sem Google, o servidor acha pelo texto
+  function localizarExtra(uid){
+    var x = acharExtra(uid); if (!x) return;
+    var rua = v('fd-rota-rua-' + uid), num = v('fd-rota-num-' + uid), b = v('fd-rota-bairro-' + uid), c = v('fd-rota-cidade-' + uid) || 'Caxias do Sul';
+    var full = [rua + (num ? ' ' + num : ''), b, c].filter(Boolean).join(', ');
+    if (!rua || full.length < 5 || !gmapsOk()) { agendarCotacao(); return; }
+    if (x.ultimoEnd === full && x.lat) { agendarCotacao(); return; }
+    x.ultimoEnd = full;
+    new google.maps.Geocoder().geocode({ address: full + ', Brasil' }, function(res, st){
+      if (x.ultimoEnd !== full) return;
+      if (st === 'OK' && res[0]) { var l = res[0].geometry.location; mapaExtra(uid, l.lat(), l.lng()); var av = document.getElementById('fd-rota-aviso-' + uid); if (av) av.style.display = 'none'; }
+      agendarCotacao();
+    });
+  }
+  function mapaExtra(uid, lat, lng){
+    var x = acharExtra(uid), el = document.getElementById('fd-rota-mapa-' + uid); if (!x || !el) return;
+    x.lat = lat; x.lng = lng; var centro = { lat: lat, lng: lng };
+    if (x.mapa && x.pino) { x.mapa.setCenter(centro); x.pino.setPosition(centro); return; }
+    x.mapa = new google.maps.Map(el, { center: centro, zoom: 16, disableDefaultUI: false, zoomControl: true, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, gestureHandling: 'cooperative' });
+    x.pino = new google.maps.Marker({ position: centro, map: x.mapa, draggable: true, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 11, fillColor: '#e83e3e', fillOpacity: 1, strokeColor: '#a01010', strokeWeight: 2 }, title: 'Arraste para ajustar o ponto de entrega' });
+    x.pino.addListener('dragend', function(ev){
+      x.lat = ev.latLng.lat(); x.lng = ev.latLng.lng();
+      new google.maps.Geocoder().geocode({ location: ev.latLng }, function(res, st){
+        if (st === 'OK' && res[0]) {
+          var comps = res[0].address_components; var comp = function(tipos){ for (var i = 0; i < comps.length; i++) for (var j = 0; j < tipos.length; j++) if (comps[i].types.indexOf(tipos[j]) > -1) return comps[i].long_name; return ''; };
+          var r = comp(['route']), b = comp(['sublocality_level_1', 'sublocality', 'neighborhood']), c = comp(['locality', 'administrative_area_level_2']);
+          if (r) document.getElementById('fd-rota-rua-' + uid).value = r; if (b) document.getElementById('fd-rota-bairro-' + uid).value = b; if (c) document.getElementById('fd-rota-cidade-' + uid).value = c;
+          var av = document.getElementById('fd-rota-aviso-' + uid); if (av) { av.textContent = '\uD83D\uDCCD Endereço atualizado automaticamente para a posição do pino.'; av.style.display = 'block'; }
+        }
+        x.ultimoEnd = [v('fd-rota-rua-' + uid) + (v('fd-rota-num-' + uid) ? ' ' + v('fd-rota-num-' + uid) : ''), v('fd-rota-bairro-' + uid), v('fd-rota-cidade-' + uid) || 'Caxias do Sul'].filter(Boolean).join(', ');
+        agendarCotacao();
+      });
+    });
+  }
+  window._fdRotaAutocompletar = function(){ extras.forEach(function(x){ autocompletarExtra(x.uid); }); };
   function remover(uid){ extras = extras.filter(function(x){ return x.uid !== uid; }); var el = document.getElementById('fd-rota-cli-' + uid); if (el) el.remove(); renumerar(); atualizar(); agendarCotacao(); }
   function verificar(uid){
     var loc = v('fd-rota-loc-' + uid).replace(/\D/g, ''), res = document.getElementById('fd-rota-res-' + uid), x = extras.find(function(y){ return y.uid === uid; });
@@ -2743,7 +2807,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
       }).catch(function(){ res.innerHTML = '<span class="fd-rota-erro">Não foi possível consultar o iFood agora.</span>'; });
   }
   function enderecoExtra(uid){ var rua = v('fd-rota-rua-' + uid), num = v('fd-rota-num-' + uid), b = v('fd-rota-bairro-' + uid), c = v('fd-rota-cidade-' + uid) || 'Caxias do Sul'; if (!rua || !num || !b) return ''; return [rua + ' ' + num, b, c].join(', '); }
-  function pontoExtra(x){ return { nome_cliente: v('fd-rota-nome-' + x.uid), telefone_cliente: v('fd-rota-tel-' + x.uid).replace(/\D/g, ''), endereco_entrega: enderecoExtra(x.uid), bairro_destino: v('fd-rota-bairro-' + x.uid), complemento_entrega: v('fd-rota-comp-' + x.uid), ifood_localizador: v('fd-rota-loc-' + x.uid).replace(/\D/g, ''), ifood_numero_pedido: x.numero || '', ifood_nome_cliente: x.nomeIfood || '' }; }
+  function pontoExtra(x){ return Object.assign({ nome_cliente: v('fd-rota-nome-' + x.uid), telefone_cliente: v('fd-rota-tel-' + x.uid).replace(/\D/g, ''), endereco_entrega: enderecoExtra(x.uid), bairro_destino: v('fd-rota-bairro-' + x.uid), complemento_entrega: v('fd-rota-comp-' + x.uid), ifood_localizador: v('fd-rota-loc-' + x.uid).replace(/\D/g, ''), ifood_numero_pedido: x.numero || '', ifood_nome_cliente: x.nomeIfood || '' }, (x.lat && x.lng) ? { lat: x.lat, lng: x.lng } : {}); }
   function pontoPrincipal(){
     try { if (typeof buildDest === 'function') buildDest(); } catch (e2) {}
     var d = {}; try { d = window.getIfoodDados ? window.getIfoodDados() : {}; } catch (e3) {}
@@ -3020,6 +3084,7 @@ function initAutocomplete(){
   }
   ac("origin-rua","origin-numero","origin-bairro","origin-cidade","buildOrigin");
   ac("dest-rua","dest-numero","dest-bairro","dest-cidade","buildDest");ac("input-cli-rua","input-cli-numero","input-cli-bairro","input-cli-cidade","");ac("input-cli-rua2","input-cli-numero2","input-cli-bairro2","input-cli-cidade2","");
+  if(typeof window._fdRotaAutocompletar==="function")window._fdRotaAutocompletar();
 }
 </script>
 <!-- Replace AIzaSyApTcBFzDNeOx3r1JUXUuwnzE4t_ak16NI - enable Places API in Google Cloud -->
