@@ -617,6 +617,8 @@ function makeInfoRow(label, value, highlight) {
 
     /* ── CRIA CARD VIA DOM ── */
     function makeOrderCard(o, cardType) {
+      /* Rota iFood disponivel: uma tele so, com os bairros na ordem, o ganho total e a km total */
+      if (cardType === "pending" && o.rota_id && window._fdRotaCardDisponivel) { var _rc = window._fdRotaCardDisponivel(o); if (_rc) return _rc; }
       var card = document.createElement("div");
       card.className = "order-card " + cardType;
 
@@ -633,6 +635,7 @@ function makeInfoRow(label, value, highlight) {
       }
       header.appendChild(idEl); header.appendChild(badgeEl);
       card.appendChild(header);
+      if (cardType === "mine" && o.rota_id && window._fdRotaFaixa) { var _rf = window._fdRotaFaixa(o); if (_rf) card.appendChild(_rf); }
 
       /* Progress e Timer */
       if (cardType === "mine") {
@@ -864,7 +867,7 @@ function makeInfoRow(label, value, highlight) {
     /* ── LOAD ORDERS ── */
     async function loadOrders() {
       try {
-        var r = await fetch(API + "/orders");
+        var r = await fetch(API + "/orders?raw=1");
         var orders = await r.json();
         allOrdersCache = orders;   /* salva cache para uso no doAction */
         try { var ru = await fetch(API + "/users"); allUsersCache = await ru.json(); } catch(e2) {} try { var rs = await fetch(API + "/settings"); settingsCache = await rs.json(); } catch(e3) {}
@@ -892,6 +895,7 @@ function makeInfoRow(label, value, highlight) {
         if (active.length === 0) {
           myDiv.innerHTML = "<div class=\"empty\">Nenhuma entrega ativa</div>";
         } else {
+          if (window._fdRotaOrdenar) active = window._fdRotaOrdenar(active);
           active.forEach(function(o) { myDiv.appendChild(makeOrderCard(o, "mine")); });
         }
         /* GPS: online envia a localização (com os pedidos ativos, ou sem pedido); sem pedidos, a lista fica vazia */
@@ -980,7 +984,7 @@ function makeInfoRow(label, value, highlight) {
            Usa o pedido já carregado na lista (não existe rota GET /orders/:id). */
         var orderCheckData = (allOrdersCache || []).find(function(x){ return String(x.id) === String(orderId); }) || null;
         if (!orderCheckData) {
-          try { var _rLista = await fetch(API + "/orders"); if (_rLista.ok) { var _lista = await _rLista.json(); orderCheckData = (_lista || []).find(function(x){ return String(x.id) === String(orderId); }) || null; } } catch (eOrderCheck) { console.error("Erro ao buscar o pedido antes de finalizar:", eOrderCheck); }
+          try { var _rLista = await fetch(API + "/orders?raw=1"); if (_rLista.ok) { var _lista = await _rLista.json(); orderCheckData = (_lista || []).find(function(x){ return String(x.id) === String(orderId); }) || null; } } catch (eOrderCheck) { console.error("Erro ao buscar o pedido antes de finalizar:", eOrderCheck); }
         }
         if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && !orderCheckData.ifood_confirmado_em) {
           var _locIfood = String(orderCheckData.ifood_localizador || "").replace(/\D/g, "");
@@ -1118,7 +1122,7 @@ if (!geoPassed) return;
   function cancelOrder(orderId) {
     showConfirm(
       "⚠️ ATENÇÃO — PENALIDADE",
-      "Se desistir, você recebe uma penalidade e fica um tempo sem poder aceitar pedidos. A penalidade aumenta a cada desistência no dia: 10 min, 30 min, 1 h, 6 h e 24 h. Deseja continuar?",
+      ((allOrdersCache || []).some(function(x){ return String(x.id) === String(orderId) && x.rota_id; }) ? "<strong>Rota iFood:</strong> desistir desta entrega devolve a <strong>rota inteira</strong> (todas as entregas voltam juntas para outro motoboy), com uma penalidade só. " : "") + "Se desistir, você recebe uma penalidade e fica um tempo sem poder aceitar pedidos. A penalidade aumenta a cada desistência no dia: 10 min, 30 min, 1 h, 6 h e 24 h. Deseja continuar?",
       async function() {
         try {
           var resp = await fetch(API + "/orders/" + orderId, {
@@ -1438,6 +1442,70 @@ function pararGPS(){
 }
 // a primeira atualizacao da lista pode ter rodado antes deste bloco: se ja estiver online, comeca o envio agora
 try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) iniciarGPS((typeof activeOrders !== 'undefined' && activeOrders ? activeOrders : []).filter(function(o){ return ['aceito','na_loja','coletado','no_cliente'].indexOf(o.status) > -1; }).map(function(o){ return o.id; })); } catch(eGpsIni) {}
+</script>
+<style id="fd-rota-css">
+.fd-rota-disp{border:2px solid #7b7ff0!important}
+.fd-rota-disp-titulo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;color:#fff;margin:4px 0 8px}
+.fd-rota-bairros{background:#1d1f33;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:15px;line-height:1.6;color:#fff}
+.fd-rota-bairros b{color:#ffcc00}
+.fd-rota-ganho{display:flex;justify-content:space-between;align-items:center;background:#0f2a18;border:1px solid #28a745;border-radius:10px;padding:10px 12px;margin:8px 0;color:#c8f7d5;font-size:14px}
+.fd-rota-ganho strong{font-size:22px;color:#4ce07a}
+.fd-rota-nota{font-size:12px;color:#c8cad8;line-height:1.45;margin:6px 0}
+.fd-rota-trava{background:#3a1a1a;border:1px solid #c0392b;border-radius:10px;padding:10px;color:#ffb3a8;font-size:13px;font-weight:700;text-align:center;margin-top:10px}
+.fd-rota-faixa{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#24264a;border:1px solid #7b7ff0;border-radius:10px;padding:6px 10px;margin:4px 0 8px;font-size:13px;font-weight:800;color:#dfe0ff}
+</style>
+<script id="fd-rota-js">
+/* ===== Rota iFood com varios pontos (pagina web do motoboy / iPhone) =====
+   Antes de aceitar: UMA tele, com os bairros na ordem da loja, o ganho total e a km total.
+   Depois de aceitar: as entregas separadas (Entrega 1/3, 2/3...), na ordem da loja; ele entrega na ordem que quiser. */
+(function(){
+  function fmt(v){ return 'R$ ' + (Math.round((parseFloat(v) || 0) * 100) / 100).toFixed(2).replace('.', ','); }
+  function km(v){ return (Math.round((parseFloat(v) || 0) * 10) / 10).toFixed(1).replace('.', ',') + ' km'; }
+  function daRota(o){ return (allOrdersCache || []).filter(function(x){ return x.rota_id === o.rota_id && x.status !== 'cancelado'; }).sort(function(a, b){ return (a.rota_ordem || 99) - (b.rota_ordem || 99); }); }
+  window._fdRotaCardDisponivel = function(o){
+    var ps = daRota(o); if (ps.length < 2) return null;
+    var ganho = ps.reduce(function(a, p){ return a + (parseFloat(p.valor_motoboy) || 0); }, 0), dist = ps.reduce(function(a, p){ return a + (parseFloat(p.distancia) || 0); }, 0);
+    var card = document.createElement('div'); card.className = 'order-card pending fd-rota-disp';
+    var header = document.createElement('div'); header.className = 'order-header';
+    var idEl = document.createElement('div'); idEl.className = 'order-id'; idEl.textContent = 'Pedido #' + o.id;
+    var badge = document.createElement('span'); badge.className = 'badge badge-pendente'; badge.textContent = 'Disponivel';
+    header.appendChild(idEl); header.appendChild(badge); card.appendChild(header);
+    var t = document.createElement('div'); t.className = 'fd-rota-disp-titulo'; t.textContent = (o.rota_socorro ? '\uD83C\uDD98 SOCORRO \u00B7 ' : '\uD83D\uDEF5 ') + 'ROTA iFood \u00B7 ' + ps.length + ' entregas'; card.appendChild(t);
+    var lojaU = (allUsersCache || []).find(function(u){ return u.username === o.loja_user; }) || {};
+    card.appendChild(makeInfoRow('\uD83C\uDFEA Loja', o.loja_name || lojaU.name || o.loja_user));
+    card.appendChild(makeInfoRow('\uD83D\uDCE6 Coleta', fmtEndereco(o.endereco_coleta) || '-'));
+    var b = document.createElement('div'); b.className = 'fd-rota-bairros';
+    ps.forEach(function(p, i){ var l = document.createElement('div'); var n = document.createElement('b'); n.textContent = (i + 1) + '\u00AA entrega: '; l.appendChild(n); l.appendChild(document.createTextNode(p.bairro_destino || '-')); b.appendChild(l); });
+    card.appendChild(b);
+    card.appendChild(makeInfoRow('\uD83D\uDCCD Distância total', km(dist)));
+    var g = document.createElement('div'); g.className = 'fd-rota-ganho'; var gl = document.createElement('span'); gl.textContent = '\uD83D\uDCB0 Ganho total'; var gv = document.createElement('strong'); gv.textContent = fmt(ganho); g.appendChild(gl); g.appendChild(gv); card.appendChild(g);
+    var nota = document.createElement('div'); nota.className = 'fd-rota-nota'; nota.textContent = 'Você aceita a rota inteira e pode entregar na ordem que preferir. Os dados dos clientes aparecem depois de coletar. Com a rota, você não pega outros pedidos até terminar.'; card.appendChild(nota);
+    if (activeOrders && activeOrders.length) { var tr = document.createElement('div'); tr.className = 'fd-rota-trava'; tr.textContent = 'Termine suas entregas para pegar uma rota.'; card.appendChild(tr); return card; }
+    var btn = document.createElement('button'); btn.className = 'btn-action btn-accept'; btn.textContent = '\u2705 Aceitar rota (' + ps.length + ' entregas)';
+    btn.addEventListener('click', function(){ showConfirm('Aceitar rota', 'Aceitar a rota com <strong>' + ps.length + ' entregas</strong>? Ganho total ' + fmt(ganho) + '.', function(){ doAction(o.id, 'pendente'); }); });
+    card.appendChild(btn); return card;
+  };
+  window._fdRotaFaixa = function(o){
+    var ps = daRota(o); if (ps.length < 2 && !o.rota_socorro) return null;
+    var i = ps.findIndex(function(p){ return p.id === o.id; });
+    var f = document.createElement('div'); f.className = 'fd-rota-faixa';
+    var a = document.createElement('span'); a.textContent = (o.rota_socorro ? '\uD83C\uDD98 Socorro \u00B7 ' : '\uD83D\uDEF5 Rota iFood \u00B7 ') + 'Entrega ' + (i + 1) + '/' + ps.length;
+    var c = document.createElement('span'); c.textContent = 'trecho ' + km(o.distancia);
+    f.appendChild(a); f.appendChild(c); return f;
+  };
+  // "Meus servicos": entregas da mesma rota juntas, na ordem da loja (a 1a em cima)
+  window._fdRotaOrdenar = function(lista){
+    var out = [], feitas = {};
+    lista.forEach(function(o){
+      if (!o.rota_id) { out.push(o); return; }
+      if (feitas[o.rota_id]) return; feitas[o.rota_id] = 1;
+      lista.filter(function(x){ return x.rota_id === o.rota_id; }).sort(function(a, b){ return (a.rota_ordem || 99) - (b.rota_ordem || 99); }).forEach(function(x){ out.push(x); });
+    });
+    return out;
+  };
+  // a lista pode ter sido montada antes deste script carregar: monta de novo se houver rota
+  try { if (typeof loadOrders === "function" && (allOrdersCache || []).some(function(o){ return o.rota_id; })) loadOrders(); } catch (eR) {}
+})();
 </script>
 </body>
 </html>
