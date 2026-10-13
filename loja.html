@@ -3000,7 +3000,35 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   // Gatilho automatico do servidor (o app Android nao tem o botao "Cliente nao atende")
   function textoAuto(p){ return 'O motoboy está no cliente há ' + p.rota_nao_atende_auto_min + ' min e ainda não finalizou a entrega #' + p.id + '. O que fazer?'; }
   function aguardandoDecisao(p){ return p.rota_nao_atende_em && !p.rota_decisao && (p.status === 'coletado' || p.status === 'no_cliente'); }
-  function botoesDecisao(p){ return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"><button type="button" class="fd-rota-btn" style="background:#2ecc71;color:#06210f;flex:1 1 160px" onclick="_fdRotaDecidir(' + p.id + ',\'deixar\',this)">\uD83D\uDC4D Deixar com o motoboy</button><button type="button" class="fd-rota-btn" style="background:#ffb547;color:#1a1000;flex:1 1 160px" onclick="_fdRotaDecidir(' + p.id + ',\'retornar\',this)">\u21A9\uFE0F Retornar para a loja</button></div>'; }
+  // Valor do retorno (o servidor calcula; consulta sem efeito) guardado por pedido para aparecer no botao
+  var _fdRetVal = {}, _fdRetBusca = {};
+  function txtRetornar(id){ return '\u21A9\uFE0F Retornar para a loja' + (_fdRetVal[id] != null ? ' (' + fmt(_fdRetVal[id]) + ')' : ''); }
+  function buscarValorRetorno(id){
+    if (_fdRetVal[id] != null) return Promise.resolve(_fdRetVal[id]);
+    if (!_fdRetBusca[id]) _fdRetBusca[id] = postRota('/rotas/entrega/' + id + '/decisao', { decisao: 'retornar' }).then(function(pv){
+      delete _fdRetBusca[id];
+      if (pv.ok && pv.j && pv.j.valor_retorno != null) { _fdRetVal[id] = parseFloat(pv.j.valor_retorno); document.querySelectorAll('.fd-rota-btn-ret[data-id="' + id + '"]').forEach(function(b){ b.textContent = txtRetornar(id); }); return _fdRetVal[id]; }
+      throw new Error((pv.j && pv.j.error) || 'Não foi possível calcular o retorno.');
+    });
+    return _fdRetBusca[id];
+  }
+  function botoesDecisao(p){ setTimeout(function(){ buscarValorRetorno(p.id).catch(function(){}); }, 0); return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"><button type="button" class="fd-rota-btn" style="background:#2ecc71;color:#06210f;flex:1 1 160px" onclick="_fdRotaDecidir(' + p.id + ',\'deixar\',this)">\uD83D\uDC4D Deixar com o motoboy</button><button type="button" class="fd-rota-btn fd-rota-btn-ret" data-id="' + p.id + '" style="background:#ffb547;color:#1a1000;flex:1 1 160px" onclick="_fdRotaDecidir(' + p.id + ',\'retornar\',this)">' + txtRetornar(p.id) + '</button></div>'; }
+  // Tela de confirmacao do retorno: valor grande em destaque, sem km nem conta
+  function confirmarRetorno(id, valor){
+    return new Promise(function(ok){
+      var ov = document.createElement('div'); ov.id = 'fd-rota-conf-ret'; ov.setAttribute('role', 'alertdialog'); ov.setAttribute('aria-modal', 'true');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:2147482800;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+      ov.innerHTML = '<div style="background:#1c1d2e;border:3px solid #ffb547;border-radius:20px;padding:22px 18px;max-width:420px;width:100%;color:#fff;text-align:center">' +
+        '<div style="font-size:20px;font-weight:900;line-height:1.3">Confirmar retorno do pedido #' + id + '</div>' +
+        '<div class="fd-rota-ret-valor" style="margin:16px 0 12px;background:#fff3c4;border:3px solid #ff9500;border-radius:16px;padding:14px 10px;color:#7a3300;font-size:44px;font-weight:900;letter-spacing:.5px;line-height:1.1">' + fmt(valor) + '</div>' +
+        '<div style="font-size:15px;line-height:1.5;color:#e6e8f5">Esse valor será descontado do seu saldo e pago ao motoboy para trazer o pedido de volta à loja.</div>' +
+        '<button type="button" class="fd-rota-ret-sim" style="width:100%;min-height:52px;border:none;border-radius:12px;background:#ff9500;color:#1a0d00;font-size:17px;font-weight:900;cursor:pointer;margin-top:16px">Confirmar retorno (' + fmt(valor) + ')</button>' +
+        '<button type="button" class="fd-rota-ret-nao" style="width:100%;min-height:48px;border:none;border-radius:12px;background:#3a3d63;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px">Voltar</button></div>';
+      document.body.appendChild(ov);
+      ov.querySelector('.fd-rota-ret-sim').onclick = function(){ ov.remove(); ok(true); };
+      ov.querySelector('.fd-rota-ret-nao').onclick = function(){ ov.remove(); ok(false); };
+    });
+  }
   window._fdRotaExtras.entrega.push(function(p){
     if (aguardandoDecisao(p)) return '<div style="background:#3a2a00;border:2px solid #ffb547;border-radius:10px;padding:8px 10px;margin-top:6px;color:#fff"><b>' + (p.rota_nao_atende_auto_min ? '\u23F1\uFE0F ' + e(textoAuto(p)) : '\uD83D\uDEAB Cliente não atende') + '</b><div class="fd-rota-contador" data-inicio="' + new Date(p.rota_nao_atende_em).getTime() + '" style="font-weight:900;color:#ffd27a;margin-top:2px">' + txtContador(restante(p)) + '</div>' + botoesDecisao(p) + '</div>';
     if (p.rota_decisao === 'deixar') return '<div style="margin-top:6px;color:#8ff0b5;font-weight:800">\u2705 Cliente não atendeu: ficou com o motoboy (' + e(p.rota_decisao_por || '') + ')</div>';
@@ -3016,9 +3044,8 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     if (btn) btn.disabled = true;
     try {
       if (dec === 'retornar') {
-        var pv = await postRota('/rotas/entrega/' + id + '/decisao', { decisao: 'retornar' });
-        if (!pv.ok) { fdAlert(pv.j.error || 'Não foi possível calcular o retorno.'); if (btn) btn.disabled = false; return; }
-        if (!await fdConfirm((pv.j.mensagem || ('O motoboy irá cobrar ' + fmt(pv.j.valor_retorno) + ' para retornar. Confirmar?')) + '\n\nO retorno é cobrado do seu saldo. O motoboy termina as outras entregas e volta com o pedido.')) { if (btn) btn.disabled = false; return; }
+        var vr; try { vr = await buscarValorRetorno(id); } catch (e27) { fdAlert(e27.message || 'Não foi possível calcular o retorno.'); if (btn) btn.disabled = false; return; }
+        if (!await confirmarRetorno(id, vr)) { if (btn) btn.disabled = false; return; }
         var x = await postRota('/rotas/entrega/' + id + '/decisao', { decisao: 'retornar', confirmar: true });
         if (!x.ok) fdAlert(x.j.error || 'Não foi possível confirmar o retorno.'); else fdAlert('\u21A9\uFE0F Retorno confirmado. Quando o motoboy chegar, confira o pedido e passe o código de entrega ' + (p.delivery_code || '') + '.');
       } else {
