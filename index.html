@@ -113,7 +113,7 @@
     <button class="tab-btn" onclick="showTab('mapa', this)">&#x1F5FA; Mapa</button>
     <button class="tab-btn" onclick="showTab('financeiro', this)">Financeiro</button>
     <button class="tab-btn" onclick="showTab('config', this)">&#9881; Ajustes de Corrida</button>
-    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-emprestimos-btn" onclick="showTab('emprestimos', this)">💰 Emprestimos<span id="emprestimos-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
+    <button class="tab-btn" id="tab-saques-btn" onclick="showTab('saques', this)">💸 Saques<span id="saques-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-rota-btn" onclick="showTab('rota-ifood', this); _fdRotaAdmin()">🛵 Rota iFood</button> <button class="tab-btn" id="tab-emprestimos-btn" onclick="showTab('emprestimos', this)">💰 Emprestimos<span id="emprestimos-badge" class="badge">0</span></button> <button class="tab-btn" id="tab-cadastros-btn" onclick="showTab('cadastros', this)">📋 Cadastros<span id="pending-badge" class="badge">0</span></button>
     <button class="tab-btn" onclick="showTab('avisos', this)">📢 Avisos</button>
       <button class="tab-btn" onclick="showTab('indicacoes', this)">&#128279; Indica&#231;&#245;es</button>
     <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
@@ -312,7 +312,17 @@
       <div id="saques-list"></div>
     </div>
   </div>
-<div id="emprestimos" class="section"><div class="card"><h3 style="margin-bottom:12px;color:#ffcc00;">💰 Solicitações de Empréstimo</h3><div id="emprestimo-modo-toggle" style="display:flex;gap:8px;align-items:center;margin-bottom:14px;padding:10px;background:#1a1a2e;border-radius:8px"><span style="font-size:13px;color:#ccc;margin-right:6px">Modo de aprovação:</span><button id="emp-modo-manual-btn" onclick="setEmprestimoModo('manual')" style="background:#555;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Manual</button><button id="emp-modo-auto-btn" onclick="setEmprestimoModo('automatico')" style="background:#555;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Automático</button></div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;padding:10px;background:#1a1a2e;border-radius:8px"><label for="emp-juros-input" style="font-size:13px;color:#ccc">Juros dos novos empréstimos (%):</label><input id="emp-juros-input" type="number" min="0" max="100" step="0.5" style="width:80px;padding:6px 8px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;font-size:14px"><button onclick="salvarJurosEmprestimo()" style="background:#28a745;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Salvar</button><span id="emp-juros-msg" style="font-size:12px;color:#aaa"></span><div style="flex-basis:100%;font-size:11px;color:#888">Vale só para empréstimos novos. Os que já existem mantêm a taxa com que foram feitos.</div></div><p id="emprestimos-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p><div id="emprestimos-list"></div></div></div><div id="avisos" class="section">
+<div id="rota-ifood" class="section"><div class="card">
+<h3 style="margin-bottom:6px;color:#ffcc00;">🛵 Rota iFood com vários pontos</h3>
+<p style="color:#bbb;font-size:13px;margin-bottom:14px;line-height:1.45">Só para pedidos iFood (entrega própria). Desligada, nada muda para ninguém: as lojas não veem a opção e as rotas não são criadas. Rotas que já existem continuam até terminar.</p>
+<div id="fd-rota-adm-cfg" style="background:#1a1a2e;border-radius:10px;padding:14px;margin-bottom:16px">Carregando...</div>
+<h3 style="margin:6px 0 8px;color:#ffcc00;font-size:15px">🚫 Cliente não atende (aguardando decisão)</h3>
+<div id="fd-rota-adm-casos" style="margin-bottom:16px"></div>
+<h3 style="margin:6px 0 8px;color:#ffcc00;font-size:15px">🛵 Rotas em andamento</h3>
+<div id="fd-rota-adm-rotas" style="margin-bottom:16px"></div>
+<h3 style="margin:6px 0 8px;color:#ffcc00;font-size:15px">🆘 Motoboys que precisaram de socorro</h3>
+<div id="fd-rota-adm-socorros"></div>
+</div></div><div id="emprestimos" class="section"><div class="card"><h3 style="margin-bottom:12px;color:#ffcc00;">💰 Solicitações de Empréstimo</h3><div id="emprestimo-modo-toggle" style="display:flex;gap:8px;align-items:center;margin-bottom:14px;padding:10px;background:#1a1a2e;border-radius:8px"><span style="font-size:13px;color:#ccc;margin-right:6px">Modo de aprovação:</span><button id="emp-modo-manual-btn" onclick="setEmprestimoModo('manual')" style="background:#555;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Manual</button><button id="emp-modo-auto-btn" onclick="setEmprestimoModo('automatico')" style="background:#555;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Automático</button></div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;padding:10px;background:#1a1a2e;border-radius:8px"><label for="emp-juros-input" style="font-size:13px;color:#ccc">Juros dos novos empréstimos (%):</label><input id="emp-juros-input" type="number" min="0" max="100" step="0.5" style="width:80px;padding:6px 8px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;font-size:14px"><button onclick="salvarJurosEmprestimo()" style="background:#28a745;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Salvar</button><span id="emp-juros-msg" style="font-size:12px;color:#aaa"></span><div style="flex-basis:100%;font-size:11px;color:#888">Vale só para empréstimos novos. Os que já existem mantêm a taxa com que foram feitos.</div></div><p id="emprestimos-empty" style="color:#888;font-size:13px;">Nenhuma solicitação pendente.</p><div id="emprestimos-list"></div></div></div><div id="avisos" class="section">
   <div class="card">
     <h3 style="margin-bottom:12px;color:#ffcc00;">📢 Gerenciar Avisos</h3>
     <div class="input-group"><label>Título do Aviso</label><input id="aviso-title" class="input" placeholder="Ex: Manutenção programada"></div>
@@ -664,7 +674,7 @@ function esc(v) {
     let currentOrderFilter = 'todos'; let _rankingData = []; let _rankingSort = { field: 'pedidos', dir: 'desc' }; function sortRanking(field){ if (_rankingSort.field === field) { _rankingSort.dir = _rankingSort.dir === 'desc' ? 'asc' : 'desc'; } else { _rankingSort.field = field; _rankingSort.dir = 'desc'; } renderRanking(); } function rankArrow(field){ if (_rankingSort.field !== field) return ''; return _rankingSort.dir === 'desc' ? ' ▼' : ' ▲'; } let _rankingPeriod = 'atual'; let _rankingCustomStart = ''; let _rankingCustomEnd = ''; var RANKING_NEVER_EPOCH = new Date('2026-08-23T00:00:00').getTime(); function getRankingPeriodRange(){ var now = new Date(); if (_rankingPeriod === 'anterior') { var s = new Date(now.getFullYear(), now.getMonth()-1, 1,0,0,0,0); var e = new Date(now.getFullYear(), now.getMonth(), 1,0,0,0,0).getTime()-1; return { start: s.getTime(), end: e }; } if (_rankingPeriod === 'personalizado') { var s2 = _rankingCustomStart ? new Date(_rankingCustomStart + 'T00:00:00').getTime() : 0; var e2 = _rankingCustomEnd ? new Date(_rankingCustomEnd + 'T23:59:59').getTime() : now.getTime(); return { start: s2, end: e2 }; } var s3 = new Date(now.getFullYear(), now.getMonth(), 1,0,0,0,0); return { start: s3.getTime(), end: now.getTime() }; } function computeRankingData(){ var range = getRankingPeriodRange(); _rankingData = allUsers.filter(function(u){ return u.role === 'motoboy'; }).map(function(m){ var periodMine = allOrders.filter(function(o){ if (o.motoboy_id !== m.id || o.status !== 'entregue') return false; var t = new Date(o.created_at).getTime(); return t >= range.start && t <= range.end; }); var pedidos = periodMine.length; var valor = periodMine.reduce(function(s,o){ return s + (parseFloat(o.valor_motoboy)||0); }, 0); var km = periodMine.reduce(function(s,o){ return s + (parseFloat(o.distancia)||0); }, 0); var ultimo = m.motoboy_ultima_entrega_at ? parseInt(m.motoboy_ultima_entrega_at) : null; var dias = ultimo ? Math.floor((Date.now() - ultimo) / 86400000) : Math.floor((Date.now() - RANKING_NEVER_EPOCH) / 86400000); return { id: m.id, name: m.name, username: m.username, pedidos: pedidos, valor: valor, km: km, dias: dias }; }); } function setRankingPeriod(p){ _rankingPeriod = p; document.querySelectorAll('#ranking .filter-btn').forEach(function(b){ b.classList.remove('active'); }); var btn = document.getElementById('rank-filter-' + p); if (btn) btn.classList.add('active'); var cd = document.getElementById('rank-custom-range'); if (cd) cd.style.display = (p === 'personalizado') ? 'flex' : 'none'; if (p === 'personalizado') { calInit(); } if (p !== 'personalizado') { computeRankingData(); renderRanking(); } } function applyRankingCustomRange(){ _rankingCustomStart = document.getElementById('rank-custom-start').value; _rankingCustomEnd = document.getElementById('rank-custom-end').value; if (_rankingCustomStart && _rankingCustomEnd) { computeRankingData(); renderRanking(); } } var _calInited = false; var _calState = { start: null, end: null }; var _calSel = { start: null, end: null }; var CAL_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; function calInit(){ if (_calInited) return; _calInited = true; var now = new Date(); _calState.start = { y: now.getFullYear(), m: now.getMonth() }; _calState.end = { y: now.getFullYear(), m: now.getMonth() }; calRender('start'); calRender('end'); } function calNav(which, unit, delta){ var st = _calState[which]; if (unit === 'y') { st.y += delta; } else { st.m += delta; if (st.m < 0) { st.m = 11; st.y--; } else if (st.m > 11) { st.m = 0; st.y++; } } calRender(which); } function calRender(which){ var st = _calState[which]; document.getElementById('cal-' + which + '-year').textContent = st.y; document.getElementById('cal-' + which + '-month').textContent = CAL_MESES[st.m]; var first = new Date(st.y, st.m, 1); var startDow = first.getDay(); var daysInMonth = new Date(st.y, st.m + 1, 0).getDate(); var html = ''; for (var i = 0; i < startDow; i++) { html += '<div class="cal-day cal-empty"></div>'; } for (var d = 1; d <= daysInMonth; d++) { var sel = _calSel[which]; var isSel = sel && sel.y === st.y && sel.m === st.m && sel.d === d; html += '<div class="cal-day' + (isSel ? ' cal-selected' : '') + '" onclick="calPick(\'' + which + '\',' + d + ')">' + d + '</div>'; } document.getElementById('cal-' + which + '-days').innerHTML = html; } function calPick(which, d){ var st = _calState[which]; _calSel[which] = { y: st.y, m: st.m, d: d }; var iso = st.y + '-' + String(st.m + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0'); document.getElementById('rank-custom-' + which).value = iso; calRender(which); applyRankingCustomRange(); }
 
     const STATUS_LABELS = {
- em_preparo: '🔄 Em Preparo',      pendente: 'Pendente',
+ em_preparo: '🔄 Em Preparo', rota_espera: '⏳ Rota (aguardando)',      pendente: 'Pendente',
       aceito: 'Aceito',
       na_loja: 'Na Loja',
       coletado: 'Coletado',
@@ -684,7 +694,7 @@ function esc(v) {
     async function loadData(tab) {
       tab = tab || 'pedidos';
       if (tab === 'pedidos') {
-        const r = await fetch(API + '/orders');
+        const r = await fetch(API + '/orders?raw=1');
         allOrders = await r.json();
         try {
           const rEv = await fetch(API + '/orders/motoboy-eventos');
@@ -701,7 +711,7 @@ function esc(v) {
       } else if (tab === 'lojas' || tab === 'motoboys') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
-        var motoboysFiltered = allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }).sort(function(a,b){ var na=parseInt((a.custom_id||'').replace(/\D/g,''))||0; var nb=parseInt((b.custom_id||'').replace(/\D/g,''))||0; return nb-na; }); if (tab === 'motoboys') { try { var rDevido = await fetch(API + '/motoboy-credito-devido-total'); var devidoList = await rDevido.json(); var devidoMap = {}; (devidoList||[]).forEach(function(dv){ devidoMap[dv.motoboy_id] = parseFloat(dv.total_devido) || 0; }); motoboysFiltered.forEach(function(u){ u.devido_lojas = devidoMap[u.id] || 0; }); } catch(eDevidoTotal) { console.error('Erro ao buscar devido lojas:', eDevidoTotal); } } renderUsers(motoboysFiltered, tab); } else if (tab === 'ranking') { const [urr, orr] = await Promise.all([fetch(API + '/users'), fetch(API + '/orders')]); allUsers = await urr.json(); allOrders = await orr.json(); computeRankingData(); renderRanking();
+        var motoboysFiltered = allUsers.filter(function(u){ return u.role === (tab === 'lojas' ? 'loja' : 'motoboy'); }).sort(function(a,b){ var na=parseInt((a.custom_id||'').replace(/\D/g,''))||0; var nb=parseInt((b.custom_id||'').replace(/\D/g,''))||0; return nb-na; }); if (tab === 'motoboys') { try { var rDevido = await fetch(API + '/motoboy-credito-devido-total'); var devidoList = await rDevido.json(); var devidoMap = {}; (devidoList||[]).forEach(function(dv){ devidoMap[dv.motoboy_id] = parseFloat(dv.total_devido) || 0; }); motoboysFiltered.forEach(function(u){ u.devido_lojas = devidoMap[u.id] || 0; }); } catch(eDevidoTotal) { console.error('Erro ao buscar devido lojas:', eDevidoTotal); } } renderUsers(motoboysFiltered, tab); } else if (tab === 'ranking') { const [urr, orr] = await Promise.all([fetch(API + '/users'), fetch(API + '/orders?raw=1')]); allUsers = await urr.json(); allOrders = await orr.json(); computeRankingData(); renderRanking();
       } else if (tab === 'financeiro') {
         const r = await fetch(API + '/users');
         allUsers = await r.json();
@@ -1556,7 +1566,7 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
       if (!confirm('Isso vai excluir os pedidos cancelados com mais de ' + days + ' dias (pedidos entregues nao sao apagados). Continuar?')) return;
       var cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
-      var r = await fetch(API + '/orders');
+      var r = await fetch(API + '/orders?raw=1');
       var orders = await r.json();
       var toDelete = orders.filter(function(o) {
         return o.status === 'cancelado' && new Date(o.created_at) < cutoff;
@@ -2659,6 +2669,66 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
   });
   // carrega a lista quando a aba Avisos e aberta
   if (typeof window.showTab === 'function') { var _st = window.showTab; window.showTab = function(id){ var r = _st.apply(this, arguments); if (id === 'avisos') window.carregarAvisosImg(); return r; }; }
+})();
+</script>
+<script id="fd-rota-admin-js">
+/* ===== Rota iFood (admin): interruptor, valor por ponto, maximo de pontos, casos sem resposta da loja e socorro ===== */
+(function(){
+  function tok(){ try { return JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token || ''; } catch (e) { return ''; } }
+  function e(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(v){ return 'R$ ' + (Math.round((parseFloat(v) || 0) * 100) / 100).toFixed(2).replace('.', ','); }
+  function minDesde(t){ return Math.max(0, Math.round((Date.now() - new Date(t).getTime()) / 60000)); }
+  async function chamar(m, u, corpo){ var r = await fetch(API + u, { method: m, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: corpo ? JSON.stringify(corpo) : undefined }); var j = {}; try { j = await r.json(); } catch (e2) {} return { ok: r.ok, st: r.status, j: j }; }
+  var ROT = { em_preparo: 'em preparo', rota_espera: 'aguardando', pendente: 'disponível', aceito: 'aceito', na_loja: 'na loja', coletado: 'coletado', no_cliente: 'no cliente', entregue: 'entregue', cancelado: 'cancelado' };
+  var BTN = 'border:none;border-radius:8px;min-height:40px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;margin:6px 6px 0 0';
+  window._fdRotaAdmin = async function(){
+    var cfgEl = document.getElementById('fd-rota-adm-cfg'); if (!cfgEl) return;
+    var r = await chamar('GET', '/admin/rotas');
+    if (!r.ok) { cfgEl.innerHTML = '<span style="color:#ff8a80">' + e(r.j.error || 'Não foi possível carregar.') + '</span>'; return; }
+    var c = r.j.config;
+    cfgEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px"><div style="font-size:16px;font-weight:900;color:' + (c.ativa ? '#4ce07a' : '#ff8a80') + '">Rota iFood: ' + (c.ativa ? 'LIGADA' : 'DESLIGADA') + '</div><button id="fd-rota-adm-toggle" style="' + BTN + ';background:' + (c.ativa ? '#c0392b' : '#28a745') + ';color:#fff;margin:0">' + (c.ativa ? 'Desligar' : 'Ligar') + '</button></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end"><label style="font-size:13px;color:#ccc">Valor por ponto (R$)<br><input id="fd-rota-adm-vp" type="number" min="0" max="100" step="0.5" value="' + c.valor_ponto + '" style="width:110px;padding:8px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;font-size:15px"></label>' +
+      '<label style="font-size:13px;color:#ccc">Máximo de pontos<br><input id="fd-rota-adm-mp" type="number" min="2" max="10" step="1" value="' + c.max_pontos + '" style="width:90px;padding:8px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;font-size:15px"></label>' +
+      '<button id="fd-rota-adm-salvar" style="' + BTN + ';background:#0d6efd;color:#fff;margin:0">Salvar valores</button><span id="fd-rota-adm-msg" style="font-size:12px;color:#aaa"></span></div>' +
+      '<div style="font-size:12px;color:#888;margin-top:8px">Vale para as próximas rotas criadas. 1º ponto = preço normal da tele; demais = km do trecho + valor por ponto.</div>';
+    document.getElementById('fd-rota-adm-toggle').onclick = async function(){
+      if (!confirm(c.ativa ? 'Desligar a Rota iFood? As lojas deixam de ver a opção (rotas em andamento continuam).' : 'Ligar a Rota iFood? As lojas passam a ver "Rota com mais entregas" no pedido iFood.')) return;
+      var x = await chamar('PUT', '/settings/rota-ifood', { ativa: !c.ativa }); if (!x.ok) alert(x.j.error || 'Erro ao salvar.'); window._fdRotaAdmin();
+    };
+    document.getElementById('fd-rota-adm-salvar').onclick = async function(){
+      var x = await chamar('PUT', '/settings/rota-ifood', { valor_ponto: document.getElementById('fd-rota-adm-vp').value, max_pontos: document.getElementById('fd-rota-adm-mp').value });
+      var m = document.getElementById('fd-rota-adm-msg'); if (!x.ok) { m.style.color = '#ff8a80'; m.textContent = x.j.error || 'Erro ao salvar.'; } else { m.style.color = '#4ce07a'; m.textContent = 'Salvo: ' + fmt(x.j.valor_ponto) + ' por ponto, máximo ' + x.j.max_pontos + ' pontos.'; }
+    };
+    // casos de cliente nao atende
+    var casos = r.j.casos_nao_atende || [];
+    document.getElementById('fd-rota-adm-casos').innerHTML = casos.length ? casos.map(function(o){ var min = minDesde(o.rota_nao_atende_em), atras = o.rota_nao_atende_admin || min >= 15;
+      return '<div style="background:' + (atras ? '#3a1a1a' : '#1a1a2e') + ';border:1px solid ' + (atras ? '#ff6b6b' : '#333') + ';border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;color:#ddd">' +
+        '<b style="color:#fff">Pedido #' + o.id + '</b> (rota #' + o.rota_id + ') · ' + e(o.loja_name || o.loja_user) + ' · motoboy ' + e(o.motoboy_name || '-') + '<br>Cliente: ' + e(o.nome_cliente || '') + '<br><span style="color:' + (atras ? '#ff8a80' : '#ffcc00') + ';font-weight:800">' + (atras ? '⏰ Loja não decidiu em 15 min (há ' + min + ' min): decida aqui' : 'Aviso há ' + min + ' min: a loja ainda pode decidir') + '</span><br>' +
+        '<button style="' + BTN + ';background:#28a745;color:#fff" onclick="_fdRotaAdmDecidir(' + o.id + ',\'deixar\')">👍 Deixar com o motoboy</button><button style="' + BTN + ';background:#ffb547;color:#1a1000" onclick="_fdRotaAdmDecidir(' + o.id + ',\'retornar\')">↩️ Retornar para a loja</button></div>'; }).join('') : '<div style="color:#888;font-size:13px">Nenhum caso agora.</div>';
+    // rotas em andamento
+    var rotas = r.j.rotas || [];
+    document.getElementById('fd-rota-adm-rotas').innerHTML = rotas.length ? rotas.map(function(rt){ var vv = rt.entregas.filter(function(p){ return p.status !== 'cancelado'; }); var p1 = vv[0] || rt.entregas[0]; var faltam = vv.filter(function(p){ return ['aceito', 'na_loja', 'coletado', 'no_cliente'].indexOf(p.status) >= 0; });
+      var pedido = vv.some(function(p){ return p.rota_socorro_pedido_em; });
+      return '<div style="background:#1a1a2e;border:1px solid ' + (pedido ? '#ff6b6b' : '#333') + ';border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;color:#ddd">' +
+        '<b style="color:#fff">Rota #' + rt.rota_id + '</b> · ' + e(p1.loja_name || p1.loja_user) + (p1.rota_socorro ? ' <span style="color:#ff8a80">(socorro)</span>' : '') + ' · motoboy ' + e(p1.motoboy_name || '—') + (pedido ? '<br><b style="color:#ff8a80">🆘 O motoboy pediu socorro</b>' : '') + '<br>' +
+        vv.map(function(p, i){ return (i + 1) + 'ª #' + p.id + ' ' + e(p.bairro_destino || '') + ': ' + (ROT[p.status] || p.status); }).join(' · ') +
+        (faltam.length && p1.motoboy_id ? '<br><button style="' + BTN + ';background:#c0392b;color:#fff" onclick="_fdRotaAdmSocorro(' + rt.rota_id + ')">🆘 Socorro do Motoboy</button>' : '') + '</div>'; }).join('') : '<div style="color:#888;font-size:13px">Nenhuma rota em andamento.</div>';
+    var soc = r.j.motoboys_socorros || [];
+    document.getElementById('fd-rota-adm-socorros').innerHTML = soc.length ? soc.map(function(m){ return '<div style="font-size:13px;color:#ddd;padding:4px 0">' + e(m.name) + (m.custom_id ? ' (' + e(m.custom_id) + ')' : '') + ': <b style="color:' + (m.socorros_count >= 3 ? '#ff8a80' : '#ffcc00') + '">' + m.socorros_count + ' socorro' + (m.socorros_count === 1 ? '' : 's') + '</b></div>'; }).join('') : '<div style="color:#888;font-size:13px">Nenhum até agora.</div>';
+  };
+  window._fdRotaAdmDecidir = async function(id, dec){
+    if (dec === 'deixar') { if (!confirm('Deixar o pedido #' + id + ' com o motoboy? A entrega é finalizada sem o código do iFood.')) return; var x = await chamar('POST', '/rotas/entrega/' + id + '/decisao', { decisao: 'deixar' }); alert(x.ok ? 'Pronto: ficou com o motoboy.' : (x.j.error || 'Erro.')); return window._fdRotaAdmin(); }
+    var pv = await chamar('POST', '/rotas/entrega/' + id + '/decisao', { decisao: 'retornar' }); if (!pv.ok) { alert(pv.j.error || 'Erro.'); return; }
+    if (!confirm((pv.j.mensagem || ('Retorno: ' + fmt(pv.j.valor_retorno))) + '\n\nO valor sai do saldo da loja.')) return;
+    var y = await chamar('POST', '/rotas/entrega/' + id + '/decisao', { decisao: 'retornar', confirmar: true }); alert(y.ok ? 'Retorno confirmado.' : (y.j.error || 'Erro.')); window._fdRotaAdmin();
+  };
+  window._fdRotaAdmSocorro = async function(rotaId){
+    var pv = await chamar('POST', '/admin/rotas/' + rotaId + '/socorro', {}); if (!pv.ok) { alert(pv.j.error || 'Não foi possível abrir o socorro.'); return; }
+    var p = pv.j;
+    if (!confirm('🆘 SOCORRO DO MOTOBOY ' + (p.motoboy || '') + '\n\nEntregas que faltam: ' + p.entregas + '\nNova rota: ' + fmt(p.total) + ' (' + String(p.km_total).replace('.', ',') + ' km), paga pelo caixa da Flash Drop.\n\nOnde o motoboy está: ' + (p.endereco_aproximado || (p.posicao.lat + ',' + p.posicao.lng)) + '\nLocalização atualizada há ' + p.atualizada_ha_min + ' min.\n\nO motoboy parado recebe só pelas entregas que já fez. Confirmar?')) return;
+    var x = await chamar('POST', '/admin/rotas/' + rotaId + '/socorro', { confirmar: true }); alert(x.ok ? 'Socorro criado: rota #' + x.j.rota_nova + ' (' + fmt(x.j.total) + '). Os motoboys foram avisados.' : (x.j.error || 'Erro.')); window._fdRotaAdmin();
+  };
+  setInterval(function(){ var s2 = document.getElementById('rota-ifood'); if (s2 && s2.classList.contains('active')) window._fdRotaAdmin(); }, 20000);
 })();
 </script>
 </body>
