@@ -2684,7 +2684,7 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
   window._fdRotaAdmin = async function(){
     var cfgEl = document.getElementById('fd-rota-adm-cfg'); if (!cfgEl) return;
     var r = await chamar('GET', '/admin/rotas');
-    if (!r.ok) { cfgEl.innerHTML = '<span style="color:#ff8a80">' + e(r.j.error || 'Não foi possível carregar.') + '</span>'; return; }
+    if (!r.ok) { cfgEl.innerHTML = '<span style="color:#ff8a80;font-weight:700">' + ((r.st === 401 || r.st === 403) ? 'Seu login do admin expirou ou é antigo. Toque em "Sair" (no topo) e entre de novo no admin para poder ligar a Rota iFood.' : e(r.j.error || 'Não foi possível carregar. Toque em Atualizar.')) + '</span>'; return; }
     var c = r.j.config;
     cfgEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px"><div style="font-size:16px;font-weight:900;color:' + (c.ativa ? '#4ce07a' : '#ff8a80') + '">Rota iFood: ' + (c.ativa ? 'LIGADA' : 'DESLIGADA') + '</div><button id="fd-rota-adm-toggle" style="' + BTN + ';background:' + (c.ativa ? '#c0392b' : '#28a745') + ';color:#fff;margin:0">' + (c.ativa ? 'Desligar' : 'Ligar') + '</button></div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end"><label style="font-size:13px;color:#ccc">Valor por ponto (R$)<br><input id="fd-rota-adm-vp" type="number" min="0" max="100" step="0.5" value="' + c.valor_ponto + '" style="width:110px;padding:8px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;font-size:15px"></label>' +
@@ -2693,7 +2693,7 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
       '<div style="font-size:12px;color:#888;margin-top:8px">Vale para as próximas rotas criadas. 1º ponto = preço normal da tele; demais = km do trecho + valor por ponto.</div>';
     document.getElementById('fd-rota-adm-toggle').onclick = async function(){
       if (!confirm(c.ativa ? 'Desligar a Rota iFood? As lojas deixam de ver a opção (rotas em andamento continuam).' : 'Ligar a Rota iFood? As lojas passam a ver "Rota com mais entregas" no pedido iFood.')) return;
-      var x = await chamar('PUT', '/settings/rota-ifood', { ativa: !c.ativa }); if (!x.ok) alert(x.j.error || 'Erro ao salvar.'); window._fdRotaAdmin();
+      var x = await chamar('PUT', '/settings/rota-ifood', { ativa: !c.ativa }); if (!x.ok) alert((x.st === 401 || x.st === 403) ? 'Seu login do admin expirou. Toque em Sair e entre de novo no admin.' : (x.j.error || 'Erro ao salvar.')); window._fdRotaAdmin();
     };
     document.getElementById('fd-rota-adm-salvar').onclick = async function(){
       var x = await chamar('PUT', '/settings/rota-ifood', { valor_ponto: document.getElementById('fd-rota-adm-vp').value, max_pontos: document.getElementById('fd-rota-adm-mp').value });
