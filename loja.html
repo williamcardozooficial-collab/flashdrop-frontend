@@ -2648,6 +2648,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
 .fd-rota-ent-corpo .fd-rota-cod{display:inline-block;margin-top:4px;background:#12131f;border:1px solid #4caf50;color:#fff;border-radius:8px;padding:2px 8px;font-weight:900;letter-spacing:3px}
 .fd-rota-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 14px;border-radius:10px;border:none;font-weight:800;font-size:13px;cursor:pointer;margin:6px 6px 0 0}
 .fd-rota-btn-pronto{background:#2ecc71;color:#06210f}
+.fd-rota-btn-canc{width:100%;background:#e67e22!important;color:#1a0d00!important}
 .fd-rota-ok{display:inline-block;margin-top:6px;color:#8ff0b5;font-weight:800}
 .fd-rota-canc{font-size:12px;color:#ff9d94;margin-top:4px}
 .fd-rota-socorro{font-size:13px;font-weight:800;color:#fff;background:#7a1f1f;border-radius:10px;padding:8px 10px;margin:0 0 10px}
@@ -2850,8 +2851,6 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     (window._fdRotaExtras.cartao || []).forEach(function(f){ try { h += f(vv, todas) || ''; } catch (e11) {} });
     return h + '</div>';
   };
-  // a lista pode ter sido montada antes deste script carregar: monta de novo com as rotas agrupadas
-  try { if (typeof renderLojaOrders === 'function' && Array.isArray(_myOrders) && _myOrders.some(function(o){ return o.rota_id; })) renderLojaOrders(_myOrders); } catch (eR) {}
   var MSG_CLIENTE = 'Olá! Seu pedido saiu para entrega e chega em breve. Fique atento ao interfone/celular \uD83D\uDE09';
   function vistasSaiu(){ try { return JSON.parse(localStorage.getItem('_fdRotaSaiu') || '[]'); } catch (e14) { return []; } }
   function avisoSaiu(ps){
@@ -2889,6 +2888,36 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     } catch (e17) {}
   };
   setInterval(window._fdRotaVerSaiu, 4000);
+  // ---------- cancelamento (cliente por cliente ou rota inteira), ate o motoboy coletar ----------
+  var ANTES_COLETA = ['em_preparo', 'rota_espera', 'pendente', 'aceito', 'na_loja'];
+  function taxaCanc(){ var t = 0; try { t = parseFloat(settings.taxa_cancelamento) || 0; } catch (e18) {} return t; }
+  window._fdRotaExtras.entrega.push(function(p, vv){
+    if (p.rota_socorro || ANTES_COLETA.indexOf(p.status) < 0 || !vv.every(function(x){ return ANTES_COLETA.indexOf(x.status) >= 0; })) return '';
+    return '<button type="button" class="fd-rota-btn" style="background:#7a2a12;color:#fff" onclick="_fdRotaCancelarCliente(' + p.rota_id + ',' + p.id + ',this)">❌ Cancelar este cliente</button>';
+  });
+  window._fdRotaExtras.cartao.push(function(vv){
+    if (!vv.length || vv[0].rota_socorro || !vv.every(function(x){ return ANTES_COLETA.indexOf(x.status) >= 0; })) return '';
+    return '<button type="button" class="fd-rota-btn fd-rota-btn-canc" onclick="_fdRotaCancelarRota(' + vv[0].rota_id + ',this)">❌ Cancelar rota inteira</button>';
+  });
+  async function postRota(url, corpo){ var r = await fetch(API_R + url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify(corpo || {}) }); var j = {}; try { j = await r.json(); } catch (e19) {} return { ok: r.ok, j: j }; }
+  window._fdRotaCancelarCliente = async function(rotaId, id, btn){
+    var p = (_myOrders || []).find(function(x){ return x.id === id; }) || {};
+    if (!await fdConfirm('Cancelar o cliente ' + (p.nome_cliente || ('#' + id)) + '?\n\nOs outros clientes continuam. A rota é recalculada sem ele: se ficar mais barata, a diferença volta para o seu saldo; se ficar mais cara, a diferença é cobrada. Taxa de cancelamento: ' + fmt(taxaCanc()) + '.')) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'Cancelando...'; }
+    var x = await postRota('/rotas/' + rotaId + '/cancelar-cliente', { order_id: id });
+    if (!x.ok) fdAlert(x.j.error || 'Não foi possível cancelar.');
+    else fdAlert('✅ Cliente cancelado.\n\nRota: ' + fmt(x.j.total_antes) + ' → ' + fmt(x.j.total_depois) + (x.j.diferenca > 0 ? '\nDevolvido ao seu saldo: ' + fmt(x.j.diferenca) : (x.j.diferenca < 0 ? '\nCobrado a mais (a rota ficou mais longa): ' + fmt(-x.j.diferenca) : '')) + (x.j.taxa ? '\nTaxa de cancelamento: ' + fmt(x.j.taxa) : ''));
+    loadData();
+  };
+  window._fdRotaCancelarRota = async function(rotaId, btn){
+    var vv = (_myOrders || []).filter(function(x){ return x.rota_id === rotaId && x.status !== 'cancelado'; }); var tot = vv.reduce(function(a, p){ return a + (parseFloat(p.valor_total) || 0); }, 0);
+    if (!await fdConfirm('Cancelar a rota inteira (' + vv.length + ' entregas)?\n\nVolta ' + fmt(tot) + ' para o seu saldo, menos a taxa de cancelamento (' + fmt(taxaCanc()) + ').')) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'Cancelando...'; }
+    var x = await postRota('/rotas/' + rotaId + '/cancelar', {});
+    if (!x.ok) fdAlert(x.j.error || 'Não foi possível cancelar.');
+    else fdAlert('✅ Rota cancelada.\nDevolvido ao seu saldo: ' + fmt(x.j.estorno) + (x.j.taxa ? '\nTaxa de cancelamento: ' + fmt(x.j.taxa) : ''));
+    loadData();
+  };
   window._fdRotaPronto = async function(rotaId, id, btn){
     if (btn) { btn.disabled = true; btn.textContent = 'Marcando...'; }
     try {
@@ -2899,6 +2928,8 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     } catch (e13) { fdAlert('Sem conexão. Tente de novo.'); }
     loadData();
   };
+  // a lista pode ter sido montada antes deste script carregar: monta de novo com as rotas agrupadas
+  try { if (typeof renderLojaOrders === 'function' && Array.isArray(_myOrders) && _myOrders.some(function(o){ return o.rota_id; })) renderLojaOrders(_myOrders); } catch (eR) {}
 })();
 </script>
 </body></html>
