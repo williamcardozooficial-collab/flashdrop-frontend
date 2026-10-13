@@ -1499,7 +1499,29 @@ try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) i
   };
   window._fdRotaRetornoVista = function(o){ return Object.assign({}, o, { _fdRetorno: true, nome_cliente: 'RETORNO PARA A LOJA', telefone_cliente: null, endereco_entrega: o.endereco_coleta, complemento_entrega: o.complemento_coleta || null, bairro_destino: o.bairro_coleta || null, entrega_lat: o.coleta_lat, entrega_lng: o.coleta_lng, obs_entrega_loja: null, cpf_cliente: null }); };
   function caixa(cor, borda, titulo, texto){ var d = document.createElement('div'); d.className = 'fd-rota-aviso'; d.style.cssText = 'background:' + cor + ';border:2px solid ' + borda + ';border-radius:12px;padding:10px 12px;margin:6px 0 10px;color:#fff;line-height:1.45'; var t = document.createElement('div'); t.style.cssText = 'font-size:17px;font-weight:900;margin-bottom:4px'; t.textContent = titulo; var p = document.createElement('div'); p.style.fontSize = '14px'; p.textContent = texto; d.appendChild(t); d.appendChild(p); return d; }
+  // Avisos da entrega + socorro (o botao "Preciso parar" aparece uma vez por rota, na 1a entrega que falta)
   window._fdRotaAvisos = function(o){
+    var box = document.createElement('div'), a = _fdRotaAvisosEntrega(o); if (a) box.appendChild(a);
+    if (o.rota_socorro && o.status === 'aceito') box.appendChild(caixa('#4a1414', '#ff6b6b', '\uD83C\uDD98 Socorro: pegue os pedidos com o motoboy parado', 'A coleta é onde o outro motoboy parou' + (o.complemento_coleta ? ' (' + o.complemento_coleta + ')' : '') + '. ' + (o.obs_coleta || '') + ' Use Google Maps ou Waze para ir até lá.'));
+    var ativos = (allOrdersCache || []).filter(function(x){ return x.rota_id === o.rota_id && String(x.motoboy_id) === String(user.id) && (x.status === 'coletado' || x.status === 'no_cliente'); }).sort(function(x, y){ return (x.rota_ordem || 99) - (y.rota_ordem || 99); });
+    if (!o._fdRetorno && ativos.length && ativos[0].id === o.id) {
+      if (o.rota_socorro_pedido_em) box.appendChild(caixa('#2a2140', '#7b7ff0', '\uD83C\uDD98 Socorro pedido', 'O admin foi avisado. Aguarde no local: outro motoboy vai buscar as entregas que faltam.'));
+      else { var sb = document.createElement('button'); sb.className = 'btn-cancel fd-rota-socorro-btn'; sb.style.cssText = 'border-color:#ff6b6b;color:#ffb3b3;margin-top:6px'; sb.textContent = '\uD83C\uDD98 Preciso parar (socorro)';
+        sb.addEventListener('click', function(){ showConfirm('Preciso parar', 'A moto quebrou ou você não consegue continuar a rota? O admin é avisado e manda outro motoboy buscar as entregas que faltam (' + ativos.length + '). Você recebe pelas que já entregou.', function(){ pedirSocorro(o.rota_id); }); });
+        box.appendChild(sb); }
+    }
+    return box.childNodes.length ? box : null;
+  };
+  async function pedirSocorro(rotaId){
+    try {
+      var r = await fetch(API + '/rotas/' + rotaId + '/pedir-socorro', { method: 'POST', headers: _hdrAuth({ 'Content-Type': 'application/json' }) });
+      var j = {}; try { j = await r.json(); } catch (e3) {}
+      if (!r.ok) { tg.showAlert('\u274C ' + (j.error || 'Não foi possível pedir socorro.')); return; }
+      tg.showAlert('\uD83C\uDD98 O admin foi avisado. Aguarde no local: outro motoboy vai buscar as entregas que faltam.');
+      await loadOrders();
+    } catch (e4) { tg.showAlert('\u274C Sem conexão. Ligue para o admin.'); }
+  }
+  function _fdRotaAvisosEntrega(o){
     if (o._fdRetorno) return caixa('#3a2a00', '#ffb547', '\u21A9\uFE0F RETORNAR PARA A LOJA', o.rota_retorno === 'chegou' ? 'Você chegou na loja. Peça o código de entrega da Flash Drop para a loja e toque em "Finalizar retorno".' : 'O cliente não atendeu e a loja pediu o pedido de volta. Termine as outras entregas e volte com este pedido. Ao chegar, toque em "Cheguei na loja (retorno)".');
     if (o.status !== 'coletado' && o.status !== 'no_cliente') return null;
     if (o.rota_nao_atende_em && !o.rota_decisao) return caixa('#2a2140', '#7b7ff0', '\u23F3 Aguardando a loja decidir', 'Você avisou que o cliente não atende. A loja decide se o pedido fica com você ou volta para a loja. Pode seguir com as outras entregas.');
