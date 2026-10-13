@@ -493,6 +493,47 @@ async function toggleOnline() {
     function fmtEndereco(v){if(!v)return '';try{var o=JSON.parse(v);var parts=[o.rua,o.num,o.comp,o.bairro,o.cidade].filter(Boolean);return parts.join(', ');}catch(e){return v;}}
 /* Decodifica entidades HTML gravadas pelo servidor (ex.: &#x27; vira apostrofo) para exibir com textContent: nada vira HTML */
 function _decEnt(t){ if (t === null || t === undefined) return t; var x = document.createElement("textarea"); x.innerHTML = String(t); return x.value; }
+/* Contato da loja do pedido: nome, telefone formatado e link do WhatsApp (wa.me com 55) */
+function _fdContatoLoja(o) {
+  o = o || {};
+  var lu = (allUsersCache || []).find(function(u){ return u.username === o.loja_user; }) || {};
+  var nome = _decEnt(o.loja_name || lu.name || o.loja_user || "Loja");
+  var tel = String(o.telefone_loja || lu.phone || "").trim();
+  var d = tel.replace(/\D/g, "").replace(/^0+/, "");
+  if (d.length === 12 || d.length === 13) { if (d.indexOf("55") !== 0) d = ""; } else if (d.length === 10 || d.length === 11) { d = "55" + d; } else { d = ""; }
+  var local = d ? d.slice(2) : "";
+  var fmt = local.length === 11 ? "(" + local.slice(0, 2) + ") " + local.slice(2, 3) + " " + local.slice(3, 7) + "-" + local.slice(7) : (local.length === 10 ? "(" + local.slice(0, 2) + ") " + local.slice(2, 6) + "-" + local.slice(6) : "");
+  return { nome: nome, tel: fmt, wa: d ? "https://wa.me/" + d : "" };
+}
+function _fdTextoFalarLoja(c) { return "Algum problema com a entrega? Fale direto com a loja: " + c.nome + (c.tel ? " \u2013 " + c.tel : " (fale com a loja pelo telefone dela)"); }
+/* Caixa com a orientacao + botao "Falar com a loja" (WhatsApp). So textContent: nome/telefone nunca viram HTML */
+function _fdCaixaFalarLoja(o, pedidoId) {
+  var c = _fdContatoLoja(o);
+  var box = document.createElement("div"); box.className = "fd-falar-loja";
+  box.style.cssText = "background:#10233a;border:1px solid #2f80ed;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px;line-height:1.45;color:#e8f1ff";
+  var t = document.createElement("div");
+  if (c.tel) { t.appendChild(document.createTextNode("Algum problema com a entrega? Fale direto com a loja: " + c.nome + " – ")); var nt = document.createElement("span"); nt.style.whiteSpace = "nowrap"; nt.textContent = c.tel; t.appendChild(nt); }
+  else t.textContent = _fdTextoFalarLoja(c);
+  box.appendChild(t);
+  if (c.wa) {
+    var a = document.createElement("a"); a.className = "fd-falar-loja-btn"; a.href = c.wa + "?text=" + encodeURIComponent("Olá! Sou o motoboy da Flash Drop do pedido #" + (pedidoId || o.id) + ".");
+    a.target = "_blank"; a.rel = "noopener"; a.textContent = "\uD83D\uDCAC Falar com a loja";
+    a.style.cssText = "display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin-top:8px;border-radius:10px;background:#25d366;color:#04210f;font-weight:800;font-size:15px;text-decoration:none";
+    box.appendChild(a);
+  }
+  return box;
+}
+/* Aviso depois de marcar a chegada no cliente: mensagem atual + orientacao para falar com a loja */
+function _fdAvisoChegadaCliente(orderId, msgAtual) {
+  var o = (allOrdersCache || []).find(function(x){ return String(x.id) === String(orderId); }) || { id: orderId };
+  var ov = document.createElement("div"); ov.className = "confirm-overlay"; ov.id = "fd-chegada-cliente"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true");
+  var bx = document.createElement("div"); bx.className = "confirm-box";
+  var h = document.createElement("h3"); h.textContent = "\uD83C\uDFE0 " + msgAtual; bx.appendChild(h);
+  bx.appendChild(_fdCaixaFalarLoja(o, orderId));
+  var ok = document.createElement("button"); ok.className = "confirm-btn-sim"; ok.type = "button"; ok.textContent = "OK"; ok.style.cssText = "width:100%;min-height:44px;margin-top:6px";
+  ok.onclick = function(){ ov.remove(); }; bx.appendChild(ok);
+  ov.appendChild(bx); document.body.appendChild(ov);
+}
 function makeInfoRow(label, value, highlight) {
       var row = document.createElement("div"); row.className = "info-row";
       var l = document.createElement("span"); l.className = "info-label"; l.textContent = label;
@@ -715,6 +756,8 @@ function makeInfoRow(label, value, highlight) {
       if (cardType === "mine" && o.telefone_loja) {
         card.appendChild(makeInfoRow("📞 Tel Loja", o.telefone_loja || "—"));
       }
+      /* Chegou no cliente: problema na entrega -> falar direto com a loja */
+      if (cardType === "mine" && o.status === "no_cliente") card.appendChild(_fdCaixaFalarLoja(o));
 
       var vMotoboy = parseFloat(o.valor_motoboy || 0);
     var vComissao = parseFloat(o.comissao || 0);
@@ -765,7 +808,7 @@ function makeInfoRow(label, value, highlight) {
           btn.addEventListener("click", function() {
             showConfirm(
               alabel,
-              "Confirmar ação: <strong>" + alabel + "</strong>?",
+              "Confirmar ação: <strong>" + alabel + "</strong>?" + (akey === "coletado" ? "<br><br><span style=\"font-size:13px;color:#cfe3ff\">" + _fdTextoFalarLoja(_fdContatoLoja(o)).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>" : ""),
               function() { doAction(oid, akey); }
             );
           });
@@ -1046,7 +1089,7 @@ if (!geoPassed) return;
         if (action.next === 'aceito') adicionarPedidoGPS(orderId);
         if (action.next === 'entregue' || action.next === 'retornado') pararGPS();
 
-        tg.showAlert(action.msg);
+        if (action.next === "no_cliente") _fdAvisoChegadaCliente(orderId, action.msg); else tg.showAlert(action.msg);
         await loadOrders();
         await syncUser();
 
