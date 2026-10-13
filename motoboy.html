@@ -579,7 +579,7 @@ function makeInfoRow(label, value, highlight) {
       return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
     }
     function _fdEventosRota(o){ if (!o || !o.rota_id) return []; var ev = [];
-      if (o.rota_nao_atende_em) ev.push({ label: 'Cliente não atende (aviso do motoboy)', icon: '\uD83D\uDCF5', ts: o.rota_nao_atende_em });
+      if (o.rota_nao_atende_em) ev.push(o.rota_nao_atende_auto_min ? { label: 'No cliente há ' + o.rota_nao_atende_auto_min + ' min — loja chamada para decidir', icon: '\u23F1\uFE0F', ts: o.rota_nao_atende_em } : { label: 'Cliente não atende (aviso do motoboy)', icon: '\uD83D\uDCF5', ts: o.rota_nao_atende_em });
       if (o.rota_decisao_em) ev.push({ label: (o.rota_decisao === 'retornar' ? 'Decisão: retornar para a loja' : 'Decisão: deixar com o motoboy') + (o.rota_decisao_por && /admin/i.test(o.rota_decisao_por) ? ' (admin)' : ' (loja)'), icon: o.rota_decisao === 'retornar' ? '\u21A9\uFE0F' : '\uD83D\uDC4D', ts: o.rota_decisao_em });
       if (o.rota_retorno_chegou_em) ev.push({ label: 'Motoboy voltou na loja (retorno)', icon: '\uD83C\uDFEA', ts: o.rota_retorno_chegou_em });
       if (o.rota_retorno_finalizado_em) ev.push({ label: 'Retorno finalizado (código Flash Drop)', icon: '\u2705', ts: o.rota_retorno_finalizado_em });
@@ -1533,6 +1533,7 @@ try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) i
   function _fdRotaAvisosEntrega(o){
     if (o._fdRetorno) return caixa('#3a2a00', '#ffb547', '\u21A9\uFE0F RETORNAR PARA A LOJA', o.rota_retorno === 'chegou' ? 'Você chegou na loja. Peça o código de entrega da Flash Drop para a loja e toque em "Finalizar retorno".' : 'O cliente não atendeu e a loja pediu o pedido de volta. Termine as outras entregas e volte com este pedido. Ao chegar, toque em "Cheguei na loja (retorno)".');
     if (o.status !== 'coletado' && o.status !== 'no_cliente') return null;
+    if (o.rota_nao_atende_em && !o.rota_decisao && o.rota_nao_atende_auto_min) return caixa('#2a2140', '#7b7ff0', '\u23F3 A loja foi chamada para decidir', 'Você está no cliente há ' + o.rota_nao_atende_auto_min + ' min e ainda não finalizou. A loja decide se o pedido fica com você ou volta para a loja. Se conseguir entregar, finalize normalmente.');
     if (o.rota_nao_atende_em && !o.rota_decisao) return caixa('#2a2140', '#7b7ff0', '\u23F3 Aguardando a loja decidir', 'Você avisou que o cliente não atende. A loja decide se o pedido fica com você ou volta para a loja. Pode seguir com as outras entregas.');
     if (o.rota_decisao) return null;
     var b = document.createElement('button'); b.className = 'btn-cancel fd-rota-nao-atende'; b.style.cssText = 'border-color:#ffb547;color:#ffd27a'; b.textContent = '\uD83D\uDEAB Cliente não atende';
