@@ -619,6 +619,8 @@ function makeInfoRow(label, value, highlight) {
     function makeOrderCard(o, cardType) {
       /* Rota iFood disponivel: uma tele so, com os bairros na ordem, o ganho total e a km total */
       if (cardType === "pending" && o.rota_id && window._fdRotaCardDisponivel) { var _rc = window._fdRotaCardDisponivel(o); if (_rc) return _rc; }
+      /* Retorno para a loja (cliente nao atendeu): dados do cliente somem e o destino passa a ser a loja */
+      if (cardType === "mine" && o.rota_id && (o.rota_retorno === "pendente" || o.rota_retorno === "chegou") && window._fdRotaRetornoVista) o = window._fdRotaRetornoVista(o);
       var card = document.createElement("div");
       card.className = "order-card " + cardType;
 
@@ -636,6 +638,7 @@ function makeInfoRow(label, value, highlight) {
       header.appendChild(idEl); header.appendChild(badgeEl);
       card.appendChild(header);
       if (cardType === "mine" && o.rota_id && window._fdRotaFaixa) { var _rf = window._fdRotaFaixa(o); if (_rf) card.appendChild(_rf); }
+      if (cardType === "mine" && o.rota_id && window._fdRotaAvisos) { var _ra = window._fdRotaAvisos(o); if (_ra) card.appendChild(_ra); }
 
       /* Progress e Timer */
       if (cardType === "mine") {
@@ -805,7 +808,7 @@ function makeInfoRow(label, value, highlight) {
         btn.className = "btn-action " + action.cls;
         var icon = document.createElement("span"); icon.textContent = action.icon;
         btn.appendChild(icon);
-        btn.appendChild(document.createTextNode(" " + action.label));
+        btn.appendChild(document.createTextNode(" " + (o._fdRetorno && actionKey === "coletado" ? "Cheguei na loja (retorno)" : (o._fdRetorno && actionKey === "no_cliente" ? "Finalizar retorno" : action.label))));
         /* Captura orderId e actionKey no closure — confirmacao com Sim/Nao */
         (function(oid, akey, alabel) {
           btn.addEventListener("click", function() {
@@ -972,7 +975,8 @@ function makeInfoRow(label, value, highlight) {
       /* Codigo de entrega ao finalizar */
       var codigoDigitado = null;
       if (action.next === "entregue") {
-        codigoDigitado = prompt("🔑 CÓDIGO DE ENTREGA\n\nDigite o código de 4 dígitos que o cliente informou:");
+        var _ordRet = (allOrdersCache || []).find(function(x){ return String(x.id) === String(orderId); }) || {};
+        codigoDigitado = prompt((_ordRet.rota_retorno === "pendente" || _ordRet.rota_retorno === "chegou") ? "🔑 CÓDIGO DE ENTREGA DA FLASH DROP\n\nRetorno: peça o código para a loja (ela passa quando receber o pedido de volta):" : "🔑 CÓDIGO DE ENTREGA\n\nDigite o código de 4 dígitos que o cliente informou:");
         if (codigoDigitado === null) return;
         codigoDigitado = codigoDigitado.trim();
         if (!codigoDigitado) {
@@ -986,7 +990,7 @@ function makeInfoRow(label, value, highlight) {
         if (!orderCheckData) {
           try { var _rLista = await fetch(API + "/orders?raw=1"); if (_rLista.ok) { var _lista = await _rLista.json(); orderCheckData = (_lista || []).find(function(x){ return String(x.id) === String(orderId); }) || null; } } catch (eOrderCheck) { console.error("Erro ao buscar o pedido antes de finalizar:", eOrderCheck); }
         }
-        if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && !orderCheckData.ifood_confirmado_em) {
+        if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && !orderCheckData.ifood_confirmado_em && !orderCheckData.rota_retorno && !orderCheckData.rota_decisao) {
           var _locIfood = String(orderCheckData.ifood_localizador || "").replace(/\D/g, "");
           if (_locIfood.length !== 8) {
             tg.showAlert("❌ Este pedido iFood está sem o localizador (8 números) cadastrado, então não dá para confirmar a entrega no iFood. Avise a loja ou o suporte. O pedido NÃO foi finalizado.");
@@ -1493,6 +1497,26 @@ try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) i
     var c = document.createElement('span'); c.textContent = 'trecho ' + km(o.distancia);
     f.appendChild(a); f.appendChild(c); return f;
   };
+  window._fdRotaRetornoVista = function(o){ return Object.assign({}, o, { _fdRetorno: true, nome_cliente: 'RETORNO PARA A LOJA', telefone_cliente: null, endereco_entrega: o.endereco_coleta, complemento_entrega: o.complemento_coleta || null, bairro_destino: o.bairro_coleta || null, entrega_lat: o.coleta_lat, entrega_lng: o.coleta_lng, obs_entrega_loja: null, cpf_cliente: null }); };
+  function caixa(cor, borda, titulo, texto){ var d = document.createElement('div'); d.className = 'fd-rota-aviso'; d.style.cssText = 'background:' + cor + ';border:2px solid ' + borda + ';border-radius:12px;padding:10px 12px;margin:6px 0 10px;color:#fff;line-height:1.45'; var t = document.createElement('div'); t.style.cssText = 'font-size:17px;font-weight:900;margin-bottom:4px'; t.textContent = titulo; var p = document.createElement('div'); p.style.fontSize = '14px'; p.textContent = texto; d.appendChild(t); d.appendChild(p); return d; }
+  window._fdRotaAvisos = function(o){
+    if (o._fdRetorno) return caixa('#3a2a00', '#ffb547', '\u21A9\uFE0F RETORNAR PARA A LOJA', o.rota_retorno === 'chegou' ? 'Você chegou na loja. Peça o código de entrega da Flash Drop para a loja e toque em "Finalizar retorno".' : 'O cliente não atendeu e a loja pediu o pedido de volta. Termine as outras entregas e volte com este pedido. Ao chegar, toque em "Cheguei na loja (retorno)".');
+    if (o.status !== 'coletado' && o.status !== 'no_cliente') return null;
+    if (o.rota_nao_atende_em && !o.rota_decisao) return caixa('#2a2140', '#7b7ff0', '\u23F3 Aguardando a loja decidir', 'Você avisou que o cliente não atende. A loja decide se o pedido fica com você ou volta para a loja. Pode seguir com as outras entregas.');
+    if (o.rota_decisao) return null;
+    var b = document.createElement('button'); b.className = 'btn-cancel fd-rota-nao-atende'; b.style.cssText = 'border-color:#ffb547;color:#ffd27a'; b.textContent = '\uD83D\uDEAB Cliente não atende';
+    b.addEventListener('click', function(){ showConfirm('Cliente não atende', 'Avisar a loja que o cliente não atende? Ela decide em até 15 min se o pedido fica com você ou volta para a loja. Enquanto isso, siga com as outras entregas.', function(){ naoAtende(o.id); }); });
+    return b;
+  };
+  async function naoAtende(id){
+    try {
+      var r = await fetch(API + '/rotas/entrega/' + id + '/nao-atende', { method: 'POST', headers: _hdrAuth({ 'Content-Type': 'application/json' }) });
+      var j = {}; try { j = await r.json(); } catch (e1) {}
+      if (!r.ok) { tg.showAlert('\u274C ' + (j.error || 'Não foi possível avisar a loja.')); return; }
+      tg.showAlert('\u2705 A loja foi avisada e tem até 15 min para decidir. Pode seguir com as outras entregas.');
+      await loadOrders();
+    } catch (e2) { tg.showAlert('\u274C Sem conexão. Tente de novo.'); }
+  }
   // "Meus servicos": entregas da mesma rota juntas, na ordem da loja (a 1a em cima)
   window._fdRotaOrdenar = function(lista){
     var out = [], feitas = {};

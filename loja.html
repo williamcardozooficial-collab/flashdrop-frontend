@@ -2918,6 +2918,66 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     else fdAlert('✅ Rota cancelada.\nDevolvido ao seu saldo: ' + fmt(x.j.estorno) + (x.j.taxa ? '\nTaxa de cancelamento: ' + fmt(x.j.taxa) : ''));
     loadData();
   };
+  // ---------- cliente nao atende (contador de 15 min) e retorno para a loja ----------
+  var PRAZO_MS = 15 * 60 * 1000;
+  function restante(p){ return PRAZO_MS - (Date.now() - new Date(p.rota_nao_atende_em).getTime()); }
+  function txtContador(ms){ if (ms <= 0) return 'Prazo encerrado: a Flash Drop foi avisada e pode decidir.'; var s2 = Math.ceil(ms / 1000); return 'Decida em ' + Math.floor(s2 / 60) + ':' + ('0' + (s2 % 60)).slice(-2); }
+  function aguardandoDecisao(p){ return p.rota_nao_atende_em && !p.rota_decisao && (p.status === 'coletado' || p.status === 'no_cliente'); }
+  function botoesDecisao(p){ return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"><button type="button" class="fd-rota-btn" style="background:#2ecc71;color:#06210f;flex:1 1 160px" onclick="_fdRotaDecidir(' + p.id + ',\'deixar\',this)">\uD83D\uDC4D Deixar com o motoboy</button><button type="button" class="fd-rota-btn" style="background:#ffb547;color:#1a1000;flex:1 1 160px" onclick="_fdRotaDecidir(' + p.id + ',\'retornar\',this)">\u21A9\uFE0F Retornar para a loja</button></div>'; }
+  window._fdRotaExtras.entrega.push(function(p){
+    if (aguardandoDecisao(p)) return '<div style="background:#3a2a00;border:2px solid #ffb547;border-radius:10px;padding:8px 10px;margin-top:6px;color:#fff"><b>\uD83D\uDEAB Cliente não atende</b><div class="fd-rota-contador" data-inicio="' + new Date(p.rota_nao_atende_em).getTime() + '" style="font-weight:900;color:#ffd27a;margin-top:2px">' + txtContador(restante(p)) + '</div>' + botoesDecisao(p) + '</div>';
+    if (p.rota_decisao === 'deixar') return '<div style="margin-top:6px;color:#8ff0b5;font-weight:800">\u2705 Cliente não atendeu: ficou com o motoboy (' + e(p.rota_decisao_por || '') + ')</div>';
+    if (p.rota_retorno === 'pendente') return '<div style="margin-top:6px;color:#ffd27a;font-weight:800">\u21A9\uFE0F Voltando para a loja \u00B7 retorno ' + fmt(p.rota_retorno_valor) + '</div>';
+    if (p.rota_retorno === 'chegou') return '<div style="margin-top:6px;background:#0f2a18;border:2px solid #2ecc71;border-radius:10px;padding:8px 10px;color:#fff;font-weight:800">\u21A9\uFE0F Motoboy voltou com o pedido. Confira e passe o código de entrega: <span class="fd-rota-cod">' + e(p.delivery_code) + '</span></div>';
+    if (p.rota_retorno === 'finalizado') return '<div style="margin-top:6px;color:#c3c6da;font-weight:800">\u21A9\uFE0F Retornado à loja</div>';
+    return '';
+  });
+  setInterval(function(){ document.querySelectorAll('.fd-rota-contador').forEach(function(el){ var ini = parseInt(el.getAttribute('data-inicio')); el.textContent = txtContador(PRAZO_MS - (Date.now() - ini)); }); }, 1000);
+  window._fdRotaDecidir = async function(id, dec, btn){
+    var p = (_myOrders || []).find(function(x){ return x.id === id; }) || {};
+    if (dec === 'deixar') { if (!await fdConfirm('Deixar o pedido #' + id + ' com o motoboy?\n\nA entrega é finalizada agora, sem o código do iFood. O pedido fica com o motoboy.')) return; }
+    if (btn) btn.disabled = true;
+    try {
+      if (dec === 'retornar') {
+        var pv = await postRota('/rotas/entrega/' + id + '/decisao', { decisao: 'retornar' });
+        if (!pv.ok) { fdAlert(pv.j.error || 'Não foi possível calcular o retorno.'); if (btn) btn.disabled = false; return; }
+        if (!await fdConfirm((pv.j.mensagem || ('O motoboy irá cobrar ' + fmt(pv.j.valor_retorno) + ' para retornar. Confirmar?')) + '\n\nO retorno é cobrado do seu saldo. O motoboy termina as outras entregas e volta com o pedido.')) { if (btn) btn.disabled = false; return; }
+        var x = await postRota('/rotas/entrega/' + id + '/decisao', { decisao: 'retornar', confirmar: true });
+        if (!x.ok) fdAlert(x.j.error || 'Não foi possível confirmar o retorno.'); else fdAlert('\u21A9\uFE0F Retorno confirmado. Quando o motoboy chegar, confira o pedido e passe o código de entrega ' + (p.delivery_code || '') + '.');
+      } else {
+        var y = await postRota('/rotas/entrega/' + id + '/decisao', { decisao: 'deixar' });
+        if (!y.ok) fdAlert(y.j.error || 'Não foi possível finalizar.'); else fdAlert('\u2705 Pronto: o pedido ficou com o motoboy e a entrega foi finalizada.');
+      }
+    } catch (e20) { fdAlert('Sem conexão. Tente de novo.'); }
+    var ov = document.getElementById('fd-rota-decidir'); if (ov) ov.remove();
+    loadData();
+  };
+  function vistos(chave){ try { return JSON.parse(localStorage.getItem(chave) || '[]'); } catch (e21) { return []; } }
+  function marcar(chave, id){ var v2 = vistos(chave); if (v2.indexOf(id) < 0) { v2.push(id); try { localStorage.setItem(chave, JSON.stringify(v2.slice(-200))); } catch (e22) {} } }
+  function modalRota(id, html){
+    if (document.getElementById(id)) return;
+    var ov = document.createElement('div'); ov.id = id; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2147480500;background:rgba(8,9,18,.9);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+    ov.innerHTML = '<div style="background:#1c1d2e;border:2px solid #ffb547;border-radius:18px;padding:18px;max-width:420px;width:100%;color:#f1f2f8">' + html + '<button type="button" style="width:100%;min-height:46px;border:none;border-radius:12px;background:#3a3d63;color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:10px" onclick="this.closest(\'[role=dialog]\').remove()">Fechar</button></div>';
+    document.body.appendChild(ov);
+    try { if (typeof _tocarAlertaNaLoja === 'function') _tocarAlertaNaLoja(); } catch (e23) {}
+  }
+  window._fdRotaVerAvisos = function(){
+    try {
+      (_myOrders || []).forEach(function(p){
+        if (!p.rota_id) return;
+        if (aguardandoDecisao(p) && vistos('_fdRotaNaoAtende').indexOf(p.id) < 0) {
+          marcar('_fdRotaNaoAtende', p.id);
+          modalRota('fd-rota-decidir', '<div style="font-size:20px;font-weight:900">\uD83D\uDEAB Cliente não atende</div><div style="font-size:15px;margin:8px 0;line-height:1.45">O motoboy está no endereço do pedido <b>#' + p.id + '</b> (' + e(p.nome_cliente || '') + ') e o cliente não atende. Decida o que fazer:</div><div class="fd-rota-contador" data-inicio="' + new Date(p.rota_nao_atende_em).getTime() + '" style="font-size:18px;font-weight:900;color:#ffd27a">' + txtContador(restante(p)) + '</div>' + botoesDecisao(p) + '<div style="font-size:12px;color:#c3c6da;margin-top:8px">Se o prazo de 15 min acabar, a Flash Drop decide.</div>');
+        }
+        if (p.rota_retorno === 'chegou' && vistos('_fdRotaVoltou').indexOf(p.id) < 0) {
+          marcar('_fdRotaVoltou', p.id);
+          modalRota('fd-rota-voltou', '<div style="font-size:20px;font-weight:900">\u21A9\uFE0F Motoboy voltou com o pedido #' + p.id + '</div><div style="font-size:15px;margin:8px 0;line-height:1.45">Confira o pedido e, se estiver tudo certo, passe ao motoboy o código de entrega:</div><div style="font-size:30px;font-weight:900;letter-spacing:8px;text-align:center;background:#12131f;border:2px solid #2ecc71;border-radius:12px;padding:8px">' + e(p.delivery_code || '') + '</div>');
+        }
+      });
+    } catch (e24) {}
+  };
+  setInterval(window._fdRotaVerAvisos, 4000);
   window._fdRotaPronto = async function(rotaId, id, btn){
     if (btn) { btn.disabled = true; btn.textContent = 'Marcando...'; }
     try {
