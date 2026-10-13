@@ -1233,10 +1233,10 @@ if (lngEl && lngEl.value) data.lng = parseFloat(lngEl.value);
         }).join('') +
         '</select></div>' +
         '<div class="input-group"><label>Cliente</label><input id="o-cliente" class="input" value="' + (esc(o.nome_cliente) || '') + '"></div>' +
-        '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (esc(o.endereco_entrega) || '') + '"></div>' + '<div class="input-group"><label>Complemento Entrega</label><input id="o-comp-entrega" class="input" value="' + (o.complemento_entrega || '') + '"></div>' + '<div class="input-group"><label>Obs Entrega (Loja)</label><input id="o-obs-entrega" class="input" value="' + (o.obs_entrega_loja || '') + '"></div>' +
+        '<div class="input-group"><label>Endereco Entrega</label><input id="o-endereco" class="input" value="' + (esc(o.endereco_entrega) || '') + '"></div>' + '<div class="input-group"><label>Complemento Entrega</label><input id="o-comp-entrega" class="input" value="' + esc(o.complemento_entrega || '') + '"></div>' + '<div class="input-group"><label>Obs Entrega (Loja)</label><input id="o-obs-entrega" class="input" value="' + esc(o.obs_entrega_loja || '') + '"></div>' +
         '<div class="input-group"><label>Valor Total (R$)</label><input id="o-valor" class="input" type="number" step="0.01" value="' + (o.valor_total || 0) + '"></div>' +
         '<div class="input-group"><label>Ganho Motoboy (R$)</label><input id="o-motoboy" class="input" type="number" step="0.01" value="' + (o.valor_motoboy || 0) + '"></div>' +
-        '<div class="input-group"><label>Obs</label><input id="o-obs" class="input" value="' + (o.obs || '') + '"></div>';
+        '<div class="input-group"><label>Obs</label><input id="o-obs" class="input" value="' + esc(o.obs || '') + '"></div>';
       openModal('modal-order');
     }
 
