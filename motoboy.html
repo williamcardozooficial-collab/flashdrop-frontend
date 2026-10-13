@@ -1537,7 +1537,7 @@ try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) i
     if (o.rota_nao_atende_em && !o.rota_decisao) return caixa('#2a2140', '#7b7ff0', '\u23F3 Aguardando a loja decidir', 'Você avisou que o cliente não atende. A loja decide se o pedido fica com você ou volta para a loja. Pode seguir com as outras entregas.');
     if (o.rota_decisao) return null;
     var b = document.createElement('button'); b.className = 'btn-cancel fd-rota-nao-atende'; b.style.cssText = 'border-color:#ffb547;color:#ffd27a'; b.textContent = '\uD83D\uDEAB Cliente não atende';
-    b.addEventListener('click', function(){ showConfirm('Cliente não atende', 'Avisar a loja que o cliente não atende? Ela decide em até 15 min se o pedido fica com você ou volta para a loja. Enquanto isso, siga com as outras entregas.', function(){ naoAtende(o.id); }); });
+    b.addEventListener('click', function(){ showConfirm('Cliente não atende', 'Avisar a loja que o cliente não atende? Ela decide em poucos minutos se o pedido fica com você ou volta para a loja. Enquanto isso, siga com as outras entregas.', function(){ naoAtende(o.id); }); });
     return b;
   };
   async function naoAtende(id){
@@ -1545,7 +1545,7 @@ try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) i
       var r = await fetch(API + '/rotas/entrega/' + id + '/nao-atende', { method: 'POST', headers: _hdrAuth({ 'Content-Type': 'application/json' }) });
       var j = {}; try { j = await r.json(); } catch (e1) {}
       if (!r.ok) { tg.showAlert('\u274C ' + (j.error || 'Não foi possível avisar a loja.')); return; }
-      tg.showAlert('\u2705 A loja foi avisada e tem até 15 min para decidir. Pode seguir com as outras entregas.');
+      tg.showAlert('\u2705 A loja foi avisada e tem até ' + (j.prazo_min || 5) + ' min para decidir. Pode seguir com as outras entregas.');
       await loadOrders();
     } catch (e2) { tg.showAlert('\u274C Sem conexão. Tente de novo.'); }
   }
