@@ -803,6 +803,8 @@ function esc(v) {
         { label: 'Pedido criado',      icon: '🆕', ts: o.created_at },
         { label: 'Em preparo',         icon: '🔄', ts: o.t_em_preparo }
       ];
+      // Quando o pedido ficou disponivel para os motoboys (gravado pelo servidor)
+      (Array.isArray(o.hist_disponivel) ? o.hist_disponivel : []).forEach(function(h){ if (h && h.ts) events.push({ label: esc(h.txt || 'Motoboy solicitado (disponível)'), icon: h.tipo === 'voltou' ? '↩️' : '📢', ts: h.ts, cor: h.tipo === 'voltou' ? '#ffb547' : '#64b5f6' }); });
       if (eventosMotoboy && eventosMotoboy.length) {
         eventosMotoboy.forEach(function(ev){
           var nome = esc(ev.motoboy_name) || ('motoboy #' + ev.motoboy_id);

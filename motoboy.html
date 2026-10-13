@@ -587,7 +587,8 @@ function makeInfoRow(label, value, highlight) {
         { label: 'Chegou no cliente',   icon: '🏠', ts: o.t_no_cliente },
         { label: 'Entregue',            icon: '🎉', ts: o.t_entregue },
         { label: 'Retornado',           icon: '🔄', ts: o.t_retornado }
-      ].filter(function(e){ return !!e.ts; });
+      ].concat((Array.isArray(o.hist_disponivel) ? o.hist_disponivel : []).map(function(h){ return { label: (h && h.txt) || 'Motoboy solicitado (disponível)', icon: h && h.tipo === 'voltou' ? '↩️' : '📢', ts: h && h.ts }; }))
+        .filter(function(e){ return !!e.ts; }).sort(function(a, b){ return new Date(a.ts) - new Date(b.ts); });
       if (events.length === 0) return null;
       var wrap = document.createElement('div');
       wrap.style.cssText = 'margin-top:10px;border-top:1px solid #3a3a3a;padding-top:8px';
