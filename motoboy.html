@@ -593,7 +593,7 @@ function makeInfoRow(label, value, highlight) {
         { label: 'Chegou na loja',      icon: '🏪', ts: o.t_na_loja },
         { label: 'Pedido coletado',     icon: '📦', ts: o.t_coletado },
         { label: 'Chegou no cliente',   icon: '🏠', ts: o.t_no_cliente },
-        { label: 'Entregue',            icon: '🎉', ts: o.t_entregue },
+        { label: o.ifood_sem_confirmacao_admin ? 'Entregue — finalizado manualmente pelo admin (sem confirmação no iFood)' : 'Entregue', icon: '🎉', ts: o.t_entregue },
         { label: 'Retornado',           icon: '🔄', ts: o.t_retornado }
       ].concat(_fdEventosRota(o)).concat((Array.isArray(o.hist_disponivel) ? o.hist_disponivel : []).map(function(h){ return { label: (h && h.txt) || 'Motoboy solicitado (disponível)', icon: h && h.tipo === 'voltou' ? '↩️' : '📢', ts: h && h.ts }; }))
         .filter(function(e){ return !!e.ts; }).sort(function(a, b){ return new Date(a.ts) - new Date(b.ts); });
