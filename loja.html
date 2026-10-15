@@ -2645,6 +2645,9 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
 .fd-rota-total{margin-top:4px;padding:12px;border-radius:12px;background:#26283d;color:#f1f2f8;font-size:16px;font-weight:800;text-align:center}
 .fd-rota-erro{color:#ff9d94;font-size:13px;font-weight:700}
 .fd-rota-1o{border-left:5px solid #4f8cff!important;padding-left:12px!important;border-radius:6px}
+@keyframes fdRotaPiscar{0%{box-shadow:0 0 0 0 rgba(79,140,255,.0)}30%{box-shadow:0 0 0 4px rgba(79,140,255,.9);background-color:rgba(79,140,255,.18)}100%{box-shadow:0 0 0 0 rgba(79,140,255,0)}}
+.fd-rota-piscar{animation:fdRotaPiscar 1.4s ease-out}
+.fd-rota-ordem-aviso{margin-top:10px;background:#12301f;border:1.5px solid #2ecc71;color:#c9f7d9;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:700;transition:opacity .4s}
 .fd-rota-1o-tag{display:inline-block;background:#4f8cff;color:#0b0c14;font-weight:900;font-size:13px;border-radius:8px;padding:4px 10px;margin-bottom:10px;letter-spacing:.5px}
 /* cartao agrupado na lista de pedidos */
 .fd-rota-card{border:2px solid #5b5fd6!important}
@@ -2838,12 +2841,78 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var falta = pts.findIndex(function(p){ return !p.endereco_entrega; });
     if (falta >= 0) { mostrarTotal('<span style="font-weight:600;font-size:14px;color:#c3c6da">Preencha o endereço do ' + (falta + 1) + '\u00BA cliente para ver o total da rota.</span>'); return; }
     mostrarTotal('<span style="font-weight:600;font-size:14px;color:#c3c6da">Calculando o total da rota...</span>');
-    var pedidoCot = JSON.stringify({ coleta: coleta(), pontos: pts });
+    var pedidoCot = JSON.stringify({ coleta: coleta(), pontos: pts }); var seq = ++cotSeq, chaves = slots().join();
     fetch(API_R + '/rotas/ifood/cotar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: pedidoCot })
       .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
-      .then(function(x){ if (x.ok && x.j.ok) { ultimaCot = x.j; mostrarTotal('Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total)); } else mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); })
+      .then(function(x){ if (x.ok && x.j.ok) { ultimaCot = x.j; mostrarTotal('Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total)); if (seq === cotSeq && chaves === slots().join() && Array.isArray(x.j.ordem) && x.j.ordem.length === slots().length && x.j.ordem.some(function(v, i){ return v !== i; })) aplicarOrdem(x.j.ordem, x.j.economia_km); } else mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); })
       .catch(function(){ mostrarTotal('<span class="fd-rota-erro">Não foi possível calcular a rota agora.</span>'); });
   }
+  // ---------- ordem mais curta automatica ----------
+  // O servidor calcula (Google, todas as ordens possiveis) e a cotacao ja vem no preco da ordem curta. Aqui so reorganizamos
+  // os clientes na tela: o conteudo de cada quadro vai para a posicao certa (1o, 2o...), nunca enquanto a loja digita.
+  var cotSeq = 0, ordemPendente = null;
+  function slots(){ return ['P'].concat(extras.map(function(x){ return x.uid; })); }
+  // "Digitando" = teclou ou mudou um campo do pedido ha menos de 1,5 s (so estar com o cursor no campo nao conta)
+  var ultimaTecla = 0;
+  ['keydown', 'input'].forEach(function(ev){ document.addEventListener(ev, function(evt){ var t = evt.target; if (evt.isTrusted && t && t.closest && t.closest('#orderForm')) ultimaTecla = Date.now(); }, true); });
+  function digitando(){ return Date.now() - ultimaTecla < 1500; }
+  function caixas(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  function lerCliente(k){
+    if (k === 'P') { var d0 = {}; try { d0 = window.getIfoodDados ? window.getIfoodDados() : {}; } catch (e1) {}
+      return { nome: v('client'), tel: caixas('.phone-box').map(function(b){ return b.value; }).join(''), rua: v('dest-rua'), num: v('dest-numero'), comp: v('dest-complemento'), bairro: v('dest-bairro'), cidade: v('dest-cidade'),
+        loc: caixas('.ifood-box').map(function(b){ return b.value; }).join(''), verif: !!d0.verificado, nomeIfood: d0.nomeCliente || '', numero: d0.numeroPedido || '', lat: (typeof _latLngEntrega !== 'undefined' && _latLngEntrega) ? _latLngEntrega.lat : null, lng: (typeof _latLngEntrega !== 'undefined' && _latLngEntrega) ? _latLngEntrega.lng : null }; }
+    var x = acharExtra(k);
+    return { nome: v('fd-rota-nome-' + k), tel: v('fd-rota-tel-' + k), rua: v('fd-rota-rua-' + k), num: v('fd-rota-num-' + k), comp: v('fd-rota-comp-' + k), bairro: v('fd-rota-bairro-' + k), cidade: v('fd-rota-cidade-' + k),
+      loc: v('fd-rota-loc-' + k).replace(/\D/g, ''), verif: !!(x && x.nomeIfood && x.loc && x.loc === v('fd-rota-loc-' + k).replace(/\D/g, '')), nomeIfood: (x && x.nomeIfood) || '', numero: (x && x.numero) || '', lat: x ? x.lat : null, lng: x ? x.lng : null };
+  }
+  function setv(id, val){ var el = document.getElementById(id); if (el) el.value = val || ''; }
+  function escreverCliente(k, d){
+    var full = [d.rua + (d.num ? ' ' + d.num : ''), d.bairro, d.cidade || 'Caxias do Sul'].filter(Boolean).join(', ');
+    if (k === 'P') {
+      _ifoodVerificado = d.verif; _ifoodNomeCliente = d.verif ? d.nomeIfood : ''; _ifoodNumeroPedido = d.verif ? d.numero : '';
+      var bx = caixas('.ifood-box'); bx.forEach(function(b, i){ b.value = d.loc.charAt(i) || ''; b.style.borderColor = d.verif ? '#22c55e' : '#ccc'; });
+      try { _syncHiddenLocalizador(); } catch (e2) {}
+      var pb = caixas('.phone-box'); pb.forEach(function(b, i){ b.value = d.tel.charAt(i) || ''; }); try { _syncHiddenPhone(); } catch (e3) {}
+      var res = document.getElementById('ifoodResultado');
+      if (res) { if (d.verif) { res.style.display = 'block'; res.style.background = '#e6ffe6'; res.style.color = '#1a7a1a'; res.innerHTML = 'Cliente: <strong>' + e(d.nomeIfood) + '</strong>' + (d.numero ? ' | Pedido iFood: <strong>#' + e(d.numero) + '</strong>' : ''); } else { res.style.display = 'none'; res.innerHTML = ''; } }
+      try { atualizarBotaoFinalizar(); } catch (e4) {}
+      setv('client', d.nome); setv('dest-rua', d.rua); setv('dest-numero', d.num); setv('dest-complemento', d.comp); setv('dest-bairro', d.bairro); setv('dest-cidade', d.cidade || 'Caxias do Sul');
+      var av = document.getElementById('dest-arrasto-aviso'); if (av) av.remove();
+      if (d.lat && d.lng) { window._lastGeocodedDest = full; try { buildDest(); } catch (e5) {} try { initMapNovoPedidoEntrega(d.lat, d.lng); } catch (e6) { _latLngEntrega = { lat: d.lat, lng: d.lng }; } }
+      else { try { _latLngEntrega = null; } catch (e7) {} try { buildDest(); } catch (e8) {} }
+      return;
+    }
+    var x = acharExtra(k); if (!x) return;
+    setv('fd-rota-nome-' + k, d.nome); setv('fd-rota-tel-' + k, d.tel); setv('fd-rota-rua-' + k, d.rua); setv('fd-rota-num-' + k, d.num); setv('fd-rota-comp-' + k, d.comp); setv('fd-rota-bairro-' + k, d.bairro); setv('fd-rota-cidade-' + k, d.cidade || 'Caxias do Sul'); setv('fd-rota-loc-' + k, d.loc);
+    x.loc = d.verif ? d.loc : null; x.nomeIfood = d.verif ? d.nomeIfood : ''; x.numero = d.verif ? d.numero : '';
+    var r2 = document.getElementById('fd-rota-res-' + k); if (r2) r2.innerHTML = d.verif ? '\u2705 Cliente: <b>' + e(d.nomeIfood) + '</b>' + (d.numero ? ' \u00B7 Pedido iFood #' + e(d.numero) : '') : '';
+    var av2 = document.getElementById('fd-rota-aviso-' + k); if (av2) av2.style.display = 'none';
+    x.ultimoEnd = full;
+    if (d.lat && d.lng) mapaExtra(k, d.lat, d.lng); else { x.lat = null; x.lng = null; }
+  }
+  function piscar(k){
+    var els = k === 'P' ? [secao('Dados do Cliente'), secao('Dados da Entrega')] : [document.getElementById('fd-rota-cli-' + k)];
+    els.forEach(function(el){ if (!el) return; el.classList.remove('fd-rota-piscar'); void el.offsetWidth; el.classList.add('fd-rota-piscar'); });
+  }
+  function avisoOrdem(eco){
+    var t = document.getElementById('fd-rota-total'); if (!t) return;
+    var a = document.getElementById('fd-rota-ordem-aviso');
+    if (!a) { a = document.createElement('div'); a.id = 'fd-rota-ordem-aviso'; a.className = 'fd-rota-ordem-aviso'; a.setAttribute('role', 'status'); a.setAttribute('aria-live', 'polite'); t.parentNode.insertBefore(a, t.nextSibling); }
+    var km = (Math.round((parseFloat(eco) || 0) * 10) / 10).toFixed(1).replace('.', ',');
+    a.textContent = '\u2728 Organizamos as entregas na ordem mais curta' + (parseFloat(eco) > 0.05 ? ' (economia de ' + km + ' km)' : '') + '.';
+    a.style.opacity = '1'; clearTimeout(a._t); a._t = setTimeout(function(){ a.style.opacity = '0'; setTimeout(function(){ if (a.parentNode) a.remove(); }, 450); }, 9000);
+  }
+  function aplicarOrdem(ordem, eco){
+    if (digitando()) { ordemPendente = { ordem: ordem, eco: eco, chaves: slots().join() }; return; }
+    var ks = slots(); if (ordem.length !== ks.length) return;
+    var dados = ks.map(lerCliente);
+    ks.forEach(function(k, pos){ if (ordem[pos] !== pos) { escreverCliente(k, dados[ordem[pos]]); piscar(k); } });
+    avisoOrdem(eco);
+    window._fdRotaUltimaOrdem = { ordem: ordem, economia: eco };
+    agendarCotacao(); // confirma o total com a lista ja na ordem nova (o servidor devolve a mesma ordem: nao mexe de novo)
+  }
+  // parou de digitar: aplica a ordem que ficou esperando
+  setInterval(function(){ if (ordemPendente && !digitando()) { var o = ordemPendente; ordemPendente = null; if (o.chaves === slots().join()) aplicarOrdem(o.ordem, o.eco); else agendarCotacao(); } }, 500);
   function limpar(){ extras.forEach(function(x){ var el = document.getElementById('fd-rota-cli-' + x.uid); if (el) el.remove(); }); extras = []; ultimaCot = null; mostrarTotal(null); atualizar(); }
   async function criarRota(){
     var pts = [pontoPrincipal()].concat(extras.map(pontoExtra));
