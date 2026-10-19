@@ -879,7 +879,7 @@ function makeInfoRow(label, value, highlight) {
     /* ── LOAD ORDERS ── */
     async function loadOrders() {
       try {
-        var r = await fetch(API + "/orders?raw=1");
+        var r = await fetch(API + "/orders?raw=1", { headers: _hdrAuth() });
         var orders = await r.json();
         allOrdersCache = orders;   /* salva cache para uso no doAction */
         try { var ru = await fetch(API + "/users"); allUsersCache = await ru.json(); } catch(e2) {} try { var rs = await fetch(API + "/settings"); settingsCache = await rs.json(); } catch(e3) {}
@@ -997,7 +997,7 @@ function makeInfoRow(label, value, highlight) {
            Usa o pedido já carregado na lista (não existe rota GET /orders/:id). */
         var orderCheckData = (allOrdersCache || []).find(function(x){ return String(x.id) === String(orderId); }) || null;
         if (!orderCheckData) {
-          try { var _rLista = await fetch(API + "/orders?raw=1"); if (_rLista.ok) { var _lista = await _rLista.json(); orderCheckData = (_lista || []).find(function(x){ return String(x.id) === String(orderId); }) || null; } } catch (eOrderCheck) { console.error("Erro ao buscar o pedido antes de finalizar:", eOrderCheck); }
+          try { var _rLista = await fetch(API + "/orders?raw=1", { headers: _hdrAuth() }); if (_rLista.ok) { var _lista = await _rLista.json(); orderCheckData = (_lista || []).find(function(x){ return String(x.id) === String(orderId); }) || null; } } catch (eOrderCheck) { console.error("Erro ao buscar o pedido antes de finalizar:", eOrderCheck); }
         }
         if (orderCheckData && orderCheckData.tipo_pagamento === "ifood" && !orderCheckData.ifood_confirmado_em && !orderCheckData.rota_retorno && !orderCheckData.rota_decisao) {
           var _locIfood = String(orderCheckData.ifood_localizador || "").replace(/\D/g, "");
