@@ -405,13 +405,13 @@
           <div id="pw-balance" style="font-size:22px;font-weight:900;color:#4caf50">R$ 0,00</div>
           <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO ATUAL</div>
         </div>
-        <div style="background:rgba(255,204,0,0.10);border-radius:8px;padding:10px;text-align:center">
+        <div id="pw-card-lojas" role="button" tabindex="0" title="Ver o saldo de cada loja" onclick="abrirSaldosCaixa('loja')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirSaldosCaixa('loja');}" style="background:rgba(255,204,0,0.10);border-radius:8px;padding:10px;text-align:center;cursor:pointer;border:1px solid rgba(255,204,0,0.25)">
           <div id="pw-ganho" style="font-size:18px;font-weight:700;color:#66bb6a">R$ 0,00</div>
-          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO LOJAS</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO LOJAS &#9662;</div>
         </div>
-        <div style="background:rgba(229,57,53,0.10);border-radius:8px;padding:10px;text-align:center">
+        <div id="pw-card-motoboys" role="button" tabindex="0" title="Ver o saldo de cada motoboy" onclick="abrirSaldosCaixa('motoboy')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirSaldosCaixa('motoboy');}" style="background:rgba(229,57,53,0.10);border-radius:8px;padding:10px;text-align:center;cursor:pointer;border:1px solid rgba(229,57,53,0.25)">
           <div id="pw-sacado" style="font-size:18px;font-weight:700;color:#ff8a65">R$ 0,00</div>
-          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO MOTOBOYS</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">SALDO MOTOBOYS &#9662;</div>
         </div>
       </div>
       <button onclick="openCaixaSaque()" style="width:100%;background:#e53935;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">&#128184; Retirar do Caixa</button>
@@ -1873,6 +1873,45 @@ loadSaques();
 
     // ── CAIXA DA PLATAFORMA ─────────────────────────────────────────
     var _pwBalance = 0;
+// Lista (so leitura) de quem tem saldo diferente de zero, mesma fonte e mesma conta dos cartoes do Caixa.
+// O cartao soma so os saldos positivos; a lista mostra tambem os negativos (em vermelho) e os dois totais.
+async function abrirSaldosCaixa(papel){
+  var lista = window._caixaUsuarios;
+  if (!lista) { try { lista = await (await fetch(API + '/users')).json(); window._caixaUsuarios = lista; } catch (e) { alert('Não foi possível carregar os saldos.'); return; } }
+  var campo = papel === 'loja' ? 'credit' : 'balance';
+  var itens = lista.filter(function(u){ return u.role === papel && Math.abs(parseFloat(u[campo] || 0)) >= 0.005; })
+    .map(function(u){ return { nome: u.name || u.username || '-', cod: u.custom_id || ('id ' + u.id), tel: u.phone || '', v: Math.round(parseFloat(u[campo] || 0) * 100) / 100 }; })
+    .sort(function(a, b){ return b.v - a.v; });
+  var fmt = function(v){ return (v < 0 ? '-' : '') + 'R$ ' + Math.abs(v).toFixed(2).replace('.', ','); };
+  var esc2 = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var titulo = papel === 'loja' ? 'Saldo das lojas' : 'Saldo dos motoboys';
+  var ov = document.getElementById('caixa-saldos'); if (ov) ov.remove();
+  ov = document.createElement('div'); ov.id = 'caixa-saldos'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', titulo);
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
+  ov.innerHTML = '<div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;max-width:560px;width:100%;color:#eee;margin:auto 0">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid #2e2e2e"><b style="font-size:16px">' + titulo + '</b><button type="button" id="caixa-saldos-fechar" aria-label="Fechar" style="background:#333;color:#fff;border:none;border-radius:8px;min-width:40px;min-height:40px;font-size:18px;cursor:pointer">&#10005;</button></div>' +
+    '<div style="padding:12px 16px"><input id="caixa-saldos-busca" type="search" placeholder="Buscar por nome" aria-label="Buscar por nome" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#111;color:#fff;font-size:15px"></div>' +
+    '<div id="caixa-saldos-lista" style="padding:0 16px"></div>' +
+    '<div id="caixa-saldos-total" style="padding:12px 16px 16px;border-top:1px solid #2e2e2e;margin-top:8px;font-size:13px;line-height:1.6"></div></div>';
+  document.body.appendChild(ov);
+  function render(){
+    var q = (document.getElementById('caixa-saldos-busca').value || '').toLowerCase().trim();
+    var vis = itens.filter(function(i){ return !q || i.nome.toLowerCase().indexOf(q) >= 0; });
+    document.getElementById('caixa-saldos-lista').innerHTML = vis.length ? vis.map(function(i){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #262626"><div style="min-width:0"><div style="font-weight:700;overflow-wrap:anywhere">' + esc2(i.nome) + '</div><div style="font-size:12px;color:#aaa">' + esc2(i.cod) + (i.tel ? ' &middot; ' + esc2(i.tel) : '') + '</div></div>' +
+        '<div style="font-weight:800;white-space:nowrap;color:' + (i.v < 0 ? '#ff6b6b' : '#7ee08a') + '">' + fmt(i.v) + '</div></div>'; }).join('') : '<div style="color:#888;padding:12px 0">Ninguém encontrado.</div>';
+    var pos = vis.reduce(function(a, i){ return a + (i.v > 0 ? i.v : 0); }, 0), neg = vis.reduce(function(a, i){ return a + (i.v < 0 ? i.v : 0); }, 0);
+    document.getElementById('caixa-saldos-total').innerHTML = '<div style="display:flex;justify-content:space-between"><span>Total dos saldos positivos' + (q ? '' : ' (igual ao cartão)') + '</span><b style="color:#7ee08a">' + fmt(Math.round(pos * 100) / 100) + '</b></div>' +
+      '<div style="display:flex;justify-content:space-between"><span>Saldos negativos</span><b style="color:#ff6b6b">' + fmt(Math.round(neg * 100) / 100) + '</b></div>' +
+      '<div style="display:flex;justify-content:space-between"><span>Total geral</span><b>' + fmt(Math.round((pos + neg) * 100) / 100) + '</b></div>' +
+      '<div style="color:#888;font-size:12px;margin-top:4px">' + vis.length + (vis.length === 1 ? ' cadastro' : ' cadastros') + ' com saldo diferente de zero. Só consulta.</div>';
+  }
+  document.getElementById('caixa-saldos-busca').addEventListener('input', render);
+  document.getElementById('caixa-saldos-fechar').onclick = function(){ ov.remove(); };
+  ov.addEventListener('click', function(ev){ if (ev.target === ov) ov.remove(); });
+  document.addEventListener('keydown', function esc(ev){ if (ev.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', esc); } });
+  render(); try { document.getElementById('caixa-saldos-busca').focus(); } catch (e2) {}
+}
     async function loadCaixa() {
       try {
         var wr = await fetch(API + '/platform/wallet');
@@ -1882,7 +1921,7 @@ loadSaques();
       } catch(e) { console.error('loadCaixa wallet:', e); }
       try {
         var ur = await fetch(API + '/users');
-        var allU = await ur.json();
+        var allU = await ur.json(); window._caixaUsuarios = allU;
         var saldoLojas = allU.filter(function(u){return u.role==='loja';}).reduce(function(s,u){var v=parseFloat(u.credit||0);return s+(v>0?v:0);},0);
         var saldoMotos = allU.filter(function(u){return u.role==='motoboy';}).reduce(function(s,u){var v=parseFloat(u.balance||0);return s+(v>0?v:0);},0);
         document.getElementById('pw-ganho').textContent = 'R$ ' + saldoLojas.toFixed(2).replace('.', ',');
