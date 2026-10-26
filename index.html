@@ -355,6 +355,7 @@
       </div>
     </div>
     <div class="input-group"><label>Expira em (opcional) — some sozinho no fim desse dia</label><input id="avimg-expira" class="input" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></div>
+    <div class="input-group"><label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer"><input type="checkbox" id="avimg-repetir" style="width:20px;height:20px"> 🔁 Repetir a cada login</label><div style="font-size:12px;color:#aaa;line-height:1.5">Marcado: o aviso aparece de novo toda vez que a loja entra com usuário e senha. Desmarcado: aparece uma vez só.</div></div>
     <div id="avimg-msg" style="display:none;margin:4px 0 10px;font-size:13px;padding:8px 10px;border-radius:8px"></div>
     <button class="btn btn-primary" id="avimg-publicar" onclick="publicarAvisoImagem()">📤 Publicar aviso com imagem</button>
     <div id="avimg-lista" style="margin-top:16px"></div>
@@ -2664,11 +2665,11 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
     var ex = lerExpira(); if (!ex.ok) return msg(ex.erro, true);
     var b = $('avimg-publicar'); b.disabled = true; b.textContent = 'Publicando...';
     try {
-      var r = await fetch(API_AV + '/admin/avisos-loja', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ imagem: imagemPronta.url, titulo: $('avimg-titulo').value, lojas_alvo: alvo, expira_em: ex.iso }) });
+      var r = await fetch(API_AV + '/admin/avisos-loja', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ imagem: imagemPronta.url, titulo: $('avimg-titulo').value, lojas_alvo: alvo, expira_em: ex.iso, repetir_login: $('avimg-repetir').checked }) });
       var d = {}; try { d = await r.json(); } catch (e) {}
       if (!r.ok) { msg('Não foi possível publicar: ' + (d.error || ('erro ' + r.status)) + (r.status === 401 || r.status === 403 ? ' Saia e entre de novo no admin.' : ''), true); return; }
       msg('Aviso publicado' + (alvo ? ' para ' + alvo.length + ' loja(s).' : ' para todas as lojas.'));
-      imagemPronta = null; $('avimg-arquivo').value = ''; $('avimg-prev-box').style.display = 'none'; $('avimg-titulo').value = ''; $('avimg-expira').value = '';
+      imagemPronta = null; $('avimg-arquivo').value = ''; $('avimg-prev-box').style.display = 'none'; $('avimg-titulo').value = ''; $('avimg-expira').value = ''; $('avimg-repetir').checked = false;
       carregarAvisosImg();
     } catch (e) { msg('Erro de conexão ao publicar.', true); }
     finally { b.disabled = false; b.textContent = '📤 Publicar aviso com imagem'; }
@@ -2686,17 +2687,23 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
       var lista = await r.json();
       if (!r.ok) { box.innerHTML = '<div style="color:#ff9a9a">' + esc(lista.error || 'Erro ao carregar.') + '</div>'; return; }
       if (!lista.length) { box.innerHTML = '<div style="color:#aaa">Nenhum aviso com imagem ainda.</div>'; return; }
-      box.innerHTML = lista.map(function(a){
+      box.innerHTML = '<div style="font-size:12px;color:#aaa;margin-bottom:4px">A loja vê os avisos nesta ordem (use ↑ ↓ para mudar).</div>' + lista.map(function(a, i){
         var status = a.expirado ? '<span style="color:#aaa">Expirado</span>' : (a.ativo ? '<span style="color:#7ee2a0">Ativo</span>' : '<span style="color:#ffcc66">Pausado</span>');
         var destino = a.lojas_alvo_nomes ? esc(a.lojas_alvo_nomes.join(', ')) : 'Todas as lojas';
+        var seta = 'min-height:36px;min-width:40px;padding:0;font-size:16px';
         return '<div class="avimg-item" data-id="' + a.id + '" style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid #333">' +
+          '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 40px"><b style="color:#ffcc00;font-size:14px">' + (i + 1) + 'º</b>' +
+            '<button class="btn" style="' + seta + '" data-acao="cima" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+            '<button class="btn" style="' + seta + '" data-acao="baixo" aria-label="Descer"' + (i === lista.length - 1 ? ' disabled' : '') + '>↓</button></div>' +
           '<img src="' + a.imagem + '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:8px;flex:0 0 72px;border:1px solid #444">' +
           '<div style="flex:1;min-width:0;font-size:13px;line-height:1.5">' +
             '<div style="font-weight:700;color:#fff">' + esc(a.titulo || '(sem título)') + ' · ' + status + '</div>' +
             '<div style="color:#ccc">Para: ' + destino + '</div>' +
             '<div style="color:#aaa">Criado em ' + dataBR(a.criado_em) + ' · Expira: ' + (a.expira_em ? dataBR(a.expira_em) : 'não expira') + '</div>' +
             '<div style="color:#ccc">Vistos: <b>' + a.vistos + '</b> de ' + a.total_alvo + ' loja(s)</div>' +
+            '<div style="color:' + (a.repetir_login ? '#7ec8ff' : '#aaa') + '">' + (a.repetir_login ? '🔁 Repete a cada login' : 'Aparece uma vez só') + '</div>' +
             '<div class="avimg-botoes" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
+              '<button class="btn" style="min-height:40px;padding:0 12px" data-acao="' + (a.repetir_login ? 'repetir-off' : 'repetir-on') + '">' + (a.repetir_login ? '1️⃣ Mostrar uma vez só' : '🔁 Repetir a cada login') + '</button>' +
               (a.expirado ? '' : '<button class="btn" style="min-height:40px;padding:0 12px" data-acao="' + (a.ativo ? 'pausar' : 'reativar') + '">' + (a.ativo ? '⏸ Pausar' : '▶ Reativar') + '</button>') +
               '<button class="btn" style="min-height:40px;padding:0 12px;background:#5a1e1e;color:#fff" data-acao="apagar">🗑 Apagar</button>' +
             '</div>' +
@@ -2709,6 +2716,9 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
     var item = b.closest('.avimg-item'); var id = item.getAttribute('data-id'); var a = b.getAttribute('data-acao');
     if (a === 'pausar') return acao(id, 'PUT', { ativo: false });
     if (a === 'reativar') return acao(id, 'PUT', { ativo: true });
+    if (a === 'repetir-on') return acao(id, 'PUT', { repetir_login: true });
+    if (a === 'repetir-off') return acao(id, 'PUT', { repetir_login: false });
+    if (a === 'cima' || a === 'baixo') { b.disabled = true; return acao(id + '/mover', 'PUT', { direcao: a }); }
     if (a === 'apagar') { // confirmacao na propria pagina
       item.querySelector('.avimg-botoes').innerHTML = '<span style="color:#ff9a9a;font-weight:700;align-self:center">Apagar este aviso?</span><button class="btn" style="min-height:40px;padding:0 12px" data-acao="cancelar">Cancelar</button><button class="btn" style="min-height:40px;padding:0 12px;background:#c62828;color:#fff" data-acao="confirmar-apagar">Apagar</button>';
       return;
