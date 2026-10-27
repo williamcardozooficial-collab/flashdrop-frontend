@@ -2895,7 +2895,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var pedidoCot = JSON.stringify({ coleta: coleta(), pontos: pts }); var seq = ++cotSeq, chaves = slots().join();
     fetch(API_R + '/rotas/' + md + '/cotar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: pedidoCot })
       .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
-      .then(function(x){ if (md === 'pix') { totalPix(x, seq, chaves); return; } if (x.ok && x.j.ok) { ultimaCot = x.j; mostrarTotal('Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total)); if (seq === cotSeq && chaves === slots().join() && Array.isArray(x.j.ordem) && x.j.ordem.length === slots().length && x.j.ordem.some(function(v, i){ return v !== i; })) aplicarOrdem(x.j.ordem, x.j.economia_km); } else mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); })
+      .then(function(x){ if (md === 'pix') { totalPix(x, seq, chaves, pedidoCot); return; } if (x.ok && x.j.ok) { ultimaCot = x.j; mostrarTotal('Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total)); if (seq === cotSeq && chaves === slots().join() && Array.isArray(x.j.ordem) && x.j.ordem.length === slots().length && x.j.ordem.some(function(v, i){ return v !== i; })) aplicarOrdem(x.j.ordem, x.j.economia_km); } else mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); })
       .catch(function(){ mostrarTotal('<span class="fd-rota-erro">Não foi possível calcular a rota agora.</span>'); });
   }
   // ---------- ordem mais curta automatica ----------
@@ -2951,7 +2951,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var a = document.getElementById('fd-rota-ordem-aviso');
     if (!a) { a = document.createElement('div'); a.id = 'fd-rota-ordem-aviso'; a.className = 'fd-rota-ordem-aviso'; a.setAttribute('role', 'status'); a.setAttribute('aria-live', 'polite'); t.parentNode.insertBefore(a, t.nextSibling); }
     var km = (Math.round((parseFloat(eco) || 0) * 10) / 10).toFixed(1).replace('.', ',');
-    a.textContent = '\u2728 Organizamos as entregas na ordem mais curta' + (parseFloat(eco) > 0.05 ? ' (economia de ' + km + ' km)' : '') + '.';
+    a.textContent = modo() === 'pix' ? '\u2728 Organizamos as entregas pelo caminho mais curto.' : ('\u2728 Organizamos as entregas na ordem mais curta' + (parseFloat(eco) > 0.05 ? ' (economia de ' + km + ' km)' : '') + '.');
     a.style.opacity = '1'; clearTimeout(a._t); a._t = setTimeout(function(){ a.style.opacity = '0'; setTimeout(function(){ if (a.parentNode) a.remove(); }, 450); }, 9000);
   }
   // so para organizar os clientes que ja tem endereco (os outros quadros ainda vazios): erros ficam em silencio
@@ -2973,19 +2973,25 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   }
   // parou de digitar: aplica a ordem que ficou esperando
   setInterval(function(){ if (ordemPendente && !digitando()) { var o = ordemPendente; ordemPendente = null; if (o.chaves === slots().join()) aplicarOrdem(o.ordem, o.eco, o.sub); else agendarCotacao(); } }, 500);
-  // Rota PIX: km e total na ordem da loja; a ordem mais curta aparece so como botao (a loja decide)
-  function totalPix(x, seq, chaves){
-    if (!(x.ok && x.j.ok)) { mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); return; }
+  // Rota PIX: total na ordem da loja, SEM km na tela da loja (pedido do William, 27/10). A ordem mais curta aparece so como
+  // botao, e so quando fica mais barata: cota a ordem sugerida e mostra o valor novo (a loja decide).
+  function totalPix(x, seq, chaves, corpo){
+    if (!(x.ok && x.j.ok)) { mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'N\u00E3o foi poss\u00EDvel calcular a rota.') + '</span>'); return; }
     if (seq !== cotSeq || chaves !== slots().join()) return;
-    ultimaCot = x.j; botaoFinalizar(true);
-    var km = (Math.round((parseFloat(x.j.km_total) || 0) * 10) / 10).toFixed(1).replace('.', ',');
-    var h = 'Rota: ' + x.j.n + ' entregas · ' + km + ' km · Total ' + fmt(x.j.total) + '<div style="font-size:12px;font-weight:600;color:#c3c6da;margin-top:4px">Km e valor somados na ordem desta lista (coleta → 1º → 2º…). Use ↑ ↓ nos cartões para mudar a ordem.</div>';
-    var sug = x.j.sugestao, eco = parseFloat(x.j.economia_km) || 0;
-    if (Array.isArray(sug) && sug.length === slots().length && sug.some(function(v2, i){ return v2 !== i; }) && eco > 0.05) {
-      window._fdRotaSugestao = { ordem: sug, eco: eco, chaves: chaves };
-      h += '<button type="button" class="fd-rota-btn" id="fd-rota-organizar" style="background:#2ecc71;color:#06210f;margin-top:10px;width:100%" onclick="_fdRotaOrganizar()">✨ Organizar pelo caminho mais curto (economiza ' + eco.toFixed(1).replace('.', ',') + ' km)</button>';
-    } else window._fdRotaSugestao = null;
-    mostrarTotal(h);
+    ultimaCot = x.j; botaoFinalizar(true); window._fdRotaSugestao = null;
+    var base = 'Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total) + '<div style="font-size:12px;font-weight:600;color:#c3c6da;margin-top:4px">Valor calculado na ordem desta lista. Use \u2191 \u2193 nos cart\u00F5es para mudar a ordem.</div>';
+    mostrarTotal(base);
+    var sug = x.j.sugestao;
+    if (!corpo || !Array.isArray(sug) || sug.length !== slots().length || !sug.some(function(v2, i){ return v2 !== i; }) || !(parseFloat(x.j.economia_km) > 0.05)) return;
+    var b = {}; try { b = JSON.parse(corpo); } catch (e1) { return; }
+    b.pontos = sug.map(function(i){ return b.pontos[i]; });
+    fetch(API_R + '/rotas/pix/cotar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify(b) })
+      .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+      .then(function(y){
+        if (!(y.ok && y.j.ok) || seq !== cotSeq || chaves !== slots().join() || !(y.j.total < x.j.total)) return;
+        window._fdRotaSugestao = { ordem: sug, eco: x.j.economia_km, chaves: chaves };
+        mostrarTotal(base + '<button type="button" class="fd-rota-btn" id="fd-rota-organizar" style="background:#2ecc71;color:#06210f;margin-top:10px;width:100%" onclick="_fdRotaOrganizar()">\u2728 Organizar pelo caminho mais curto (fica ' + fmt(y.j.total) + ')</button>');
+      }).catch(function(){});
   }
   // Rota PIX: "Finalizar" libera com o total da rota (a taxa de um ponto so nao e usada); iFood: nao mexe no botao
   function botaoFinalizar(ok){ if (modo() !== 'pix' || !extras.length) return; var s = document.getElementById('submitBtn'); if (!s) return; s.disabled = !ok; s.style.opacity = ok ? '1' : '0.4'; }
@@ -3003,9 +3009,8 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
       if (!pts[i].endereco_entrega) { fdAlert('Preencha rua, número e bairro do ' + (i + 1) + 'º cliente.'); return; }
     }
     if (!ultimaCot) { cotar(); fdAlert('Aguarde o total da rota aparecer e toque de novo em Finalizar.'); return; }
-    var km = (Math.round((parseFloat(ultimaCot.km_total) || 0) * 10) / 10).toFixed(1).replace('.', ',');
     var lista = pts.map(function(p, i){ return (i + 1) + 'º ' + p.nome_cliente + ' – ' + (p.bairro_destino || ''); }).join('\n');
-    if (!await fdConfirm('📋 ROTA PIX – ' + pts.length + ' entregas\n\n' + lista + '\n\nOrdem de entrega: a desta lista · ' + km + ' km\nTotal: ' + fmt(ultimaCot.total) + ' (sai do seu saldo)\n\n⏳ As entregas ficam em preparo. Marque “Pronto” em cada uma quando ficar pronta; o motoboy é chamado quando a última estiver pronta. Cada cliente recebe o seu código de entrega quando o motoboy coletar.\n\nCriar a rota?')) return;
+    if (!await fdConfirm('📋 ROTA PIX – ' + pts.length + ' entregas\n\n' + lista + '\n\nOrdem de entrega: a desta lista\nTotal: ' + fmt(ultimaCot.total) + ' (sai do seu saldo)\n\n⏳ As entregas ficam em preparo. Marque “Pronto” em cada uma quando ficar pronta; o motoboy é chamado quando a última estiver pronta. Cada cliente recebe o seu código de entrega quando o motoboy coletar.\n\nCriar a rota?')) return;
     var b = document.getElementById('submitBtn'); if (b) { b.disabled = true; b.textContent = 'Criando rota...'; }
     try {
       var r = await fetch(API_R + '/rotas/pix', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ coleta: coleta(), pontos: pts }) });
