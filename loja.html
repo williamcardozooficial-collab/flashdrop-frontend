@@ -2724,6 +2724,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var md = modo(), on = !!md;
     if (extras.length && md !== modoQuadros) { limpar(); return; } // os quadros de iFood e de PIX tem campos diferentes
     box.style.display = on ? 'block' : 'none'; marcarPrimeiro(on);
+    var tg1 = document.getElementById('fd-rota-1o-tag'); if (tg1) tg1.textContent = md === 'pix' ? '1\u00AA ENTREGA' : '1\u00BA CLIENTE';
     var m = document.getElementById('fd-rota-max'); if (m) m.textContent = maxPontos();
     var tt = document.getElementById('fd-rota-tipo-txt'); if (tt) tt.textContent = md === 'pix' ? 'PIX (já pagos)' : 'do iFood';
     // Rota PIX com pontos extras: a taxa de um ponto so (calc-result) da lugar ao total da rota; Finalizar libera com o total
@@ -2734,7 +2735,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   window._fdRotaAtualizar = atualizar;
   function renumerar(){
     extras.forEach(function(x, i){ var el = document.getElementById('fd-rota-cli-' + x.uid); if (!el) return; el.style.setProperty('--fd-rc', CORES[(i + 1) % CORES.length]);
-      var dz = el.querySelector('.fd-rota-desce'); if (dz) { dz.disabled = i === extras.length - 1; dz.style.opacity = dz.disabled ? '.35' : '1'; } el.querySelector('.fd-rota-cli-num').textContent = (i + 2) + '\u00BA CLIENTE'; });
+      var dz = el.querySelector('.fd-rota-desce'); if (dz) { dz.disabled = i === extras.length - 1; dz.style.opacity = dz.disabled ? '.35' : '1'; } el.querySelector('.fd-rota-cli-num').textContent = (i + 2) + (modoQuadros === 'pix' ? '\u00AA ENTREGA' : '\u00BA CLIENTE'); });
   }
   function campo(uid, nome, rot, ph, extra){ return '<label for="fd-rota-' + nome + '-' + uid + '">' + rot + '</label><input id="fd-rota-' + nome + '-' + uid + '" placeholder="' + ph + '"' + (extra || '') + '>'; }
   function adicionar(){
@@ -2951,7 +2952,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var a = document.getElementById('fd-rota-ordem-aviso');
     if (!a) { a = document.createElement('div'); a.id = 'fd-rota-ordem-aviso'; a.className = 'fd-rota-ordem-aviso'; a.setAttribute('role', 'status'); a.setAttribute('aria-live', 'polite'); t.parentNode.insertBefore(a, t.nextSibling); }
     var km = (Math.round((parseFloat(eco) || 0) * 10) / 10).toFixed(1).replace('.', ',');
-    a.textContent = modo() === 'pix' ? '\u2728 Organizamos as entregas pelo caminho mais curto.' : ('\u2728 Organizamos as entregas na ordem mais curta' + (parseFloat(eco) > 0.05 ? ' (economia de ' + km + ' km)' : '') + '.');
+    a.textContent = modo() === 'pix' ? '\u2728 Organizamos pelo caminho mais curto. A ordem mudou: o motoboy vai entregar nesta nova ordem (confira os quadros).' : ('\u2728 Organizamos as entregas na ordem mais curta' + (parseFloat(eco) > 0.05 ? ' (economia de ' + km + ' km)' : '') + '.');
     a.style.opacity = '1'; clearTimeout(a._t); a._t = setTimeout(function(){ a.style.opacity = '0'; setTimeout(function(){ if (a.parentNode) a.remove(); }, 450); }, 9000);
   }
   // so para organizar os clientes que ja tem endereco (os outros quadros ainda vazios): erros ficam em silencio
@@ -2975,11 +2976,16 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   setInterval(function(){ if (ordemPendente && !digitando()) { var o = ordemPendente; ordemPendente = null; if (o.chaves === slots().join()) aplicarOrdem(o.ordem, o.eco, o.sub); else agendarCotacao(); } }, 500);
   // Rota PIX: total na ordem da loja, SEM km na tela da loja (pedido do William, 27/10). A ordem mais curta aparece so como
   // botao, e so quando fica mais barata: cota a ordem sugerida e mostra o valor novo (a loja decide).
+  // Destaque da rota PIX: o motoboy entrega exatamente na ordem da lista (pedido do William, 27/10)
+  function avisoOrdemPix(n){
+    var ords = []; for (var i = 1; i <= n; i++) ords.push(i + '\u00AA');
+    return '<div style="margin-top:10px;background:#3a2a00;border:2px solid #ffb547;border-radius:10px;padding:10px 12px;color:#ffe2b8;font-size:14px;font-weight:700;line-height:1.45;text-align:left">\u26A0\uFE0F As entregas ser\u00E3o feitas <b style="color:#fff">NESTA ORDEM: ' + ords.join(', ') + '</b>. Se algum cliente precisa receber primeiro, coloque ele no topo com \u2191 \u2193.</div>';
+  }
   function totalPix(x, seq, chaves, corpo){
     if (!(x.ok && x.j.ok)) { mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'N\u00E3o foi poss\u00EDvel calcular a rota.') + '</span>'); return; }
     if (seq !== cotSeq || chaves !== slots().join()) return;
     ultimaCot = x.j; botaoFinalizar(true); window._fdRotaSugestao = null;
-    var base = 'Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total) + '<div style="font-size:12px;font-weight:600;color:#c3c6da;margin-top:4px">Valor calculado na ordem desta lista. Use \u2191 \u2193 nos cart\u00F5es para mudar a ordem.</div>';
+    var base = 'Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total) + '<div style="font-size:12px;font-weight:600;color:#c3c6da;margin-top:4px">Valor calculado na ordem desta lista. Use \u2191 \u2193 nos cart\u00F5es para mudar a ordem.</div>' + avisoOrdemPix(x.j.n);
     mostrarTotal(base);
     var sug = x.j.sugestao;
     if (!corpo || !Array.isArray(sug) || sug.length !== slots().length || !sug.some(function(v2, i){ return v2 !== i; }) || !(parseFloat(x.j.economia_km) > 0.05)) return;
@@ -2990,7 +2996,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
       .then(function(y){
         if (!(y.ok && y.j.ok) || seq !== cotSeq || chaves !== slots().join() || !(y.j.total < x.j.total)) return;
         window._fdRotaSugestao = { ordem: sug, eco: x.j.economia_km, chaves: chaves };
-        mostrarTotal(base + '<button type="button" class="fd-rota-btn" id="fd-rota-organizar" style="background:#2ecc71;color:#06210f;margin-top:10px;width:100%" onclick="_fdRotaOrganizar()">\u2728 Organizar pelo caminho mais curto (fica ' + fmt(y.j.total) + ')</button>');
+        mostrarTotal(base + '<button type="button" class="fd-rota-btn" id="fd-rota-organizar" style="background:#2ecc71;color:#06210f;margin-top:10px;width:100%;flex-direction:column" onclick="_fdRotaOrganizar()">\u2728 Organizar pelo caminho mais curto (fica ' + fmt(y.j.total) + ')<span style="display:block;font-size:12px;font-weight:700;margin-top:2px">A ordem vai mudar, e o motoboy vai entregar na nova ordem.</span></button>');
       }).catch(function(){});
   }
   // Rota PIX: "Finalizar" libera com o total da rota (a taxa de um ponto so nao e usada); iFood: nao mexe no botao
@@ -3009,8 +3015,8 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
       if (!pts[i].endereco_entrega) { fdAlert('Preencha rua, número e bairro do ' + (i + 1) + 'º cliente.'); return; }
     }
     if (!ultimaCot) { cotar(); fdAlert('Aguarde o total da rota aparecer e toque de novo em Finalizar.'); return; }
-    var lista = pts.map(function(p, i){ return (i + 1) + 'º ' + p.nome_cliente + ' – ' + (p.bairro_destino || ''); }).join('\n');
-    if (!await fdConfirm('📋 ROTA PIX – ' + pts.length + ' entregas\n\n' + lista + '\n\nOrdem de entrega: a desta lista\nTotal: ' + fmt(ultimaCot.total) + ' (sai do seu saldo)\n\n⏳ As entregas ficam em preparo. Marque “Pronto” em cada uma quando ficar pronta; o motoboy é chamado quando a última estiver pronta. Cada cliente recebe o seu código de entrega quando o motoboy coletar.\n\nCriar a rota?')) return;
+    var lista = pts.map(function(p, i){ return (i + 1) + '\u00AA entrega: ' + p.nome_cliente + ' \u2013 ' + (p.bairro_destino || ''); }).join('\n');
+    if (!await fdConfirm('\uD83D\uDCCB ROTA PIX \u2013 ' + pts.length + ' entregas\n\n' + lista + '\n\n\uD83D\uDCCD O motoboy vai entregar EXATAMENTE nesta ordem.\nSe algum cliente precisa receber primeiro, toque em Cancelar e ajuste com \u2191 \u2193.\n\nTotal: ' + fmt(ultimaCot.total) + ' (sai do seu saldo)\n\n\u23F3 As entregas ficam em preparo. Marque \u201CPronto\u201D em cada uma quando ficar pronta; o motoboy \u00E9 chamado quando a \u00FAltima estiver pronta. Cada cliente recebe o seu c\u00F3digo de entrega quando o motoboy coletar.\n\n\u2705 Ao confirmar, voc\u00EA concorda com esta ordem de entrega.')) return;
     var b = document.getElementById('submitBtn'); if (b) { b.disabled = true; b.textContent = 'Criando rota...'; }
     try {
       var r = await fetch(API_R + '/rotas/pix', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ coleta: coleta(), pontos: pts }) });
@@ -3085,12 +3091,13 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     h += '<div class="order-header"><strong>\uD83D\uDEF5 Rota ' + (p1.tipo_pagamento === 'pix' ? 'PIX' : 'iFood') + ' (' + vv.length + ' entrega' + (vv.length === 1 ? '' : 's') + ')</strong><span class="status-badge">' + statusGeral(vv) + '</span></div>';
     if (p1.rota_socorro) h += '<div class="fd-rota-socorro">\uD83C\uDD98 Socorro do Motoboy \u2013 pago pela Flash Drop</div>';
     h += '<div class="fd-rota-resumo">Total da rota: ' + fmt(total) + '</div>';
+    if (p1.tipo_pagamento === 'pix' && vv.length) h += '<div class="fd-rota-dica">\uD83D\uDCCD O motoboy entrega nesta ordem: ' + vv.map(function(p, i){ return (i + 1) + '\u00AA ' + e(p.nome_cliente || ('#' + p.id)); }).join(' \u2192 ') + '.</div>';
     var mbR = vv.filter(function(p){ return p.motoboy_name; })[0];
     if (mbR) h += '<div class="fd-rota-resumo" style="margin-top:-4px">\uD83D\uDEF5 Motoboy: ' + e(mbR.motoboy_name) + '</div>';
     if (vv.some(function(p){ return p.status === 'em_preparo'; })) h += '<div class="fd-rota-dica">Marque <b>Pronto</b> em cada entrega quando ficar pronta. O motoboy é chamado quando a última estiver pronta.</div>';
     if (p1.motoboy_id && typeof buildMotoboyInfo === 'function') { try { h += buildMotoboyInfo(p1); } catch (e9) {} }
     vv.forEach(function(p, i){
-      h += '<div class="fd-rota-ent" style="--fd-rc:' + CORES[i % CORES.length] + '"><div class="fd-rota-ent-topo"><span>' + (i + 1) + '\u00BA CLIENTE \u00B7 Pedido #' + p.id + '</span><span>' + (ROTULO[p.status] || e(p.status)) + '</span></div><div class="fd-rota-ent-corpo">';
+      h += '<div class="fd-rota-ent" style="--fd-rc:' + CORES[i % CORES.length] + '"><div class="fd-rota-ent-topo"><span>' + (i + 1) + (p.tipo_pagamento === 'pix' ? '\u00AA ENTREGA' : '\u00BA CLIENTE') + ' \u00B7 Pedido #' + p.id + '</span><span>' + (ROTULO[p.status] || e(p.status)) + '</span></div><div class="fd-rota-ent-corpo">';
       h += '<div><b>Cliente:</b> ' + e(p.nome_cliente || '\u2014') + '</div>';
       if (p.telefone_cliente) h += '<div><b>Tel:</b> ' + e(p.telefone_cliente) + '</div>';
       h += '<div><b>Entrega:</b> ' + e(p.endereco_entrega || '\u2014') + (p.complemento_entrega ? ' \u2014 ' + e(p.complemento_entrega) : '') + '</div>';
