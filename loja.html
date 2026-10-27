@@ -2667,6 +2667,10 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
 .fd-rota-ok{display:inline-block;margin-top:6px;color:#8ff0b5;font-weight:800}
 .fd-rota-canc{font-size:12px;color:#ff9d94;margin-top:4px}
 .fd-rota-socorro{font-size:13px;font-weight:800;color:#fff;background:#7a1f1f;border-radius:10px;padding:8px 10px;margin:0 0 10px}
+/* rota PIX: com pontos extras o total e o da rota (a taxa de um ponto so fica escondida) */
+#orderForm.fd-rota-pix-on #calc-result{display:none!important}
+.fd-rota-buscar{min-width:96px;border:none;border-radius:10px;background:#ff9500;color:#1a0d00;font-weight:800;font-size:14px;cursor:pointer;min-height:46px}
+.fd-rota-end2{display:block;width:100%;text-align:left;margin-top:6px;padding:10px;border-radius:8px;border:1.5px solid #3a3d63;background:#12131f;color:#f1f2f8;font-size:13px;cursor:pointer}
 </style>
 <script id="fd-rota-js">
 /* ===== Rota iFood com varios pontos (loja) =====
@@ -2679,6 +2683,11 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   function ligada(){ try { return !!(settings && settings.rota_ifood_ativa === true); } catch (e) { return false; } }
   function maxPontos(){ var v = 4; try { v = parseInt(settings.rota_max_pontos); } catch (e) {} return isNaN(v) || v < 2 ? 4 : v; }
   function ehIfood(){ var t = document.getElementById('tipoPagamento'); return !!(t && t.value === 'ifood'); }
+  // Rota PIX: mesma caixa com "⚡ PIX (pago)" e a chave settings.rota_pix_ativa (sem localizador; celular obrigatorio)
+  function pixLigada(){ try { return !!(settings && settings.rota_pix_ativa === true); } catch (e) { return false; } }
+  function ehPix(){ var t = document.getElementById('tipoPagamento'); return !!(t && t.value === 'pix'); }
+  function modo(){ if (ligada() && ehIfood()) return 'ifood'; if (pixLigada() && ehPix()) return 'pix'; return null; }
+  var modoQuadros = null; // modo em que os quadros extras foram criados (trocou a forma de pagamento: limpa)
   function fmt(v){ return 'R$ ' + (Math.round((parseFloat(v) || 0) * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function tok(){ try { return JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token || ''; } catch (e) { return ''; } }
   function e(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -2694,7 +2703,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var sub = document.getElementById('submitBtn'); if (!sub) return;
     var box = document.createElement('div'); box.id = 'fd-rota-box'; box.style.display = 'none';
     box.innerHTML = '<div class="fd-rota-titulo">\uD83D\uDEF5 Rota com mais entregas (opcional)</div>' +
-      '<div class="fd-rota-sub">Leve até <b id="fd-rota-max">4</b> pedidos do iFood com o mesmo motoboy. O 1º cliente é o que está preenchido acima; adicione os próximos na ordem da entrega.</div>' +
+      '<div class="fd-rota-sub">Leve até <b id="fd-rota-max">4</b> pedidos <span id="fd-rota-tipo-txt">do iFood</span> com o mesmo motoboy. O 1º cliente é o que está preenchido acima; adicione os próximos na ordem da entrega.</div>' +
       '<div id="fd-rota-lista"></div>' +
       '<button type="button" class="fd-rota-add" id="fd-rota-add">+ Adicionar outro ponto</button>' +
       '<div id="fd-rota-total" class="fd-rota-total" role="status" aria-live="polite" style="display:none;margin-top:12px"></div>';
@@ -2712,28 +2721,36 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   }
   function atualizar(){
     montarCaixa(); var box = document.getElementById('fd-rota-box'); if (!box) return;
-    var on = ligada() && ehIfood();
+    var md = modo(), on = !!md;
+    if (extras.length && md !== modoQuadros) { limpar(); return; } // os quadros de iFood e de PIX tem campos diferentes
     box.style.display = on ? 'block' : 'none'; marcarPrimeiro(on);
     var m = document.getElementById('fd-rota-max'); if (m) m.textContent = maxPontos();
+    var tt = document.getElementById('fd-rota-tipo-txt'); if (tt) tt.textContent = md === 'pix' ? 'PIX (já pagos)' : 'do iFood';
+    // Rota PIX com pontos extras: a taxa de um ponto so (calc-result) da lugar ao total da rota; Finalizar libera com o total
+    var fm = document.getElementById('orderForm'); if (fm) fm.classList.toggle('fd-rota-pix-on', md === 'pix' && extras.length > 0);
     var add = document.getElementById('fd-rota-add'); if (add) { add.disabled = 1 + extras.length >= maxPontos(); add.textContent = add.disabled ? 'Máximo de ' + maxPontos() + ' entregas por rota' : '+ Adicionar outro ponto'; }
     if (!on) { mostrarTotal(null); }
   }
   window._fdRotaAtualizar = atualizar;
   function renumerar(){
-    extras.forEach(function(x, i){ var el = document.getElementById('fd-rota-cli-' + x.uid); if (!el) return; el.style.setProperty('--fd-rc', CORES[(i + 1) % CORES.length]); el.querySelector('.fd-rota-cli-num').textContent = (i + 2) + '\u00BA CLIENTE'; });
+    extras.forEach(function(x, i){ var el = document.getElementById('fd-rota-cli-' + x.uid); if (!el) return; el.style.setProperty('--fd-rc', CORES[(i + 1) % CORES.length]);
+      var dz = el.querySelector('.fd-rota-desce'); if (dz) { dz.disabled = i === extras.length - 1; dz.style.opacity = dz.disabled ? '.35' : '1'; } el.querySelector('.fd-rota-cli-num').textContent = (i + 2) + '\u00BA CLIENTE'; });
   }
   function campo(uid, nome, rot, ph, extra){ return '<label for="fd-rota-' + nome + '-' + uid + '">' + rot + '</label><input id="fd-rota-' + nome + '-' + uid + '" placeholder="' + ph + '"' + (extra || '') + '>'; }
   function adicionar(){
     if (1 + extras.length >= maxPontos()) return;
+    var md = modo(); if (!md) return; modoQuadros = md; var pix = md === 'pix';
     var uid = ++seq; extras.push({ uid: uid });
     var el = document.createElement('div'); el.className = 'fd-rota-cli'; el.id = 'fd-rota-cli-' + uid;
-    el.innerHTML = '<div class="fd-rota-cli-topo"><span class="fd-rota-cli-num"></span><button type="button" class="fd-rota-rem" aria-label="Remover este cliente">\u2715 Remover</button></div>' +
+    el.innerHTML = '<div class="fd-rota-cli-topo"><span class="fd-rota-cli-num"></span>' +
+      (pix ? '<span style="display:flex;gap:6px;margin-left:auto"><button type="button" class="fd-rota-rem fd-rota-sobe" aria-label="Subir na ordem" onclick="_fdRotaMover(' + uid + ',-1)">↑</button><button type="button" class="fd-rota-rem fd-rota-desce" aria-label="Descer na ordem" onclick="_fdRotaMover(' + uid + ',1)">↓</button></span>' : '') +
+      '<button type="button" class="fd-rota-rem" aria-label="Remover este cliente">\u2715 Remover</button></div>' +
       '<div class="fd-rota-cli-corpo">' +
         '<div class="fd-rota-sec">Dados do cliente</div>' +
-        '<label for="fd-rota-loc-' + uid + '">Localizador iFood (8 números)</label><div class="fd-rota-loc"><input id="fd-rota-loc-' + uid + '" inputmode="numeric" maxlength="8" placeholder="00000000"><button type="button" class="fd-rota-ver">Verificar</button></div>' +
+        (pix ? '<label for="fd-rota-cod-' + uid + '">Código do cliente <span style="font-weight:400">(opcional – preenche os dados)</span></label><div class="fd-rota-loc"><input id="fd-rota-cod-' + uid + '" inputmode="numeric" placeholder="Ex: 556" style="letter-spacing:normal"><button type="button" class="fd-rota-buscar">Buscar</button></div>' : '<label for="fd-rota-loc-' + uid + '">Localizador iFood (8 números)</label><div class="fd-rota-loc"><input id="fd-rota-loc-' + uid + '" inputmode="numeric" maxlength="8" placeholder="00000000"><button type="button" class="fd-rota-ver">Verificar</button></div>') +
         '<div class="fd-rota-res" id="fd-rota-res-' + uid + '"></div>' +
-        campo(uid, 'nome', 'Nome do cliente *', 'Preenchido ao verificar o localizador') +
-        campo(uid, 'tel', 'Celular <span style="font-weight:400">(opcional)</span>', 'Ex: 54 99999-9999', ' inputmode="tel"') +
+        campo(uid, 'nome', 'Nome do cliente *', pix ? 'Ex: João da Silva' : 'Preenchido ao verificar o localizador') +
+        campo(uid, 'tel', pix ? 'Celular *' : 'Celular <span style="font-weight:400">(opcional)</span>', 'Ex: 54 99999-9999', ' inputmode="tel"') +
         '<div class="fd-rota-sec">Dados da entrega</div>' +
         campo(uid, 'rua', 'Rua / Avenida *', 'Ex: Rua das Flores') +
         '<div class="fd-rota-linha"><div>' + campo(uid, 'num', 'Número *', 'Ex: 123', ' inputmode="numeric"') + '</div><div>' + campo(uid, 'comp', 'Complemento', 'Ex: Apto 12') + '</div></div>' +
@@ -2742,7 +2759,10 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
       '</div>';
     document.getElementById('fd-rota-lista').appendChild(el);
     el.querySelector('.fd-rota-rem').addEventListener('click', function(){ remover(uid); });
-    el.querySelector('.fd-rota-ver').addEventListener('click', function(){ verificar(uid); });
+    if (pix) {
+      el.querySelector('.fd-rota-buscar').addEventListener('click', function(){ buscarCodigo(uid); });
+      document.getElementById('fd-rota-cod-' + uid).addEventListener('keydown', function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); buscarCodigo(uid); } });
+    } else el.querySelector('.fd-rota-ver').addEventListener('click', function(){ verificar(uid); });
     ['rua', 'num', 'bairro', 'cidade'].forEach(function(n){ var i = document.getElementById('fd-rota-' + n + '-' + uid);
       i.addEventListener('input', function(){ var x = acharExtra(uid); if (x) { x.lat = null; x.lng = null; } });
       i.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') ev.preventDefault(); });
@@ -2750,7 +2770,25 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     document.getElementById('fd-rota-rua-' + uid).addEventListener('focus', function(){ autocompletarExtra(uid); });
     autocompletarExtra(uid);
     renumerar(); atualizar(); agendarCotacao();
-    try { document.getElementById('fd-rota-loc-' + uid).focus(); } catch (e2) {}
+    try { document.getElementById((pix ? 'fd-rota-cod-' : 'fd-rota-loc-') + uid).focus(); } catch (e2) {}
+  }
+  // Rota PIX: "Código do cliente" preenche nome, celular e endereço (mesma busca do 1º cliente); 2 endereços: a loja escolhe
+  function buscarCodigo(uid){
+    var cod = v('fd-rota-cod-' + uid), res = document.getElementById('fd-rota-res-' + uid); if (!cod) { res.innerHTML = '<span class="fd-rota-erro">Digite o código do cliente.</span>'; return; }
+    var lj = {}; try { lj = JSON.parse(localStorage.getItem('flashdrop_user') || '{}'); } catch (e1) {}
+    res.textContent = 'Buscando cliente...';
+    fetch(API_R + '/clientes/buscar?loja_id=' + encodeURIComponent(lj.id || '') + '&codigo=' + encodeURIComponent(cod)).then(function(r){ return r.ok ? r.json() : null; }).then(function(c){
+      if (!c || !c.nome) { res.innerHTML = '<span class="fd-rota-erro">Cliente não encontrado.</span>'; return; }
+      setv('fd-rota-nome-' + uid, c.nome); setv('fd-rota-tel-' + uid, c.celular || '');
+      function usar(n){ var s = n === 2 ? '2' : ''; setv('fd-rota-rua-' + uid, c['rua' + s]); setv('fd-rota-num-' + uid, c['numero' + s]); setv('fd-rota-comp-' + uid, c['complemento' + s]); setv('fd-rota-bairro-' + uid, c['bairro' + s]); setv('fd-rota-cidade-' + uid, c['cidade' + s] || 'Caxias do Sul'); var x = acharExtra(uid); if (x) { x.lat = null; x.lng = null; } localizarExtra(uid); }
+      usar(1);
+      res.innerHTML = '✅ Cliente: <b>' + e(c.nome) + '</b>';
+      if (c.rua2) {
+        var end = function(s){ return [(c['rua' + s] || '') + (c['numero' + s] ? ' ' + c['numero' + s] : ''), c['bairro' + s]].filter(Boolean).join(', '); };
+        res.innerHTML += '<div style="color:#ffb547;font-weight:700;margin-top:4px">⚠️ Cliente tem 2 endereços. Confirme qual usar:</div><button type="button" class="fd-rota-end2" data-n="1">📍 ' + e(end('')) + '</button><button type="button" class="fd-rota-end2" data-n="2">📍 ' + e(end('2')) + '</button>';
+        res.querySelectorAll('.fd-rota-end2').forEach(function(b){ b.addEventListener('click', function(){ usar(parseInt(b.getAttribute('data-n'))); res.querySelectorAll('.fd-rota-end2').forEach(function(o){ o.style.borderColor = o === b ? '#2ecc71' : '#3a3d63'; }); }); });
+      }
+    }).catch(function(){ res.innerHTML = '<span class="fd-rota-erro">Não foi possível buscar o cliente agora.</span>'; });
   }
   // ---------- endereco de cada quadro: o mesmo do endereco normal (sugestoes do Google, mapa com pino que da para arrastar) ----------
   function acharExtra(uid){ return extras.find(function(y){ return y.uid === uid; }); }
@@ -2839,13 +2877,15 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   function agendarCotacao(){ clearTimeout(tCot); tCot = setTimeout(cotar, 500); }
   window._fdRotaCotar = agendarCotacao;
   function cotar(){
-    ultimaCot = null;
-    if (!(ligada() && ehIfood()) || !extras.length) { mostrarTotal(null); return; }
+    ultimaCot = null; botaoFinalizar(false);
+    var md = modo();
+    if (!md || !extras.length) { mostrarTotal(null); return; }
     if (digitando()) { agendarCotacao(); return; } // nunca durante a digitacao
     var pts = [pontoPrincipal()].concat(extras.map(pontoExtra));
     var falta = pts.findIndex(function(p){ return !p.endereco_entrega; });
     if (falta >= 0) {
       mostrarTotal('<span style="font-weight:600;font-size:14px;color:#c3c6da">Preencha o endereço do ' + (falta + 1) + '\u00BA cliente para ver o total da rota.</span>');
+      if (md === 'pix') return; // rota PIX: a ordem e da loja (nao reorganiza sozinho)
       // quadros vazios/incompletos sao ignorados: organiza so os que ja tem endereco escolhido (pino), em silencio
       var ks0 = slots(), prontos = []; pts.forEach(function(p, i){ if (p.endereco_entrega && p.lat && p.lng) prontos.push(i); });
       if (prontos.length >= 2) ordemParcial(prontos.map(function(i){ return ks0[i]; }), prontos.map(function(i){ return pts[i]; }));
@@ -2853,9 +2893,9 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     }
     mostrarTotal('<span style="font-weight:600;font-size:14px;color:#c3c6da">Calculando o total da rota...</span>');
     var pedidoCot = JSON.stringify({ coleta: coleta(), pontos: pts }); var seq = ++cotSeq, chaves = slots().join();
-    fetch(API_R + '/rotas/ifood/cotar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: pedidoCot })
+    fetch(API_R + '/rotas/' + md + '/cotar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: pedidoCot })
       .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
-      .then(function(x){ if (x.ok && x.j.ok) { ultimaCot = x.j; mostrarTotal('Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total)); if (seq === cotSeq && chaves === slots().join() && Array.isArray(x.j.ordem) && x.j.ordem.length === slots().length && x.j.ordem.some(function(v, i){ return v !== i; })) aplicarOrdem(x.j.ordem, x.j.economia_km); } else mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); })
+      .then(function(x){ if (md === 'pix') { totalPix(x, seq, chaves); return; } if (x.ok && x.j.ok) { ultimaCot = x.j; mostrarTotal('Rota: ' + x.j.n + ' entregas \u00B7 Total ' + fmt(x.j.total)); if (seq === cotSeq && chaves === slots().join() && Array.isArray(x.j.ordem) && x.j.ordem.length === slots().length && x.j.ordem.some(function(v, i){ return v !== i; })) aplicarOrdem(x.j.ordem, x.j.economia_km); } else mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); })
       .catch(function(){ mostrarTotal('<span class="fd-rota-erro">Não foi possível calcular a rota agora.</span>'); });
   }
   // ---------- ordem mais curta automatica ----------
@@ -2871,10 +2911,10 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   function caixas(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
   function lerCliente(k){
     if (k === 'P') { var d0 = {}; try { d0 = window.getIfoodDados ? window.getIfoodDados() : {}; } catch (e1) {}
-      return { nome: v('client'), tel: caixas('.phone-box').map(function(b){ return b.value; }).join(''), rua: v('dest-rua'), num: v('dest-numero'), comp: v('dest-complemento'), bairro: v('dest-bairro'), cidade: v('dest-cidade'),
+      return { cod: v('client-codigo'), nome: v('client'), tel: caixas('.phone-box').map(function(b){ return b.value; }).join(''), rua: v('dest-rua'), num: v('dest-numero'), comp: v('dest-complemento'), bairro: v('dest-bairro'), cidade: v('dest-cidade'),
         loc: caixas('.ifood-box').map(function(b){ return b.value; }).join(''), verif: !!d0.verificado, nomeIfood: d0.nomeCliente || '', numero: d0.numeroPedido || '', lat: (typeof _latLngEntrega !== 'undefined' && _latLngEntrega) ? _latLngEntrega.lat : null, lng: (typeof _latLngEntrega !== 'undefined' && _latLngEntrega) ? _latLngEntrega.lng : null }; }
     var x = acharExtra(k);
-    return { nome: v('fd-rota-nome-' + k), tel: v('fd-rota-tel-' + k), rua: v('fd-rota-rua-' + k), num: v('fd-rota-num-' + k), comp: v('fd-rota-comp-' + k), bairro: v('fd-rota-bairro-' + k), cidade: v('fd-rota-cidade-' + k),
+    return { cod: v('fd-rota-cod-' + k), nome: v('fd-rota-nome-' + k), tel: v('fd-rota-tel-' + k), rua: v('fd-rota-rua-' + k), num: v('fd-rota-num-' + k), comp: v('fd-rota-comp-' + k), bairro: v('fd-rota-bairro-' + k), cidade: v('fd-rota-cidade-' + k),
       loc: v('fd-rota-loc-' + k).replace(/\D/g, ''), verif: !!(x && x.nomeIfood && x.loc && x.loc === v('fd-rota-loc-' + k).replace(/\D/g, '')), nomeIfood: (x && x.nomeIfood) || '', numero: (x && x.numero) || '', lat: x ? x.lat : null, lng: x ? x.lng : null };
   }
   function setv(id, val){ var el = document.getElementById(id); if (el) el.value = val || ''; }
@@ -2884,18 +2924,18 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
       _ifoodVerificado = d.verif; _ifoodNomeCliente = d.verif ? d.nomeIfood : ''; _ifoodNumeroPedido = d.verif ? d.numero : '';
       var bx = caixas('.ifood-box'); bx.forEach(function(b, i){ b.value = d.loc.charAt(i) || ''; b.style.borderColor = d.verif ? '#22c55e' : '#ccc'; });
       try { _syncHiddenLocalizador(); } catch (e2) {}
-      var pb = caixas('.phone-box'); pb.forEach(function(b, i){ b.value = d.tel.charAt(i) || ''; }); try { _syncHiddenPhone(); } catch (e3) {}
+      var telD = String(d.tel || '').replace(/\D/g, ''); var pb = caixas('.phone-box'); pb.forEach(function(b, i){ b.value = telD.charAt(i) || ''; }); try { _syncHiddenPhone(); } catch (e3) {}
       var res = document.getElementById('ifoodResultado');
       if (res) { if (d.verif) { res.style.display = 'block'; res.style.background = '#e6ffe6'; res.style.color = '#1a7a1a'; res.innerHTML = 'Cliente: <strong>' + e(d.nomeIfood) + '</strong>' + (d.numero ? ' | Pedido iFood: <strong>#' + e(d.numero) + '</strong>' : ''); } else { res.style.display = 'none'; res.innerHTML = ''; } }
       try { atualizarBotaoFinalizar(); } catch (e4) {}
-      setv('client', d.nome); setv('dest-rua', d.rua); setv('dest-numero', d.num); setv('dest-complemento', d.comp); setv('dest-bairro', d.bairro); setv('dest-cidade', d.cidade || 'Caxias do Sul');
+      setv('client-codigo', d.cod); setv('client', d.nome); setv('dest-rua', d.rua); setv('dest-numero', d.num); setv('dest-complemento', d.comp); setv('dest-bairro', d.bairro); setv('dest-cidade', d.cidade || 'Caxias do Sul');
       var av = document.getElementById('dest-arrasto-aviso'); if (av) av.remove();
       if (d.lat && d.lng) { window._lastGeocodedDest = full; try { buildDest(); } catch (e5) {} try { initMapNovoPedidoEntrega(d.lat, d.lng); } catch (e6) { _latLngEntrega = { lat: d.lat, lng: d.lng }; } }
       else { try { _latLngEntrega = null; } catch (e7) {} try { buildDest(); } catch (e8) {} }
       return;
     }
     var x = acharExtra(k); if (!x) return;
-    setv('fd-rota-nome-' + k, d.nome); setv('fd-rota-tel-' + k, d.tel); setv('fd-rota-rua-' + k, d.rua); setv('fd-rota-num-' + k, d.num); setv('fd-rota-comp-' + k, d.comp); setv('fd-rota-bairro-' + k, d.bairro); setv('fd-rota-cidade-' + k, d.cidade || 'Caxias do Sul'); setv('fd-rota-loc-' + k, d.loc);
+    setv('fd-rota-cod-' + k, d.cod); setv('fd-rota-nome-' + k, d.nome); setv('fd-rota-tel-' + k, d.tel); setv('fd-rota-rua-' + k, d.rua); setv('fd-rota-num-' + k, d.num); setv('fd-rota-comp-' + k, d.comp); setv('fd-rota-bairro-' + k, d.bairro); setv('fd-rota-cidade-' + k, d.cidade || 'Caxias do Sul'); setv('fd-rota-loc-' + k, d.loc);
     x.loc = d.verif ? d.loc : null; x.nomeIfood = d.verif ? d.nomeIfood : ''; x.numero = d.verif ? d.numero : '';
     var r2 = document.getElementById('fd-rota-res-' + k); if (r2) r2.innerHTML = d.verif ? '\u2705 Cliente: <b>' + e(d.nomeIfood) + '</b>' + (d.numero ? ' \u00B7 Pedido iFood #' + e(d.numero) : '') : '';
     var av2 = document.getElementById('fd-rota-aviso-' + k); if (av2) av2.style.display = 'none';
@@ -2933,8 +2973,53 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   }
   // parou de digitar: aplica a ordem que ficou esperando
   setInterval(function(){ if (ordemPendente && !digitando()) { var o = ordemPendente; ordemPendente = null; if (o.chaves === slots().join()) aplicarOrdem(o.ordem, o.eco, o.sub); else agendarCotacao(); } }, 500);
+  // Rota PIX: km e total na ordem da loja; a ordem mais curta aparece so como botao (a loja decide)
+  function totalPix(x, seq, chaves){
+    if (!(x.ok && x.j.ok)) { mostrarTotal('<span class="fd-rota-erro">' + e(x.j.error || 'Não foi possível calcular a rota.') + '</span>'); return; }
+    if (seq !== cotSeq || chaves !== slots().join()) return;
+    ultimaCot = x.j; botaoFinalizar(true);
+    var km = (Math.round((parseFloat(x.j.km_total) || 0) * 10) / 10).toFixed(1).replace('.', ',');
+    var h = 'Rota: ' + x.j.n + ' entregas · ' + km + ' km · Total ' + fmt(x.j.total) + '<div style="font-size:12px;font-weight:600;color:#c3c6da;margin-top:4px">Km e valor somados na ordem desta lista (coleta → 1º → 2º…). Use ↑ ↓ nos cartões para mudar a ordem.</div>';
+    var sug = x.j.sugestao, eco = parseFloat(x.j.economia_km) || 0;
+    if (Array.isArray(sug) && sug.length === slots().length && sug.some(function(v2, i){ return v2 !== i; }) && eco > 0.05) {
+      window._fdRotaSugestao = { ordem: sug, eco: eco, chaves: chaves };
+      h += '<button type="button" class="fd-rota-btn" id="fd-rota-organizar" style="background:#2ecc71;color:#06210f;margin-top:10px;width:100%" onclick="_fdRotaOrganizar()">✨ Organizar pelo caminho mais curto (economiza ' + eco.toFixed(1).replace('.', ',') + ' km)</button>';
+    } else window._fdRotaSugestao = null;
+    mostrarTotal(h);
+  }
+  // Rota PIX: "Finalizar" libera com o total da rota (a taxa de um ponto so nao e usada); iFood: nao mexe no botao
+  function botaoFinalizar(ok){ if (modo() !== 'pix' || !extras.length) return; var s = document.getElementById('submitBtn'); if (!s) return; s.disabled = !ok; s.style.opacity = ok ? '1' : '0.4'; }
+  window._fdRotaOrganizar = function(){ var s = window._fdRotaSugestao; if (!s || s.chaves !== slots().join()) { agendarCotacao(); return; } window._fdRotaSugestao = null; aplicarOrdem(s.ordem, s.eco); };
+  // Rota PIX: setinhas para a loja mudar a ordem (troca o conteudo dos quadros; o 1o cliente e o formulario de cima)
+  function trocar(k1, k2){ var d1 = lerCliente(k1), d2 = lerCliente(k2); escreverCliente(k1, d2); escreverCliente(k2, d1); piscar(k1); piscar(k2); agendarCotacao(); }
+  window._fdRotaMover = function(uid, dir){ var ks = slots(), i = ks.indexOf(uid), j = i + dir; if (i < 0 || j < 0 || j >= ks.length) return; trocar(ks[i], ks[j]); };
   function limpar(){ extras.forEach(function(x){ var el = document.getElementById('fd-rota-cli-' + x.uid); if (el) el.remove(); }); extras = []; ultimaCot = null; mostrarTotal(null); atualizar(); }
+  // Rota PIX: celular obrigatorio, sem localizador; cria na ordem desta lista (o servidor soma km e preco nessa ordem)
+  async function criarRotaPix(){
+    var pts = [pontoPrincipal()].concat(extras.map(pontoExtra)).map(function(p){ return { nome_cliente: p.nome_cliente, telefone_cliente: p.telefone_cliente, endereco_entrega: p.endereco_entrega, bairro_destino: p.bairro_destino, complemento_entrega: p.complemento_entrega, lat: p.lat, lng: p.lng }; });
+    for (var i = 0; i < pts.length; i++) {
+      if (!pts[i].nome_cliente) { fdAlert('Informe o nome do ' + (i + 1) + 'º cliente.'); return; }
+      if (String(pts[i].telefone_cliente || '').replace(/\D/g, '').length < 10) { fdAlert('Informe o celular do ' + (i + 1) + 'º cliente (com DDD).'); return; }
+      if (!pts[i].endereco_entrega) { fdAlert('Preencha rua, número e bairro do ' + (i + 1) + 'º cliente.'); return; }
+    }
+    if (!ultimaCot) { cotar(); fdAlert('Aguarde o total da rota aparecer e toque de novo em Finalizar.'); return; }
+    var km = (Math.round((parseFloat(ultimaCot.km_total) || 0) * 10) / 10).toFixed(1).replace('.', ',');
+    var lista = pts.map(function(p, i){ return (i + 1) + 'º ' + p.nome_cliente + ' – ' + (p.bairro_destino || ''); }).join('\n');
+    if (!await fdConfirm('📋 ROTA PIX – ' + pts.length + ' entregas\n\n' + lista + '\n\nOrdem de entrega: a desta lista · ' + km + ' km\nTotal: ' + fmt(ultimaCot.total) + ' (sai do seu saldo)\n\n⏳ As entregas ficam em preparo. Marque “Pronto” em cada uma quando ficar pronta; o motoboy é chamado quando a última estiver pronta. Cada cliente recebe o seu código de entrega quando o motoboy coletar.\n\nCriar a rota?')) return;
+    var b = document.getElementById('submitBtn'); if (b) { b.disabled = true; b.textContent = 'Criando rota...'; }
+    try {
+      var r = await fetch(API_R + '/rotas/pix', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ coleta: coleta(), pontos: pts }) });
+      var j = {}; try { j = await r.json(); } catch (e5) {}
+      if (r.status === 402 && j.faltante) { abrirModalSaldoParaPedido(j.faltante); return; }
+      if (!r.ok) { fdAlert(j.error || 'Não foi possível criar a rota.'); return; }
+      try { var u = await (await fetch(API_R + '/users/' + user.id)).json(); if (u && u.id) { user.credit = u.credit; localStorage.setItem('flashdrop_user', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('flashdrop_user') || '{}'), { credit: u.credit }))); } } catch (e6) {}
+      limpar(); closeModal(); loadData();
+      fdAlert('✅ Rota PIX criada: ' + j.n + ' entregas · ' + fmt(j.total) + '.\n\nMarque “Pronto” em cada entrega quando ficar pronta.');
+    } catch (e7) { fdAlert('Não foi possível criar a rota (conexão).'); }
+    finally { if (b) { b.disabled = false; b.textContent = 'Finalizar Pedido'; } }
+  }
   async function criarRota(){
+    if (modo() === 'pix') return criarRotaPix();
     var pts = [pontoPrincipal()].concat(extras.map(pontoExtra));
     for (var i = 0; i < pts.length; i++) {
       if (pts[i].ifood_localizador.length !== 8) { fdAlert('Informe o localizador iFood (8 números) do ' + (i + 1) + '\u00BA cliente.'); return; }
@@ -2962,7 +3047,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     if (typeof window.onTipoPagChange === 'function' && !window.onTipoPagChange._fdRota) { var o1 = window.onTipoPagChange; window.onTipoPagChange = function(){ var r = o1.apply(this, arguments); atualizar(); return r; }; window.onTipoPagChange._fdRota = true; }
     // "Finalizar pedido" com pontos extras cria a rota inteira de uma vez
     var form = document.getElementById('orderForm');
-    if (form && form.onsubmit && !form._fdRota) { var o2 = form.onsubmit; form.onsubmit = function(ev){ if (ligada() && ehIfood() && extras.length) { ev.preventDefault(); criarRota(); return false; } return o2.call(this, ev); }; form._fdRota = true; }
+    if (form && form.onsubmit && !form._fdRota) { var o2 = form.onsubmit; form.onsubmit = function(ev){ if (modo() && extras.length) { ev.preventDefault(); criarRota(); return false; } return o2.call(this, ev); }; form._fdRota = true; }
     // fechar o "Novo Pedido" limpa os pontos extras
     if (typeof window.closeModal === 'function' && !window.closeModal._fdRota) { var o3 = window.closeModal; window.closeModal = function(){ limpar(); return o3.apply(this, arguments); }; window.closeModal._fdRota = true; }
     // taxa do 1o ponto calculada: atualiza o total da rota
@@ -2974,7 +3059,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     atualizar();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ligar); else ligar();
-  setInterval(function(){ var b = document.getElementById('fd-rota-box'); if (!b || (ligada() && ehIfood()) !== (b.style.display !== 'none')) atualizar(); }, 1500);
+  setInterval(function(){ var b = document.getElementById('fd-rota-box'); if (!b || !!modo() !== (b.style.display !== 'none') || (extras.length && modo() !== modoQuadros)) atualizar(); }, 1500);
 
   // ---------- cartao agrupado na lista de pedidos ----------
   var ROTULO = { em_preparo: '\uD83D\uDD04 Em preparo', rota_espera: '\u23F3 Aguardando motoboy', pendente: '\u23F3 Aguardando motoboy', aceito: '\u2705 Aceito', na_loja: '\uD83C\uDFEA Na loja', coletado: '\uD83D\uDCE6 Saiu para entrega', no_cliente: '\uD83C\uDFE0 No cliente', entregue: '\uD83C\uDF89 Entregue', cancelado: '\u274C Cancelado' };
@@ -2992,7 +3077,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var canc = todas.filter(function(p){ return p.status === 'cancelado'; });
     var p1 = vv[0] || todas[0]; var total = vv.reduce(function(a, p){ return a + (parseFloat(p.valor_total) || 0); }, 0);
     var h = '<div class="order-card fd-rota-card" data-rota="' + p1.rota_id + '">';
-    h += '<div class="order-header"><strong>\uD83D\uDEF5 Rota iFood (' + vv.length + ' entrega' + (vv.length === 1 ? '' : 's') + ')</strong><span class="status-badge">' + statusGeral(vv) + '</span></div>';
+    h += '<div class="order-header"><strong>\uD83D\uDEF5 Rota ' + (p1.tipo_pagamento === 'pix' ? 'PIX' : 'iFood') + ' (' + vv.length + ' entrega' + (vv.length === 1 ? '' : 's') + ')</strong><span class="status-badge">' + statusGeral(vv) + '</span></div>';
     if (p1.rota_socorro) h += '<div class="fd-rota-socorro">\uD83C\uDD98 Socorro do Motoboy \u2013 pago pela Flash Drop</div>';
     h += '<div class="fd-rota-resumo">Total da rota: ' + fmt(total) + '</div>';
     var mbR = vv.filter(function(p){ return p.motoboy_name; })[0];
@@ -3046,6 +3131,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
         var col = vv.filter(function(p){ return p.t_coletado; });
         if (vistas.indexOf(String(k)) >= 0 || !col.length || !vv.every(function(p){ return ['coletado', 'no_cliente', 'entregue'].indexOf(p.status) >= 0; })) return;
         vistas.push(String(k)); try { localStorage.setItem('_fdRotaSaiu', JSON.stringify(vistas.slice(-100))); } catch (e16) {}
+        if (vv[0] && vv[0].tipo_pagamento === 'pix') return; // rota PIX: cada cliente ja recebe o "Pedido coletado" com o codigo
         // so avisa se a coleta foi agora (nao repete avisos antigos ao abrir a pagina)
         if (Date.now() - new Date(col[0].t_coletado).getTime() < 2 * 60 * 60 * 1000) avisoSaiu(vv);
       });
@@ -3132,7 +3218,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
   setInterval(function(){ document.querySelectorAll('.fd-rota-contador').forEach(function(el){ var ini = parseInt(el.getAttribute('data-inicio')), pz = parseInt(el.getAttribute('data-prazo')) || 900000; el.textContent = txtContador(pz - (Date.now() - ini)); }); }, 1000);
   window._fdRotaDecidir = async function(id, dec, btn){
     var p = (_myOrders || []).find(function(x){ return x.id === id; }) || {};
-    if (dec === 'deixar') { if (!await fdConfirm('Deixar o pedido #' + id + ' com o motoboy?\n\nA entrega é finalizada agora, sem o código do iFood. O pedido fica com o motoboy.')) return; }
+    if (dec === 'deixar') { if (!await fdConfirm('Deixar o pedido #' + id + ' com o motoboy?\n\nA entrega é finalizada agora, sem o código ' + (p.tipo_pagamento === 'pix' ? 'de entrega' : 'do iFood') + '. O pedido fica com o motoboy.')) return; }
     if (btn) btn.disabled = true;
     try {
       if (dec === 'retornar') {

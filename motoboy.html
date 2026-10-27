@@ -1135,7 +1135,7 @@ if (!geoPassed) return;
   function cancelOrder(orderId) {
     showConfirm(
       "⚠️ ATENÇÃO — PENALIDADE",
-      ((allOrdersCache || []).some(function(x){ return String(x.id) === String(orderId) && x.rota_id; }) ? "<strong>Rota iFood:</strong> desistir desta entrega devolve a <strong>rota inteira</strong> (todas as entregas voltam juntas para outro motoboy), com uma penalidade só. " : "") + "Se desistir, você recebe uma penalidade e fica um tempo sem poder aceitar pedidos. A penalidade aumenta a cada desistência no dia: 10 min, 30 min, 1 h, 6 h e 24 h. Deseja continuar?",
+      ((allOrdersCache || []).some(function(x){ return String(x.id) === String(orderId) && x.rota_id; }) ? "<strong>" + ((allOrdersCache || []).some(function(x){ return String(x.id) === String(orderId) && x.tipo_pagamento === 'pix'; }) ? "Rota PIX" : "Rota iFood") + ":</strong> desistir desta entrega devolve a <strong>rota inteira</strong> (todas as entregas voltam juntas para outro motoboy), com uma penalidade só. " : "") + "Se desistir, você recebe uma penalidade e fica um tempo sem poder aceitar pedidos. A penalidade aumenta a cada desistência no dia: 10 min, 30 min, 1 h, 6 h e 24 h. Deseja continuar?",
       async function() {
         try {
           var resp = await fetch(API + "/orders/" + orderId, {
@@ -1483,7 +1483,7 @@ try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) i
     var idEl = document.createElement('div'); idEl.className = 'order-id'; idEl.textContent = 'Pedido #' + o.id;
     var badge = document.createElement('span'); badge.className = 'badge badge-pendente'; badge.textContent = 'Disponivel';
     header.appendChild(idEl); header.appendChild(badge); card.appendChild(header);
-    var t = document.createElement('div'); t.className = 'fd-rota-disp-titulo'; t.textContent = (o.rota_socorro ? '\uD83C\uDD98 SOCORRO \u00B7 ' : '\uD83D\uDEF5 ') + 'ROTA iFood \u00B7 ' + ps.length + ' entregas'; card.appendChild(t);
+    var t = document.createElement('div'); t.className = 'fd-rota-disp-titulo'; t.textContent = (o.rota_socorro ? '\uD83C\uDD98 SOCORRO \u00B7 ' : '\uD83D\uDEF5 ') + 'ROTA ' + (o.tipo_pagamento === 'pix' ? 'PIX' : 'iFood') + ' \u00B7 ' + ps.length + ' entregas'; card.appendChild(t);
     var lojaU = (allUsersCache || []).find(function(u){ return u.username === o.loja_user; }) || {};
     card.appendChild(makeInfoRow('\uD83C\uDFEA Loja', o.loja_name || lojaU.name || o.loja_user));
     card.appendChild(makeInfoRow('\uD83D\uDCE6 Coleta', fmtEndereco(o.endereco_coleta) || '-'));
@@ -1502,7 +1502,7 @@ try { if (typeof user !== 'undefined' && user && user.online && !_gpsInterval) i
     var ps = daRota(o); if (ps.length < 2 && !o.rota_socorro) return null;
     var i = ps.findIndex(function(p){ return p.id === o.id; });
     var f = document.createElement('div'); f.className = 'fd-rota-faixa';
-    var a = document.createElement('span'); a.textContent = (o.rota_socorro ? '\uD83C\uDD98 Socorro \u00B7 ' : '\uD83D\uDEF5 Rota iFood \u00B7 ') + 'Entrega ' + (i + 1) + '/' + ps.length;
+    var a = document.createElement('span'); a.textContent = (o.rota_socorro ? '\uD83C\uDD98 Socorro \u00B7 ' : '\uD83D\uDEF5 Rota ' + (o.tipo_pagamento === 'pix' ? 'PIX' : 'iFood') + ' \u00B7 ') + 'Entrega ' + (i + 1) + '/' + ps.length;
     var c = document.createElement('span'); c.textContent = 'trecho ' + km(o.distancia);
     f.appendChild(a); f.appendChild(c); return f;
   };
