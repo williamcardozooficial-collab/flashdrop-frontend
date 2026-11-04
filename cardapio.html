@@ -545,7 +545,7 @@ distanciaCalculada=km;
 _coordLojaFinal=coordLoja;
 _coordClienteFinal=coordCliente;
 var pag=document.getElementById('ch-pag').value;
-var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+var isCartao=(pag==='cartao_credito'||pag==='cartao_debito')&&!(window._cardapioFechado&&window._cardapioFechado.modo);
 var taxaFinal=isCartao?taxa*2:taxa;
 var lid=lojaGlobal.id;
 var totalItens=totalCarrinho(lid);
@@ -583,12 +583,17 @@ var pag=document.getElementById('ch-pag').value;
 if(!nome){fdAlert('Informe seu nome completo.');return;}
 if(!cel||cel.replace(/\D/g,'').length<10){fdAlert('Informe um celular valido.');return;}
 if(!cpf||cpf.replace(/\D/g,'').length<11){fdAlert('Informe um CPF valido.');return;}
+/* Flash Drop fechada com a chave do admin: entrega pela loja (valor proprio) ou retirada nao usam o calculo por distancia */
+var _cf=window._cardapioFechado||{};var _cfRet=!!_cf.modo&&!!_cf.retirada;var _cfFixo=!!_cf.modo&&(_cfRet||_cf.entrega_modo==='proprio');
+if(!_cfRet){
 if(!rua){fdAlert('Informe a rua de entrega.');return;}
 if(!numero){fdAlert('Informe o numero.');return;}
 if(!bairro){fdAlert('Informe o bairro.');return;}
 if(!cidade){fdAlert('Informe a cidade.');return;}
-if(taxaCalculada===0){fdAlert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
-var endCompleto=rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
+}
+if(_cfFixo)taxaCalculada=_cfRet?0:(parseFloat(_cf.entrega_valor)||0);
+if(taxaCalculada===0&&!_cfFixo){fdAlert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
+var endCompleto=_cfRet?'Retirada na loja':rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
 /* Montar string de itens */
 var itens=c.map(function(i){
 var adText=i.adicionais&&i.adicionais.length?' ['+i.adicionais.join(' | ')+']':'';
@@ -596,7 +601,7 @@ var obsText=i.obs?' (obs: '+i.obs+')':'';
 return '1x '+i.nome+adText+obsText+' (R$'+i.preco.toFixed(2)+')';
 }).join(' | ');
 var totalItens=totalCarrinho(lid);
-var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+var isCartao=(pag==='cartao_credito'||pag==='cartao_debito')&&!(window._cardapioFechado&&window._cardapioFechado.modo);
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var taxaBruta=taxaFinal;
 var _descontoRes=await calcularDescontoPromocao(lid,totalCarrinhoValidoPromocao(lid),pag,taxaFinal);
@@ -652,7 +657,7 @@ tipo_pagamento:'pix',
 valor_total:taxaFinal,valor_motoboy:0,comissao:0,
 obs_coleta:'Itens: '+itens+(descontoFrete>0?' | 🎉 PROMOÇÃO: '+((_descontoRes&&_descontoRes.promo)?_descontoRes.promo.nome:'Frete grátis')+' - Desconto R$ '+descontoFrete.toFixed(2)+(_tipoPromo==='desconto_produto'?' (loja arca com o desconto)':' (desconto no frete)'):''),
 obs_entrega_loja:obs_entrega||null,
-plataforma:'cardapio',
+plataforma:'cardapio',entrega_tipo:_cfRet?'retirada':'loja',
 status:'pendente',
 complemento_coleta:null,
 complemento_entrega:complemento||null,
@@ -697,7 +702,7 @@ tipo_pagamento:pag,
 valor_total:taxaFinal,valor_motoboy:0,comissao:0,
 obs_coleta:'Itens: '+itens+(descontoFrete>0?' | 🎉 PROMOÇÃO: '+((_descontoRes&&_descontoRes.promo)?_descontoRes.promo.nome:'Frete grátis')+' - Desconto R$ '+descontoFrete.toFixed(2)+(_tipoPromo==='desconto_produto'?' (loja arca com o desconto)':' (desconto no frete)'):''),
 obs_entrega_loja:obs_entrega||null,
-plataforma:'cardapio',
+plataforma:'cardapio',entrega_tipo:_cfRet?'retirada':'loja',
 status:'pendente',
 complemento_coleta:null,
 complemento_entrega:complemento||null,
@@ -946,6 +951,7 @@ if(formas.includes('pix'))sel.innerHTML+='<option value="pix">Pix / Pagamento On
 if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">&#128181; Dinheiro</option>';
 if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">&#128179; Máquina de Cartão</option>';
 if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">&#128179; Cartao por aproximacao</option>';if(formas.includes('pix_direto'))sel.innerHTML+='<option value="pix_direto">&#x1F4B8; PIX</option>';
+var _cfPag=window._cardapioFechado;if(_cfPag&&_cfPag.modo){Array.prototype.slice.call(sel.options).forEach(function(o){if(o.value==='pix_direto'||(o.value==='pix'&&!_cfPag.tem_mp_proprio))o.remove();});}
 }
 function renderLojaFechada(loja){
 var nome=loja.name||loja.nome||'';
@@ -1110,7 +1116,7 @@ var aviso=document.getElementById('aviso-dinheiro');if(aviso)aviso.style.display
 return;
 }
 var pag=document.getElementById('ch-pag').value;
-var isCartao=(pag==='cartao_credito'||pag==='cartao_debito');
+var isCartao=(pag==='cartao_credito'||pag==='cartao_debito')&&!(window._cardapioFechado&&window._cardapioFechado.modo);
 var taxaFinal=isCartao?taxaCalculada*2:taxaCalculada;
 var lid=lojaGlobal?lojaGlobal.id:null;
 var totalItens=lid?totalCarrinho(lid):0;
@@ -1546,6 +1552,8 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
   if (typeof _preencher === 'function') { window.preencherFormasPagamento = function(){ var r = _preencher.apply(this, arguments); ROBO_TIPOS.forEach(function(v){ var sel = document.getElementById('ch-pag'); if (sel && disp[v] === false) Array.prototype.slice.call(sel.options).forEach(function(o){ if (o.value === v) o.remove(); }); }); return r; }; }
   async function consultar(){
     var l = loja(); if (!l) return null;
+    // Flash Drop fechada com a chave ligada: a entrega e da loja, o robo (motoboys online) nao se aplica
+    if (window._cardapioFechado && window._cardapioFechado.modo) { seq++; ultimoTotal = totalAtual(); disp = { robo_ligado: false, dinheiro: true, cartao_aproximacao: true }; aplicar(); return disp; }
     var meu = ++seq; var total = totalAtual(); ultimoTotal = total;
     try {
       var r = await fetch(ROBO_API + '/disponibilidade-pagamento?loja=' + encodeURIComponent(l.username || l.id) + '&valor=' + total.toFixed(2));
@@ -1579,15 +1587,72 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
   async function consultarFuncionamento(){ try { var r = await fetch(FUNC_API + '/funcionamento', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; } }
   function fechado(f){ return !!(f && f.aberto_agora === false); }
   var estado = null;
+  // Cardapio com a Flash Drop fechada (chave do admin): pedido entregue pela loja. O servidor e quem decide e marca o pedido.
+  function modoFechado(){ return !!(window._cardapioFechado && window._cardapioFechado.modo); }
+  function fmtReais(v){ return 'R$ ' + (parseFloat(v) || 0).toFixed(2); }
+  function refazerPagamentos(){
+    var rb = window._roboPagamento;
+    if (rb && rb.consultar) { rb.consultar(); return; }
+    if (typeof preencherFormasPagamento === 'function' && typeof lojaGlobal !== 'undefined' && lojaGlobal) preencherFormasPagamento(lojaGlobal);
+  }
+  function secaoEndereco(){ var i = document.getElementById('ch-rua'); return i && i.closest ? i.closest('.secao-checkout') : null; }
+  function montarEscolhaEntrega(){
+    var box = document.getElementById('cf-entrega-box'); if (box) return box;
+    var sec = secaoEndereco(); if (!sec || !sec.parentNode) return null;
+    box = document.createElement('div'); box.id = 'cf-entrega-box'; box.className = 'secao-checkout'; box.style.display = 'none';
+    box.innerHTML = '<h4>&#128666; Como receber</h4>' +
+      '<div style="background:#1a1000;border:1.5px solid #f5a623;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#ffd27a;line-height:1.5">A entrega deste pedido é feita <b>pela própria loja</b>.</div>' +
+      '<label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:#ddd;font-size:14px"><input type="radio" name="cf-entrega" value="loja" checked style="width:20px;height:20px"> Entrega pela loja</label>' +
+      '<label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:#ddd;font-size:14px"><input type="radio" name="cf-entrega" value="retirada" style="width:20px;height:20px"> Retirar na loja</label>';
+    sec.parentNode.insertBefore(box, sec);
+    box.addEventListener('change', function(e){ if (e.target && e.target.name === 'cf-entrega' && window._cardapioFechado) { window._cardapioFechado.retirada = e.target.value === 'retirada'; taxaCalculada = 0; distanciaCalculada = 0; var bl = document.getElementById('bloco-taxa-resultado'); if (bl) bl.style.display = 'none'; aplicarEntrega(); } });
+    return box;
+  }
+  // Valor proprio e retirada nao calculam por distancia: o valor aparece direto
+  function aplicarEntrega(){
+    var cf = window._cardapioFechado || {}, modo = !!cf.modo, ret = modo && !!cf.retirada, fixo = modo && (ret || cf.entrega_modo === 'proprio');
+    var box = montarEscolhaEntrega(); if (box) box.style.display = modo ? '' : 'none';
+    var sec = secaoEndereco(); if (sec) sec.style.display = ret ? 'none' : '';
+    var calc = document.getElementById('btn-calcular-taxa'); if (calc) calc.style.display = fixo ? 'none' : '';
+    var banner = document.getElementById('banner-promocoes'); if (banner && modo) banner.style.display = 'none';
+    if (!fixo) return;
+    var st = document.getElementById('taxa-status'); if (st) st.innerHTML = '';
+    var taxa = ret ? 0 : (parseFloat(cf.entrega_valor) || 0); taxaCalculada = taxa; distanciaCalculada = 0;
+    var itens = 0; try { itens = totalCarrinho(lojaGlobal.id) || 0; } catch (e) {}
+    var v = document.getElementById('taxa-valor'); if (v) v.textContent = ret ? 'Retirada na loja: sem taxa' : fmtReais(taxa) + ' (entrega da loja)';
+    var t = document.getElementById('total-final-val'); if (t) t.textContent = fmtReais(itens + taxa);
+    var bl = document.getElementById('bloco-taxa-resultado'); if (bl) bl.style.display = 'block';
+  }
+  async function consultarModo(){
+    var l = (typeof lojaGlobal !== 'undefined' && lojaGlobal) ? lojaGlobal : null; if (!l) return;
+    try {
+      var r = await fetch(FUNC_API + '/cardapio-fechado/estado?loja_id=' + encodeURIComponent(l.id), { cache: 'no-store' }); if (!r.ok) return;
+      var j = await r.json(), antes = window._cardapioFechado || {};
+      j.retirada = !!antes.retirada && !!j.modo;
+      window._cardapioFechado = j;
+      if (j.modo || antes.modo) {
+        // Flash Drop abriu com o carrinho aberto: volta ao calculo normal
+        if (antes.modo && !j.modo) { taxaCalculada = 0; distanciaCalculada = 0; var bl = document.getElementById('bloco-taxa-resultado'); if (bl) bl.style.display = 'none'; }
+        aplicarEntrega();
+        if (!!j.modo !== !!antes.modo) refazerPagamentos();
+      }
+    } catch (e) {}
+  }
+  // Calculo da plataforma ou promocoes nao valem para o valor fixo; promocoes nao valem em nenhum pedido deste modo
+  if (typeof window.calcularDescontoPromocao === 'function') {
+    var _desc = window.calcularDescontoPromocao;
+    window.calcularDescontoPromocao = async function(){ if (modoFechado()) return null; return _desc.apply(this, arguments); };
+  }
+  setInterval(function(){ if (modoFechado()) aplicarEntrega(); }, 1500);
   function msgCliente(f){
     var p = f && f.proxima_abertura;
     return 'A Flash Drop está fechada agora.' + (p ? ' Abrimos ' + p : '') + ' — você pode montar o carrinho e ver o frete, mas só vai conseguir finalizar o pedido ' + (p ? 'nesse horário.' : 'quando abrirmos.');
   }
   function aplicar(){
-    var f = estado, fech = fechado(f);
+    var f = estado, modo = modoFechado(), fech = fechado(f) && !modo;
     var el = document.getElementById('func-faixa-fechado');
     if (!el) { el = document.createElement('div'); el.id = 'func-faixa-fechado'; el.style.cssText = 'display:none;position:sticky;top:0;z-index:9998;background:#3a1a1a;border-bottom:2px solid #e53935;color:#ffcdd2;text-align:center;padding:10px 14px;font-size:14px;font-weight:700'; document.body.insertBefore(el, document.body.firstChild); }
-    el.textContent = fech ? '🔒 ' + ((f && f.mensagem) || 'A Flash Drop está fechada agora.') : ''; el.style.display = fech ? 'block' : 'none';
+    if (modo) { el.style.background = '#2a1a00'; el.style.borderBottomColor = '#f5a623'; el.style.color = '#ffd27a'; el.textContent = '🔒 A Flash Drop está fechada, mas esta loja continua recebendo pedidos: a entrega é feita pela própria loja.'; el.style.display = 'block'; } else { el.style.background = '#3a1a1a'; el.style.borderBottomColor = '#e53935'; el.style.color = '#ffcdd2'; el.textContent = fech ? '🔒 ' + ((f && f.mensagem) || 'A Flash Drop está fechada agora.') : ''; el.style.display = fech ? 'block' : 'none'; }
     var av = document.getElementById('func-aviso-checkout');
     if (!av) { var box = document.getElementById('modal-carrinho'); var alvo = box ? (box.querySelector('.modal-conteudo, .modal-content') || box.firstElementChild || box) : null; if (alvo) { av = document.createElement('div'); av.id = 'func-aviso-checkout'; av.style.cssText = 'display:none;margin:10px 0;background:#3a1a1a;border:1px solid #e53935;border-radius:8px;padding:10px 12px;color:#ffcdd2;font-size:13px;font-weight:700;line-height:1.5'; alvo.insertBefore(av, alvo.firstChild); } }
     if (av) { av.textContent = fech ? '🔒 ' + msgCliente(f) : ''; av.style.display = fech ? 'block' : 'none'; }
@@ -1597,7 +1662,7 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
       else if (btn.getAttribute('data-func-travado') === '1') { btn.removeAttribute('data-func-travado'); btn.style.opacity = ''; btn.title = ''; }
     }
   }
-  async function atualizar(){ var f = await consultarFuncionamento(); if (f) estado = f; aplicar(); return f; }
+  async function atualizar(){ var f = await consultarFuncionamento(); if (f) estado = f; await consultarModo(); aplicar(); return f; }
   if (typeof window.abrirCarrinho === 'function') {
     var _abrir = window.abrirCarrinho;
     window.abrirCarrinho = function(){ var r = _abrir.apply(this, arguments); atualizar(); return r; };
@@ -1606,11 +1671,11 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
     var _fin = window.finalizarPedido;
     window.finalizarPedido = async function(){
       var f = await atualizar();
-      if (fechado(f)) { fdAlert(msgCliente(f)); return; }
+      if (fechado(f) && !modoFechado()) { fdAlert(msgCliente(f)); return; }
       return _fin.apply(this, arguments);
     };
   }
-  atualizar(); setInterval(atualizar, 60000);
+  atualizar(); setTimeout(atualizar, 2500); setInterval(atualizar, 60000);
   window._funcionamento = { consultar: consultarFuncionamento, atualizar: atualizar, mensagem: msgCliente };
 })();
 </script>

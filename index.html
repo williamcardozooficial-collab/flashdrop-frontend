@@ -148,6 +148,14 @@
 
     <div id="config" class="section">
       <div class="card">
+        <div id="cf-admin-box" style="background:#1a1a2e;border:1px solid #f5a623;border-radius:10px;padding:12px 14px;margin-bottom:16px">
+          <div style="font-size:15px;font-weight:800;color:#f5a623;margin-bottom:4px">🛵 Cardápio fora do horário</div>
+          <div style="font-size:12px;color:#aaa;line-height:1.45;margin-bottom:10px">Ligado: com o Flash Drop fechado, o cardápio das lojas online continua recebendo pedidos, entregues pela própria loja. A loja só vê os detalhes depois de aceitar e pagar a taxa. Esses pedidos não vão para os motoboys.</div>
+          <label style="display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;color:#fff;font-weight:700;font-size:14px"><input type="checkbox" id="cf-adm-ativo" onchange="_fdCfAdmSalvar('ativo')" style="width:22px;height:22px"> Cardápio fora do horário <span id="cf-adm-estado" style="font-weight:800"></span></label>
+          <div class="input-group" style="margin:8px 0 6px"><label for="cf-adm-taxa">Taxa por pedido do cardápio fora do horário (R$)</label><input id="cf-adm-taxa" class="input" type="number" step="0.10" min="0" max="100"></div>
+          <button type="button" class="btn" onclick="_fdCfAdmSalvar('taxa')" style="min-height:42px;padding:0 16px;background:#f5a623;color:#1a0d00;font-weight:800">Salvar taxa</button>
+          <div id="cf-adm-msg" role="status" aria-live="polite" style="font-size:12px;margin-top:6px;min-height:15px"></div>
+        </div>
         <h3 style="margin-bottom:15px;color:#ffcc00;">&#9881; Ajustes de Corrida</h3>
         <div class="input-group">
           <label>Taxa Minima (R$)</label>
@@ -396,6 +404,10 @@
   </div>
 
   <div id="caixa" class="section">
+    <div class="card" style="background:#1a1a2e;border:1px solid #f5a623;margin-bottom:12px">
+      <h3 style="color:#f5a623;margin:0 0 10px;font-size:15px">🧾 Cardápio fora do horário</h3>
+      <div id="cf-resumo" style="font-size:13px;color:#ccc">Carregando...</div>
+    </div>
     <div class="card" style="background:linear-gradient(135deg,#1a2a1a,#0d1f0d);border:1px solid #2e7d32;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <h3 style="color:#4caf50;margin:0;font-size:15px">&#128176; Saldo da Plataforma</h3>
@@ -1935,7 +1947,7 @@ async function abrirSaldosCaixa(papel){
           document.getElementById('caixa-events').innerHTML = '<p style="color:#666;text-align:center;padding:20px 0">Nenhum evento nas últimas 48h</p>';
           return;
         }
-        var icons = { comissao: '✅', saque: '💸', recebimento_dinheiro:'💵', estorno:'↩️', debito_pedido:'📤', debito_cardapio:'📤', recarga_mp:'💰', pagamento_motoboy:'🛵', pagamento_motoboy_recusado:'🚫', ajuste_admin_credito:'➕', ajuste_admin_debito:'➖', taxa_cancelamento:'⚠️', cobranca_cliente:'💵', corrida:'🛵', debito_cartao_aprox:'📤', taxa_extra:'🌧️', bonus_promo:'🎉', comissao_indicacao_loja:'🤝', bonus_indicacao:'🧲', pagamento_loja:'✅', bonus_entrega:'🎁', cartao_aproximacao:'💳', taxa_chuva_admin:'🌧️', taxa_noturna:'🌙', promocao:'🎉', indicacao_loja:'🤝', saque_caixa_admin:'🏧' }; var origemLabel = { plataforma:'🏦 Plataforma', loja:'🏪 Loja', motoboy:'🛵 Motoboy' }; var creditTipos = ['comissao','recebimento_dinheiro','estorno','recarga_mp','ajuste_admin_credito','corrida','taxa_extra','bonus_promo','comissao_indicacao_loja','bonus_indicacao','pagamento_loja','cartao_aproximacao','saque_caixa_admin'];
+        var icons = { taxa_cardapio_fechado:'🧾', receita_cardapio_fechado:'🧾', comissao: '✅', saque: '💸', recebimento_dinheiro:'💵', estorno:'↩️', debito_pedido:'📤', debito_cardapio:'📤', recarga_mp:'💰', pagamento_motoboy:'🛵', pagamento_motoboy_recusado:'🚫', ajuste_admin_credito:'➕', ajuste_admin_debito:'➖', taxa_cancelamento:'⚠️', cobranca_cliente:'💵', corrida:'🛵', debito_cartao_aprox:'📤', taxa_extra:'🌧️', bonus_promo:'🎉', comissao_indicacao_loja:'🤝', bonus_indicacao:'🧲', pagamento_loja:'✅', bonus_entrega:'🎁', cartao_aproximacao:'💳', taxa_chuva_admin:'🌧️', taxa_noturna:'🌙', promocao:'🎉', indicacao_loja:'🤝', saque_caixa_admin:'🏧' }; var origemLabel = { plataforma:'🏦 Plataforma', loja:'🏪 Loja', motoboy:'🛵 Motoboy' }; var creditTipos = ['receita_cardapio_fechado','comissao','recebimento_dinheiro','estorno','recarga_mp','ajuste_admin_credito','corrida','taxa_extra','bonus_promo','comissao_indicacao_loja','bonus_indicacao','pagamento_loja','cartao_aproximacao','saque_caixa_admin'];
         var colors = { comissao: '#4caf50', saque: '#e53935' };
         document.getElementById('caixa-events').innerHTML = events.map(function(ev) {
           var dt = new Date(ev.created_at);
@@ -1944,7 +1956,7 @@ async function abrirSaldosCaixa(papel){
           var icon = icons[ev.tipo] || '📌';
           var sinal = creditTipos.indexOf(ev.tipo) !== -1 ? '+ ' : '− '; var origTag = origemLabel[ev.origem] || ''; var nomeTag = ev.nome ? (' • ' + ev.nome) : '';
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222">' +
-            '<div><span>' + icon + ' </span><span style="color:#ddd;font-size:13px">' + (fixStr(ev.descricao || ev.tipo)) + '</span><br>' +
+            '<div><span>' + icon + ' </span><span style="color:#ddd;font-size:13px">' + ((ev.tipo === 'taxa_cardapio_fechado' || ev.tipo === 'receita_cardapio_fechado') ? esc(ev.descricao || ev.tipo) : fixStr(ev.descricao || ev.tipo)) + '</span><br>' +
             '<span style="color:#666;font-size:11px">' + origTag + nomeTag + ' • ' + dtStr + '</span></div>' +
             '<strong style="color:' + col + ';font-size:15px;white-space:nowrap;margin-left:10px">' + sinal + 'R$ ' + parseFloat(ev.valor).toFixed(2).replace('.', ',') + '</strong>' +
             '</div>';
@@ -2742,6 +2754,43 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
   });
   // carrega a lista quando a aba Avisos e aberta
   if (typeof window.showTab === 'function') { var _st = window.showTab; window.showTab = function(id){ var r = _st.apply(this, arguments); if (id === 'avisos') window.carregarAvisosImg(); return r; }; }
+})();
+</script>
+<script id="fd-cf-admin-js">
+/* Cardapio com o Flash Drop fechado (admin): chave, taxa por pedido e resumo na aba Caixa */
+(function(){
+  var API_CF = 'https://flashdrop-backend-production.up.railway.app';
+  function tok(){ try { return JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token || ''; } catch (e) { return ''; } }
+  function fmt(v){ return 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ','); }
+  function $(id){ return document.getElementById(id); }
+  async function resumo(){ var r = await fetch(API_CF + '/admin/cardapio-fechado/resumo', { headers: { 'Authorization': 'Bearer ' + tok() }, cache: 'no-store' }); var j = {}; try { j = await r.json(); } catch (e) {} return { ok: r.ok, j: j }; }
+  function pintarChave(ativo){ var el = $('cf-adm-estado'); if (!el) return; el.textContent = ativo ? '(LIGADO)' : '(DESLIGADO)'; el.style.color = ativo ? '#4ce07a' : '#ff8a80'; }
+  async function carregarConfig(){
+    var x = await resumo(); var m = $('cf-adm-msg'); if (!$('cf-adm-ativo')) return;
+    if (!x.ok) { if (m) { m.style.color = '#ff8a80'; m.textContent = x.j.error || 'Não foi possível carregar. Entre de novo no admin.'; } return; }
+    $('cf-adm-ativo').checked = x.j.ativo === true; $('cf-adm-taxa').value = (parseFloat(x.j.taxa) || 0).toFixed(2); pintarChave(x.j.ativo === true);
+  }
+  window._fdCfAdmSalvar = async function(qual){
+    var m = $('cf-adm-msg'); var corpo = qual === 'ativo' ? { ativo: $('cf-adm-ativo').checked } : { taxa: $('cf-adm-taxa').value };
+    m.style.color = '#aaa'; m.textContent = 'Salvando...';
+    try {
+      var r = await fetch(API_CF + '/settings/cardapio-fechado', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify(corpo) });
+      var j = {}; try { j = await r.json(); } catch (e) {}
+      if (!r.ok) { m.style.color = '#ff8a80'; m.textContent = j.error || 'Erro ao salvar.'; carregarConfig(); return; }
+      pintarChave(j.ativo === true); $('cf-adm-ativo').checked = j.ativo === true; $('cf-adm-taxa').value = (parseFloat(j.taxa) || 0).toFixed(2);
+      m.style.color = '#4ce07a'; m.textContent = 'Salvo: ' + (j.ativo ? 'ligado' : 'desligado') + ', taxa de ' + fmt(j.taxa) + ' por pedido.';
+    } catch (e) { m.style.color = '#ff8a80'; m.textContent = 'Sem conexão. Tente de novo.'; carregarConfig(); }
+  };
+  async function carregarResumo(){
+    var el = $('cf-resumo'); if (!el) return;
+    var x; try { x = await resumo(); } catch (e) { el.textContent = 'Sem conexão.'; return; }
+    if (!x.ok) { el.textContent = x.j.error || 'Não foi possível carregar.'; return; }
+    var j = x.j, cel = function(rot, c){ return '<div style="background:rgba(245,166,35,.10);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:900;color:#f5a623">' + fmt(c.total) + '</div><div style="font-size:12px;color:#ccc">' + c.qtd + ' pedido' + (c.qtd === 1 ? '' : 's') + '</div><div style="font-size:10px;color:#aaa;margin-top:2px">' + rot + '</div></div>'; };
+    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:8px">' + cel('HOJE', j.hoje) + cel('ESTE MÊS', j.mes) + cel('TOTAL', j.geral) + '</div>' +
+      '<div style="font-size:12px;color:#aaa">Chave: <b style="color:' + (j.ativo ? '#4ce07a' : '#ff8a80') + '">' + (j.ativo ? 'ligada' : 'desligada') + '</b> · Taxa: ' + fmt(j.taxa) + ' · Recebidos: ' + j.pedidos.recebidos + ' · Aguardando a loja: ' + j.pedidos.aguardando + ' · Recusados: ' + j.pedidos.recusados + '</div>';
+  }
+  if (typeof window.showTab === 'function') { var _st = window.showTab; window.showTab = function(id){ var r = _st.apply(this, arguments); if (id === 'config') carregarConfig(); if (id === 'caixa') carregarResumo(); return r; }; }
+  if (typeof window.loadCaixa === 'function') { var _lc = window.loadCaixa; window.loadCaixa = function(){ carregarResumo(); return _lc.apply(this, arguments); }; }
 })();
 </script>
 <script id="fd-rota-admin-js">
