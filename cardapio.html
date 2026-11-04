@@ -583,15 +583,15 @@ var pag=document.getElementById('ch-pag').value;
 if(!nome){fdAlert('Informe seu nome completo.');return;}
 if(!cel||cel.replace(/\D/g,'').length<10){fdAlert('Informe um celular valido.');return;}
 if(!cpf||cpf.replace(/\D/g,'').length<11){fdAlert('Informe um CPF valido.');return;}
-/* Flash Drop fechada com a chave do admin: entrega pela loja (valor proprio) ou retirada nao usam o calculo por distancia */
-var _cf=window._cardapioFechado||{};var _cfRet=!!_cf.modo&&!!_cf.retirada;var _cfFixo=!!_cf.modo&&(_cfRet||_cf.entrega_modo==='proprio');
+/* Flash Drop fechada com a chave do admin: sem valor de entrega ou retirada nao usam o calculo por distancia */
+var _cf=window._cardapioFechado||{};var _cfRet=!!_cf.modo&&!!_cf.retirada;var _cfFixo=!!_cf.modo&&(_cfRet||_cf.entrega_modo==='sem_valor');
 if(!_cfRet){
 if(!rua){fdAlert('Informe a rua de entrega.');return;}
 if(!numero){fdAlert('Informe o numero.');return;}
 if(!bairro){fdAlert('Informe o bairro.');return;}
 if(!cidade){fdAlert('Informe a cidade.');return;}
 }
-if(_cfFixo)taxaCalculada=_cfRet?0:(parseFloat(_cf.entrega_valor)||0);
+if(_cfFixo)taxaCalculada=0;
 if(taxaCalculada===0&&!_cfFixo){fdAlert('Por favor, calcule a taxa de entrega antes de finalizar.');return;}
 var endCompleto=_cfRet?'Retirada na loja':rua+', '+numero+', '+bairro+', '+cidade+(complemento?' - '+complemento:'');
 /* Montar string de itens */
@@ -1601,26 +1601,31 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
     var sec = secaoEndereco(); if (!sec || !sec.parentNode) return null;
     box = document.createElement('div'); box.id = 'cf-entrega-box'; box.className = 'secao-checkout'; box.style.display = 'none';
     box.innerHTML = '<h4>&#128666; Como receber</h4>' +
-      '<div style="background:#1a1000;border:1.5px solid #f5a623;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#ffd27a;line-height:1.5">A entrega deste pedido é feita <b>pela própria loja</b>.</div>' +
-      '<label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:#ddd;font-size:14px"><input type="radio" name="cf-entrega" value="loja" checked style="width:20px;height:20px"> Entrega pela loja</label>' +
-      '<label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:#ddd;font-size:14px"><input type="radio" name="cf-entrega" value="retirada" style="width:20px;height:20px"> Retirar na loja</label>';
+      '<label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:#ddd;font-size:14px"><input type="radio" name="cf-entrega" value="loja" checked style="width:20px;height:20px"> Entrega</label>' +
+      '<label style="display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:#ddd;font-size:14px"><input type="radio" name="cf-entrega" value="retirada" style="width:20px;height:20px"> Retirar na loja</label>' +
+      '<div id="cf-ret-end" style="display:none;margin-top:6px;font-size:13px;color:#ffd27a;line-height:1.5"></div>';
     sec.parentNode.insertBefore(box, sec);
     box.addEventListener('change', function(e){ if (e.target && e.target.name === 'cf-entrega' && window._cardapioFechado) { window._cardapioFechado.retirada = e.target.value === 'retirada'; taxaCalculada = 0; distanciaCalculada = 0; var bl = document.getElementById('bloco-taxa-resultado'); if (bl) bl.style.display = 'none'; aplicarEntrega(); } });
     return box;
   }
-  // Valor proprio e retirada nao calculam por distancia: o valor aparece direto
+  // Sem valor de entrega e retirada nao calculam por distancia: o cardapio mostra direto, com cara de pedido normal
   function aplicarEntrega(){
-    var cf = window._cardapioFechado || {}, modo = !!cf.modo, ret = modo && !!cf.retirada, fixo = modo && (ret || cf.entrega_modo === 'proprio');
-    var box = montarEscolhaEntrega(); if (box) box.style.display = modo ? '' : 'none';
+    var cf = window._cardapioFechado || {}, modo = !!cf.modo, ret = modo && !!cf.retirada, semValor = modo && !ret && cf.entrega_modo === 'sem_valor', fixo = ret || semValor;
+    // Retirada so aparece se a loja permitir; sem isso o endereco da loja nao aparece em lugar nenhum
+    var box = montarEscolhaEntrega(); if (box) box.style.display = (modo && cf.permite_retirada) ? '' : 'none';
+    var rr = document.querySelector('input[name="cf-entrega"][value="' + (ret ? 'retirada' : 'loja') + '"]'); if (rr) rr.checked = true;
+    var re = document.getElementById('cf-ret-end');
+    if (re) { var ende = ''; if (ret) { try { ende = fmtLojaAddress(lojaGlobal.address) || ''; } catch (e0) {} } re.textContent = ende ? '📍 Retirada em: ' + ende : ''; re.style.display = ende ? 'block' : 'none'; }
     var sec = secaoEndereco(); if (sec) sec.style.display = ret ? 'none' : '';
     var calc = document.getElementById('btn-calcular-taxa'); if (calc) calc.style.display = fixo ? 'none' : '';
     var banner = document.getElementById('banner-promocoes'); if (banner && modo) banner.style.display = 'none';
+    var rot = document.querySelector('.taxa-total-final span'); if (rot) rot.textContent = semValor ? 'Total (sem a entrega)' : (ret ? 'Total' : 'Total com entrega');
     if (!fixo) return;
     var st = document.getElementById('taxa-status'); if (st) st.innerHTML = '';
-    var taxa = ret ? 0 : (parseFloat(cf.entrega_valor) || 0); taxaCalculada = taxa; distanciaCalculada = 0;
+    taxaCalculada = 0; distanciaCalculada = 0;
     var itens = 0; try { itens = totalCarrinho(lojaGlobal.id) || 0; } catch (e) {}
-    var v = document.getElementById('taxa-valor'); if (v) v.textContent = ret ? 'Retirada na loja: sem taxa' : fmtReais(taxa) + ' (entrega da loja)';
-    var t = document.getElementById('total-final-val'); if (t) t.textContent = fmtReais(itens + taxa);
+    var v = document.getElementById('taxa-valor'); if (v) v.textContent = ret ? 'Sem taxa' : 'A loja informa';
+    var t = document.getElementById('total-final-val'); if (t) t.textContent = fmtReais(itens);
     var bl = document.getElementById('bloco-taxa-resultado'); if (bl) bl.style.display = 'block';
   }
   async function consultarModo(){
@@ -1628,11 +1633,11 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
     try {
       var r = await fetch(FUNC_API + '/cardapio-fechado/estado?loja_id=' + encodeURIComponent(l.id), { cache: 'no-store' }); if (!r.ok) return;
       var j = await r.json(), antes = window._cardapioFechado || {};
-      j.retirada = !!antes.retirada && !!j.modo;
+      j.retirada = !!antes.retirada && !!j.modo && !!j.permite_retirada;
       window._cardapioFechado = j;
       if (j.modo || antes.modo) {
-        // Flash Drop abriu com o carrinho aberto: volta ao calculo normal
-        if (antes.modo && !j.modo) { taxaCalculada = 0; distanciaCalculada = 0; var bl = document.getElementById('bloco-taxa-resultado'); if (bl) bl.style.display = 'none'; }
+        // Flash Drop abriu, ou a loja mudou a entrega, com o carrinho aberto: volta ao calculo normal
+        if ((antes.modo && !j.modo) || (antes.modo && antes.entrega_modo !== j.entrega_modo) || (antes.retirada && !j.retirada)) { taxaCalculada = 0; distanciaCalculada = 0; var bl = document.getElementById('bloco-taxa-resultado'); if (bl) bl.style.display = 'none'; }
         aplicarEntrega();
         if (!!j.modo !== !!antes.modo) refazerPagamentos();
       }
@@ -1649,10 +1654,10 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
     return 'A Flash Drop está fechada agora.' + (p ? ' Abrimos ' + p : '') + ' — você pode montar o carrinho e ver o frete, mas só vai conseguir finalizar o pedido ' + (p ? 'nesse horário.' : 'quando abrirmos.');
   }
   function aplicar(){
-    var f = estado, modo = modoFechado(), fech = fechado(f) && !modo;
+    var f = estado, fech = fechado(f) && !!window._cardapioFechado && !modoFechado();
     var el = document.getElementById('func-faixa-fechado');
     if (!el) { el = document.createElement('div'); el.id = 'func-faixa-fechado'; el.style.cssText = 'display:none;position:sticky;top:0;z-index:9998;background:#3a1a1a;border-bottom:2px solid #e53935;color:#ffcdd2;text-align:center;padding:10px 14px;font-size:14px;font-weight:700'; document.body.insertBefore(el, document.body.firstChild); }
-    if (modo) { el.style.background = '#2a1a00'; el.style.borderBottomColor = '#f5a623'; el.style.color = '#ffd27a'; el.textContent = '🔒 A Flash Drop está fechada, mas esta loja continua recebendo pedidos: a entrega é feita pela própria loja.'; el.style.display = 'block'; } else { el.style.background = '#3a1a1a'; el.style.borderBottomColor = '#e53935'; el.style.color = '#ffcdd2'; el.textContent = fech ? '🔒 ' + ((f && f.mensagem) || 'A Flash Drop está fechada agora.') : ''; el.style.display = fech ? 'block' : 'none'; }
+    el.textContent = fech ? '🔒 ' + ((f && f.mensagem) || 'A Flash Drop está fechada agora.') : ''; el.style.display = fech ? 'block' : 'none';
     var av = document.getElementById('func-aviso-checkout');
     if (!av) { var box = document.getElementById('modal-carrinho'); var alvo = box ? (box.querySelector('.modal-conteudo, .modal-content') || box.firstElementChild || box) : null; if (alvo) { av = document.createElement('div'); av.id = 'func-aviso-checkout'; av.style.cssText = 'display:none;margin:10px 0;background:#3a1a1a;border:1px solid #e53935;border-radius:8px;padding:10px 12px;color:#ffcdd2;font-size:13px;font-weight:700;line-height:1.5'; alvo.insertBefore(av, alvo.firstChild); } }
     if (av) { av.textContent = fech ? '🔒 ' + msgCliente(f) : ''; av.style.display = fech ? 'block' : 'none'; }
@@ -1675,7 +1680,9 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
       return _fin.apply(this, arguments);
     };
   }
-  atualizar(); setTimeout(atualizar, 2500); setInterval(atualizar, 60000);
+  atualizar(); setInterval(atualizar, 60000);
+  // o modo depende da loja carregada: consulta assim que ela estiver pronta
+  var _espera = setInterval(function(){ if (window._cardapioFechado) { clearInterval(_espera); return; } if (typeof lojaGlobal !== 'undefined' && lojaGlobal) atualizar(); }, 1000);
   window._funcionamento = { consultar: consultarFuncionamento, atualizar: atualizar, mensagem: msgCliente };
 })();
 </script>

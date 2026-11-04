@@ -120,10 +120,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 </div>
 <div id="loja-entrega-cf-bar" style="display:none;margin:8px 20px 0;background:#1a1a2e;border:1px solid #f5a623;border-radius:12px;padding:10px 14px">
 <div style="font-size:11px;color:#f5a623;font-weight:700;text-transform:uppercase;margin-bottom:6px">🛵 Entrega no cardápio fora do horário</div>
-<div style="font-size:12px;color:#aaa;margin-bottom:8px;line-height:1.4">Com o Flash Drop fechado, seu cardápio continua recebendo pedidos e a entrega é feita pela sua loja. Quanto cobrar do cliente?</div>
-<label style="display:flex;align-items:center;gap:8px;min-height:40px;font-size:13px;color:#ccc;cursor:pointer"><input type="radio" name="cf-modo" id="cf-modo-plat" onchange="_fdCfModo()" style="width:18px;height:18px"> Usar valor da plataforma</label>
-<label style="display:flex;align-items:center;gap:8px;min-height:40px;font-size:13px;color:#ccc;cursor:pointer"><input type="radio" name="cf-modo" id="cf-modo-prop" onchange="_fdCfModo()" style="width:18px;height:18px"> Valor próprio</label>
-<div id="cf-valor-box" style="display:none;gap:8px;align-items:center;margin-top:4px"><span style="font-size:13px;color:#ccc">R$</span><input id="cf-valor" type="number" step="0.50" min="0" max="500" style="flex:1;min-width:0;padding:9px 10px;background:#111;border:1px solid #444;border-radius:8px;color:#fff;font-size:15px"><button type="button" onclick="_fdCfSalvar()" style="min-height:40px;padding:0 16px;background:#f5a623;border:none;border-radius:8px;color:#1a0d00;font-weight:800;font-size:13px;cursor:pointer">Salvar</button></div>
+<div style="font-size:12px;color:#aaa;margin-bottom:8px;line-height:1.4">Com o Flash Drop fechado, seu cardápio continua recebendo pedidos e a entrega é feita pela sua loja. Como cobrar a entrega do cliente?</div>
+<label style="display:flex;align-items:center;gap:8px;min-height:40px;font-size:13px;color:#ccc;cursor:pointer"><input type="radio" name="cf-modo" id="cf-modo-plat" onchange="_fdCfSalvar()" style="width:18px;height:18px"> <span>Valor da plataforma <span style="color:#888">(calculado pela distância)</span></span></label>
+<label style="display:flex;align-items:center;gap:8px;min-height:40px;font-size:13px;color:#ccc;cursor:pointer"><input type="radio" name="cf-modo" id="cf-modo-sem" onchange="_fdCfSalvar()" style="width:18px;height:18px"> <span>Sem valor de entrega <span style="color:#888">(você informa depois de aceitar)</span></span></label>
+<label style="display:flex;align-items:center;gap:8px;min-height:40px;font-size:13px;color:#ccc;cursor:pointer;border-top:1px solid #2a2a4a;margin-top:4px;padding-top:4px"><input type="checkbox" id="cf-retirada" onchange="_fdCfSalvar()" style="width:18px;height:18px"> <span>Permitir retirada na loja <span style="color:#888">(mostra seu endereço ao cliente)</span></span></label>
 <div id="cf-msg" role="status" aria-live="polite" style="font-size:12px;margin-top:6px;min-height:15px"></div>
 </div>
 <div id="loja-pix-bar" style="margin:8px 20px 0;background:#0d1f1a;border:1px solid #1a4a3a;border-radius:12px;padding:12px 14px">
@@ -3389,8 +3389,9 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     if (o.obs_entrega_loja) h += '<div class="fd-cf-linha"><b>💬 Observação:</b> ' + e(o.obs_entrega_loja) + '</div>';
     h += '<div class="fd-cf-linha"><b>💰 Pagamento:</b> ' + e(PAG[o.tipo_pagamento] || o.tipo_pagamento || '—') + '</div>';
     if (o.tipo_pagamento === 'pix') h += '<div class="fd-cf-oculto">Confira no seu Mercado Pago se o PIX foi pago antes de preparar.</div>';
-    var itens = parseFloat(o.valor_pedido) || 0, frete = parseFloat(o.so_cardapio_frete) || 0;
-    h += '<div class="fd-cf-valores"><div><span>Itens</span><span>' + fmt(itens) + '</span></div>' + (o.so_cardapio_retirada ? '' : '<div><span>Entrega</span><span>' + fmt(frete) + '</span></div>') + '<div class="fd-cf-total"><span>Total do cliente</span><span>' + fmt(itens + frete) + '</span></div></div>';
+    var itens = parseFloat(o.valor_pedido) || 0, frete = parseFloat(o.so_cardapio_frete) || 0, semFrete = !o.so_cardapio_retirada && o.so_cardapio_frete == null;
+    h += '<div class="fd-cf-valores"><div><span>Itens</span><span>' + fmt(itens) + '</span></div>' + (o.so_cardapio_retirada ? '' : '<div><span>Entrega</span><span>' + (semFrete ? 'a informar' : fmt(frete)) + '</span></div>') + '<div class="fd-cf-total"><span>' + (semFrete ? 'Total (sem a entrega)' : 'Total do cliente') + '</span><span>' + fmt(itens + frete) + '</span></div></div>';
+    if (o.status === 'em_preparo' && o.so_cardapio_frete_loja) h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn ' + (semFrete ? 'fd-cf-rec' : 'fd-cf-nao') + '" onclick="_fdCfFrete(' + o.id + ')">' + (semFrete ? '🛵 Informar valor da entrega' : '✏️ Corrigir valor da entrega') + '</button></div>';
     if (o.status === 'em_preparo') h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn fd-cf-ok" onclick="_fdCfEntregue(' + o.id + ',this)">✅ Marcar como entregue</button><button type="button" class="fd-cf-btn fd-cf-canc" onclick="_fdCfCancelar(' + o.id + ',this)">❌ Cancelar pedido</button></div>';
     return h + '</div>';
   };
@@ -3434,21 +3435,47 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     if (!uid) return;
     bar._ok = true;
     fetch(API_CF + '/users/' + uid, { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(u){
-      var proprio = u.loja_entrega_modo === 'proprio';
-      document.getElementById('cf-modo-plat').checked = !proprio; document.getElementById('cf-modo-prop').checked = proprio;
-      document.getElementById('cf-valor').value = (parseFloat(u.loja_entrega_valor) || 0).toFixed(2); document.getElementById('cf-valor-box').style.display = proprio ? 'flex' : 'none';
+      var plat = !u.loja_entrega_modo || u.loja_entrega_modo === 'plataforma';
+      document.getElementById('cf-modo-plat').checked = plat; document.getElementById('cf-modo-sem').checked = !plat;
+      document.getElementById('cf-retirada').checked = u.loja_permite_retirada === true;
     }).catch(function(){ bar._ok = false; });
   }
-  window._fdCfModo = function(){ document.getElementById('cf-valor-box').style.display = document.getElementById('cf-modo-prop').checked ? 'flex' : 'none'; if (document.getElementById('cf-modo-plat').checked) window._fdCfSalvar(); };
   window._fdCfSalvar = async function(){
-    var m = document.getElementById('cf-msg'), prop = document.getElementById('cf-modo-prop').checked;
+    var m = document.getElementById('cf-msg');
     m.style.color = '#c3c6da'; m.textContent = 'Salvando...';
     try {
-      var r = await fetch(API_CF + '/loja/cardapio-entrega', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ modo: prop ? 'proprio' : 'plataforma', valor: document.getElementById('cf-valor').value }) });
+      var r = await fetch(API_CF + '/loja/cardapio-entrega', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ modo: document.getElementById('cf-modo-sem').checked ? 'sem_valor' : 'plataforma', permite_retirada: document.getElementById('cf-retirada').checked }) });
       var j = {}; try { j = await r.json(); } catch (e11) {}
       if (!r.ok) { m.style.color = '#ff9d94'; m.textContent = j.error || 'Não foi possível salvar.'; return; }
-      m.style.color = '#7ee2a0'; m.textContent = j.entrega_modo === 'proprio' ? 'Salvo: entrega por ' + fmt(j.entrega_valor) + '.' : 'Salvo: valor da plataforma.';
+      m.style.color = '#7ee2a0'; m.textContent = 'Salvo: ' + (j.entrega_modo === 'sem_valor' ? 'sem valor de entrega' : 'valor da plataforma') + (j.permite_retirada ? ', com retirada na loja.' : ', sem retirada.');
     } catch (e12) { m.style.color = '#ff9d94'; m.textContent = 'Sem conexão. Tente de novo.'; }
+  };
+  // "Sem valor de entrega": a loja digita o valor deste pedido depois de ver o endereco (janela propria: a lista recarrega sozinha)
+  window._fdCfFrete = function(id){
+    var o = (_myOrders || []).find(function(x){ return x.id === id; }) || {};
+    var ov = document.createElement('div'); ov.id = 'fd-cf-frete'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2147480500;background:rgba(8,9,18,.9);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+    var atual = o.so_cardapio_frete != null ? (parseFloat(o.so_cardapio_frete) || 0).toFixed(2) : '';
+    ov.innerHTML = '<div style="background:#1c1d2e;border:2px solid #f5a623;border-radius:18px;padding:18px;max-width:380px;width:100%;color:#f1f2f8">' +
+      '<label for="fd-cf-frete-v" style="display:block;font-size:17px;font-weight:800;margin-bottom:4px">Valor da entrega do pedido #' + id + '</label>' +
+      '<div style="font-size:13px;color:#c3c6da;margin-bottom:10px;line-height:1.4">Soma ao total do pedido e o cliente recebe o valor pelo WhatsApp.</div>' +
+      '<input id="fd-cf-frete-v" type="number" inputmode="decimal" step="0.50" min="0" max="500" value="' + atual + '" placeholder="R$ 0,00" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1.5px solid #3a3d63;background:#12131f;color:#f1f2f8;font-size:18px">' +
+      '<div id="fd-cf-frete-msg" role="status" aria-live="polite" style="font-size:13px;color:#ff9d94;min-height:18px;margin-top:6px"></div>' +
+      '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn fd-cf-ok" id="fd-cf-frete-ok">Salvar</button><button type="button" class="fd-cf-btn fd-cf-nao" id="fd-cf-frete-nao">Voltar</button></div></div>';
+    document.body.appendChild(ov);
+    var inp = document.getElementById('fd-cf-frete-v'); try { inp.focus(); } catch (e13) {}
+    document.getElementById('fd-cf-frete-nao').onclick = function(){ ov.remove(); };
+    document.getElementById('fd-cf-frete-ok').onclick = async function(){
+      var bt = this, msg = document.getElementById('fd-cf-frete-msg');
+      if (String(inp.value).trim() === '') { msg.textContent = 'Digite o valor da entrega.'; return; }
+      bt.disabled = true; bt.textContent = 'Salvando...';
+      try {
+        var r = await fetch(API_CF + '/cardapio-fechado/' + id + '/frete', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: JSON.stringify({ valor: inp.value }) });
+        var j = {}; try { j = await r.json(); } catch (e14) {}
+        if (!r.ok) { msg.textContent = j.error || 'Não foi possível salvar.'; bt.disabled = false; bt.textContent = 'Salvar'; return; }
+        ov.remove(); recarregar();
+      } catch (e15) { msg.textContent = 'Sem conexão. Tente de novo.'; bt.disabled = false; bt.textContent = 'Salvar'; }
+    };
   };
   setInterval(pintarConfig, 2000); setTimeout(pintarConfig, 1200);
   try { if (typeof renderLojaOrders === 'function' && Array.isArray(_myOrders) && _myOrders.some(function(o){ return o.so_cardapio; })) renderLojaOrders(_myOrders); } catch (eR) {}
