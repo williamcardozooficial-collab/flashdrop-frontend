@@ -3344,7 +3344,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
    no servidor e libera os detalhes. Nao ha "Chamar motoboy": a entrega e da loja. */
 (function(){
   var API_CF = 'https://flashdrop-backend-production.up.railway.app';
-  var PAG = { pix: 'Pagamento online (PIX)', dinheiro: 'Dinheiro', cartao_credito: 'Máquina de cartão', cartao_debito: 'Máquina de cartão', cartao_aproximacao: 'Cartão por aproximação', maquina: 'Máquina de cartão' };
+  var PAG = { pix_direto: 'PIX da loja (combine com o cliente)', pix: 'Pagamento online (PIX)', dinheiro: 'Dinheiro', cartao_credito: 'Máquina de cartão', cartao_debito: 'Máquina de cartão', cartao_aproximacao: 'Cartão por aproximação', maquina: 'Máquina de cartão' };
   var semSaldo = {}; // pedido -> saldo no momento em que o servidor recusou por falta de saldo
   function tok(){ try { return JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token || ''; } catch (e) { return ''; } }
   function e(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }

@@ -951,7 +951,7 @@ if(formas.includes('pix'))sel.innerHTML+='<option value="pix">Pix / Pagamento On
 if(formas.includes('dinheiro'))sel.innerHTML+='<option value="dinheiro">&#128181; Dinheiro</option>';
 if(formas.includes('cartao_credito'))sel.innerHTML+='<option value="cartao_credito">&#128179; Máquina de Cartão</option>';
 if(formas.includes('cartao_aproximacao'))sel.innerHTML+='<option value="cartao_aproximacao">&#128179; Cartao por aproximacao</option>';if(formas.includes('pix_direto'))sel.innerHTML+='<option value="pix_direto">&#x1F4B8; PIX</option>';
-var _cfPag=window._cardapioFechado;if(_cfPag&&_cfPag.modo){Array.prototype.slice.call(sel.options).forEach(function(o){if(o.value==='pix_direto'||(o.value==='pix'&&!_cfPag.tem_mp_proprio))o.remove();});}
+var _cfPag=window._cardapioFechado;if(_cfPag&&_cfPag.modo){sel.innerHTML='<option value="pix_direto" selected>&#x1F4B8; PIX da loja</option>';sel.value='pix_direto';}
 }
 function renderLojaFechada(loja){
 var nome=loja.name||loja.nome||'';
@@ -1553,7 +1553,7 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
   async function consultar(){
     var l = loja(); if (!l) return null;
     // Flash Drop fechada com a chave ligada: a entrega e da loja, o robo (motoboys online) nao se aplica
-    if (window._cardapioFechado && window._cardapioFechado.modo) { seq++; ultimoTotal = totalAtual(); disp = { robo_ligado: false, dinheiro: true, cartao_aproximacao: true }; aplicar(); return disp; }
+    if (window._cardapioFechado && window._cardapioFechado.modo) { seq++; ultimoTotal = totalAtual(); disp = { robo_ligado: false, dinheiro: true, cartao_aproximacao: true }; aplicar(); aviso(''); var _s = document.getElementById('ch-pag'); if (_s) _s.value = 'pix_direto'; return disp; }
     var meu = ++seq; var total = totalAtual(); ultimoTotal = total;
     try {
       var r = await fetch(ROBO_API + '/disponibilidade-pagamento?loja=' + encodeURIComponent(l.username || l.id) + '&valor=' + total.toFixed(2));
@@ -1619,6 +1619,10 @@ async function calcularDescontoPromocao(lojaId, subtotal, formaPagamento, valorF
     var sec = secaoEndereco(); if (sec) sec.style.display = ret ? 'none' : '';
     var calc = document.getElementById('btn-calcular-taxa'); if (calc) calc.style.display = fixo ? 'none' : '';
     var banner = document.getElementById('banner-promocoes'); if (banner && modo) banner.style.display = 'none';
+    // O cliente acerta direto com a loja
+    var sp = document.getElementById('ch-pag'), np = document.getElementById('cf-pag-nota');
+    if (!np && sp && sp.parentNode) { np = document.createElement('div'); np.id = 'cf-pag-nota'; np.style.cssText = 'display:none;margin-top:8px;font-size:13px;color:#ffd27a;line-height:1.5'; np.textContent = 'O pagamento é combinado direto com a loja.'; sp.parentNode.appendChild(np); }
+    if (np) np.style.display = modo ? 'block' : 'none';
     var rot = document.querySelector('.taxa-total-final span'); if (rot) rot.textContent = semValor ? 'Total (sem a entrega)' : (ret ? 'Total' : 'Total com entrega');
     if (!fixo) return;
     var st = document.getElementById('taxa-status'); if (st) st.innerHTML = '';
