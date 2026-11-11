@@ -3406,7 +3406,59 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     h += '<div class="fd-cf-valores"><div><span>Itens</span><span>' + fmt(itens) + '</span></div>' + (o.so_cardapio_retirada ? '' : '<div><span>Entrega</span><span>' + (semFrete ? 'a informar' : fmt(frete)) + '</span></div>') + '<div class="fd-cf-total"><span>' + (semFrete ? 'Total (sem a entrega)' : 'Total do cliente') + '</span><span>' + fmt(itens + frete) + '</span></div></div>';
     if (o.status === 'em_preparo' && o.so_cardapio_frete_loja) h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn ' + (semFrete ? 'fd-cf-rec' : 'fd-cf-nao') + '" onclick="_fdCfFrete(' + o.id + ')">' + (semFrete ? '🛵 Informar valor da entrega' : '✏️ Corrigir valor da entrega') + '</button></div>';
     if (o.status === 'em_preparo') h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn fd-cf-ok" onclick="_fdCfEntregue(' + o.id + ',this)">✅ Marcar como entregue</button><button type="button" class="fd-cf-btn fd-cf-canc" onclick="_fdCfCancelar(' + o.id + ',this)">❌ Cancelar pedido</button></div>';
+    // Chamar motoboy (so pedido de entrega ja aceito): texto do grupo (sem numero da casa) e texto completo para o motoboy
+    if (!o.so_cardapio_retirada && o.status !== 'cancelado') h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn fd-cf-rec" onclick="_fdCfCopiar(' + o.id + ',\'grupo\',this)">📋 Copiar para grupo do WhatsApp</button><button type="button" class="fd-cf-btn fd-cf-rec" onclick="_fdCfCopiar(' + o.id + ',\'motoboy\',this)">🛵 Copiar para o motoboy</button></div><div id="fd-cf-copia-' + o.id + '"></div>';
     return h + '</div>';
+  };
+  // ===== Textos para chamar motoboy (pedido do cardapio fora do horario) =====
+  function _cfLimpa(v){ return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
+  function _cfEndLoja(o){
+    var a = {}; try { a = JSON.parse((typeof user !== 'undefined' && user && user.address) || '{}') || {}; } catch (e1) { a = {}; }
+    var rua = _cfLimpa(a.rua), num = _cfLimpa(a.num || a.numero), bairro = _cfLimpa(a.bairro) || _cfLimpa(o.bairro_coleta);
+    if (!rua) { var p = _cfLimpa(o.endereco_coleta).split(',').map(_cfLimpa).filter(Boolean); rua = p[0] || ''; if (p[1] && /^\d+[A-Za-z]?$/.test(p[1])) num = p[1]; if (!bairro) bairro = (p[2] || ''); }
+    return { linha: rua ? rua + (num ? ', ' + num : '') : '', bairro: bairro };
+  }
+  // Separa rua e numero do endereco do cliente. seguro=false quando nao da para separar com certeza.
+  function _cfEndCliente(o){
+    var comp = _cfLimpa(o.complemento_entrega), s = _cfLimpa(o.endereco_entrega);
+    var iTraco = s.lastIndexOf(' - ');
+    if (iTraco > 0) { var depois = _cfLimpa(s.slice(iTraco + 3)); if (!comp || depois === comp) { if (!comp) comp = depois; s = _cfLimpa(s.slice(0, iTraco)); } }
+    var partes = s.split(',').map(_cfLimpa).filter(Boolean), rua = '', num = '', bairro = _cfLimpa(o.bairro_destino), seguro = false;
+    if (partes.length >= 2 && /^\d+[A-Za-z]?(\s*[-\/]\s*\d+[A-Za-z]?)?$/.test(partes[1])) { rua = partes[0]; num = partes[1]; seguro = true; if (!bairro && partes[2]) bairro = partes[2]; }
+    else if (partes.length >= 1) { var m = partes[0].match(/^(.*\D)\s+(\d+[A-Za-z]?)$/); if (m) { rua = _cfLimpa(m[1]); num = m[2]; seguro = true; if (!bairro && partes[1]) bairro = partes[1]; } }
+    // Grupo: nunca vaza o numero. Sem separacao segura -> so o que vem antes do primeiro numero/virgula.
+    var ruaGrupo = seguro ? rua : _cfLimpa(s.split(/[,\d]/)[0]);
+    if (seguro && /\d+[A-Za-z]?\s*$/.test(ruaGrupo)) ruaGrupo = _cfLimpa(ruaGrupo.replace(/[\s,]*\d+[A-Za-z]?\s*$/, ''));
+    return { rua: rua, num: num, comp: comp, bairro: bairro, seguro: seguro, ruaGrupo: ruaGrupo, completo: s };
+  }
+  function _cfTel(t){
+    var d = String(t || '').replace(/\D/g, ''); if ((d.length === 12 || d.length === 13) && d.indexOf('55') === 0) d = d.slice(2);
+    if (d.length === 11) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+    if (d.length === 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+    return _cfLimpa(t);
+  }
+  function _cfBlocos(blocos){ return blocos.map(function(b){ return (Array.isArray(b) ? b : [b]).filter(function(l){ return l; }).join('\n'); }).filter(Boolean).join('\n\n'); }
+  window._fdCfTextos = function(o){
+    var nome = _cfLimpa(o.loja_name || (typeof user !== 'undefined' && user && user.name) || '').toUpperCase();
+    var L = _cfEndLoja(o), C = _cfEndCliente(o);
+    var ref = _cfLimpa(o.referencia_entrega || o.ponto_referencia || o.obs_entrega_loja);
+    var grupo = _cfBlocos(['🏍️ PRECISO DE MOTOBOY! 🛵', nome ? '🍔 ' + nome : '', ['📍 COLETA', L.linha, L.bairro ? '🏘️ Bairro: ' + L.bairro : ''], ['📦 ENTREGA', C.ruaGrupo, C.bairro ? '🏘️ Bairro: ' + C.bairro : ''], '🚫 SEM RETORNO', '🏍️ Quem puder pegar, chama!']);
+    var entrega = C.seguro ? C.rua + (C.num ? ', ' + C.num : '') : C.completo;
+    var motoboy = _cfBlocos([['📦 PEDIDO #' + o.id, nome ? '🍔 ' + nome : ''], ['📍 COLETA', L.linha, L.bairro ? '🏘️ Bairro: ' + L.bairro : ''], ['🏠 ENTREGA', entrega, C.comp ? '📌 Complemento: ' + C.comp : '', ref ? '📌 Referência: ' + ref : '', C.bairro ? '🏘️ Bairro: ' + C.bairro : ''], [_cfLimpa(o.nome_cliente) ? '👤 Cliente: ' + _cfLimpa(o.nome_cliente) : '', _cfTel(o.telefone_cliente) ? '📞 Telefone: ' + _cfTel(o.telefone_cliente) : '']]);
+    return { grupo: grupo, motoboy: motoboy };
+  };
+  window._fdCfCopiar = function(id, tipo, btn){
+    var lista = [].concat((typeof allOrders !== 'undefined' && allOrders) || [], (typeof _myOrders !== 'undefined' && _myOrders) || []);
+    var o = lista.find(function(x){ return String(x.id) === String(id); }); if (!o) return;
+    var texto = window._fdCfTextos(o)[tipo];
+    var orig = btn ? btn.textContent : '';
+    var ok = function(){ if (btn) { btn.textContent = 'Copiado!'; setTimeout(function(){ btn.textContent = orig; }, 2000); } };
+    var manual = function(){
+      var box = document.getElementById('fd-cf-copia-' + id); if (!box) { fdAlert(texto); return; }
+      box.innerHTML = '<div class="fd-cf-oculto" style="margin-top:8px">Não deu para copiar automaticamente. Selecione o texto abaixo e copie:</div><textarea readonly style="width:100%;min-height:220px;margin-top:6px;padding:8px;border-radius:8px;box-sizing:border-box;font-size:13px">' + e(texto) + '</textarea>';
+      var ta = box.querySelector('textarea'); if (ta) { ta.focus(); ta.select(); }
+    };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(ok, manual); else manual(); } catch (e4) { manual(); }
   };
   function recarregar(){ try { loadData(); } catch (e3) {} }
   window._fdCfAceitar = async function(id, btn){
