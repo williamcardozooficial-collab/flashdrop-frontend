@@ -566,6 +566,8 @@ h+='</div></div>';
 function printOrder(orderId){
 var o=(_myOrders||[]).find(function(x){return String(x.id)===String(orderId);})||{};
 if(!o.id){return;} if(o.status==='cancelado'){fdAlert('Pedido cancelado. Impressao nao disponivel.'); return;}
+// Pedido do cardapio fora do horario (so_cardapio): mesma nota, com quantidade, desconto, entrega da loja e "Combinar com a loja"
+var _cfP=!!o.so_cardapio;if(_cfP&&!o.so_cardapio_aceito_em){return;}var _cfRet=_cfP&&!!o.so_cardapio_retirada;
 var SEP1='================================';
 var SEP2='--------------------------------';
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -589,10 +591,12 @@ if(depth===0&&ch==='|'&&raw[ci-1]===' '&&raw[ci+1]===' '){itemList.push(cur.trim
 cur+=ch;
 }
 if(cur.trim())itemList.push(cur.trim());
+if(_cfP)itemList=itemList.filter(function(it){return !/^(🎉|PROMO|Ajuste:)/i.test(it);});
 itemList.forEach(function(item){
 var pm=item.match(/\(R\$([\d.]+)\)\s*$/);
 var ps=pm?'R$ '+parseFloat(pm[1]).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
 var ib=item.replace(/\(R\$[\d.]+\)\s*$/,'').trim();
+var _qtM=ib.match(/^(\d+)x\s*/);
 ib=ib.replace(/^\d+x\s*/,'');
 var cm=ib.match(/\[([^\[\]]+)\]/);
 var comps=[];
@@ -601,7 +605,7 @@ var obsM=ib.match(/\(obs:\s*(.+?)\)\s*$/);
 var obsText='';
 if(obsM){obsText=obsM[1];ib=ib.replace(/\s*\(obs:.+?\)\s*$/,'').trim();}
 itensHTML+='<div style="margin:4px 0;padding:4px 6px;border-left:2px solid #000;">';
-itensHTML+='<div style="font-size:13px;font-weight:900;color:#000;font-family:monospace">'+esc(ib)+(ps?' - '+esc(ps):'')+'</div>';
+itensHTML+='<div style="font-size:13px;font-weight:900;color:#000;font-family:monospace">'+(_cfP?esc((_qtM?_qtM[1]:'1')+'x '):'')+esc(ib)+(ps?' - '+esc(ps):'')+'</div>';
 comps.forEach(function(c){c=c.trim();var cName=c.replace(/^[^:]+:/,'').replace(/\(\+R\$[\d\.]+\)/,'').trim();if(cName)itensHTML+='<div style="font-size:11px;padding-left:8px;color:#000;font-family:monospace;font-weight:bold">- '+esc(cName)+'</div>';});
 if(obsText)itensHTML+='<div style="font-size:11px;padding-left:8px;color:#000;font-family:monospace;font-style:italic">Obs: '+esc(obsText)+'</div>';
 itensHTML+='</div>';
@@ -625,22 +629,36 @@ h2+=line(SEP2);
 h2+=section('CLIENTE');
 h2+=field('Nome',o.nome_cliente);
 if(o.telefone_cliente)h2+=field('Tel',o.telefone_cliente);
-if(o.endereco_entrega)h2+=field('Entrega',(o.endereco_entrega||'')+(o.complemento_entrega?' - '+o.complemento_entrega:''));
-if(o.bairro_destino)h2+=field('Bairro',o.bairro_destino);
+if(_cfRet){h2+=field('Entrega','RETIRADA NA LOJA');}else{
+if(o.endereco_entrega)h2+=field('Entrega',(o.endereco_entrega||'')+(o.complemento_entrega&&String(o.endereco_entrega||'').indexOf(o.complemento_entrega)===-1?' - '+o.complemento_entrega:''));
+if(o.bairro_destino&&(!_cfP||String(o.endereco_entrega||'').indexOf(o.bairro_destino)===-1))h2+=field('Bairro',o.bairro_destino);}
 if(o.obs_entrega_loja)h2+=field('Obs',o.obs_entrega_loja);
 h2+=line(SEP2);
 h2+=section('ITENS DO PEDIDO');
 h2+=itensHTML||'<div style="font-size:12px;color:#000;font-family:monospace;font-weight:bold">-</div>';
 h2+=line(SEP2);
 h2+=section('VALORES');
+var _fR2=function(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});};
+if(_cfP){
+var _dsc=Math.round((parseFloat(o.desconto_promocao)||0)*100)/100;
+var _frete=(!_cfRet&&o.so_cardapio_frete!=null&&o.so_cardapio_frete!=='')?Math.round((parseFloat(o.so_cardapio_frete)||0)*100)/100:null;
+var _semValor=!_cfRet&&_frete===null;
+total=Math.max(0,subtotal-_dsc)+(_frete||0);
+if(subtotal>0)h2+=field('Subtotal',_fR2(subtotal));
+if(_dsc>0)h2+=field('Desconto','- '+_fR2(_dsc));
+if(_frete!==null&&_frete>0)h2+=field('Entrega',_fR2(_frete));
+h2+=line(SEP2);
+h2+=bigVal(_semValor?'TOTAL (SEM A ENTREGA)':'TOTAL',_fR2(total));
+}else{
 if(subtotal>0)h2+=field('Subtotal','R$ '+subtotal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
 h2+=field('Entrega','R$ '+taxa.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
 h2+=line(SEP2);
 h2+=bigVal('TOTAL','R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+}
 h2+=line(SEP2);
 h2+=section('PAGAMENTO');
 var pn={dinheiro:'Dinheiro',maquina:'Cartao',pix:'PIX',cartao_aproximacao:'Cartao Aprox.',pix_direto:'💸 PIX'};
-h2+=field('Forma',pn[o.tipo_pagamento]||o.tipo_pagamento||'-');
+h2+=field('Forma',_cfP?'Combinar com a loja':(pn[o.tipo_pagamento]||o.tipo_pagamento||'-'));
 if(troco)h2+=field('Troco para',troco);
 h2+=line(SEP1);
 h2+=sub(dtCriado);
@@ -3407,6 +3425,8 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     if (o.status === 'em_preparo' && o.so_cardapio_frete_loja) h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn ' + (semFrete ? 'fd-cf-rec' : 'fd-cf-nao') + '" onclick="_fdCfFrete(' + o.id + ')">' + (semFrete ? '🛵 Informar valor da entrega' : '✏️ Corrigir valor da entrega') + '</button></div>';
     if (o.status === 'em_preparo') h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn fd-cf-ok" onclick="_fdCfEntregue(' + o.id + ',this)">✅ Marcar como entregue</button><button type="button" class="fd-cf-btn fd-cf-canc" onclick="_fdCfCancelar(' + o.id + ',this)">❌ Cancelar pedido</button></div>';
     // Chamar motoboy (so pedido de entrega ja aceito): texto do grupo (sem numero da casa) e texto completo para o motoboy
+    // Imprimir a notinha (mesma funcao dos pedidos normais), so depois do aceite; vale tambem para retirada
+    if (o.status !== 'cancelado') h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn fd-cf-nao" onclick="printOrder(' + o.id + ')">🖨️ Imprimir</button></div>';
     if (!o.so_cardapio_retirada && o.status !== 'cancelado') h += '<div class="fd-cf-botoes"><button type="button" class="fd-cf-btn fd-cf-rec" onclick="_fdCfCopiar(' + o.id + ',\'grupo\',this)">📋 Copiar para grupo do WhatsApp</button><button type="button" class="fd-cf-btn fd-cf-rec" onclick="_fdCfCopiar(' + o.id + ',\'motoboy\',this)">🛵 Copiar para o motoboy</button></div><div id="fd-cf-copia-' + o.id + '"></div>';
     return h + '</div>';
   };
