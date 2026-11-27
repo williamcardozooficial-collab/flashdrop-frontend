@@ -119,6 +119,7 @@
     <button class="tab-btn" onclick="showTab('caixa', this)">&#128176; Caixa</button>
     <button class="tab-btn" onclick="showTab('promocoes', this)">🎯 Promoções</button>
     <button class="tab-btn" onclick="showTab('funcionamento', this); carregarFuncionamentoAdmin();">🕒 Horário de funcionamento</button>
+    <button class="tab-btn" onclick="showTab('feriados', this); carregarFeriadosAdmin();">📅 Feriados</button>
   </div>
 
   <div class="content">
@@ -458,6 +459,20 @@
         <button class="btn" id="func-btn-seguir" onclick="manualFuncionamentoAdmin(null)" style="padding:9px 16px;background:#444;color:#fff">🕒 Seguir horário</button>
       </div>
       <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.5">"Fechar agora" deixa fechado até você clicar "Abrir agora" ou "Seguir horário". "Abrir agora" deixa aberto até você clicar "Fechar agora" ou "Seguir horário". Só valem com a chave "Usar horário de funcionamento" ligada.</div>
+    </div>
+  </div>
+  <!-- FERIADOS -->
+  <div id="feriados" class="section">
+    <div class="card">
+      <h3 style="margin:0 0 6px;color:#ff7043">📅 Feriados</h3>
+      <div style="font-size:12px;color:#aaa;margin-bottom:12px;line-height:1.5">No dia marcado a Flash Drop fica <b>fechada o dia inteiro</b> (horário de Brasília), como se fosse fora do horário o dia todo: nenhum pedido vai para os motoboys. Vale mesmo com "Abrir agora". O cardápio fora do horário continua funcionando se a chave dele estiver ligada. As lojas veem um aviso em vermelho 7 dias antes e o dia no calendário. Para abrir num feriado, remova a data.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+        <label style="font-size:12px;color:#aaa">Data<br><input type="date" id="fer-data" style="padding:8px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;font-size:16px"></label>
+        <label style="font-size:12px;color:#aaa;flex:1;min-width:160px">Nome (opcional)<br><input type="text" id="fer-nome" maxlength="60" placeholder="Ex.: Natal" style="width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;font-size:16px"></label>
+        <button class="btn btn-primary" onclick="adicionarFeriadoAdmin()" style="padding:9px 16px">➕ Adicionar feriado</button>
+      </div>
+      <div id="fer-msg" style="display:none;padding:8px 10px;border-radius:6px;margin-bottom:10px;font-size:13px"></div>
+      <div id="fer-lista" style="font-size:13px;color:#aaa">Carregando...</div>
     </div>
   </div>
 
@@ -2576,7 +2591,8 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
     var txt;
     if (!e.usando_horario) txt = '⚪ Horário de funcionamento desligado: a Flash Drop aceita pedidos a qualquer hora.';
     else if (e.aberto_agora) txt = '🟢 Aberta agora' + (e.motivo === 'aberto_manual' ? ' (aberta manualmente com "Abrir agora")' : ' (dentro do horário)') + '.';
-    else txt = '🔴 Fechada agora' + (e.motivo === 'fechado_manual' ? ' (fechada manualmente com "Fechar agora")' : '') + '.' + (e.proxima_abertura ? ' Abre ' + e.proxima_abertura + '.' : '');
+    else txt = '🔴 Fechada agora' + (e.motivo === 'fechado_manual' ? ' (fechada manualmente com "Fechar agora")' : e.motivo === 'feriado' ? ' (feriado' + (e.feriado && e.feriado.nome ? ': ' + e.feriado.nome : '') + ', veja a aba Feriados)' : '') + '.' + (e.proxima_abertura ? ' Abre ' + e.proxima_abertura + '.' : '');
+    if (e.motivo === 'feriado' && !e.usando_horario) txt = '🔴 Fechada hoje: feriado' + (e.feriado && e.feriado.nome ? ' (' + e.feriado.nome + ')' : '') + '. Veja a aba Feriados.';
     el.textContent = txt;
     el.style.background = !e.usando_horario ? '#222' : (e.aberto_agora ? '#12301a' : '#3a1a1a');
     campo('func-btn-seguir').style.display = e.manual ? '' : 'none';
@@ -2613,6 +2629,53 @@ document.addEventListener('DOMContentLoaded',function(){var orig=window.showTab;
     if (!cfg.ativo && modo) { alert('Ligue "Usar horário de funcionamento" para usar Fechar/Abrir agora.'); return; }
     if (modo === 'fechado' && !confirm('Fechar a Flash Drop agora?\nLojas e clientes não vão conseguir criar pedidos até você clicar "Abrir agora" ou "Seguir horário".')) return;
     cfg.manual = modo; await enviar(cfg);
+  };
+})();
+</script>
+<script>
+// Feriados (admin): marca e remove datas no servidor (rotas /feriados, so admin com o token do login)
+(function(){
+  var API_F = 'https://flashdrop-backend-production.up.railway.app';
+  var DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  function $(id){ return document.getElementById(id); }
+  function tok(){ try { return (JSON.parse(localStorage.getItem('flashdrop_user') || '{}').token) || ''; } catch (e) { return ''; } }
+  function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function msg(t, erro){ var m = $('fer-msg'); if (!m) return; m.textContent = t || ''; m.style.display = t ? 'block' : 'none'; m.style.background = erro ? '#3a1a1a' : '#12301a'; m.style.color = erro ? '#ff9a9a' : '#7ee2a0'; }
+  function br(iso){ return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4); }
+  function diaSem(iso){ return DIAS[new Date(iso + 'T12:00:00Z').getUTCDay()]; }
+  function pintar(d){
+    var el = $('fer-lista'); if (!el) return;
+    var fs = (d && d.feriados) || [], hoje = (d && d.hoje) || '';
+    if (!fs.length) { el.innerHTML = '<div style="color:#888">Nenhum feriado marcado.</div>'; return; }
+    el.innerHTML = fs.map(function(f){
+      var passado = hoje && f.data < hoje, ehHoje = f.data === hoje;
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-top:1px solid #333;' + (passado ? 'opacity:.5' : '') + '">' +
+        '<div style="flex:1"><b style="color:' + (passado ? '#aaa' : '#ff7043') + '">' + br(f.data) + '</b> <span style="color:#aaa">(' + diaSem(f.data) + ')</span>' + (f.nome ? ' — ' + esc(f.nome) : '') + (ehHoje ? ' <b style="color:#ff5252">HOJE</b>' : '') + (passado ? ' <span style="color:#777">(já passou)</span>' : '') + '</div>' +
+        '<button class="btn" onclick="removerFeriadoAdmin(\'' + f.data + '\')" style="padding:6px 12px;background:#444;color:#fff">🗑 Remover</button></div>';
+    }).join('');
+  }
+  async function chamar(metodo, caminho, corpo){
+    var r = await fetch(API_F + caminho, { method: metodo, cache: 'no-store', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }, body: corpo ? JSON.stringify(corpo) : undefined });
+    var d = {}; try { d = await r.json(); } catch (e) {}
+    if (!r.ok) throw new Error((d && d.error) || ('erro ' + r.status));
+    return d;
+  }
+  var hojeSrv = '';
+  window.carregarFeriadosAdmin = async function(){
+    try { var d = await chamar('GET', '/feriados'); hojeSrv = d.hoje || ''; pintar(d); } catch (e) { $('fer-lista').textContent = 'Erro ao carregar os feriados: ' + e.message; }
+  };
+  window.adicionarFeriadoAdmin = async function(){
+    var data = ($('fer-data').value || '').trim(), nome = ($('fer-nome').value || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) { msg('Escolha a data.', true); return; }
+    if (hojeSrv && data < hojeSrv && !confirm('Essa data já passou. Marcar mesmo assim?')) return;
+    if (data === hojeSrv && !confirm('Marcar HOJE como feriado?\nA Flash Drop fecha agora e nenhum pedido vai para os motoboys até amanhã.')) return;
+    try { var d = await chamar('POST', '/feriados', { data: data, nome: nome }); d.hoje = hojeSrv; pintar(d); $('fer-data').value = ''; $('fer-nome').value = ''; msg('Feriado ' + br(data) + ' marcado.'); }
+    catch (e) { msg('Não foi possível marcar: ' + e.message + (/Token/i.test(e.message) ? ' — saia e entre de novo no admin.' : ''), true); }
+  };
+  window.removerFeriadoAdmin = async function(data){
+    if (!confirm('Remover o feriado de ' + br(data) + '?\nNesse dia a Flash Drop volta a seguir o horário normal.')) return;
+    try { var d = await chamar('DELETE', '/feriados/' + encodeURIComponent(data)); d.hoje = hojeSrv; pintar(d); msg('Feriado ' + br(data) + ' removido.'); }
+    catch (e) { msg('Não foi possível remover: ' + e.message, true); }
   };
 })();
 </script>
