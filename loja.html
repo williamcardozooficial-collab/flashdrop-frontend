@@ -3614,7 +3614,7 @@ button[id^="tab-"][style*="rgb(102, 102, 102)"],button[id^="tab-"][style*="color
     var novo = document.querySelector('.content .btn-new'); if (!novo || !novo.parentNode) return;
     var b = document.createElement('button'); b.type = 'button'; b.id = 'btn-calendario-func'; b.textContent = '📅 Calendário de funcionamento';
     b.onclick = function(){ abrirCalendarioFuncionamento(); };
-    b.style.cssText = 'width:100%;padding:12px;background:#1f1f3a;color:#fff;border:1.5px solid #667eea;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin:-8px 0 20px';
+    b.style.cssText = 'width:100%;padding:12px;background:linear-gradient(135deg,#FF8A00,#FFC400);color:#1a1200;border:1.5px solid #FFB000;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin:-8px 0 20px;box-shadow:0 4px 12px rgba(255,138,0,.4)';
     novo.parentNode.insertBefore(b, novo.nextSibling);
   }
   // ---------- calendario ----------
